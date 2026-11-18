@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 69 commits · ~9,400 lines of Swift · 114 tests_
+_Last updated: 2026-11-18 · version 1.5 · 73 commits · ~9,700 lines of Swift · 122 tests_
 
 ---
 
@@ -148,11 +148,12 @@ Synthetic clicks don't open menu submenus.
 
 ### P2: New, on-theme
 
-- **Accessory battery alert** _(V)_: notify once when a Bluetooth device drops to 20% (the batteries are
-  already read). Add it as an alert metric so the threshold is editable.
-- **Connected USB devices** _(V)_: a count and list in the Battery panel's Devices section (IOKit `IOUSBHostDevice`).
-- **Fully unload switched-off modules** _(V)_: check every monitor stops sampling when its module is off,
-  not just hidden. Measure before/after with `ps`.
+- ~~Accessory battery alert~~ _(V)_: done 2026-11-18 (`6341833`), as the "Accessory battery" alert metric.
+- ~~Connected USB devices~~ _(V)_: done 2026-11-18 (`667cdf6`); not seen with a real device (none plugged in).
+- **Fully unload switched-off modules** _(V)_: audited 2026-11-18, everything is still sampled when off. The costly
+  one (accessory batteries via `system_profiler`) is now gated (`6341833`). The rest are cheap and feed the vibe
+  score, alerts, keep awake and Shortcuts; gating them needs a decision on whether alerts and the vibe should
+  ignore switched-off modules.
 - **Timer, stopwatch, focus sessions** _(V)_, tied to keep awake: a focus session keeps the Mac awake until it ends.
 - **Downloads watcher** _(V)_: files arriving in a chosen folder; enables a "while downloads are active"
   keep-awake trigger.
@@ -576,7 +577,17 @@ rows) instead of clicks: it needs no focus, and macOS won't let VibeCheck take f
 (`activate` was refused). A driver that pauses when the cursor moves caught the owner using the Mac twice.
 Not bugs: Weather tile missing (Weather is switched off); "On battery" (the Mac was unplugged); "VibeCheck 2"
 at 50% CPU in the process list (the brief Claude Code limits check, a child process).
-Open: "+N more" under listening ports isn't clickable.
+"+N more" under listening ports: fixed in `667cdf6`.
+
+### 2026-11-18: accessory alert, USB devices, ports list, sampling audit (agents in parallel)
+
+| Commit | What |
+|---|---|
+| `6341833` | "Accessory battery" alert (lowest device, named in the text); accessory batteries read only when the Battery module or that alert is on. 6 tests. |
+| `667cdf6` | "USB devices" in the Battery view (while open, every 5 s); "+N more" listening ports expands. 2 tests. |
+
+Notes: one agent built the alert, a cheap read-only agent audited sampling of switched-off modules, the
+USB list and ports change were done here. 122 tests, zero warnings, installed. Not seen on screen.
 
 ---
 
