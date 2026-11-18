@@ -229,7 +229,7 @@ struct CPUPanel: View {
         let cpu = stats.cpu
         Panel(module: .cpu, headline: Fmt.percent(cpu.total),
               subtitle: "User \(Fmt.percent(cpu.user)) · Sys \(Fmt.percent(cpu.system))") {
-            MetricChart(lines: [.init(key: .cpu, color: Palette.user),
+            MetricChart(lines: [.init(key: .cpu, color: Palette.user, name: "Total"),
                                 .init(key: .cpuSystem, color: Palette.system, name: "Sys")],
                         maxValue: 1, height: 96, format: Fmt.percent)
 

@@ -88,27 +88,28 @@ struct DeckHome: View {
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 10) {
-            VibeRing(vibe: stats.vibe.vibe, size: 30, lineWidth: 3.5, monochromeWhenVibing: false)
-            VStack(alignment: .leading, spacing: 2) {
+        // The verdict gets its own full-width line: beside the four buttons it only had ~150 pt and got cut off.
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 10) {
+                VibeRing(vibe: stats.vibe.vibe, size: 30, lineWidth: 3.5, monochromeWhenVibing: false)
                 Text(stats.vibe.vibe.title)
                     .font(.system(size: 15, weight: .semibold))
                     .contentTransition(.interpolate)
-                Text(stats.vibe.verdict)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .contentTransition(.opacity)
+                Spacer(minLength: 4)
+                NotificationBellButton()
+                AwakeMenuButton()
+                DeckIconButton(symbol: "gearshape", help: "Settings (⌘,)") {
+                    (NSApp.delegate as? AppDelegate)?.showSettings()
+                }
+                DeckIconButton(symbol: "power", help: "Quit VibeCheck") { NSApp.terminate(nil) }
             }
-            .accessibilityElement(children: .combine)
-            Spacer(minLength: 4)
-            NotificationBellButton()
-            AwakeMenuButton()
-            DeckIconButton(symbol: "gearshape", help: "Settings (⌘,)") {
-                (NSApp.delegate as? AppDelegate)?.showSettings()
-            }
-            DeckIconButton(symbol: "power", help: "Quit VibeCheck") { NSApp.terminate(nil) }
+            Text(stats.vibe.verdict)
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+                .contentTransition(.opacity)
+                .padding(.leading, 40)
         }
     }
 }

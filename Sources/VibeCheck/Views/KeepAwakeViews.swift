@@ -124,6 +124,7 @@ struct KeepAwakeSettings: View {
                 }
             } footer: {
                 Text("The cup in the deck has more choices, like staying awake while an app is running. A time that has already passed today means tomorrow.")
+                    .settingsFooter()
             }
             Section("Automatically keep awake") {
                 Toggle("While plugged in", isOn: $settings.keepAwakeOnPower)
@@ -142,6 +143,7 @@ struct KeepAwakeSettings: View {
                 Toggle("Show a cup in the menu bar while awake", isOn: $settings.keepAwakeShowInMenuBar)
             } footer: {
                 Text("With the display allowed to sleep, the screen turns off but downloads, builds and music keep going. Closing the lid still puts the Mac to sleep.")
+                    .settingsFooter()
             }
         }
         .formStyle(.grouped)

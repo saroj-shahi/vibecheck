@@ -86,7 +86,7 @@ private struct MenuBarSettings: View {
                 Text("Preview")
             } footer: {
                 Text("Live, using your real stats. With separate items macOS sets the gaps between items, and their order is changed by ⌘-dragging them in the menu bar.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .settingsFooter()
             }
 
             Section("Style") {
@@ -121,7 +121,7 @@ private struct MenuBarSettings: View {
                 Text("Items")
             } footer: {
                 Text("Drag to reorder. The order is used by the combined item and the deck.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .settingsFooter()
             }
         }
         .formStyle(.grouped)
@@ -190,6 +190,11 @@ private struct MenuBarPreview: View {
             .padding(.horizontal, 12)
         }
         .defaultScrollAnchor(.trailing)
+        // Items that don't fit scroll off the leading edge; fade it so the cut reads as "more this way".
+        .mask(HStack(spacing: 0) {
+            LinearGradient(colors: [.clear, .black], startPoint: .leading, endPoint: .trailing).frame(width: 28)
+            Rectangle()
+        })
         .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.bar))
         .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
         .animation(.spring(response: 0.3, dampingFraction: 0.85), value: settings.orderedModules)
@@ -289,7 +294,7 @@ private struct AlertSettings: View {
                 }
             } footer: {
                 Text("Click a highlighted word to change it; drag a number sideways to adjust it (hold ⌥ for fine steps). Each alert fires once, then waits until things recover and at least 5 minutes pass.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .settingsFooter()
             }
             Section {
                 HStack {
@@ -331,7 +336,7 @@ private struct AlertRuleRow: View {
                         }
                     }
                     NumberToken(value: $rule.threshold, unit: rule.metric.unit, range: rule.metric.range)
-                    Text("for")
+                    if rule.duration > 0 { Text("for") } // "below 15% instantly", not "for instantly"
                     TokenMenu(title: AlertRule.durationLabel(rule.duration)) {
                         ForEach(AlertRule.durations, id: \.0) { seconds, label in
                             Button(label) { rule.duration = seconds }
@@ -559,7 +564,7 @@ private struct ShortcutSettings: View {
             }
             Section {
                 Text("Press a shortcut from any app to open that panel; press it again to close. Shortcuts for items that are switched off just beep. \(settings.hotkeyModifier.symbols)A starts or stops keeping your Mac awake (see Keep Awake).")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .settingsFooter()
             }
         }
         .formStyle(.grouped)
@@ -656,7 +661,9 @@ private struct WeatherSettings: View {
                     if let location = settings.weatherLocation {
                         VStack(alignment: .trailing) {
                             Text(location.name)
-                            Text(location.subtitle).font(.caption).foregroundStyle(.secondary)
+                            if location.subtitle != location.name {
+                                Text(location.subtitle).font(.caption).foregroundStyle(.secondary)
+                            }
                         }
                     } else {
                         Text("Not set").foregroundStyle(.secondary)
@@ -686,7 +693,7 @@ private struct WeatherSettings: View {
                 Text("Change city")
             } footer: {
                 Text("Weather comes from Open-Meteo.com (free, no account). Only the chosen city's coordinates are sent; VibeCheck never asks for your location.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .settingsFooter()
             }
         }
         .formStyle(.grouped)
@@ -707,5 +714,15 @@ private struct WeatherSettings: View {
         } catch {
             if !Task.isCancelled { searchError = "Search failed. Check your connection." }
         }
+    }
+}
+
+extension View {
+    /// Form section footer: caption, secondary, leading-aligned (grouped forms align footers trailing by default).
+    func settingsFooter() -> some View {
+        font(.caption)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
