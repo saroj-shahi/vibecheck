@@ -164,7 +164,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         KeepAwake.shared.batteryProvider = { [unowned stats] in stats.battery }
         KeepAwake.shared.onSessionEnded = { [weak self] reason in
-            guard let self, reason.notifies, self.settings.keepAwakeNotify else { return }
+            guard let self else { return }
+            // A finished focus session always says so; other endings follow the keep-awake setting.
+            if reason == .focusDone {
+                self.alerts.notify(title: "Focus session done", body: "Take a break. Your Mac can sleep again.", kind: .keepAwake)
+                return
+            }
+            guard reason.notifies, self.settings.keepAwakeNotify else { return }
             self.alerts.notify(title: "Keep awake ended", body: "\(reason.message) Your Mac can sleep again.", kind: .keepAwake)
         }
         NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,

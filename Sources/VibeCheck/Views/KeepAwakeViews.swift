@@ -8,9 +8,14 @@ struct AwakeMenuItems: View {
     var body: some View {
         @Bindable var settings = settings
         if let session = awake.session {
-            Text("Awake \(session.remaining(now: Date()))")
-            Button("Stop Keeping Awake") { awake.stop() }
+            Text(session.focus ? "Focusing, \(session.remaining(now: Date()))" : "Awake \(session.remaining(now: Date()))")
+            Button(session.focus ? "End Focus Session" : "Stop Keeping Awake") { awake.stop() }
             Divider()
+        }
+        Section("Focus") {
+            ForEach(FocusPreset.minutes, id: \.self) { minutes in
+                Button("Focus for \(minutes) Minutes") { awake.startFocus(minutes: minutes) }
+            }
         }
         Section(awake.isActive ? "Start Over" : "Keep Awake") {
             ForEach(AwakePreset.minutes, id: \.self) { minutes in
@@ -69,16 +74,17 @@ struct AwakeStatusStrip: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "cup.and.saucer.fill")
+            Image(systemName: session.focus ? "timer" : "cup.and.saucer.fill")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Color.accentColor)
             TimelineView(.periodic(from: .now, by: 15)) { context in
-                Text("Staying awake \(session.remaining(now: context.date))")
+                Text(session.focus ? "Focus · \(session.remaining(now: context.date))"
+                                   : "Staying awake \(session.remaining(now: context.date))")
                     .font(.system(size: 12))
                     .lineLimit(1)
             }
             Spacer(minLength: 4)
-            Button("Stop") { KeepAwake.shared.stop() }
+            Button(session.focus ? "End" : "Stop") { KeepAwake.shared.stop() }
                 .controlSize(.small)
         }
         .padding(.horizontal, 10)

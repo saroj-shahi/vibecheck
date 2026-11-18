@@ -22,6 +22,8 @@ enum AwakeEnd: Hashable {
 /// Why a session stopped by itself.
 enum AwakeEndReason: Equatable {
     case timeUp, appQuit, lowBattery, triggerOff
+    /// A focus session ran its full length.
+    case focusDone
 
     var message: String {
         switch self {
@@ -29,6 +31,7 @@ enum AwakeEndReason: Equatable {
         case .appQuit: "The app it was waiting on quit."
         case .lowBattery: "The battery got low."
         case .triggerOff: "What started it is gone (unplugged or display disconnected)."
+        case .focusDone: "Focus session done. Take a break."
         }
     }
 
@@ -39,13 +42,15 @@ enum AwakeEndReason: Equatable {
 struct AwakeSession: Equatable {
     var started: Date
     var end: AwakeEnd
+    /// A focus session: a timed session that ends with a "take a break" notification.
+    var focus = false
 
     /// Checks the session's end condition and the battery floor (0 = no floor). Plain function so it's testable.
     static func endReason(_ session: AwakeSession, now: Date, battery: BatterySample, batteryFloor: Int,
                           isRunning: (String) -> Bool) -> AwakeEndReason? {
         switch session.end {
         case .never, .whileTriggered: break
-        case .at(let date): if now >= date { return .timeUp }
+        case .at(let date): if now >= date { return session.focus ? .focusDone : .timeUp }
         case .whileRunning(let bundleID, _): if !isRunning(bundleID) { return .appQuit }
         }
         if batteryFloor > 0, battery.present, !battery.onAC, battery.percent * 100 < Double(batteryFloor) {
@@ -67,6 +72,18 @@ struct AwakeSession: Equatable {
             return rest == 0 ? "\(hours) h left" : "\(hours) h \(rest) min left"
         }
     }
+}
+
+extension AwakeSession {
+    /// Whole minutes left in a timed session, rounded up; nil when it has no end time.
+    func minutesLeft(now: Date) -> Int? {
+        guard case .at(let date) = end else { return nil }
+        return max(0, Int((date.timeIntervalSince(now) / 60).rounded(.up)))
+    }
+}
+
+enum FocusPreset {
+    static let minutes = [25, 50, 90]
 }
 
 /// Quick-start lengths offered in the deck menu and Settings (0 = indefinitely).
@@ -142,8 +159,8 @@ final class KeepAwake {
 
     private var settings: AppSettings { .shared }
 
-    func start(_ end: AwakeEnd) {
-        session = AwakeSession(started: Date(), end: end)
+    func start(_ end: AwakeEnd, focus: Bool = false) {
+        session = AwakeSession(started: Date(), end: end, focus: focus)
         lastEndReason = nil
         applyAssertion()
         if timer == nil {
@@ -160,6 +177,9 @@ final class KeepAwake {
     }
 
     func start(minutes: Int) { start(AwakePreset.end(minutes)) }
+
+    /// Keeps the Mac awake for `minutes` of focus, then says to take a break.
+    func startFocus(minutes: Int) { start(.at(Date().addingTimeInterval(Double(minutes) * 60)), focus: true) }
 
     /// Starts a session with the quick-start length from Settings, or stops the running one.
     func toggle() {

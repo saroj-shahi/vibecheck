@@ -45,10 +45,25 @@ struct AwakeCup: View {
     }
 
     var body: some View {
-        Image(systemName: "cup.and.saucer.fill")
-            .font(.system(size: 11, weight: .medium))
-            .frame(height: 22)
-            .help("Keeping your Mac awake")
-            .accessibilityLabel("Keeping your Mac awake")
+        if let session = KeepAwake.shared.session, session.focus {
+            // Focus: a timer with the minutes left, at a fixed width so the item never resizes.
+            TimelineView(.periodic(from: .now, by: 20)) { context in
+                HStack(spacing: 2) {
+                    Image(systemName: "timer").font(.system(size: 10, weight: .semibold))
+                    Text("\(session.minutesLeft(now: context.date) ?? 0)m")
+                        .font(.system(size: 10, weight: .semibold).monospacedDigit())
+                        .frame(width: 20, alignment: .leading)
+                }
+                .frame(height: 22)
+                .help("Focus: \(session.remaining(now: context.date))")
+                .accessibilityLabel("Focus session, \(session.remaining(now: context.date))")
+            }
+        } else {
+            Image(systemName: "cup.and.saucer.fill")
+                .font(.system(size: 11, weight: .medium))
+                .frame(height: 22)
+                .help("Keeping your Mac awake")
+                .accessibilityLabel("Keeping your Mac awake")
+        }
     }
 }
