@@ -48,6 +48,13 @@ VibeCheck sums up your Mac in one glance and explains it in one click.
 | Agents | ✨ + tokens today | Claude Code and Codex tokens today, last 24 h by hour, current 5-hour window (Claude, estimated), Codex usage limits, busiest projects, per-model split (read from local logs only) |
 | Clock | time | date, month calendar, world clocks with day/night and offset |
 
+## Shortcuts, Spotlight and Siri
+
+VibeCheck adds actions to the Shortcuts app: **Get Mac Vibe**, **Get Mac Stat** (CPU, GPU, memory, free disk,
+download/upload speed, hottest temperature, battery, agent tokens today), **Open VibeCheck Deck** (optionally on
+a module), **Keep Mac Awake** (for N minutes or until stopped) and **Let Mac Sleep**. Four of them also work
+from Spotlight and Siri, e.g. _"Keep my Mac awake with VibeCheck"_.
+
 ## Settings
 
 Open from the gear in the deck, `⌘,`, or by opening the app again.

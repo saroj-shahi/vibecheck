@@ -12,6 +12,7 @@ let package = Package(
                 .linkedFramework("IOKit"),
                 .linkedFramework("SystemConfiguration"),
                 .linkedFramework("ServiceManagement"),
+                .linkedFramework("AppIntents"),
             ]
         ),
         .testTarget(name: "VibeCheckTests", dependencies: ["VibeCheck"], path: "Tests/VibeCheckTests"),

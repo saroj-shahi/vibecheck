@@ -142,7 +142,8 @@ final class StatusItemController: NSObject {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private let stats = SystemStats()
+    let stats = SystemStats()
+    let launchedAt = Date()
     private let settings = AppSettings.shared
     private let alerts = AlertEngine()
     private lazy var deck = DeckController(stats: stats, settings: settings)
@@ -274,6 +275,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if deck.isVisible, deck.route == .module(module) { deck.close(); return }
         guard let button = (combinedItem ?? items[module])?.button else { return }
         deck.open(from: button, route: .module(module))
+    }
+
+    /// Opens the deck on the home grid or a module (used by the Shortcuts action).
+    func openDeck(_ module: Module?) {
+        let target = module.flatMap { settings.isEnabled($0) ? $0 : nil }
+        let route: DeckRoute = target.map { .module($0) } ?? .home
+        guard let button = (combinedItem ?? target.flatMap { items[$0] } ?? vibeItem ?? items.values.first)?.button else { return }
+        deck.open(from: button, route: route)
     }
 
     func showSettings(_ section: SettingsSection? = nil) {
