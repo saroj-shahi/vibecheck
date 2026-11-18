@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 65 commits · ~9,300 lines of Swift · 112 tests_
+_Last updated: 2026-11-18 · version 1.5 · 67 commits · ~9,400 lines of Swift · 114 tests_
 
 ---
 
@@ -143,8 +143,8 @@ Synthetic clicks don't open menu submenus.
 5. **Distribution.** Developer ID signing + notarization (`notarytool`), a DMG, an update check (Sparkle or
    GitHub Releases), and a Homebrew cask _(V)_. On this Mac it's signed with the owner's free "Apple Development" certificate (Team ID `77HKFF78Z8`,
    expires Nov 2027; Xcode can renew it); other Macs still need Developer ID + notarization.
-6. **Separate-items reorder.** Moving modules in Settings doesn't move existing separate items (macOS keeps
-   autosaved positions). Either document ⌘-drag (done in the UI) or recreate items with new autosave names.
+6. ~~Separate-items reorder~~: done 2026-11-18 (`536771f`). Not yet tried on the owner's menu bar (their current
+   ⌘-dragged layout stays until they reorder in Settings).
 
 ### P2: New, on-theme
 
@@ -267,6 +267,7 @@ Short record of choices future sessions shouldn't silently undo.
 | Per-item options live in `ItemOptions` (JSON per module, `itemOptions` key); the look stays in `LabelStyle` | Looks are shared across modules; options are module-specific and grow without new enum cases. Agents' icon follows the look picker, not an option |
 | Account name and plan: Claude from `~/.claude.json` (`oauthAccount.displayName`, `organizationType`), Codex from `plan_type` in its logs; never `~/.codex/auth.json` | Only non-secret fields; credential files stay unread |
 | `SIGPIPE` is ignored app-wide | Child processes (`ps`, `lsof`, `nettop`, `claude`) can exit before we write to them |
+| Separate items' autosave names carry a generation (`vibecheck.cpu.g3`) bumped on each Settings reorder; generation 0 keeps the original names | macOS 27 remembers item positions by autosave name outside the app's defaults; new names are placed in creation order, each to the left (probe app). Don't revert to fixed names |
 | Limit lists key on `RateWindow.key` (length + name) | Copilot's two monthly quotas share a length; keying on length drew one twice |
 | Agents module: no network of its own; live Claude limits run the local `claude` CLI | Keeps "local logs only" true for VibeCheck itself |
 | No cost estimates in the Agents module (owner, 2026-11-18) | It would need downloading a price list; never hard-code prices either |
@@ -545,6 +546,17 @@ background agent swapped the client while the badges and Now card were built her
 throwing pipe write plus SIGPIPE ignore (an early-exiting CLI would otherwise kill the app). The Keychain
 work earlier today (Apple Development signing) still helps launch-at-login and future permissions, but no
 longer matters for Claude limits. The live fetch still runs only with the setting on.
+
+### 2026-11-18: Settings reorder moves separate items
+
+| Commit | What |
+|---|---|
+| `536771f` | `AppSettings.statusItemGeneration` + `autosaveName(_:generation:)`; `syncItems` rebuilds all separate items (and the ring item) right to left when the generation changed. Footers updated. 2 tests. |
+
+Notes: no `NSStatusItem Preferred Position` keys exist in the app's defaults on macOS 27.2 and nothing was
+found in Control Center's preferences, so positions can't be reset by deleting keys. A throwaway probe app
+showed new names are placed in creation order (each new item to the left) and old names come back where
+they were. Not triggered on the owner's Mac, to keep their current arrangement.
 
 ---
 
