@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 55 commits · ~7,900 lines of Swift · 90 tests_
+_Last updated: 2026-11-18 · version 1.5 · 57 commits · ~7,900 lines of Swift · 90 tests_
 
 ---
 
@@ -134,8 +134,8 @@ Synthetic clicks don't open menu submenus.
 4. **Port manager** _(V)_. Listening TCP ports with the owning process (`lsof -nP -iTCP -sTCP:LISTEN`, only
    while the view is open), in the Network detail view; kill through item 1.
 5. **Distribution.** Developer ID signing + notarization (`notarytool`), a DMG, an update check (Sparkle or
-   GitHub Releases), and a Homebrew cask _(V)_. On this Mac it's signed with the self-signed "VibeCheck Local Signing" certificate (stable Keychain
-   permissions); other Macs still need right-click → Open.
+   GitHub Releases), and a Homebrew cask _(V)_. On this Mac it's signed with the owner's free "Apple Development" certificate (Team ID `77HKFF78Z8`,
+   expires Nov 2027; Xcode can renew it); other Macs still need Developer ID + notarization.
 6. **Separate-items reorder.** Moving modules in Settings doesn't move existing separate items (macOS keeps
    autosaved positions). Either document ⌘-drag (done in the UI) or recreate items with new autosave names.
 
@@ -256,7 +256,7 @@ Short record of choices future sessions shouldn't silently undo.
 | Live Claude limits are opt-in, off by default, and not in settings backup | It reads another app's credential; that choice is made on each Mac, never restored silently |
 | "Limits left" shows Claude Code first: live limits, else its local estimate; other agents only without Claude Code | Falling back to Codex's monthly limit made Claude Code usage look missing (owner report) |
 | "Limits left" has one fixed width (104 pt) in every state | Status item length is measured only at creation/settings changes; a growing label got clipped |
-| `build.sh` signs with the local "VibeCheck Local Signing" identity when present (else ad hoc) | Ad hoc signatures change every build, so macOS forgot Keychain "Always Allow" after each install. The designated requirement is now `identifier "local.vibecheck.app" and certificate leaf = H"5798…"`. Don't go back to ad hoc on this Mac |
+| `build.sh` signs with an "Apple Development" identity when present (then the self-signed "VibeCheck Local Signing", then ad hoc) | Keychain "Always Allow" on another app's item is stored in its partition list as `teamid:` for apps with a Team ID, but as `cdhash:` (one exact build) for apps without one, so self-signed and ad hoc builds re-prompt after every update. Don't drop the Apple Development identity |
 | After a Keychain "Deny", stop asking until the setting is switched again | Otherwise macOS would show the prompt every 15 minutes |
 | Agents module network use: only api.anthropic.com, only with live Claude limits on | Keeps "local logs only" true by default |
 | No cost estimates in the Agents module (owner, 2026-11-18) | It would need downloading a price list; never hard-code prices either |
@@ -483,6 +483,20 @@ a build signed with it, the owner allowed Keychain access, then installed a seco
 CDHash (`3907…` → `fc35…`); the fresh process showed live limits (32% / 65%) right after launch.
 Launch at login still reports enabled. Rejected: reading the token through `/usr/bin/security` (an
 "Always Allow" there would cover every process that runs it).
+
+### 2026-11-18: Keychain prompt fixed for real (Apple Development signing)
+
+| Commit | What |
+|---|---|
+| `c9d3a17` | `build.sh` prefers an "Apple Development: …" identity automatically. |
+
+Notes: the self-signed identity still re-prompted. Reading the Claude Code item's access list (no secret)
+showed why: its partition list held `cdhash:` entries, one per VibeCheck build. The owner created a free
+Apple Development certificate in Xcode; it was invalid until they installed Apple's WWDR G3 intermediate
+(the Keychain only had the G1 one that expired in 2023; codesign failed with "unable to build chain").
+After one more "Always Allow" the partition list gained `teamid:77HKFF78Z8`. Verified: a second build with
+a different CDHash (`44e0…` → `9199…`) showed live limits right after launch, with the owner set to deny
+any prompt. Launch at login still enabled. The "VibeCheck Local Signing" certificate is no longer needed.
 
 ---
 
