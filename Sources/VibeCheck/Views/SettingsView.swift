@@ -92,6 +92,11 @@ private struct MenuBarSettings: View {
                     Text("On a display with a notch, the combined item shows as many stats as fit beside it (in the order below) plus a +N badge. Everything stays in the deck.")
                 }
                 .disabled(settings.menuBarStyle != .combined)
+                Picker("Stats beside the notch", selection: $settings.notchMaxStats) {
+                    Text("As many as fit").tag(0)
+                    ForEach(1...4, id: \.self) { Text("At most \($0)").tag($0) }
+                }
+                .disabled(settings.menuBarStyle != .combined || !settings.autoFitNotch)
                 Toggle("Colorful graphs", isOn: $settings.colorfulMenuBar)
             }
 

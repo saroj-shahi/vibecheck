@@ -24,6 +24,14 @@ enum NotchFit {
         return count
     }
 
+    /// Applies the user's "at most N beside the notch" cap (0 = no cap) to the fitted count.
+    /// Returns nil when every stat is shown.
+    static func capped(fitted: Int?, total: Int, cap: Int) -> Int? {
+        var count = fitted ?? total
+        if cap > 0 { count = min(count, cap) }
+        return count >= total ? nil : count
+    }
+
     /// Room for the combined item between the notch's right edge and the item's own right edge, which
     /// stays put as the item changes width. nil when the item's display has no notch or the item sits
     /// entirely left of it.

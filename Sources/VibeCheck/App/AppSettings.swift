@@ -186,6 +186,10 @@ final class AppSettings {
     var autoFitNotch: Bool {
         didSet { save(autoFitNotch, "autoFitNotch", structural: true) }
     }
+    /// At most this many stats beside the notch (0 = as many as fit).
+    var notchMaxStats: Int {
+        didSet { save(notchMaxStats, "notchMaxStats", structural: true) }
+    }
     var showVibeRing: Bool {
         didSet { save(showVibeRing, "showVibeRing", structural: true) }
     }
@@ -263,6 +267,7 @@ final class AppSettings {
         }
         menuBarSpacing = defaults.string(forKey: "menuBarSpacing").flatMap(MenuBarSpacing.init(rawValue:)) ?? .normal
         autoFitNotch = defaults.object(forKey: "autoFitNotch") as? Bool ?? true
+        notchMaxStats = defaults.integer(forKey: "notchMaxStats")
         showVibeRing = defaults.object(forKey: "showVibeRing") as? Bool ?? true
         colorfulMenuBar = defaults.object(forKey: "colorfulMenuBar") as? Bool ?? true
         clockFormat = defaults.string(forKey: "clockFormat").flatMap(ClockFormat.init(rawValue:)) ?? .dayTime

@@ -25,4 +25,13 @@ struct NotchFitTests {
         // Barely any room: ring and chip only.
         #expect(NotchFit.visibleCount(itemWidths: widths, fixed: 16, gap: 2, chipWidth: 18, available: 30) == 0)
     }
+
+    @Test func capLimitsStatsBesideTheNotch() {
+        #expect(NotchFit.capped(fitted: 3, total: 6, cap: 2) == 2)     // room for 3, user wants 2
+        #expect(NotchFit.capped(fitted: 1, total: 6, cap: 2) == 1)     // never more than fits
+        #expect(NotchFit.capped(fitted: 3, total: 6, cap: 0) == 3)     // no cap
+        #expect(NotchFit.capped(fitted: nil, total: 6, cap: 0) == nil) // everything fits
+        #expect(NotchFit.capped(fitted: nil, total: 6, cap: 2) == 2)   // fits, but capped
+        #expect(NotchFit.capped(fitted: nil, total: 2, cap: 4) == nil)
+    }
 }

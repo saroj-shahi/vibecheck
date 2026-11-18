@@ -110,8 +110,9 @@ final class StatusItemController: NSObject {
                 }
                 let chip = NSHostingView(rootView: HiddenCountChip(count: 8)).fittingSize.width
                 let ring: CGFloat = settings.showVibeRing ? 16 : 0
-                limit = NotchFit.visibleCount(itemWidths: widths, fixed: ring + spacing.padding * 2,
-                                              gap: spacing.between, chipWidth: chip, available: available)
+                let fitted = NotchFit.visibleCount(itemWidths: widths, fixed: ring + spacing.padding * 2,
+                                                   gap: spacing.between, chipWidth: chip, available: available)
+                limit = NotchFit.capped(fitted: fitted, total: widths.count, cap: settings.notchMaxStats)
             }
         }
         guard limit != fit.visibleCount else { return }
@@ -284,8 +285,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
                 let chip = NSHostingView(rootView: HiddenCountChip(count: 8)).fittingSize.width
                 for room in [189.0, 300.0] {
-                    let count = NotchFit.visibleCount(itemWidths: widths, fixed: 16 + spacing.padding * 2, gap: spacing.between,
-                                                      chipWidth: chip, available: room)
+                    let fitted = NotchFit.visibleCount(itemWidths: widths, fixed: 16 + spacing.padding * 2, gap: spacing.between,
+                                                       chipWidth: chip, available: room)
+                    let count = NotchFit.capped(fitted: fitted, total: widths.count, cap: self.settings.notchMaxStats)
                     let names = count.map { self.settings.orderedModules.prefix($0).map(\.title).joined(separator: ", ") } ?? "all"
                     NSLog("%@", "VibeCheck deck-demo notch-fit room=\(Int(room)): \(names) + \(count.map { "+\(self.settings.orderedModules.count - $0)" } ?? "none")")
                 }
