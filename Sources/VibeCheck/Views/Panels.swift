@@ -233,21 +233,9 @@ struct ProcessList: View {
     }
 
     private func confirmRow(_ target: ProcessKiller.Identity, name rowName: String) -> some View {
-        let name = ProcessKiller.name(of: target.pid) ?? rowName
-        return HStack(spacing: 6) {
-            Text("Force quit \(name)? Unsaved work is lost.")
-                .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 4)
-            Button("Cancel") { withAnimation(Deck.animation) { confirming = nil } }
-                .keyboardShortcut(.cancelAction)
-            Button("Force Quit") { run(target, mode: .forceQuit) }
-                .tint(.red)
-        }
-        .font(.callout)
-        .controlSize(.small)
-        .buttonStyle(.borderedProminent)
-        .padding(6)
-        .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(.red.opacity(0.12)))
+        ForceQuitConfirmRow(name: ProcessKiller.name(of: target.pid) ?? rowName,
+                            cancel: { withAnimation(Deck.animation) { confirming = nil } },
+                            confirm: { run(target, mode: .forceQuit) })
     }
 
     private func run(_ target: ProcessKiller.Identity, mode: ProcessKiller.Mode) {
@@ -272,6 +260,111 @@ private struct QuitAccessibility<Actions: View>: ViewModifier {
             content.accessibilityHint("Can't be quit: \(reason.lowercased())")
         } else {
             content.accessibilityActions { actions() }
+        }
+    }
+}
+
+/// Inline "Force quit X?" confirmation shared by the process and port lists.
+struct ForceQuitConfirmRow: View {
+    let name: String
+    let cancel: () -> Void
+    let confirm: () -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text("Force quit \(name)? Unsaved work is lost.")
+                .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 4)
+            Button("Cancel", action: cancel)
+                .keyboardShortcut(.cancelAction)
+            Button("Force Quit", action: confirm)
+                .tint(.red)
+        }
+        .font(.callout)
+        .controlSize(.small)
+        .buttonStyle(.borderedProminent)
+        .padding(6)
+        .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(.red.opacity(0.12)))
+    }
+}
+
+/// "Listening ports": TCP listeners with their owner, quit through the same path as ProcessList.
+struct ListeningPortsSection: View {
+    @Environment(SystemStats.self) private var stats
+    @State private var confirming: (target: ProcessKiller.Identity, asked: Date)?
+    @State private var notice: (pid: Int32, text: String)?
+    @State private var noticeClear: Task<Void, Never>?
+    private let limit = 8
+
+    var body: some View {
+        let ports = stats.listeningPorts
+        VStack(alignment: .leading, spacing: 4) {
+            SectionTitle(text: "Listening ports")
+            if ports.isEmpty {
+                Text("Nothing is listening.").font(.callout).foregroundStyle(.tertiary)
+            }
+            ForEach(ports.prefix(limit)) { row($0) }
+            if ports.count > limit {
+                Text("+\(ports.count - limit) more").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func row(_ item: ListeningPort) -> some View {
+        if let confirming, confirming.target.pid == item.pid, Date().timeIntervalSince(confirming.asked) < 20,
+           ProcessKiller.identity(of: item.pid) == confirming.target {
+            ForceQuitConfirmRow(name: ProcessKiller.name(of: item.pid) ?? item.name,
+                                cancel: { withAnimation(Deck.animation) { self.confirming = nil } },
+                                confirm: { run(confirming.target, mode: .forceQuit) })
+        } else {
+            HStack(spacing: 6) {
+                Group {
+                    if let icon = NSRunningApplication(processIdentifier: item.pid)?.icon {
+                        Image(nsImage: icon).resizable()
+                    } else {
+                        Image(systemName: "gearshape").foregroundStyle(.tertiary)
+                    }
+                }
+                .frame(width: 16, height: 16)
+                Text(item.name).lineLimit(1).truncationMode(.middle)
+                Spacer()
+                if let notice, notice.pid == item.pid {
+                    Text(notice.text).font(.caption).foregroundStyle(.orange).lineLimit(1)
+                } else {
+                    Text(item.isLocalOnly ? "local only" : "open to network")
+                        .font(.caption).foregroundStyle(item.isLocalOnly ? .tertiary : .secondary)
+                    Text(String(item.port)).font(.system(.callout, design: .monospaced)).foregroundStyle(.secondary)
+                }
+            }
+            .font(.callout)
+            .contentShape(Rectangle())
+            .help("\(item.address):\(item.port), pid \(item.pid)")
+            .contextMenu { menu(item) }
+            .modifier(QuitAccessibility(pid: item.pid, actions: { menu(item) }))
+        }
+    }
+
+    @ViewBuilder
+    private func menu(_ item: ListeningPort) -> some View {
+        let name = ProcessKiller.name(of: item.pid) ?? item.name
+        if let reason = ProcessKiller.protectionReason(pid: item.pid) {
+            Text("Can't quit \(name): \(reason.lowercased())")
+        } else if let target = ProcessKiller.identity(of: item.pid) {
+            // Identity is taken when the menu is built, so a reused pid is refused at click time.
+            Button("Quit \(name)") { run(target, mode: .quit) }
+            Button("Force Quit \(name)…") { withAnimation(Deck.animation) { confirming = (target, Date()) } }
+        }
+    }
+
+    private func run(_ target: ProcessKiller.Identity, mode: ProcessKiller.Mode) {
+        confirming = nil
+        guard case .failed(let text) = ProcessKiller.quit(target, mode: mode) else { return }
+        notice = (target.pid, text)
+        noticeClear?.cancel()
+        noticeClear = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(3))
+            if !Task.isCancelled { notice = nil }
         }
     }
 }
@@ -458,6 +551,8 @@ struct NetworkPanel: View {
                     .font(.callout)
                 }
             }
+
+            ListeningPortsSection()
 
             DetailsDisclosure(.network) {
                 VStack(spacing: 4) {

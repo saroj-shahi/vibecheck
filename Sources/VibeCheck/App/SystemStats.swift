@@ -58,10 +58,16 @@ final class SystemStats {
     @ObservationIgnored var refreshInterval: TimeInterval = 2
     private(set) var networkApps: [AppNetworkUsage] = []
     @ObservationIgnored private var fetchingNetworkApps = false
+    private(set) var listeningPorts: [ListeningPort] = []
+    @ObservationIgnored private var fetchingPorts = false
+    @ObservationIgnored private var lastPortFetch = Date.distantPast
 
     /// Number of open panels showing per-app network usage; `nettop` only runs while this is > 0.
     var networkAppDemand = 0 {
-        didSet { if networkAppDemand > 0, oldValue == 0 { refreshNetworkApps() } }
+        didSet {
+            if networkAppDemand > 0, oldValue == 0 { refreshNetworkApps(); refreshPorts() }
+            if networkAppDemand == 0 { listeningPorts = [] }
+        }
     }
 
     let history = HistoryStore()
@@ -161,7 +167,10 @@ final class SystemStats {
         onTick?()
 
         if processDemand > 0, Date().timeIntervalSince(lastProcessFetch) >= processInterval - 0.25 { refreshProcesses() }
-        if networkAppDemand > 0 { refreshNetworkApps() }
+        if networkAppDemand > 0 {
+            refreshNetworkApps()
+            if Date().timeIntervalSince(lastPortFetch) >= 4.75 { refreshPorts() }
+        }
     }
 
     var vibeInput: VibeInput {
@@ -205,6 +214,18 @@ final class SystemStats {
             let rows = await NetworkAppSampler.fetch()
             self.networkApps = NetworkAppSampler.groupByApp(rows) { NSRunningApplication(processIdentifier: $0)?.localizedName }
             self.fetchingNetworkApps = false
+        }
+    }
+
+    /// `lsof` for listening TCP ports, at most every 5 s and only while the Network view is open.
+    private func refreshPorts() {
+        guard !fetchingPorts else { return }
+        fetchingPorts = true
+        lastPortFetch = Date()
+        Task {
+            let found = await PortSampler.fetch()
+            if self.networkAppDemand > 0 { self.listeningPorts = found }
+            self.fetchingPorts = false
         }
     }
 
