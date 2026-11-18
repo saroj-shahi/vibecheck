@@ -219,6 +219,7 @@ private struct GeneralSettings: View {
 
     var body: some View {
         @Bindable var settings = settings
+        @Bindable var claudeLimits = ClaudeLiveLimits.shared
         Form {
             Section {
                 Picker("Update every", selection: $settings.refreshInterval) {
@@ -234,6 +235,19 @@ private struct GeneralSettings: View {
                     .disabled(!BluetoothSnooze.shared.isAvailable)
             } footer: {
                 Text(bluetoothFooter)
+                    .settingsFooter()
+            }
+            Section {
+                Toggle("Show Claude's real plan limits", isOn: $claudeLimits.isOn)
+                if claudeLimits.isOn {
+                    TimelineView(.periodic(from: .now, by: 30)) { context in
+                        Text(claudeLimits.statusText(now: context.date))
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } footer: {
+                Text("Reads Claude Code's sign-in from your Keychain (macOS asks first) and asks Anthropic for your plan usage. Nothing else is sent. Off by default.")
                     .settingsFooter()
             }
             Section {

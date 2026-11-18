@@ -12,10 +12,13 @@ final class AgentUsageStore {
     @ObservationIgnored private let queue = DispatchQueue(label: "vibecheck.agent-usage", qos: .utility)
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var scanning = false
+    /// The last scan, before live Claude limits are merged in.
+    @ObservationIgnored private var scanned = AgentUsageSample()
 
     func start() {
         guard timer == nil else { return }
         refresh()
+        ClaudeLiveLimits.shared.start()
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
             MainActor.assumeIsolated { AgentUsageStore.shared.refresh() }
         }
@@ -32,9 +35,17 @@ final class AgentUsageStore {
                 MainActor.assumeIsolated {
                     let store = AgentUsageStore.shared
                     store.scanning = false
-                    if store.sample != result { store.sample = result }
+                    store.scanned = result
+                    store.reapply()
                 }
             }
         }
+    }
+
+    /// Publishes the last scan with fresh live Claude limits merged in (only assigns when it changed).
+    func reapply(now: Date = Date()) {
+        let live = ClaudeLiveLimits.shared
+        let merged = ClaudeLiveLimits.merge(scanned, live: live.currentWindows(now: now), fetchedAt: live.fetchedAt, now: now)
+        if sample != merged { sample = merged }
     }
 }

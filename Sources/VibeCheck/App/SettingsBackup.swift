@@ -9,7 +9,7 @@ enum SettingsBackup {
         "worldClocks", "weatherLocation", "temperatureUnit", "chartRange", "groupProcessesByApp",
         "keepAwakeDefaultMinutes", "keepAwakeDisplayOn", "keepAwakeBatteryFloor", "keepAwakeAtLaunch", "keepAwakeShowInMenuBar",
         "keepAwakeUntilMinute", "keepAwakeNotify", "keepAwakeHotkey", "keepAwakeOnPower", "keepAwakeWithDisplay",
-        "bluetoothOffWhileAsleep",
+        "bluetoothOffWhileAsleep",  // not "claudeLiveLimits": Keychain access is opted into on each Mac
     ]
     static let formatKey = "VibeCheckSettingsVersion"
 
