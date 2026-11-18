@@ -41,7 +41,7 @@ What *was* verified: unit tests, real data via `--dump`, real window frames via 
 | Keep awake triggers: plugged in and external display start a session | ✅ built app with launch arguments + `pmset -g assertions` (on AC with the MSI display attached) |
 | Keep awake: trigger ending on unplug / display removal, end notification, ⌃⌥⌘A, "Until" menu | ❌ not exercised (logic covered by unit tests) |
 | App Intents metadata in the bundle (5 actions, 2 enums, 4 phrases) | ✅ `extract.actionsdata` inspected; signature verifies |
-| CPU / memory with the deck closed: 2.65% / 112 MB (was 3.9% / 138 MB) | ✅ A/B against the installed build over 120 s with `ps`; `sample` profiles before and after |
+| CPU / memory with the deck closed: ~3.3% / ~100 MB installed (was ~3.9% / 138–155 MB) | ✅ installed app measured 3× 40 s with `ps`; `sample` shows our tick at ~70 ms per 20 s vs ~250 ms SwiftUI layout |
 | Deck home / CPU / Sensors views after the throttling (process list, all-sensor list) | ❌ never seen |
 | Notification history: cap, newest first, unseen count, persistence, alerts recorded | ✅ unit tests |
 | Notification history: bell, red dot, popover in the deck | ❌ never seen |
@@ -75,9 +75,11 @@ Fix whatever turns up before starting new features.
 
 ### P1
 
-- **Performance, next round.** Done 2026-11-18 (see session history): 3.9% → 2.65% CPU with the deck
-  closed, 138 → 112 MB. What's left is mostly SwiftUI redrawing the menu bar each tick; try Instruments'
-  SwiftUI template, and skip label updates when the displayed text didn't change. Not done on purpose:
+- **Performance, next round: menu bar rendering.** After the 2026-11-18 pass the installed app idles at
+  ~3.3% CPU (was ~3.9%) and ~100 MB. VibeCheck's own sampling is now ~70 ms per 20 s; SwiftUI layout and
+  drawing of the menu bar item is ~250 ms per 20 s, so that's the next target: Instruments' SwiftUI
+  template, avoid relayout of the `NSHostingView` in the status button each tick, and skip label updates
+  when the displayed text didn't change. Not done on purpose:
   caching widths in `refitAroundNotch()`, which only runs when the item moves or settings change.
 - **Distribution.** Developer ID signing + notarization (`notarytool`), a DMG, and an update mechanism
   (Sparkle or a GitHub Releases check). Today it's ad hoc signed, so other Macs need right-click → Open.
@@ -277,7 +279,7 @@ Notes: `swift test` passes (62). The deck UI wasn't seen on screen, and no real 
 |---|---|
 | `a93e6b3` | Sensors: dies only and at most every 4 s unless the Sensors panel is open (`sensorDemand`). Processes: 5 s interval on the deck home, dropped when the deck closes, verdict only while the deck shows it, name lookups only for the top apps. Agents scan: `stat` before opening, full walk every 5 min, `autoreleasepool` per file. `--dump` prints sensor counts. 2 tests. |
 
-Notes: measured with the deck closed, new vs installed build side by side over 120 s: 2.65% vs 3.91% CPU, 112 vs 138 MB. `sample` showed VibeCheck's own tick work going from ~27 ms to ~6 ms per second; the rest is system/SwiftUI. Deck behaviour after the throttling wasn't looked at on screen.
+Notes: VibeCheck's own tick work went from ~27 ms to ~4–6 ms per second (`sample`). Installed and measured with the deck closed: ~3.3% CPU and ~100 MB, down from ~3.9% and 138–155 MB. The first side-by-side test (2.65%) overstated it: the second copy's menu bar item was hidden for lack of room, so it skipped the SwiftUI drawing that is now the biggest cost (and the commit message quotes that 2.65%). Testing tip: compare builds one at a time, not side by side. Deck behaviour after the throttling wasn't looked at on screen.
 
 ---
 
