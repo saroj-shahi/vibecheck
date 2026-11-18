@@ -203,8 +203,19 @@ private struct GeneralSettings: View {
                 Toggle("Launch at login", isOn: $settings.launchAtLogin)
             }
             Section {
-                Text("VibeCheck 1.4 · Click the menu bar item to check the vibes. ⌃⌥⌘1–9 open a module from anywhere.")
-                    .font(.caption).foregroundStyle(.secondary)
+                HStack(spacing: 14) {
+                    Image(nsImage: NSApp.applicationIconImage)
+                        .resizable()
+                        .frame(width: 56, height: 56)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("VibeCheck").font(.system(size: 17, weight: .bold, design: .rounded))
+                        Text("Is your Mac vibing or cooked?").font(.callout).foregroundStyle(.secondary)
+                        Text("Version 1.5 · Click the menu bar item to check the vibes. ⌃⌥⌘1–9 open a module from anywhere.")
+                            .font(.caption).foregroundStyle(.tertiary)
+                    }
+                }
+                .padding(.vertical, 4)
             }
         }
         .formStyle(.grouped)

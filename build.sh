@@ -10,11 +10,8 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp .build/release/VibeCheck "$APP/Contents/MacOS/VibeCheck"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
-if [ ! -f build/AppIcon.icns ]; then
-  swift scripts/make_icon.swift build/AppIcon.iconset
-  iconutil -c icns build/AppIcon.iconset -o build/AppIcon.icns
-fi
-cp build/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+# The icon is rendered from branding/svg by scripts/render_brand.swift and committed.
+cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 
 codesign --force --sign - "$APP"
 echo "Built $APP"

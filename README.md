@@ -1,66 +1,111 @@
-# VibeCheck
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="branding/png/lockup-dark.png">
+    <img src="branding/png/lockup-light.png" alt="VibeCheck" width="460">
+  </picture>
+</p>
 
-A lightweight macOS menu bar system monitor that tells you if your Mac is vibing or cooked (macOS 14+), written in Swift with SwiftUI + AppKit.
+<p align="center"><b>Is your Mac vibing or cooked?</b><br>
+A native menu bar system monitor for macOS 14+, written in Swift with SwiftUI and AppKit.</p>
 
-A **vibe ring** sums it all up: full and monochrome while your Mac is vibing, two-thirds and yellow when
-it's mid, one-third and red when it's cooked (sustained CPU, memory pressure, heat, low disk or battery,
-thermal throttling). The deck header turns that into a sentence, e.g. "Kinda mid: CPU has been busy at 72%.
-Xcode is the loudest at 140% CPU." States only change after two consecutive samples, so nothing flickers.
+<p align="center"><img src="branding/png/social-card.png" alt="VibeCheck: CPU, GPU, memory, network, sensors and more" width="720"></p>
 
-Each module gets its own menu bar item (or one combined item, the default for new installs). Clicking opens the **deck**: a glass panel
-under the menu bar with a live tile per stat. Click a tile (or use the arrow keys and Return) and it unfolds
-into that module's detail view; Esc folds back, then closes. `⌘1`–`⌘9` jump between modules inside the deck,
-`⌘,` opens Settings. Separate items open the deck straight on their module.
+---
 
-| Module  | Menu bar                     | Panel |
-|---------|------------------------------|-------|
-| CPU     | mini history bars + %        | user/system/idle, history graph, per-core bars, P/E cores, load average, thermal state, top apps or processes |
-| GPU     | mini history bars + %        | utilization graph, renderer / tiler split, GPU memory in use, model and core count (each GPU on Intel Macs) |
-| Memory  | pressure-colored gauge + %   | composition bar (app/wired/compressed/cached), history, pressure, swap, top apps (helpers grouped, with icons) or processes |
-| Network | ↑/↓ rates; arrows light up while data moves, "Offline" when disconnected | mirrored up/down graph, status, interface, local IP, totals since boot, per-interface traffic (Wi-Fi, Ethernet, VPN…), top apps by traffic |
-| Disk    | read/write rates             | I/O graph, every local volume with capacity bars |
-| Sensors | hottest temperature         | SoC/CPU, SSD and battery temperatures with history, fan speed and range, system and adapter power, full list of every sensor |
-| Battery | icon + % (off by default)    | state, time remaining, power draw, health, cycle count, Bluetooth device batteries (AirPods, Apple keyboards/mice/trackpads) |
-| Weather | condition icon + temperature (off by default) | current conditions, next 12 hours, 7-day forecast with ranges ([Open-Meteo](https://open-meteo.com/), no key, city search instead of location access) |
-| Clock   | time (off by default)        | big time and date, month calendar (opens Calendar), world clocks with day/night and offset |
+## What it does
 
-Detail views lead with one big number and a short summary, then the chart, then **who's responsible**
-(top apps), with everything else behind a remembered **Details** toggle. Hover any chart to scrub it: a
-hairline and value bubble follow the pointer (with a trackpad tick at the peak). Every chart has a sliding
-**Live / 1H / 24H** pill, and switching ranges morphs the line instead of redrawing it. Hour and day history are averaged (6 s and 144 s buckets),
-saved to `~/Library/Application Support/VibeCheck/history.json`, and survive restarts; sleep shows as gaps.
+VibeCheck sums up your Mac in one glance and explains it in one click.
 
-Settings (gear icon in any panel, or open the app again):
+- **The vibe ring** lives in your menu bar: full and monochrome while your Mac is **vibing**, two-thirds
+  and yellow when it's **mid**, one-third and red when it's **cooked** (sustained CPU, memory pressure,
+  heat, low disk or battery, thermal throttling). States change only after two consecutive samples, so
+  nothing flickers.
+- **The deck** opens under the menu bar: a glass panel with a live tile per stat and a one-line verdict,
+  e.g. _"Kinda mid: CPU has been busy at 72%. Xcode is the loudest at 140% CPU."_ Click a tile (or use the
+  arrow keys and Return) and it unfolds into that module's detail view. Esc folds back, then closes.
+  `⌘1`–`⌘9` jump between modules, `⌘,` opens Settings.
+- **Detail views** lead with one big number and a summary, then a chart, then **who's responsible** (top
+  apps), with everything else behind a remembered **Details** toggle. Hover any chart to scrub it; switch
+  **Live / 1H / 24H** and the line morphs. History survives restarts (sleep shows as gaps).
 
-- **General:** separate items or **one combined item** (icon tabs switch modules), which items to show and how each one looks (graph + value, icon + value, value only), colorful or single-color graphs, spacing (normal / compact / tight), update interval, launch at login.
-- **Clock:** menu bar format (locale-aware), seconds, world clocks with city search.
+## Modules
+
+| Module | Menu bar | Detail view |
+|---|---|---|
+| CPU | mini history bars + % | user/system split, per-core bars, P/E cores, load average, thermal state, top apps |
+| GPU | mini history bars + % | utilization, renderer/tiler split, GPU memory, model and cores |
+| Memory | pressure-colored gauge + % | app/wired/compressed/cached breakdown, pressure, swap, top apps |
+| Network | ↑/↓ rates that light up with traffic, "Offline" when disconnected | status, per-interface traffic, local IP, totals, top apps by traffic |
+| Disk | read/write rates | I/O graph, every local volume with free space |
+| Sensors | hottest temperature | SoC, SSD and battery temperatures, fan speed, system and adapter power, every sensor |
+| Battery | icon + % | state, time remaining, power draw, health, cycles, Bluetooth device batteries |
+| Weather | condition + temperature | now, next 12 hours, 7 days ([Open-Meteo](https://open-meteo.com/); city search, no location access) |
+| Clock | time | date, month calendar, world clocks with day/night and offset |
+
+## Settings
+
+Open from the gear in the deck, `⌘,`, or by opening the app again.
+
+- **Menu Bar:** a live preview drawn with your real stats; separate items or **one combined item**;
+  spacing (normal / compact / tight); vibe ring; colorful or single-color graphs; drag to reorder; per-item
+  style (graph, icon or value only). **Fit around the camera notch** shows only what fits beside the notch
+  (or at most _N_ stats) plus a "+N" badge.
+- **General:** update interval, launch at login.
+- **Alerts:** rules that read as sentences: _Tell me when **CPU usage** is **above** **90%** for **1 min**._
+  Click a word to change it, drag the number sideways to adjust it, preview the banner.
+- **Clock:** locale-aware formats, seconds, world clocks.
 - **Weather:** city search, °C / °F.
-- **Backup:** export / import settings as a .plist, or reset to defaults.
-- **Menu Bar:** a live preview drawn with the real labels, style, spacing, vibe ring, and drag-to-reorder items. **Fit around the camera notch** (on by default): on a notched display the combined item shows as many stats as fit beside the notch, in your order, plus a "+N" badge; everything stays in the deck.
-- **Alerts:** rules read as sentences ("Tell me when **CPU usage** is **above** **90%** for **1 min**"); click a word to change it, drag the number sideways to adjust it, preview the banner. Notifications such as "CPU above 90% for 1 min", "temperature above 95 °C", "battery below 15%", "startup disk below 10% free". Each fires once, then re-arms after the value recovers (5 min cooldown).
-- **Shortcuts:** `⌃⌥⌘1`…`⌃⌥⌘9` open CPU, GPU, Memory, Network, Disk, Sensors, Battery, Clock, Weather from any app (modifier keys configurable).
+- **Shortcuts:** `⌃⌥⌘1`…`⌃⌥⌘9` open each module from any app.
+- **Backup:** export, import or reset settings.
 
-## Build & run
+## Install
 
 ```bash
-./build.sh            # builds build/VibeCheck.app
-open build/VibeCheck.app
-./build.sh --install  # also copies it to /Applications
-/Applications/VibeCheck.app/Contents/MacOS/VibeCheck --login-item on   # or off / status
+./build.sh --install                                                   # builds and copies to /Applications
+/Applications/VibeCheck.app/Contents/MacOS/VibeCheck --login-item on   # launch at login (or off / status)
 ```
 
-Debug: `swift build && .build/debug/VibeCheck --dump` prints one sample from every monitor.
-`build/VibeCheck.app/Contents/MacOS/VibeCheck --deck-demo` opens the deck, unfolds CPU, folds back and logs the window frame at each step.
+The app is signed locally (ad hoc). On another Mac, right-click it and choose **Open** the first time.
 
-Tests: `swift test` (alert timing/cooldown, history bucketing/persistence, app grouping, world clocks, menu bar layout, per-app network parsing, weather decoding, settings backup).
+## Develop
 
-## Layout
+```bash
+./build.sh                  # builds build/VibeCheck.app
+swift test                  # 40+ tests: alerts, history, charts, layout, vibe score, notch fit, backup…
+swift build && .build/debug/VibeCheck --dump    # print one sample from every monitor
+build/VibeCheck.app/Contents/MacOS/VibeCheck --deck-demo   # open the deck and log its frames
+```
 
-- `Sources/VibeCheck/Monitors/` — data collectors (Mach host stats, sysctl, IOKit, IOPowerSources, SMC, HID temperature sensors, `ps`)
-- `Sources/VibeCheck/App/` — `SystemStats` (timer + histories), settings, status items
-- `Sources/VibeCheck/Views/` — menu bar labels, panels, charts, settings window
+| Folder | What's inside |
+|---|---|
+| `Sources/VibeCheck/Monitors/` | Data collectors: Mach host stats, sysctl, IOKit, IOPowerSources, SMC, HID sensors, `ps`, `nettop` |
+| `Sources/VibeCheck/App/` | `SystemStats`, settings, the deck controller, vibe score, alerts, history, weather, hotkeys |
+| `Sources/VibeCheck/Views/` | Menu bar labels, deck, detail panels, charts, settings window |
+| `branding/` | Brand guide, SVG sources and rendered PNGs |
+| `scripts/` | `render_brand.swift`: renders the app icon and every brand asset from SVG |
+
+## Brand
+
+<img src="branding/png/icon-256.png" alt="VibeCheck app icon" width="96" align="left">
+
+The mark is the **vibe ring** with a **pulse that turns into a check** and breaks out through the ring's
+gap: monitoring, then a verdict. The palette runs **Mint → Sky → Violet** on deep **Ink** and **Night**;
+the wordmark is SF Pro Rounded Bold with "Check" in the gradient. Voice: casual and honest, slang only for
+**vibing, mid, cooked**.
+
+<br clear="left">
+
+<img src="branding/png/palette.png" alt="VibeCheck palette" width="100%">
+
+The full guide (logo usage, clear space, color roles, type, voice, motion) is in
+[`branding/BRAND.md`](branding/BRAND.md). All artwork is generated from SVG:
+
+```bash
+swift scripts/render_brand.swift   # rewrites branding/png/* and Resources/AppIcon.icns
+```
 
 ## Ideas for next steps
 
-- Per-process network usage, public IP, Wi-Fi details
+- Per-process network history, public IP, Wi-Fi details
 - Fan control (needs a privileged helper), notification history, iCloud settings sync
+- A Liquid Glass `.icon` variant made in Icon Composer
