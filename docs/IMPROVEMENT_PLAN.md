@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 25 commits · ~6,800 lines of Swift · 58 tests_
+_Last updated: 2026-11-18 · version 1.5 · 25 commits · ~6,800 lines of Swift · 62 tests_
 
 ---
 
@@ -41,6 +41,8 @@ What *was* verified: unit tests, real data via `--dump`, real window frames via 
 | Keep awake triggers: plugged in and external display start a session | ✅ built app with launch arguments + `pmset -g assertions` (on AC with the MSI display attached) |
 | Keep awake: trigger ending on unplug / display removal, end notification, ⌃⌥⌘A, "Until" menu | ❌ not exercised (logic covered by unit tests) |
 | App Intents metadata in the bundle (5 actions, 2 enums, 4 phrases) | ✅ `extract.actionsdata` inspected; signature verifies |
+| Notification history: cap, newest first, unseen count, persistence, alerts recorded | ✅ unit tests |
+| Notification history: bell, red dot, popover in the deck | ❌ never seen |
 | Shortcuts app lists the 5 VibeCheck actions | ✅ seen by the owner after installing (2026-11-18) |
 | Running the actions; Spotlight / Siri phrases | ❌ not tried yet |
 | Agents: Claude Code / Codex token totals from real logs | ✅ `--dump` (today's Claude total matched an independent Python count) + unit tests |
@@ -88,7 +90,6 @@ Fix whatever turns up before starting new features.
 - **Liquid Glass `.icon`** made in Icon Composer from `branding/svg/icon.svg` layers (keep the `.icns`
   for macOS 14–15).
 - **WidgetKit widgets:** vibe ring, CPU/memory sparkline (needs an app group to share samples).
-- **Notification history** in the deck (last 20 alerts with time and value).
 - **Network:** public IP (opt-in, privacy note), Wi-Fi details (SSID needs Location permission),
   per-app traffic history.
 - **Battery:** charge history over days, health trend.
@@ -158,6 +159,7 @@ Short record of choices future sessions shouldn't silently undo.
 | Brand assets generated from SVG by `scripts/render_brand.swift` | One source of truth; `NSImage` renders SVG natively, no extra tools |
 | Keep-awake triggers are edge-triggered; a manual session always wins | A Stop by hand sticks until the condition goes away and comes back; triggers never cut short a session the user started |
 | Trigger endings don't notify; time-up, app-quit and low-battery endings do | Unplugging is something the user just did; the others happen behind their back |
+| Notification history lives in `~/Library/Application Support/VibeCheck/notifications.json`, not in defaults, and isn't part of settings backup | It's history, not a setting (like `history.json`) |
 | App Intents metadata is generated in `build.sh` with Xcode's `appintentsmetadataprocessor` | SwiftPM doesn't run it; needs Xcode installed (build warns and skips otherwise). Keep the protocol list in `build.sh` in sync if new intent kinds (entities, queries) are added |
 | Intents run in the app and wait ~2.5 s after a cold launch | CPU and network rates need two samples |
 | Agents module reads local logs only, no network, no credentials | Privacy; works offline; no keychain prompts |
@@ -256,6 +258,14 @@ Notes: `swift test` passes (56). Both triggers started a session in the built ap
 | `deaa7cc` | `Intents.swift`: Get Mac Vibe, Get Mac Stat (9 stats), Open VibeCheck Deck, Keep Mac Awake, Let Mac Sleep, plus Spotlight/Siri phrases. `build.sh` compiles with `-emit-const-values-path` and runs `appintentsmetadataprocessor` into `Contents/Resources/Metadata.appintents`. `AppDelegate.openDeck(_:)`. 2 tests. |
 
 Notes: `swift test` passes (58). The metadata lists all 5 actions and 4 phrases, and the signed bundle verifies. After installing, the owner saw the actions in the Shortcuts app. Running them and the Spotlight/Siri phrases are not checked yet.
+
+### 2026-11-18: notification history
+
+| Commit | What |
+|---|---|
+| _(uncommitted)_ | `NotificationLog` (last 20, newest first, seen marker, saved to Application Support); `AlertEngine` records fired alerts and keep-awake endings (`log`, `notify(kind:)`); bell button with red dot and a popover list in the deck header (`NotificationHistoryView.swift`). 4 tests. |
+
+Notes: `swift test` passes (62). The deck UI wasn't seen on screen, and no real notification was triggered (that would have written a test entry into the owner's history). Test notifications from Settings aren't recorded.
 
 ---
 

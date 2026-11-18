@@ -154,6 +154,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        alerts.log = NotificationLog.shared
         stats.onTick = { [weak self] in
             guard let self else { return }
             self.alerts.evaluate(self.settings.alertRules, stats: self.stats)
@@ -162,7 +163,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         KeepAwake.shared.batteryProvider = { [unowned stats] in stats.battery }
         KeepAwake.shared.onSessionEnded = { [weak self] reason in
             guard let self, reason.notifies, self.settings.keepAwakeNotify else { return }
-            self.alerts.notify(title: "Keep awake ended", body: "\(reason.message) Your Mac can sleep again.")
+            self.alerts.notify(title: "Keep awake ended", body: "\(reason.message) Your Mac can sleep again.", kind: .keepAwake)
         }
         NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
                                                object: nil, queue: .main) { _ in

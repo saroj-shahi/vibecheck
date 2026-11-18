@@ -69,6 +69,8 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
     private let canNotify = Bundle.main.bundleIdentifier != nil
     /// Where alerts go; replaceable for tests.
     var deliver: ((_ title: String, _ body: String) -> Void)?
+    /// Where sent notifications are kept for the deck's history (nil = not kept, e.g. in tests).
+    var log: NotificationLog?
 
     override init() {
         super.init()
@@ -109,7 +111,9 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
             if !fired.contains(rule.id), cooledDown, now.timeIntervalSince(since) >= rule.duration {
                 fired.insert(rule.id)
                 lastFired[rule.id] = now
-                post(title: "VibeCheck · \(rule.metric.title)", body: rule.describe(current: value))
+                let title = "VibeCheck · \(rule.metric.title)", body = rule.describe(current: value)
+                post(title: title, body: body)
+                log?.record(.alert, title: title, body: body, at: now)
             }
         }
         // Forget state for rules that were deleted or disabled.
@@ -119,9 +123,10 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
     }
 
     /// A one-off notification from elsewhere in the app (e.g. keep awake ending).
-    func notify(title: String, body: String) {
+    func notify(title: String, body: String, kind: LoggedNotification.Kind) {
         requestPermissionIfNeeded()
         post(title: title, body: body)
+        log?.record(kind, title: title, body: body)
     }
 
     func sendTest() {

@@ -103,6 +103,7 @@ struct DeckHome: View {
             }
             .accessibilityElement(children: .combine)
             Spacer(minLength: 4)
+            NotificationBellButton()
             AwakeMenuButton()
             DeckIconButton(symbol: "gearshape", help: "Settings (⌘,)") {
                 (NSApp.delegate as? AppDelegate)?.showSettings()

@@ -29,6 +29,8 @@ VibeCheck sums up your Mac in one glance and explains it in one click.
   on by itself while plugged in or while an external display is connected. `⌃⌥⌘A` toggles it from any app,
   sessions stop by themselves on low battery, and you get a notification when one ends on its own. A small
   cup sits in the menu bar while it's on.
+- **Notification history:** the bell in the deck lists the last 20 alerts and keep-awake endings with
+  time and value; a red dot means there's something you haven't seen.
 - **Detail views** lead with one big number and a summary, then a chart, then **who's responsible** (top
   apps), with everything else behind a remembered **Details** toggle. Hover any chart to scrub it; switch
   **Live / 1H / 24H** and the line morphs. History survives restarts (sleep shows as gaps).
