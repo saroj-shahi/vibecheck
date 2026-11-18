@@ -22,6 +22,7 @@ struct Panel<Content: View>: View {
                 Image(systemName: module.symbol)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(module.accent)
+                    .networkStatusDot(online: stats.network.interface != nil, size: 6, enabled: module == .network)
                     .deckMatched("icon.\(module.rawValue)", namespace)
                 Text(module.title).font(.headline)
                 Spacer()

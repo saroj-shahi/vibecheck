@@ -148,6 +148,7 @@ struct ModuleTile: View {
                     Image(systemName: module.symbol)
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(module.accent)
+                        .networkStatusDot(online: stats.network.interface != nil, enabled: module == .network)
                         .deckMatched("icon.\(module.rawValue)", namespace)
                     Text(module.title)
                         .font(.system(size: 11, weight: .medium))

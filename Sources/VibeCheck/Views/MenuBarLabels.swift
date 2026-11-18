@@ -84,6 +84,7 @@ struct MenuBarLabel: View {
                 .opacity(offline ? 0 : 1)
             HStack(spacing: 2) {
                 Image(systemName: "network.slash").font(.system(size: 10, weight: .semibold))
+                    .networkStatusDot(online: false, size: 4)
                 Text("Offline").font(.system(size: 9, weight: .semibold))
             }
             .foregroundStyle(.secondary)
@@ -101,6 +102,7 @@ struct MenuBarLabel: View {
                 Image(systemName: module.symbol)
                     .font(.system(size: 11))
                     .foregroundStyle(highlight && !anyActive ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.primary))
+                    .networkStatusDot(online: stats.network.interface != nil, size: 4, enabled: module == .network)
             }
             VStack(alignment: .trailing, spacing: -2) {
                 rateLine(top, highlight: highlight)
@@ -169,6 +171,32 @@ struct MenuBarLabel: View {
                 .lineLimit(1)
                 .frame(width: settings.clockTextWidth, alignment: .center)
         }
+    }
+}
+
+/// Small status dot pinned to the bottom-trailing corner of the network glyph:
+/// green while an interface is up, red while offline.
+struct NetworkStatusDot: ViewModifier {
+    let online: Bool
+    let size: CGFloat
+    let enabled: Bool
+
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .bottomTrailing) {
+            if enabled {
+                Circle()
+                    .fill(online ? Color.green : Color.red)
+                    .frame(width: size, height: size)
+                    .offset(x: size * 0.35, y: size * 0.25)
+                    .accessibilityLabel(online ? "Online" : "Offline")
+            }
+        }
+    }
+}
+
+extension View {
+    func networkStatusDot(online: Bool, size: CGFloat = 5, enabled: Bool = true) -> some View {
+        modifier(NetworkStatusDot(online: online, size: size, enabled: enabled))
     }
 }
 
