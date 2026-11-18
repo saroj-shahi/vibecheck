@@ -198,7 +198,7 @@ strings, clipped mark in the lockup.
 
 | Commit | What |
 |---|---|
-| (uncommitted) | Green/red status dot on the network glyph: menu bar (icon + value style and the offline glyph), deck tile and panel header (`NetworkStatusDot` in `MenuBarLabels.swift`). |
+| `dbda3a7` | Green/red status dot on the network glyph: menu bar (icon + value style and the offline glyph), deck tile and panel header (`NetworkStatusDot` in `MenuBarLabels.swift`). |
 
 Notes: builds and `swift test` passes; installed and the green dot was seen in the menu bar (icon + value style) via a screenshot. Red (offline), deck tile and panel header not yet seen on screen. Green = an interface is up, red = offline. The menu bar's standard (graph) style has no network icon, so no dot there.
 
