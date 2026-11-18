@@ -63,3 +63,21 @@ struct DeckTests {
         #expect(cpu > home)
     }
 }
+
+struct DeckPlacementTests {
+    // Geometry measured on a Mac with an external 1920×1080 display above the built-in one.
+    let screen = NSRect(x: -44, y: 1169, width: 1920, height: 1080)
+    let visible = NSRect(x: -44, y: 1169, width: 1920, height: 1050)
+
+    @Test func buttonInTheMenuBarCounts() {
+        // Status item windows here are 39 pt tall and poke above the screen; the button itself is inside.
+        let button = NSRect(x: 817, y: 2224, width: 46, height: 22)
+        #expect(DeckController.isInMenuBar(button, screen: screen, visible: visible))
+    }
+
+    @Test func unplacedOrOffscreenButtonsDoNot() {
+        #expect(!DeckController.isInMenuBar(NSRect(x: 0, y: 0, width: 46, height: 22), screen: screen, visible: visible))
+        #expect(!DeckController.isInMenuBar(NSRect(x: 817, y: 1500, width: 46, height: 22), screen: screen, visible: visible))
+        #expect(!DeckController.isInMenuBar(NSRect(x: 3000, y: 2224, width: 46, height: 22), screen: screen, visible: visible))
+    }
+}

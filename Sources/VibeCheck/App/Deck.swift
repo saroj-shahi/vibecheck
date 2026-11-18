@@ -239,24 +239,38 @@ final class DeckController: NSObject {
         if isVisible { reposition(animated: true) }
     }
 
-    /// Hangs the deck 6 pt under its status item, centred on it and kept on screen. Right after launch
-    /// the item may not be placed yet; then the deck falls back to the top-right of the screen.
+    /// Hangs the deck 6 pt under the clicked status item, centred on it and kept on its display.
+    /// Uses the button's on-screen rect (status item windows can be taller than the menu bar and poke
+    /// above the screen, so their window frame isn't a reliable anchor). If the item isn't placed in a
+    /// menu bar yet (right after launch), falls back to the top-right of the main display.
     private func targetFrame() -> NSRect {
-        let buttonWindow = anchor?.window
-        let screen = buttonWindow?.screen ?? NSScreen.main ?? NSScreen.screens.first
+        let anchorRect = anchorRectOnScreen()
+        let screen = anchorRect.flatMap { rect in NSScreen.screens.first { $0.frame.intersects(rect) } }
+            ?? anchor?.window?.screen ?? NSScreen.main ?? NSScreen.screens.first
         guard let screen else { return NSRect(x: 0, y: 0, width: Deck.width, height: contentHeight) }
         let visible = screen.visibleFrame
 
-        var top = visible.maxY - 6
+        let top = visible.maxY - 6
         var centerX = visible.maxX - Deck.width / 2 - 8
-        if let buttonFrame = buttonWindow?.frame, screen.frame.contains(NSPoint(x: buttonFrame.midX, y: buttonFrame.midY)),
-           buttonFrame.minY >= visible.maxY - 2 {
-            top = min(buttonFrame.minY - 6, top)
-            centerX = buttonFrame.midX
+        if let rect = anchorRect, Self.isInMenuBar(rect, screen: screen.frame, visible: visible) {
+            centerX = rect.midX
         }
         let height = max(160, min(ceil(contentHeight), top - visible.minY - 12))
         let x = min(max(centerX - Deck.width / 2, visible.minX + 8), visible.maxX - Deck.width - 8)
         return NSRect(x: x, y: top - height, width: Deck.width, height: height)
+    }
+
+    private func anchorRectOnScreen() -> NSRect? {
+        guard let button = anchor, let window = button.window else { return nil }
+        return window.convertToScreen(button.convert(button.bounds, to: nil))
+    }
+
+    /// True when the rect's centre sits in the strip between the visible area's top and the screen's top
+    /// (with a little slack, since the menu bar height varies by display and notch).
+    nonisolated static func isInMenuBar(_ rect: NSRect, screen: NSRect, visible: NSRect) -> Bool {
+        let center = NSPoint(x: rect.midX, y: rect.midY)
+        return center.x >= screen.minX && center.x <= screen.maxX
+            && center.y >= visible.maxY - 10 && center.y <= screen.maxY + 20
     }
 
     private func reposition(animated: Bool) {

@@ -220,7 +220,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         let steps: [(Double, String, () -> Void)] = [
             (1.0, "launch", {
-                guard let button = (self.combinedItem ?? self.items.values.first)?.button else { return }
+                for item in [self.combinedItem, self.vibeItem].compactMap({ $0 }) + Array(self.items.values) {
+                    guard let button = item.button, let window = button.window else { continue }
+                    let inScreen = window.convertToScreen(button.convert(button.bounds, to: nil))
+                    NSLog("%@", "VibeCheck deck-demo item \(item.kind): window=\(NSStringFromRect(window.frame)) buttonOnScreen=\(NSStringFromRect(inScreen)) screen=\(NSStringFromRect(window.screen?.frame ?? .zero)) visible=\(NSStringFromRect(window.screen?.visibleFrame ?? .zero))")
+                }
+                for screen in NSScreen.screens {
+                    NSLog("%@", "VibeCheck deck-demo screen: frame=\(NSStringFromRect(screen.frame)) visible=\(NSStringFromRect(screen.visibleFrame))")
+                }
+                guard let button = (self.combinedItem ?? self.items[.network] ?? self.items.values.first)?.button else { return }
                 self.deck.ignoresOutsideClicks = true
                 self.deck.open(from: button, route: .home)
             }),
