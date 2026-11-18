@@ -1,4 +1,5 @@
 import Foundation
+import SQLite3
 
 /// Token counts in one bucket. "Total" includes cache reads, matching tools as usage tools usually count them.
 struct TokenCounts: Equatable {
@@ -18,9 +19,16 @@ struct TokenCounts: Equatable {
 }
 
 enum AgentKind: String, CaseIterable, Identifiable {
-    case claude, codex
+    case claude, codex, copilot, opencode
     var id: String { rawValue }
-    var title: String { self == .claude ? "Claude Code" : "Codex" }
+    var title: String {
+        switch self {
+        case .claude: "Claude Code"
+        case .codex: "Codex"
+        case .copilot: "GitHub Copilot"
+        case .opencode: "OpenCode"
+        }
+    }
 }
 
 struct UsageEntry: Equatable {
@@ -36,11 +44,16 @@ struct RateWindow: Equatable {
     var usedPercent: Double
     var windowMinutes: Int
     var resetsAt: Date
+    /// Provider's own name for the limit (Copilot: "Chat requests"); otherwise the title comes from the length.
+    var name: String? = nil
 
-    var title: String {
+    var title: String { name ?? lengthTitle }
+
+    private var lengthTitle: String {
         switch windowMinutes {
         case 300: "5-hour limit"
         case 10080: "Weekly limit"
+        case 40320...44640: "Monthly limit"
         case let m where m % 1440 == 0: "\(m / 1440)-day limit"
         case let m where m % 60 == 0: "\(m / 60)-hour limit"
         default: "\(windowMinutes)-min limit"
@@ -229,6 +242,67 @@ enum AgentLogParser {
         }
     }
 
+    /// Per-file state while reading a Copilot CLI session (`events.jsonl`).
+    struct CopilotState {
+        var project = "Unknown"
+    }
+
+    /// One Copilot CLI event → a usage entry (with its event id for dedupe) and/or the monthly quotas.
+    /// Copilot talks to OpenAI-style endpoints: input includes cache reads and output includes reasoning.
+    static func copilot(_ line: Data, state: inout CopilotState, calendar: Calendar = .current)
+        -> (key: String?, entry: UsageEntry?, limits: [RateWindow]?, time: Date?) {
+        guard let object = try? JSONSerialization.jsonObject(with: line) as? [String: Any],
+              let data = object["data"] as? [String: Any] else { return (nil, nil, nil, nil) }
+        let time = date(object["timestamp"] as? String)
+        switch object["type"] as? String {
+        case "session.start", "session.resume":
+            if let context = data["context"] as? [String: Any], let cwd = context["cwd"] as? String {
+                state.project = project(cwd)
+            }
+            return (nil, nil, nil, nil)
+        case "session.usage_record":
+            guard let usage = data["usage"] as? [String: Any], let time else { return (nil, nil, nil, nil) }
+            let cacheRead = int(usage["cacheReadTokens"])
+            let tokens = TokenCounts(input: max(0, int(usage["inputTokens"]) - cacheRead), output: int(usage["outputTokens"]),
+                                     cacheWrite: int(usage["cacheWriteTokens"]), cacheRead: cacheRead)
+            guard tokens.total > 0 else { return (nil, nil, nil, nil) }
+            let model = usage["model"] as? String ?? "unknown"
+            return (object["id"] as? String, UsageEntry(time: time, agent: .copilot, model: model,
+                                                        project: state.project, tokens: tokens), nil, time)
+        case "model.model_call_success":
+            guard let quotas = data["quotaSnapshots"] as? [String: Any] else { return (nil, nil, nil, nil) }
+            let names = [("chat", "Chat requests"), ("completions", "Completions"), ("premium_interactions", "Premium requests")]
+            let windows = names.compactMap { key, name -> RateWindow? in
+                guard let quota = quotas[key] as? [String: Any],
+                      quota["isUnlimitedEntitlement"] as? Bool != true, int(quota["entitlementRequests"]) > 0,
+                      let left = (quota["remainingPercentage"] as? NSNumber)?.doubleValue,
+                      let reset = date(quota["resetDate"] as? String),
+                      let start = calendar.date(byAdding: .month, value: -1, to: reset) else { return nil }
+                return RateWindow(usedPercent: min(max(100 - left, 0), 100),
+                                  windowMinutes: Int(reset.timeIntervalSince(start) / 60), resetsAt: reset, name: name)
+            }
+            return (nil, nil, windows.isEmpty ? nil : windows, time)
+        default:
+            return (nil, nil, nil, nil)
+        }
+    }
+
+    /// One OpenCode message row (`message.data` JSON) → a usage entry. Reasoning is counted as output.
+    static func opencode(_ data: Data) -> UsageEntry? {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              object["role"] as? String == "assistant",
+              let tokens = object["tokens"] as? [String: Any],
+              let created = ((object["time"] as? [String: Any])?["created"] as? NSNumber)?.doubleValue else { return nil }
+        let cache = tokens["cache"] as? [String: Any] ?? [:]
+        let counts = TokenCounts(input: int(tokens["input"]), output: int(tokens["output"]) + int(tokens["reasoning"]),
+                                 cacheWrite: int(cache["write"]), cacheRead: int(cache["read"]))
+        guard counts.total > 0 else { return nil }
+        let path = object["path"] as? [String: Any]
+        return UsageEntry(time: Date(timeIntervalSince1970: created / 1000), agent: .opencode,
+                          model: object["modelID"] as? String ?? "unknown",
+                          project: project(path?["cwd"] as? String), tokens: counts)
+    }
+
     /// The active 5-hour block: starts at the hour of the first message after a previous block ended
     /// (or after a 5-hour gap), as usage tools usually count them. Nil when the last block is over.
     static func currentBlock(_ entries: [UsageEntry], now: Date, calendar: Calendar = .current) -> UsageBlock? {
@@ -297,15 +371,21 @@ final class AgentUsageScanner: @unchecked Sendable {
     private struct FileState {
         var offset: UInt64 = 0
         var codex = AgentLogParser.CodexState()
+        var copilot = AgentLogParser.CopilotState()
     }
 
     private let claudeRoots: [URL]
     private let codexRoots: [URL]
+    private let copilotRoots: [URL]
+    private let opencodeDB: URL
+    /// Modification stamp of the OpenCode database (and its WAL) at the last read; nil = never read.
+    private var opencodeStamp: String?
     private var files: [String: FileState] = [:]
     private var entries: [UsageEntry] = []
     private var entryKeys: [String] = []
     private var seen = Set<String>()
-    private var limits: (time: Date, windows: [RateWindow])?
+    /// Latest provider-reported limits per agent (Codex and Copilot log them).
+    private var limits: [AgentKind: (time: Date, windows: [RateWindow])] = [:]
     /// Log files found by the last full walk, so quick scans skip walking the folder tree.
     private var known: [(url: URL, agent: AgentKind)] = []
     private var present = Set<AgentKind>()
@@ -313,7 +393,7 @@ final class AgentUsageScanner: @unchecked Sendable {
     /// How often the folder tree is walked to find new log files; in between, only known files are checked.
     var walkInterval: TimeInterval = 300
 
-    init(claudeRoots: [URL]? = nil, codexRoots: [URL]? = nil) {
+    init(claudeRoots: [URL]? = nil, codexRoots: [URL]? = nil, copilotRoots: [URL]? = nil, opencodeDB: URL? = nil) {
         let home = FileManager.default.homeDirectoryForCurrentUser
         let env = ProcessInfo.processInfo.environment
         var claude = [home.appending(path: ".claude/projects"), home.appending(path: ".config/claude/projects")]
@@ -321,6 +401,10 @@ final class AgentUsageScanner: @unchecked Sendable {
         self.claudeRoots = claudeRoots ?? claude
         self.codexRoots = codexRoots
             ?? [URL(fileURLWithPath: env["CODEX_HOME"] ?? home.appending(path: ".codex").path).appending(path: "sessions")]
+        self.copilotRoots = copilotRoots
+            ?? [URL(fileURLWithPath: env["COPILOT_HOME"] ?? home.appending(path: ".copilot").path).appending(path: "session-state")]
+        let dataHome = env["XDG_DATA_HOME"].map { URL(fileURLWithPath: $0) } ?? home.appending(path: ".local/share")
+        self.opencodeDB = opencodeDB ?? dataHome.appending(path: "opencode/opencode.db")
     }
 
     /// `fullWalk` forces looking for new files now (e.g. when the Agents panel opens).
@@ -330,7 +414,8 @@ final class AgentUsageScanner: @unchecked Sendable {
             lastWalk = now
             present = []
             known = []
-            for (agent, roots) in [(AgentKind.claude, claudeRoots), (.codex, codexRoots)] {
+            if FileManager.default.fileExists(atPath: opencodeDB.path) { present.insert(.opencode) }
+            for (agent, roots) in [(AgentKind.claude, claudeRoots), (.codex, codexRoots), (.copilot, copilotRoots)] {
                 for root in Set(roots.map(\.standardizedFileURL)) {
                     guard FileManager.default.fileExists(atPath: root.path) else { continue }
                     present.insert(agent)
@@ -340,6 +425,7 @@ final class AgentUsageScanner: @unchecked Sendable {
         }
         // Free each file's parsed JSON as we go; on a GCD queue it would otherwise pile up until the scan ends.
         for file in known { autoreleasepool { read(file.url, agent: file.agent) } }
+        if present.contains(.opencode) { autoreleasepool { readOpenCode(since: cutoff) } }
         // Keep one week (plus a day for the 24-hour chart near midnight).
         var keptEntries: [UsageEntry] = [], keptKeys: [String] = []
         for (entry, key) in zip(entries, entryKeys) where entry.time >= cutoff {
@@ -348,7 +434,7 @@ final class AgentUsageScanner: @unchecked Sendable {
         entries = keptEntries
         entryKeys = keptKeys
         seen = Set(keptKeys.filter { !$0.isEmpty })
-        return AgentLogParser.summarize(entries, limits: limits.map { [.codex: $0.windows] } ?? [:], present: present,
+        return AgentLogParser.summarize(entries, limits: limits.mapValues(\.windows), present: present,
                                         now: now, calendar: calendar)
     }
 
@@ -368,6 +454,7 @@ final class AgentUsageScanner: @unchecked Sendable {
     private static let usageMarker = Data("\"usage\"".utf8)
     private static let tokenMarker = Data("token_count".utf8)
     private static let contextMarkers = [Data("\"session_meta\"".utf8), Data("\"turn_context\"".utf8)]
+    private static let copilotMarkers = ["session.usage_record", "quotaSnapshots", "session.start", "session.resume"].map { Data($0.utf8) }
 
     private func read(_ url: URL, agent: AgentKind) {
         var state = files[url.path] ?? FileState()
@@ -397,11 +484,67 @@ final class AgentUsageScanner: @unchecked Sendable {
                 else { continue }
                 let result = AgentLogParser.codex(Data(line), state: &state.codex)
                 if let entry = result.entry { entries.append(entry); entryKeys.append("") }
-                if let windows = result.limits, let time = result.time, time >= (limits?.time ?? .distantPast) {
-                    limits = (time, windows)
+                if let windows = result.limits, let time = result.time { keepLimits(windows, at: time, for: .codex) }
+            case .copilot:
+                guard Self.copilotMarkers.contains(where: { line.range(of: $0) != nil }) else { continue }
+                let result = AgentLogParser.copilot(Data(line), state: &state.copilot)
+                if let entry = result.entry {
+                    let key = result.key.map { "copilot:" + $0 } ?? ""
+                    if key.isEmpty || seen.insert(key).inserted { entries.append(entry); entryKeys.append(key) }
                 }
+                if let windows = result.limits, let time = result.time { keepLimits(windows, at: time, for: .copilot) }
+            case .opencode:
+                continue // read from its database, not from log files
             }
         }
         files[url.path] = state
+    }
+
+    private func keepLimits(_ windows: [RateWindow], at time: Date, for agent: AgentKind) {
+        if time >= (limits[agent]?.time ?? .distantPast) { limits[agent] = (time, windows) }
+    }
+
+    /// OpenCode keeps messages in SQLite. When the database (or its WAL) changed, re-read the week's
+    /// assistant messages and replace all OpenCode entries (token counts are filled in after a message starts).
+    private func readOpenCode(since cutoff: Date) {
+        let paths = [opencodeDB.path, opencodeDB.path + "-wal"]
+        let stamp = paths.map { path -> String in
+            var info = stat()
+            guard stat(path, &info) == 0 else { return "-" }
+            return "\(info.st_size):\(info.st_mtimespec.tv_sec):\(info.st_mtimespec.tv_nsec)"
+        }.joined(separator: "|")
+        guard stamp != opencodeStamp else { return }
+        guard let rows = Self.openCodeMessages(at: opencodeDB, since: cutoff) else { return }
+        opencodeStamp = stamp
+        var keptEntries: [UsageEntry] = [], keptKeys: [String] = []
+        for (entry, key) in zip(entries, entryKeys) where entry.agent != .opencode {
+            keptEntries.append(entry); keptKeys.append(key)
+        }
+        for (id, data) in rows {
+            guard let entry = AgentLogParser.opencode(data) else { continue }
+            keptEntries.append(entry); keptKeys.append("opencode:" + id)
+        }
+        entries = keptEntries
+        entryKeys = keptKeys
+    }
+
+    /// Read-only query; nil if the database can't be opened right now (it's retried next scan).
+    static func openCodeMessages(at url: URL, since cutoff: Date) -> [(id: String, data: Data)]? {
+        var db: OpaquePointer?
+        guard sqlite3_open_v2(url.path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else { sqlite3_close(db); return nil }
+        defer { sqlite3_close(db) }
+        sqlite3_busy_timeout(db, 200)
+        var statement: OpaquePointer?
+        let sql = "SELECT id, data FROM message WHERE time_created >= ?"
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else { return nil }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_int64(statement, 1, Int64(cutoff.timeIntervalSince1970 * 1000))
+        var rows: [(id: String, data: Data)] = []
+        while sqlite3_step(statement) == SQLITE_ROW {
+            guard let id = sqlite3_column_text(statement, 0), let bytes = sqlite3_column_blob(statement, 1) else { continue }
+            let count = Int(sqlite3_column_bytes(statement, 1))
+            rows.append((String(cString: id), Data(bytes: bytes, count: count)))
+        }
+        return rows
     }
 }

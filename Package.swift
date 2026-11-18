@@ -14,6 +14,7 @@ let package = Package(
                 .linkedFramework("ServiceManagement"),
                 .linkedFramework("AppIntents"),
                 .linkedFramework("CoreBluetooth"),
+                .linkedLibrary("sqlite3"),
             ]
         ),
         .testTarget(name: "VibeCheckTests", dependencies: ["VibeCheck"], path: "Tests/VibeCheckTests"),

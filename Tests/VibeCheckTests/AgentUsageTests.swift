@@ -78,7 +78,8 @@ struct AgentUsageTests {
         let line = claudeLine(id: "a", time: stamp, input: 1, output: 1, cacheWrite: 1, cacheRead: 1)
         try (line + "\n" + line + "\n").write(to: file, atomically: true, encoding: .utf8)
 
-        let scanner = AgentUsageScanner(claudeRoots: [root.appending(path: "claude")], codexRoots: [root.appending(path: "codex")])
+        let scanner = AgentUsageScanner(claudeRoots: [root.appending(path: "claude")], codexRoots: [root.appending(path: "codex")],
+                                        copilotRoots: [], opencodeDB: root.appending(path: "none.db"))
         let first = scanner.scan(now: now)
         #expect(first.today.total == 4)
         #expect(first.agents.map(\.agent) == [.claude, .codex])
@@ -102,7 +103,8 @@ struct AgentUsageTests {
         let first = dir.appending(path: "a.jsonl")
         try line("a1").write(to: first, atomically: true, encoding: .utf8)
 
-        let scanner = AgentUsageScanner(claudeRoots: [root.appending(path: "claude")], codexRoots: [])
+        let scanner = AgentUsageScanner(claudeRoots: [root.appending(path: "claude")], codexRoots: [],
+                                        copilotRoots: [], opencodeDB: root.appending(path: "none.db"))
         #expect(scanner.scan(now: now).today.total == 1)
 
         let handle = try FileHandle(forWritingTo: first)
