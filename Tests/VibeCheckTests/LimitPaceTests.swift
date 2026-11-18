@@ -38,13 +38,25 @@ struct LimitPaceTests {
         #expect(w.cardTitle == "Weekly limit")
     }
 
-    @Test func menuBarPrefersClaudeThenAnyAgentWithLimits() {
+    @Test func menuBarShowsClaudeFirstEvenWithoutLiveLimits() {
+        let codexLimits = [window(used: 10, minutes: 10080), window(used: 5)]
         var sample = AgentUsageSample()
-        sample.agents = [AgentSummary(agent: .codex, limits: [window(used: 10, minutes: 10080), window(used: 5)])]
-        #expect(sample.menuBarLimits?.agent == .codex)
-        #expect(sample.menuBarLimits?.limits.map(\.windowMinutes) == [300, 10080])
-        sample.agents.append(AgentSummary(agent: .claude, limits: [window(used: 30)]))
-        #expect(sample.menuBarLimits?.agent == .claude)
+        sample.agents = [AgentSummary(agent: .codex, limits: codexLimits)]
+        // No Claude Code on this Mac: the other agent's limits, shortest first.
+        #expect(sample.menuBarLimits == .limits(.codex, codexLimits.reversed()))
+
+        // Claude Code in use, live limits off: its local estimate, not Codex's limits.
+        let block = UsageBlock(start: resets.addingTimeInterval(-3600), end: resets, tokens: TokenCounts(input: 5))
+        sample.agents.insert(AgentSummary(agent: .claude, block: block), at: 0)
+        #expect(sample.menuBarLimits == .claudeEstimate(block))
+
+        // Live Claude limits win.
+        sample.agents[0].limits = [window(used: 30)]
+        #expect(sample.menuBarLimits == .limits(.claude, [window(used: 30)]))
+
+        // Claude Code with no current window and no limits: fall back to another agent's limits.
+        sample.agents[0] = AgentSummary(agent: .claude)
+        #expect(sample.menuBarLimits == .limits(.codex, codexLimits.reversed()))
         sample.agents = [AgentSummary(agent: .claude)]
         #expect(sample.menuBarLimits == nil)
     }

@@ -162,12 +162,29 @@ struct MenuBarLabel: View {
         }
     }
 
+    /// The "Limits left" style keeps one width in every state (loading, estimate, limits): the status
+    /// item's length is only measured when it's created or settings change, so it must not grow later.
+    static let limitsWidth: CGFloat = 104
+
     @ViewBuilder
     private var agents: some View {
-        let sample = AgentUsageStore.shared.sample
-        if style == .limits, let pick = sample.menuBarLimits {
-            AgentLimitsLabel(limits: pick.limits, tint: tint(Palette.agents))
+        if style == .limits {
+            agentsContent.frame(width: Self.limitsWidth, alignment: .leading)
         } else {
+            agentsContent
+        }
+    }
+
+    @ViewBuilder
+    private var agentsContent: some View {
+        let sample = AgentUsageStore.shared.sample
+        switch style == .limits ? sample.menuBarLimits : nil {
+        case .limits(_, let limits):
+            AgentLimitsLabel(limits: limits, tint: tint(Palette.agents))
+        case .claudeEstimate(let block):
+            ClaudeEstimateLabel(block: block, today: sample.agents.first { $0.agent == .claude }?.today.total ?? 0,
+                                tint: tint(Palette.agents))
+        case nil:
             agentTokens(sample)
         }
     }
@@ -276,11 +293,11 @@ struct AgentLimitsLabel: View {
                     ForEach(limits.prefix(2), id: \.windowMinutes) { limit in
                         HStack(spacing: 3) {
                             Text("\(Int(limit.leftPercent.rounded()))%")
-                                .fixedSize().frame(minWidth: 30, alignment: .trailing)
+                                .frame(width: 30, alignment: .trailing)
                                 .foregroundStyle(limit.isAheadOfPace(now: context.date)
                                                  ? AnyShapeStyle(limit.gaugeColor(now: context.date)) : AnyShapeStyle(.primary))
                             Image(systemName: "arrow.clockwise").font(.system(size: 7, weight: .bold))
-                            Text(limit.countdown(now: context.date)).fixedSize().frame(minWidth: 40, alignment: .leading)
+                            Text(limit.countdown(now: context.date)).frame(width: 44, alignment: .leading)
                         }
                     }
                 }
@@ -290,6 +307,38 @@ struct AgentLimitsLabel: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(limits.prefix(2).map { "\($0.cardTitle) \(Int($0.leftPercent.rounded())) percent left" }
                 .joined(separator: ", "))
+        }
+    }
+}
+
+/// "Limits left" without live limits: Claude Code's tokens in the estimated 5-hour window with its reset
+/// countdown, over today's Claude Code total.
+struct ClaudeEstimateLabel: View {
+    let block: UsageBlock
+    let today: Int
+    let tint: Color
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 60)) { context in
+            let reset = RateWindow(usedPercent: 0, windowMinutes: 300, resetsAt: block.end).countdown(now: context.date)
+            HStack(spacing: 4) {
+                Image(systemName: "sparkles").font(.system(size: 11)).foregroundStyle(tint)
+                VStack(alignment: .trailing, spacing: -1) {
+                    HStack(spacing: 3) {
+                        Text(Fmt.tokens(block.tokens.total)).frame(width: 30, alignment: .trailing)
+                        Image(systemName: "arrow.clockwise").font(.system(size: 7, weight: .bold))
+                        Text(reset).frame(width: 44, alignment: .leading)
+                    }
+                    HStack(spacing: 3) {
+                        Text(Fmt.tokens(today)).frame(width: 30, alignment: .trailing)
+                        Text("today").foregroundStyle(.secondary).frame(width: 54, alignment: .leading)
+                    }
+                }
+                .font(.system(size: 9.5, weight: .semibold).monospacedDigit())
+                .lineLimit(1)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Claude Code: \(Fmt.tokens(block.tokens.total)) tokens this 5-hour window, resets in \(reset). \(Fmt.tokens(today)) today")
         }
     }
 }
