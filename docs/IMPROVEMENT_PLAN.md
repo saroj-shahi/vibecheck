@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 53 commits · ~7,900 lines of Swift · 90 tests_
+_Last updated: 2026-11-18 · version 1.5 · 55 commits · ~7,900 lines of Swift · 90 tests_
 
 ---
 
@@ -134,7 +134,8 @@ Synthetic clicks don't open menu submenus.
 4. **Port manager** _(V)_. Listening TCP ports with the owning process (`lsof -nP -iTCP -sTCP:LISTEN`, only
    while the view is open), in the Network detail view; kill through item 1.
 5. **Distribution.** Developer ID signing + notarization (`notarytool`), a DMG, an update check (Sparkle or
-   GitHub Releases), and a Homebrew cask _(V)_. Today it's ad hoc signed, so other Macs need right-click → Open.
+   GitHub Releases), and a Homebrew cask _(V)_. On this Mac it's signed with the self-signed "VibeCheck Local Signing" certificate (stable Keychain
+   permissions); other Macs still need right-click → Open.
 6. **Separate-items reorder.** Moving modules in Settings doesn't move existing separate items (macOS keeps
    autosaved positions). Either document ⌘-drag (done in the UI) or recreate items with new autosave names.
 
@@ -255,6 +256,7 @@ Short record of choices future sessions shouldn't silently undo.
 | Live Claude limits are opt-in, off by default, and not in settings backup | It reads another app's credential; that choice is made on each Mac, never restored silently |
 | "Limits left" shows Claude Code first: live limits, else its local estimate; other agents only without Claude Code | Falling back to Codex's monthly limit made Claude Code usage look missing (owner report) |
 | "Limits left" has one fixed width (104 pt) in every state | Status item length is measured only at creation/settings changes; a growing label got clipped |
+| `build.sh` signs with the local "VibeCheck Local Signing" identity when present (else ad hoc) | Ad hoc signatures change every build, so macOS forgot Keychain "Always Allow" after each install. The designated requirement is now `identifier "local.vibecheck.app" and certificate leaf = H"5798…"`. Don't go back to ad hoc on this Mac |
 | After a Keychain "Deny", stop asking until the setting is switched again | Otherwise macOS would show the prompt every 15 minutes |
 | Agents module network use: only api.anthropic.com, only with live Claude limits on | Keeps "local logs only" true by default |
 | No cost estimates in the Agents module (owner, 2026-11-18) | It would need downloading a price list; never hard-code prices either |
@@ -464,9 +466,23 @@ empty locations. 90 tests, zero warnings, installed. Nothing seen on screen.
 Notes: the owner had "Limits left" on but live Claude limits off, so the label fell back to Codex's monthly
 limit. With the owner's OK the setting was switched on (`defaults write … claudeLiveLimits -bool true` +
 relaunch); they allowed Keychain access, and the real menu bar item showed Claude's 36% / 66% left after the
-fix. Each new ad hoc build asks for Keychain access again until the app is properly signed (Distribution,
-P1). The built-in display's menu bar shows fewer VibeCheck items than the external one (notch), so
+fix. Each new ad hoc build asked for Keychain access again; fixed the same day by a stable local signing
+identity (next entry). The built-in display's menu bar shows fewer VibeCheck items than the external one (notch), so
 accessibility listings of the items vary with the active display.
+
+### 2026-11-18: stable local code signing
+
+| Commit | What |
+|---|---|
+| `f825b4e` | `build.sh` signs with "VibeCheck Local Signing" (override with `VIBECHECK_SIGN_IDENTITY`) when it exists, else ad hoc. |
+
+Notes: the owner compared with "Usage for Claude", which never re-asks: it's App Store signed and uses its
+own claude.ai sign-in in a web view (never reads Claude Code's Keychain item). The owner created a
+self-signed code-signing certificate in Keychain Access and trusted it for code signing. Verified: installed
+a build signed with it, the owner allowed Keychain access, then installed a second build with a different
+CDHash (`3907…` → `fc35…`); the fresh process showed live limits (32% / 65%) right after launch.
+Launch at login still reports enabled. Rejected: reading the token through `/usr/bin/security` (an
+"Always Allow" there would cover every process that runs it).
 
 ---
 
