@@ -146,6 +146,7 @@ struct ModulePanel: View {
         case .sensors: SensorsPanel()
         case .battery: BatteryPanel()
         case .clock: ClockPanel()
+        case .weather: WeatherPanel()
         }
     }
 }
@@ -305,6 +306,48 @@ struct NetworkPanel: View {
                 StatRow(label: "Local IP", value: n.ipv4 ?? "—")
                 StatRow(label: "Downloaded since boot", value: Fmt.bytes(Double(n.totalDownloaded)))
                 StatRow(label: "Uploaded since boot", value: Fmt.bytes(Double(n.totalUploaded)))
+            }
+
+            if n.interfaces.count > 1 {
+                VStack(spacing: 4) {
+                    SectionTitle(text: "Interfaces").frame(maxWidth: .infinity, alignment: .leading)
+                    ForEach(n.interfaces.prefix(6)) { iface in
+                        HStack(spacing: 6) {
+                            Circle().fill(iface.isActive ? Color.green : Color.gray.opacity(0.4)).frame(width: 6, height: 6)
+                            Text(iface.displayName).lineLimit(1).truncationMode(.tail)
+                            Spacer()
+                            Text("↓ \(Fmt.compactRate(iface.download))  ↑ \(Fmt.compactRate(iface.upload))")
+                                .monospacedDigit().foregroundStyle(.secondary)
+                        }
+                        .font(.callout)
+                        .help("\(iface.bsdName): \(Fmt.bytes(Double(iface.totalIn))) in, \(Fmt.bytes(Double(iface.totalOut))) out since boot")
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                SectionTitle(text: "Top apps")
+                let apps = stats.networkApps.prefix(5)
+                if apps.isEmpty {
+                    Text("No app traffic right now.").font(.callout).foregroundStyle(.tertiary)
+                }
+                ForEach(Array(apps)) { app in
+                    HStack(spacing: 6) {
+                        Group {
+                            if let icon = NSRunningApplication(processIdentifier: app.id)?.icon {
+                                Image(nsImage: icon).resizable()
+                            } else {
+                                Image(systemName: "gearshape").foregroundStyle(.tertiary)
+                            }
+                        }
+                        .frame(width: 16, height: 16)
+                        Text(app.name).lineLimit(1).truncationMode(.middle)
+                        Spacer()
+                        Text("↓ \(Fmt.compactRate(app.download))  ↑ \(Fmt.compactRate(app.upload))")
+                            .monospacedDigit().foregroundStyle(.secondary)
+                    }
+                    .font(.callout)
+                }
             }
         }
     }

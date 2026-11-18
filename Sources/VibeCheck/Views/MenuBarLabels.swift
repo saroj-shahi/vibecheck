@@ -33,6 +33,7 @@ struct MenuBarLabel: View {
             case .sensors: iconValue(stats.sensors.hottest.map { String(format: "%.0f°", $0) } ?? "–")
             case .battery: battery
             case .clock: clock
+            case .weather: weather
             }
         }
         .frame(height: 22)
@@ -142,6 +143,19 @@ struct MenuBarLabel: View {
                 Image(systemName: b.present ? batterySymbol(b) : "powerplug").font(.system(size: 13))
             }
             value(b.present ? Fmt.percent(b.percent) : "AC")
+        }
+    }
+
+    private var weather: some View {
+        let forecast = WeatherStore.shared.forecast
+        return HStack(spacing: gap) {
+            if style != .valueOnly {
+                Image(systemName: forecast.map { WeatherCode.symbol($0.code, isDay: $0.isDay) } ?? "cloud.sun")
+                    .symbolRenderingMode(settings.colorfulMenuBar ? .multicolor : .monochrome)
+                    .font(.system(size: 12))
+                    .frame(width: 18)
+            }
+            value(forecast.map { String(format: "%.0f°", $0.temperature) } ?? "–", width: 27)
         }
     }
 

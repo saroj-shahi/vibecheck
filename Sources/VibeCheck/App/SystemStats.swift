@@ -53,6 +53,13 @@ final class SystemStats {
     @ObservationIgnored private var fetchingDevices = false
     private(set) var uptime: TimeInterval = 0
     private(set) var processes: [ProcessRow] = []
+    private(set) var networkApps: [AppNetworkUsage] = []
+    @ObservationIgnored private var fetchingNetworkApps = false
+
+    /// Number of open panels showing per-app network usage; `nettop` only runs while this is > 0.
+    var networkAppDemand = 0 {
+        didSet { if networkAppDemand > 0, oldValue == 0 { refreshNetworkApps() } }
+    }
 
     let history = HistoryStore()
     /// Called after every sample; the app delegate hooks alerts in here.
@@ -132,6 +139,7 @@ final class SystemStats {
         onTick?()
 
         if processDemand > 0 { refreshProcesses() }
+        if networkAppDemand > 0 { refreshNetworkApps() }
     }
 
     /// Bluetooth accessory levels change slowly; check once a minute in the background.
@@ -143,6 +151,16 @@ final class SystemStats {
             let found = await DeviceBatteryMonitor.fetch()
             self.devices = found
             self.fetchingDevices = false
+        }
+    }
+
+    private func refreshNetworkApps() {
+        guard !fetchingNetworkApps else { return }
+        fetchingNetworkApps = true
+        Task {
+            let rows = await NetworkAppSampler.fetch()
+            self.networkApps = NetworkAppSampler.groupByApp(rows) { NSRunningApplication(processIdentifier: $0)?.localizedName }
+            self.fetchingNetworkApps = false
         }
     }
 

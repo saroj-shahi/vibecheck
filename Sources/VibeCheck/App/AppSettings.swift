@@ -4,7 +4,7 @@ import ServiceManagement
 import SwiftUI
 
 enum Module: String, CaseIterable, Identifiable {
-    case cpu, gpu, memory, network, disk, sensors, battery, clock
+    case cpu, gpu, memory, network, disk, sensors, battery, clock, weather
 
     var id: String { rawValue }
 
@@ -18,6 +18,7 @@ enum Module: String, CaseIterable, Identifiable {
         case .sensors: "Sensors"
         case .battery: "Battery"
         case .clock: "Clock"
+        case .weather: "Weather"
         }
     }
 
@@ -31,6 +32,7 @@ enum Module: String, CaseIterable, Identifiable {
         case .sensors: "thermometer.medium"
         case .battery: "battery.75percent"
         case .clock: "clock"
+        case .weather: "cloud.sun"
         }
     }
 
@@ -44,18 +46,19 @@ enum Module: String, CaseIterable, Identifiable {
         case .sensors: .orange
         case .battery: .green
         case .clock: .indigo
+        case .weather: .cyan
         }
     }
 
     var labelStyles: [LabelStyle] {
         switch self {
-        case .sensors, .battery: [.standard, .valueOnly]
+        case .sensors, .battery, .weather: [.standard, .valueOnly]
         case .clock: [.standard, .iconAndValue]
         default: LabelStyle.allCases
         }
     }
 
-    var enabledByDefault: Bool { self != .battery && self != .clock }
+    var enabledByDefault: Bool { ![.battery, .clock, .weather].contains(self) }
 }
 
 enum Palette {
@@ -106,7 +109,7 @@ enum LabelStyle: String, CaseIterable, Identifiable {
             case .memory: "Gauge + value"
             case .network: "Rates + arrows"
             case .disk: "Rates + R/W"
-            case .sensors, .battery: "Icon + value"
+            case .sensors, .battery, .weather: "Icon + value"
             case .clock: "Time only"
             }
         case .iconAndValue: module == .clock ? "Icon + time" : "Icon + value"
@@ -192,6 +195,19 @@ final class AppSettings {
             if let data = try? JSONEncoder().encode(worldClocks) { defaults.set(data, forKey: "worldClocks") }
         }
     }
+    var weatherLocation: WeatherLocation? {
+        didSet {
+            defaults.set(weatherLocation.flatMap { try? JSONEncoder().encode($0) }, forKey: "weatherLocation")
+            WeatherStore.shared.refresh()
+        }
+    }
+    var temperatureUnit: TemperatureUnit {
+        didSet {
+            defaults.set(temperatureUnit.rawValue, forKey: "temperatureUnit")
+            WeatherStore.shared.refresh()
+        }
+    }
+
     /// While the clock panel is open its seconds tick even if the menu bar shows minutes only.
     @ObservationIgnored var isClockPanelOpen = false
 
@@ -240,6 +256,10 @@ final class AppSettings {
         clockShowSeconds = defaults.bool(forKey: "clockShowSeconds")
         worldClocks = defaults.data(forKey: "worldClocks")
             .flatMap { try? JSONDecoder().decode([WorldClock].self, from: $0) } ?? WorldClock.defaults
+        weatherLocation = defaults.data(forKey: "weatherLocation")
+            .flatMap { try? JSONDecoder().decode(WeatherLocation.self, from: $0) }
+        temperatureUnit = defaults.string(forKey: "temperatureUnit").flatMap(TemperatureUnit.init(rawValue:))
+            ?? (Locale.current.measurementSystem == .us ? .fahrenheit : .celsius)
         alertRules = defaults.data(forKey: "alertRules")
             .flatMap { try? JSONDecoder().decode([AlertRule].self, from: $0) } ?? AlertRule.defaults
     }
@@ -283,5 +303,6 @@ final class AppSettings {
         }
         defaults.set(enabledModules.map(\.rawValue), forKey: "enabledModules")
         NotificationCenter.default.post(name: .vibeCheckSettingsChanged, object: nil)
+        if module == .weather { WeatherStore.shared.refresh() }
     }
 }

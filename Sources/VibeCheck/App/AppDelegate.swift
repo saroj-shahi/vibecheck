@@ -97,6 +97,13 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         }
     }
 
+    private var wantsNetworkApps: Bool {
+        switch kind {
+        case .single(let module): module == .network
+        case .combined: true
+        }
+    }
+
     @objc private func buttonClicked(_ sender: NSStatusBarButton) {
         popover.isShown ? close() : open()
     }
@@ -115,6 +122,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private func open() {
         guard let button = item.button else { return }
         if wantsProcesses { stats.processDemand += 1 }
+        if wantsNetworkApps { stats.networkAppDemand += 1 }
         NSApp.activate()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
@@ -125,6 +133,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     nonisolated func popoverDidClose(_ notification: Notification) {
         MainActor.assumeIsolated {
             if wantsProcesses { stats.processDemand = max(0, stats.processDemand - 1) }
+            if wantsNetworkApps { stats.networkAppDemand = max(0, stats.networkAppDemand - 1) }
         }
     }
 
@@ -153,6 +162,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         syncItems()
         HotkeyManager.shared.onTrigger = { [weak self] module in self?.openFromShortcut(module) }
         configureHotkeys()
+        WeatherStore.shared.refresh()
 
         NotificationCenter.default.addObserver(forName: .vibeCheckSettingsChanged, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {

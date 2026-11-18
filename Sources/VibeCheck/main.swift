@@ -12,6 +12,7 @@ MainActor.assumeIsolated {
         for g in GPUMonitor.sample().gpus { print("GPU  \(g.model) cores \(g.cores ?? 0) device \(Fmt.percent(g.device)) renderer \(g.renderer.map(Fmt.percent) ?? "-") tiler \(g.tiler.map(Fmt.percent) ?? "-") mem \(g.memoryInUse.map(Fmt.bytes) ?? "-")") }
         print("MEM  used \(Fmt.bytes(m.used))/\(Fmt.bytes(m.total)) app \(Fmt.bytes(m.app)) wired \(Fmt.bytes(m.wired)) comp \(Fmt.bytes(m.compressed)) cached \(Fmt.bytes(m.cached)) pressure \(m.pressure.label) swap \(Fmt.bytes(m.swapUsed))")
         print("NET  \(n.interface ?? "-") \(n.ipv4 ?? "-") down \(Fmt.rate(n.download)) up \(Fmt.rate(n.upload)) totals \(Fmt.bytes(Double(n.totalDownloaded)))/\(Fmt.bytes(Double(n.totalUploaded)))")
+        for i in n.interfaces.prefix(5) { print("     iface \(i.bsdName) \(i.displayName): ↓\(Fmt.rate(i.download)) ↑\(Fmt.rate(i.upload)) total \(Fmt.bytes(Double(i.totalIn)))") }
         print("DISK read \(Fmt.rate(d.readRate)) write \(Fmt.rate(d.writeRate))")
         for v in DiskMonitor.volumes() { print("     \(v.name): \(Fmt.bytes(v.available)) free of \(Fmt.bytes(v.total))") }
         print("BATT present \(b.present) \(Fmt.percent(b.percent)) charging \(b.isCharging) AC \(b.onAC) cycles \(b.cycleCount.map(String.init) ?? "-") health \(b.health.map(Fmt.percent) ?? "-") temp \(b.temperature.map { String(format: "%.1f", $0) } ?? "-") W \(b.powerWatts.map { String(format: "%.1f", $0) } ?? "-")")
@@ -29,6 +30,18 @@ MainActor.assumeIsolated {
             devices.signal()
         }
         devices.wait()
+        let extra = DispatchSemaphore(value: 0)
+        Task.detached {
+            let rows = await NetworkAppSampler.fetch()
+            let apps = NetworkAppSampler.groupByApp(rows) { _ in nil }.prefix(4)
+            print("APPS " + apps.map { "\($0.name) ↓\(Fmt.compactRate($0.download)) ↑\(Fmt.compactRate($0.upload))" }.joined(separator: " | "))
+            if let f = try? await OpenMeteo.forecast(for: WeatherLocation(name: "London", region: nil, country: nil,
+                                                                          latitude: 51.5085, longitude: -0.1257), unit: .celsius) {
+                print("WX   London \(f.temperature)° \(WeatherCode.describe(f.code)), \(f.hours.count)h, \(f.days.count)d")
+            } else { print("WX   fetch failed") }
+            extra.signal()
+        }
+        extra.wait()
         print("UP   \(Fmt.uptime(SysctlReader.uptime()))")
         exit(0)
     }

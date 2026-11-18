@@ -11,6 +11,8 @@ struct SettingsView: View {
                 .tabItem { Label("Alerts", systemImage: "bell.badge") }
             ClockSettings()
                 .tabItem { Label("Clock", systemImage: "clock") }
+            WeatherSettings()
+                .tabItem { Label("Weather", systemImage: "cloud.sun") }
             ShortcutSettings()
                 .tabItem { Label("Shortcuts", systemImage: "keyboard") }
         }
@@ -69,8 +71,16 @@ private struct GeneralSettings: View {
                 }
                 Toggle("Launch at login", isOn: $settings.launchAtLogin)
             }
+            Section("Backup") {
+                HStack {
+                    Button("Export Settings…") { SettingsBackup.runExport() }
+                    Button("Import Settings…") { SettingsBackup.runImport() }
+                    Spacer()
+                    Button("Reset to Defaults…", role: .destructive) { SettingsBackup.runReset() }
+                }
+            }
             Section {
-                Text("VibeCheck 1.2 · Click any menu bar item to check the vibes.")
+                Text("VibeCheck 1.3 · Click any menu bar item to check the vibes.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -263,5 +273,81 @@ private struct ClockSettings: View {
         return Array((TimeZone.knownTimeZoneIdentifiers + ["UTC"])
             .filter { $0.localizedCaseInsensitiveContains(normalized) || $0.localizedCaseInsensitiveContains(query) }
             .prefix(8))
+    }
+}
+
+private struct WeatherSettings: View {
+    @Environment(AppSettings.self) private var settings
+    @State private var search = ""
+    @State private var results: [WeatherLocation] = []
+    @State private var searching = false
+    @State private var searchError: String?
+
+    var body: some View {
+        @Bindable var settings = settings
+        Form {
+            Section {
+                Toggle("Show weather in menu bar", isOn: Binding(
+                    get: { settings.isEnabled(.weather) },
+                    set: { settings.setEnabled(.weather, $0) }
+                ))
+                Picker("Units", selection: $settings.temperatureUnit) {
+                    ForEach(TemperatureUnit.allCases) { Text($0.title).tag($0) }
+                }
+                LabeledContent("City") {
+                    if let location = settings.weatherLocation {
+                        VStack(alignment: .trailing) {
+                            Text(location.name)
+                            Text(location.subtitle).font(.caption).foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Text("Not set").foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            Section {
+                TextField("Search for a city", text: $search)
+                if searching { ProgressView().controlSize(.small) }
+                if let searchError { Text(searchError).font(.caption).foregroundStyle(.secondary) }
+                ForEach(results) { place in
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(place.name)
+                            Text(place.subtitle).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Use") {
+                            settings.weatherLocation = place
+                            search = ""
+                            results = []
+                        }
+                    }
+                }
+            } header: {
+                Text("Change city")
+            } footer: {
+                Text("Weather comes from Open-Meteo.com (free, no account). Only the chosen city's coordinates are sent; VibeCheck never asks for your location.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .task(id: search) { await runSearch() }
+    }
+
+    /// Debounced: waits until typing pauses before asking the geocoder.
+    private func runSearch() async {
+        let query = search.trimmingCharacters(in: .whitespaces)
+        guard query.count >= 2 else { results = []; searchError = nil; return }
+        try? await Task.sleep(for: .milliseconds(450))
+        guard !Task.isCancelled else { return }
+        searching = true
+        defer { searching = false }
+        do {
+            results = try await OpenMeteo.search(query)
+            searchError = results.isEmpty ? "No matches." : nil
+        } catch {
+            if !Task.isCancelled { searchError = "Search failed. Check your connection." }
+        }
     }
 }

@@ -21,6 +21,11 @@ struct AppUsage: Identifiable {
 enum ProcessSampler {
     private typealias ResponsibleFn = @convention(c) (pid_t) -> pid_t
     /// Private libsystem call a process viewer uses to attribute helpers to their app; looked up at runtime.
+    static func responsible(for pid: Int32) -> Int32 {
+        let owner = responsibleFor?(pid) ?? pid
+        return owner > 0 ? owner : pid
+    }
+
     private static let responsibleFor: ResponsibleFn? = {
         dlsym(UnsafeMutableRawPointer(bitPattern: -2), "responsibility_get_pid_responsible_for_pid")
             .map { unsafeBitCast($0, to: ResponsibleFn.self) }
