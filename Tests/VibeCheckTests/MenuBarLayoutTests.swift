@@ -7,7 +7,7 @@ import Testing
 struct MenuBarLayoutTests {
     private func width(_ view: some View, stats: SystemStats, settings: AppSettings) -> CGFloat {
         NSHostingView(rootView: view.environment(stats).environment(settings)
-            .environment(CombinedSelection())).fittingSize.width
+            ).fittingSize.width
     }
 
     @Test func tighterSpacingNarrowsEveryItem() {

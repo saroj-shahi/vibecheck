@@ -7,16 +7,28 @@ struct Panel<Content: View>: View {
     let headline: String
     @ViewBuilder var content: Content
     @Environment(SystemStats.self) private var stats
+    @Environment(\.deckNamespace) private var namespace
+    @Environment(\.deckShowsBack) private var showsBack
+    @Environment(DeckModel.self) private var deckModel: DeckModel?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                Label(module.title, systemImage: module.symbol)
-                    .font(.headline)
-                    .foregroundStyle(module.accent, .primary)
+            HStack(alignment: .center, spacing: 8) {
+                if showsBack, let deckModel {
+                    DeckIconButton(symbol: "chevron.left", help: "Back (Esc)") { deckModel.go(.home) }
+                        .padding(.leading, -6)
+                }
+                Image(systemName: module.symbol)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(module.accent)
+                    .deckMatched("icon.\(module.rawValue)", namespace)
+                Text(module.title).font(.headline)
                 Spacer()
                 Text(headline)
                     .font(.system(size: 22, weight: .semibold, design: .rounded).monospacedDigit())
+                    .contentTransition(.numericText())
+                    .lineLimit(1)
+                    .deckMatched("value.\(module.rawValue)", namespace)
             }
             content
             Divider()
@@ -35,8 +47,14 @@ struct Panel<Content: View>: View {
             }
             .buttonStyle(.borderless)
         }
-        .padding(14)
-        .frame(width: 320)
+        .padding(16)
+        .frame(width: Deck.width)
+        .background(
+            // The tile's background grows into the whole detail view, fading as it goes.
+            RoundedRectangle(cornerRadius: Deck.cornerRadius, style: .continuous)
+                .fill(.clear)
+                .deckMatched("bg.\(module.rawValue)", namespace)
+        )
     }
 }
 

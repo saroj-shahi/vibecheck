@@ -7,16 +7,10 @@ final class PassthroughHostingView<Content: View>: NSHostingView<Content> {
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
 
-/// Which tab the combined panel is showing (shortcuts switch it).
-@Observable
-@MainActor
-final class CombinedSelection {
-    var module: Module = .cpu
-}
-
 /// One status bar item: either a single module or the combined item holding all enabled modules.
+/// Clicking it opens the shared deck (home for the combined item, the module's detail otherwise).
 @MainActor
-final class StatusItemController: NSObject, NSPopoverDelegate {
+final class StatusItemController: NSObject {
     enum Kind: Equatable {
         case single(Module)
         case combined
@@ -24,34 +18,34 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
 
     let kind: Kind
     private let item: NSStatusItem
-    private let popover = NSPopover()
-    private unowned let stats: SystemStats
-    private unowned let settings: AppSettings
-    private unowned let selection: CombinedSelection
     /// The label with its environment, kept so the item can measure it after settings change.
     private var labelView = AnyView(EmptyView())
+    private let onClick: (StatusItemController) -> Void
 
-    init(kind: Kind, stats: SystemStats, settings: AppSettings, selection: CombinedSelection) {
+    var button: NSStatusBarButton? { item.button }
+
+    /// Where this item's deck opens.
+    var route: DeckRoute {
+        if case .single(let module) = kind { return .module(module) }
+        return .home
+    }
+
+    init(kind: Kind, stats: SystemStats, settings: AppSettings, onClick: @escaping (StatusItemController) -> Void) {
         self.kind = kind
-        self.stats = stats
-        self.settings = settings
-        self.selection = selection
+        self.onClick = onClick
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         super.init()
 
         let label: AnyView
-        let content: AnyView
         switch kind {
         case .single(let module):
             item.autosaveName = "vibecheck.\(module.rawValue)"
             label = AnyView(MenuBarLabel(module: module))
-            content = AnyView(ModulePanel(module: module))
         case .combined:
             item.autosaveName = "vibecheck.combined"
             label = AnyView(CombinedLabel())
-            content = AnyView(CombinedPanel())
         }
-        labelView = AnyView(label.environment(stats).environment(settings).environment(selection))
+        labelView = AnyView(label.environment(stats).environment(settings))
         refreshLength()
 
         if let button = item.button {
@@ -69,14 +63,6 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             button.action = #selector(buttonClicked(_:))
             button.setAccessibilityLabel(kind == .combined ? "VibeCheck" : "VibeCheck \(title)")
         }
-
-        let controller = NSHostingController(rootView: content
-            .environment(stats).environment(settings).environment(selection))
-        controller.sizingOptions = .preferredContentSize
-        popover.contentViewController = controller
-        popover.behavior = .transient
-        popover.animates = false
-        popover.delegate = self
     }
 
     private var title: String {
@@ -90,65 +76,17 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         item.length = max(ceil(width), 8)
     }
 
-    private var wantsProcesses: Bool {
-        switch kind {
-        case .single(let module): module == .cpu || module == .memory
-        case .combined: true
-        }
-    }
+    @objc private func buttonClicked(_ sender: NSStatusBarButton) { onClick(self) }
 
-    private var wantsNetworkApps: Bool {
-        switch kind {
-        case .single(let module): module == .network
-        case .combined: true
-        }
-    }
-
-    @objc private func buttonClicked(_ sender: NSStatusBarButton) {
-        popover.isShown ? close() : open()
-    }
-
-    /// Shortcut behaviour: open (on the right tab), or close if that panel is already showing.
-    func handleShortcut(for module: Module) {
-        if kind == .combined {
-            if popover.isShown, selection.module == module { close(); return }
-            selection.module = module
-            if !popover.isShown { open() }
-        } else {
-            popover.isShown ? close() : open()
-        }
-    }
-
-    private func open() {
-        guard let button = item.button else { return }
-        if wantsProcesses { stats.processDemand += 1 }
-        if wantsNetworkApps { stats.networkAppDemand += 1 }
-        NSApp.activate()
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        popover.contentViewController?.view.window?.makeKey()
-    }
-
-    func close() { if popover.isShown { popover.performClose(nil) } }
-
-    nonisolated func popoverDidClose(_ notification: Notification) {
-        MainActor.assumeIsolated {
-            if wantsProcesses { stats.processDemand = max(0, stats.processDemand - 1) }
-            if wantsNetworkApps { stats.networkAppDemand = max(0, stats.networkAppDemand - 1) }
-        }
-    }
-
-    func remove() {
-        close()
-        NSStatusBar.system.removeStatusItem(item)
-    }
+    func remove() { NSStatusBar.system.removeStatusItem(item) }
 }
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let stats = SystemStats()
     private let settings = AppSettings.shared
-    private let selection = CombinedSelection()
     private let alerts = AlertEngine()
+    private lazy var deck = DeckController(stats: stats, settings: settings)
     private var items: [Module: StatusItemController] = [:]
     private var combinedItem: StatusItemController?
     private var settingsWindow: NSWindow?
@@ -172,6 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.stats.start(interval: self.settings.refreshInterval)
             }
         }
+        if CommandLine.arguments.contains("--deck-demo") { runDeckDemo() }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -184,14 +123,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return false
     }
 
+    private func makeItem(_ kind: StatusItemController.Kind) -> StatusItemController {
+        StatusItemController(kind: kind, stats: stats, settings: settings) { [weak self] item in
+            guard let self, let button = item.button else { return }
+            self.deck.toggle(from: button, route: item.route)
+        }
+    }
+
     private func syncItems() {
+        deck.close()
         if settings.menuBarStyle == .combined {
             items.values.forEach { $0.remove() }
             items.removeAll()
             if let combinedItem {
                 combinedItem.refreshLength()
             } else {
-                combinedItem = StatusItemController(kind: .combined, stats: stats, settings: settings, selection: selection)
+                combinedItem = makeItem(.combined)
             }
             return
         }
@@ -202,8 +149,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         for module in Module.allCases.reversed() {
             let enabled = settings.isEnabled(module)
             if enabled, items[module] == nil {
-                items[module] = StatusItemController(kind: .single(module), stats: stats,
-                                                     settings: settings, selection: selection)
+                items[module] = makeItem(.single(module))
             } else if !enabled, let existing = items.removeValue(forKey: module) {
                 existing.remove()
             }
@@ -219,19 +165,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Global shortcut: open the deck on that module, or close it if that module is already showing.
     private func openFromShortcut(_ module: Module) {
         guard settings.isEnabled(module) else { NSSound.beep(); return }
-        if let combinedItem {
-            combinedItem.handleShortcut(for: module)
-        } else if let item = items[module] {
-            items.values.filter { $0 !== item }.forEach { $0.close() }
-            item.handleShortcut(for: module)
-        }
+        if deck.isVisible, deck.route == .module(module) { deck.close(); return }
+        guard let button = (combinedItem ?? items[module])?.button else { return }
+        deck.open(from: button, route: .module(module))
     }
 
     func showSettings() {
-        items.values.forEach { $0.close() }
-        combinedItem?.close()
+        deck.close()
         if settingsWindow == nil {
             let view = SettingsView(onTestNotification: { [weak self] in self?.alerts.sendTest() })
                 .environment(settings)
@@ -245,5 +188,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         NSApp.activate()
         settingsWindow?.makeKeyAndOrderFront(nil)
+    }
+
+    /// `--deck-demo`: opens the deck, unfolds CPU, folds back, and logs the window frame at each step.
+    private func runDeckDemo() {
+        func log(_ step: String) {
+            let window = NSApp.windows.first { $0 is DeckPanel }
+            NSLog("VibeCheck deck-demo \(step): visible=\(window?.isVisible ?? false) frame=\(NSStringFromRect(window?.frame ?? .zero)) route=\(deck.route)")
+        }
+        let steps: [(Double, String, () -> Void)] = [
+            (1.0, "launch", {
+                guard let button = (self.combinedItem ?? self.items.values.first)?.button else { return }
+                self.deck.ignoresOutsideClicks = true
+                self.deck.open(from: button, route: .home)
+            }),
+            (1.6, "home", { self.deck.model.go(.module(.cpu)) }),
+            (2.4, "cpu", { self.deck.model.go(.home) }),
+            (3.2, "home-again", { self.deck.close() }),
+            (3.8, "closed", { self.deck.ignoresOutsideClicks = false }),
+        ]
+        for (time, name, action) in steps {
+            DispatchQueue.main.asyncAfter(deadline: .now() + time) { log(name); action() }
+        }
     }
 }

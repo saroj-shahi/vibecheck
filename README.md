@@ -2,7 +2,10 @@
 
 A lightweight macOS menu bar system monitor that tells you if your Mac is vibing or cooked (macOS 14+), written in Swift with SwiftUI + AppKit.
 
-Each module gets its own menu bar item; click one for a detailed panel.
+Each module gets its own menu bar item (or one combined item). Clicking opens the **deck**: a glass panel
+under the menu bar with a live tile per stat. Click a tile (or use the arrow keys and Return) and it unfolds
+into that module's detail view; Esc folds back, then closes. `⌘1`–`⌘9` jump between modules inside the deck,
+`⌘,` opens Settings. Separate items open the deck straight on their module.
 
 | Module  | Menu bar                     | Panel |
 |---------|------------------------------|-------|
@@ -37,6 +40,7 @@ open build/VibeCheck.app
 ```
 
 Debug: `swift build && .build/debug/VibeCheck --dump` prints one sample from every monitor.
+`build/VibeCheck.app/Contents/MacOS/VibeCheck --deck-demo` opens the deck, unfolds CPU, folds back and logs the window frame at each step.
 
 Tests: `swift test` (alert timing/cooldown, history bucketing/persistence, app grouping, world clocks, menu bar layout, per-app network parsing, weather decoding, settings backup).
 
