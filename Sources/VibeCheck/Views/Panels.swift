@@ -143,6 +143,10 @@ struct ProcessList: View {
     let metric: Metric
     @Environment(SystemStats.self) private var stats
     @AppStorage("groupProcessesByApp") private var byApp = true
+    /// Row waiting for a Force Quit confirmation.
+    @State private var confirming: Int32?
+    /// Short result shown in a row after a failed quit.
+    @State private var notice: (pid: Int32, text: String)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -160,44 +164,97 @@ struct ProcessList: View {
             } else if byApp {
                 let apps = metric == .cpu ? stats.topApps(by: \.cpu) : stats.topApps(by: \.memory)
                 ForEach(apps) { app in
-                    row(name: app.name, detail: app.processCount > 1 ? "\(app.processCount)" : nil,
+                    row(pid: app.id, name: app.name, detail: app.processCount > 1 ? "\(app.processCount)" : nil,
                         value: value(cpu: app.cpu, memory: app.memory),
                         icon: NSRunningApplication(processIdentifier: app.id)?.icon)
                 }
             } else {
                 let rows = metric == .cpu ? stats.topProcesses(by: \.cpu) : stats.topProcesses(by: \.memory)
                 ForEach(rows) { row in
-                    self.row(name: row.name, detail: nil, value: value(cpu: row.cpu, memory: row.memory), icon: nil)
+                    self.row(pid: row.id, name: row.name, detail: nil,
+                             value: value(cpu: row.cpu, memory: row.memory), icon: nil)
                 }
             }
         }
+        .onChange(of: byApp) { confirming = nil; notice = nil }
     }
 
     private func value(cpu: Double, memory: Double) -> String {
         metric == .cpu ? String(format: "%.1f%%", cpu) : Fmt.bytes(memory)
     }
 
-    private func row(name: String, detail: String?, value: String, icon: NSImage?) -> some View {
-        HStack(spacing: 6) {
-            if byApp {
-                Group {
-                    if let icon { Image(nsImage: icon).resizable() }
-                    else { Image(systemName: "gearshape").foregroundStyle(.tertiary) }
+    @ViewBuilder
+    private func row(pid: Int32, name: String, detail: String?, value: String, icon: NSImage?) -> some View {
+        if confirming == pid {
+            confirmRow(pid: pid, name: name)
+        } else {
+            HStack(spacing: 6) {
+                if byApp {
+                    Group {
+                        if let icon { Image(nsImage: icon).resizable() }
+                        else { Image(systemName: "gearshape").foregroundStyle(.tertiary) }
+                    }
+                    .frame(width: 16, height: 16)
                 }
-                .frame(width: 16, height: 16)
+                Text(name).lineLimit(1).truncationMode(.middle)
+                if let detail {
+                    Text(detail)
+                        .font(.caption2).foregroundStyle(.secondary)
+                        .padding(.horizontal, 4)
+                        .background(Capsule().fill(.quaternary))
+                        .help("\(detail) processes")
+                }
+                Spacer()
+                if let notice, notice.pid == pid {
+                    Text(notice.text).font(.caption).foregroundStyle(.orange).lineLimit(1)
+                } else {
+                    Text(value).monospacedDigit().foregroundStyle(.secondary)
+                }
             }
-            Text(name).lineLimit(1).truncationMode(.middle)
-            if let detail {
-                Text(detail)
-                    .font(.caption2).foregroundStyle(.secondary)
-                    .padding(.horizontal, 4)
-                    .background(Capsule().fill(.quaternary))
-                    .help("\(detail) processes")
-            }
-            Spacer()
-            Text(value).monospacedDigit().foregroundStyle(.secondary)
+            .font(.callout)
+            .contentShape(Rectangle())
+            .contextMenu { menu(pid: pid, name: name) }
+            .accessibilityActions { menu(pid: pid, name: name) }
+        }
+    }
+
+    @ViewBuilder
+    private func menu(pid: Int32, name rowName: String) -> some View {
+        let name = ProcessKiller.name(of: pid) ?? rowName
+        if let reason = ProcessKiller.protectionReason(pid: pid) {
+            Text("Can't quit \(name): \(reason.lowercased())")
+        } else {
+            Button("Quit \(name)") { run(pid: pid, mode: .quit) }
+            Button("Force Quit \(name)…") { withAnimation(Deck.animation) { confirming = pid } }
+        }
+    }
+
+    private func confirmRow(pid: Int32, name rowName: String) -> some View {
+        let name = ProcessKiller.name(of: pid) ?? rowName
+        return HStack(spacing: 6) {
+            Text("Force quit \(name)? Unsaved work is lost.")
+                .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 4)
+            Button("Cancel") { withAnimation(Deck.animation) { confirming = nil } }
+                .keyboardShortcut(.cancelAction)
+            Button("Force Quit") { run(pid: pid, mode: .forceQuit) }
+                .tint(.red)
         }
         .font(.callout)
+        .controlSize(.small)
+        .buttonStyle(.borderedProminent)
+        .padding(6)
+        .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(.red.opacity(0.12)))
+    }
+
+    private func run(pid: Int32, mode: ProcessKiller.Mode) {
+        confirming = nil
+        if case .failed(let text) = ProcessKiller.quit(pid: pid, mode: mode) {
+            notice = (pid, text)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                if notice?.pid == pid { notice = nil }
+            }
+        }
     }
 }
 
