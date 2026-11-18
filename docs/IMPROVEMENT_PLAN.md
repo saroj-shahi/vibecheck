@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 62 commits · ~8,900 lines of Swift · 105 tests_
+_Last updated: 2026-11-18 · version 1.5 · 65 commits · ~9,300 lines of Swift · 112 tests_
 
 ---
 
@@ -75,6 +75,8 @@ not the whole screen.
 | Working-now badge, tokens-per-hour alert in Settings and as a notification | ❌ never seen |
 | Per-item options: content rules, decoding, migration of "Limits left" | ✅ unit tests; migration checked on the owner's real settings |
 | Per-item options panel (Agents, Memory) | ✅ rendered offscreen through AppKit (`NSHostingView.cacheDisplay`, real controls); the slider button in the real Settings window seen, the expanded panel not |
+| Live limits from Claude Code: real exchange from the app's code | ✅ probe test (0.9 s, plan "team") and the real menu bar item showed 9% / 61% left afterwards |
+| Account/plan badges, Now card, Copilot's two quotas, per-day burn | ✅ rendered offscreen from real logs (AppKit, dark mode): "Claude Code · Saroj · Team", "Codex · Free", Now "VibeCheck · Opus 5.5 · 276K written" |
 | Listening ports: `lsof -F` parsing | ✅ 7 unit tests (format checked against real `lsof` output) |
 | Listening ports section, quit from it | ❌ never seen |
 
@@ -258,13 +260,15 @@ Short record of choices future sessions shouldn't silently undo.
 | another app (GPL-3.0) is a source of ideas only, never code | Copying GPL code would make VibeCheck GPL |
 | Quit actions hold the pid's start time and refuse if it changed | pids are reused; a stale menu must never signal a different process |
 | Secure input warning says where macOS "points", not who holds it | `kCGSSessionSecureInputPID` records the frontmost app when secure input starts (a CLI tool's was reported as Chrome, then Slack) |
-| Live Claude limits are opt-in, off by default, and not in settings backup | It reads another app's credential; that choice is made on each Mac, never restored silently |
+| Live Claude limits come from the user's own `claude` CLI (`get_usage` control request), never the Keychain or an Anthropic endpoint directly; opt-in, not in settings backup | Claude Code signs in and refreshes itself, so no Keychain prompts and no undocumented API; idea from another app (GPL: idea only, the protocol is Claude Code's) |
 | "Limits left" shows Claude Code first: live limits, else its local estimate; other agents only without Claude Code | Falling back to Codex's monthly limit made Claude Code usage look missing (owner report) |
 | "Limits left" has one fixed width (104 pt) in every state | Status item length is measured only at creation/settings changes; a growing label got clipped |
 | `build.sh` signs with an "Apple Development" identity when present (then the self-signed "VibeCheck Local Signing", then ad hoc) | Keychain "Always Allow" on another app's item is stored in its partition list as `teamid:` for apps with a Team ID, but as `cdhash:` (one exact build) for apps without one, so self-signed and ad hoc builds re-prompt after every update. Don't drop the Apple Development identity |
 | Per-item options live in `ItemOptions` (JSON per module, `itemOptions` key); the look stays in `LabelStyle` | Looks are shared across modules; options are module-specific and grow without new enum cases. Agents' icon follows the look picker, not an option |
-| After a Keychain "Deny", stop asking until the setting is switched again | Otherwise macOS would show the prompt every 15 minutes |
-| Agents module network use: only api.anthropic.com, only with live Claude limits on | Keeps "local logs only" true by default |
+| Account name and plan: Claude from `~/.claude.json` (`oauthAccount.displayName`, `organizationType`), Codex from `plan_type` in its logs; never `~/.codex/auth.json` | Only non-secret fields; credential files stay unread |
+| `SIGPIPE` is ignored app-wide | Child processes (`ps`, `lsof`, `nettop`, `claude`) can exit before we write to them |
+| Limit lists key on `RateWindow.key` (length + name) | Copilot's two monthly quotas share a length; keying on length drew one twice |
+| Agents module: no network of its own; live Claude limits run the local `claude` CLI | Keeps "local logs only" true for VibeCheck itself |
 | No cost estimates in the Agents module (owner, 2026-11-18) | It would need downloading a price list; never hard-code prices either |
 | Settings footers use `settingsFooter()` (caption, leading) | Grouped `Form` footers align trailing by default on macOS |
 | Chart areas add points with `addLine`, never `addLines` | `addLines` starts a new subpath and breaks the closed fill |
@@ -527,6 +531,20 @@ Checked offscreen through AppKit, which renders real pickers and toggles (`Image
 `.fixedSize()` on pickers misaligned the right column and was removed. Don't drive the real Settings
 window with synthetic clicks while another app is in front: captures by window ID show it even when
 covered, but clicks land on the window on top (three clicks went to the Claude app this session).
+
+### 2026-11-18: Claude limits via Claude Code, account badges, Now card (agent in parallel)
+
+| Commit | What |
+|---|---|
+| `0e35d58` | `ClaudeLimits.swift` asks the user's `claude` CLI (`--print --input-format stream-json …`, control requests `initialize` + `get_usage`) instead of Keychain + Anthropic API. Keychain code removed. SIGPIPE ignored. |
+| `8368b51` | Account name + plan badges, "Now" card for active sessions, per-day burn for long windows, fix for duplicate Copilot quota rows. 5 tests. |
+
+Notes: the owner asked how another app shows limits without prompts. Its source (GPL, read for ideas only)
+showed it runs Claude Code's own control protocol; tried by hand first (no model request, ~0.9 s), then a
+background agent swapped the client while the badges and Now card were built here. Review fixes: a
+throwing pipe write plus SIGPIPE ignore (an early-exiting CLI would otherwise kill the app). The Keychain
+work earlier today (Apple Development signing) still helps launch-at-login and future permissions, but no
+longer matters for Claude limits. The live fetch still runs only with the setting on.
 
 ---
 
