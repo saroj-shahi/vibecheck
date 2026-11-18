@@ -20,6 +20,15 @@ MainActor.assumeIsolated {
         print("     \(sensors.all.count) raw sensors")
         for f in sensors.fans { print("FAN  \(f.id): \(Int(f.rpm)) rpm (\(Int(f.minRPM ?? 0))–\(Int(f.maxRPM ?? 0)))") }
         print("PWR  system \(sensors.systemPower.map { String(format: "%.1f W", $0) } ?? "-") adapter \(sensors.adapterPower.map { String(format: "%.1f W", $0) } ?? "-")")
+        let devices = DispatchSemaphore(value: 0)
+        Task.detached {
+            for d in await DeviceBatteryMonitor.fetch() {
+                print("DEV  \(d.name) [\(d.kind ?? "?")] " + (d.levels.isEmpty ? "no battery info"
+                    : d.levels.map { "\($0.label.isEmpty ? "" : $0.label + " ")\($0.percent)%" }.joined(separator: " ")))
+            }
+            devices.signal()
+        }
+        devices.wait()
         print("UP   \(Fmt.uptime(SysctlReader.uptime()))")
         exit(0)
     }

@@ -1,101 +1,110 @@
 import SwiftUI
 
-/// The compact view drawn inside each status bar item.
+/// The compact view drawn inside each status bar item, in the style chosen in Settings.
 struct MenuBarLabel: View {
     let module: Module
     @Environment(SystemStats.self) private var stats
+    @Environment(AppSettings.self) private var settings
+
+    private var style: LabelStyle { settings.labelStyle(module) }
+    private var colorful: Bool { settings.colorfulMenuBar }
+    private let valueFont = Font.system(size: 11, weight: .medium).monospacedDigit()
 
     var body: some View {
         Group {
             switch module {
-            case .cpu: cpu
-            case .gpu: gpu
-            case .memory: memory
-            case .network: twoLine(top: ("↑", Fmt.compactRate(stats.network.upload)),
-                                   bottom: ("↓", Fmt.compactRate(stats.network.download)))
-            case .disk: twoLine(top: ("R", Fmt.compactRate(stats.disk.readRate)),
-                                bottom: ("W", Fmt.compactRate(stats.disk.writeRate)))
-            case .sensors: sensors
+            case .cpu: meter(Fmt.percent(stats.cpu.total)) {
+                MiniBars(totals: stats.cpuHistory.suffix(8), system: stats.cpuSystemHistory.suffix(8),
+                         color: tint(Palette.user), systemColor: tint(Palette.system))
+            }
+            case .gpu: meter(Fmt.percent(stats.gpu.utilization)) {
+                MiniBars(totals: stats.gpuHistory.suffix(8), system: [], color: tint(Palette.gpu))
+            }
+            case .memory: meter(Fmt.percent(stats.memory.usage)) { memoryGauge }
+            case .network: rates(top: ("↑", stats.network.upload), bottom: ("↓", stats.network.download))
+            case .disk: rates(top: ("R", stats.disk.readRate), bottom: ("W", stats.disk.writeRate))
+            case .sensors: iconValue(stats.sensors.hottest.map { String(format: "%.0f°", $0) } ?? "–")
             case .battery: battery
+            case .clock: clock
             }
         }
-        .frame(width: module.labelWidth, height: 22)
+        .frame(width: settings.labelWidth(module), height: 22)
     }
 
-    private var cpu: some View {
-        HStack(spacing: 4) {
-            MiniBars(totals: stats.cpuHistory.suffix(8), system: stats.cpuSystemHistory.suffix(8))
-                .frame(width: 23, height: 15)
-            Text(Fmt.percent(stats.cpu.total))
-                .font(.system(size: 11, weight: .medium).monospacedDigit())
-                .frame(width: 30, alignment: .trailing)
-        }
-    }
+    private func tint(_ color: Color) -> Color { colorful ? color : .primary }
 
-    private var gpu: some View {
+    /// Graph-style modules: graph + value, icon + value, or value only.
+    @ViewBuilder
+    private func meter<Graph: View>(_ value: String, @ViewBuilder graph: () -> Graph) -> some View {
         HStack(spacing: 4) {
-            MiniBars(totals: stats.gpuHistory.suffix(8), system: [], color: Palette.gpu)
-                .frame(width: 23, height: 15)
-            Text(Fmt.percent(stats.gpu.utilization))
-                .font(.system(size: 11, weight: .medium).monospacedDigit())
-                .frame(width: 30, alignment: .trailing)
-        }
-    }
-
-    private var memory: some View {
-        HStack(spacing: 4) {
-            GeometryReader { geo in
-                RoundedRectangle(cornerRadius: 1.5)
-                    .strokeBorder(.primary.opacity(0.5), lineWidth: 1)
-                    .overlay(alignment: .bottom) {
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(Palette.pressure(stats.memory.pressure))
-                            .frame(height: max(1, (geo.size.height - 2) * stats.memory.usage))
-                            .padding(1)
-                    }
+            switch style {
+            case .standard: graph().frame(width: module == .memory ? 7 : 23, height: 15)
+            case .iconAndValue: Image(systemName: module.symbol).font(.system(size: 12))
+            case .valueOnly: EmptyView()
             }
-            .frame(width: 7, height: 15)
-            Text(Fmt.percent(stats.memory.usage))
-                .font(.system(size: 11, weight: .medium).monospacedDigit())
-                .frame(width: 32, alignment: .trailing)
+            Text(value).font(valueFont).frame(minWidth: 30, alignment: .trailing)
         }
     }
 
-    private var sensors: some View {
+    private var memoryGauge: some View {
+        GeometryReader { geo in
+            RoundedRectangle(cornerRadius: 1.5)
+                .strokeBorder(.primary.opacity(0.5), lineWidth: 1)
+                .overlay(alignment: .bottom) {
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(tint(Palette.pressure(stats.memory.pressure)))
+                        .frame(height: max(1, (geo.size.height - 2) * stats.memory.usage))
+                        .padding(1)
+                }
+        }
+    }
+
+    private func rates(top: (String, Double), bottom: (String, Double)) -> some View {
+        HStack(spacing: 3) {
+            if style == .iconAndValue {
+                Image(systemName: module.symbol).font(.system(size: 11))
+            }
+            VStack(alignment: .trailing, spacing: -2) {
+                rateLine(top)
+                rateLine(bottom)
+            }
+            .font(.system(size: 9, weight: .semibold).monospacedDigit())
+        }
+    }
+
+    private func rateLine(_ pair: (String, Double)) -> some View {
         HStack(spacing: 2) {
-            Image(systemName: "thermometer.medium").font(.system(size: 12))
-            Text(stats.sensors.hottest.map { String(format: "%.0f°", $0) } ?? "–")
-                .font(.system(size: 11, weight: .medium).monospacedDigit())
-                .frame(width: 28, alignment: .trailing)
+            Text(Fmt.compactRate(pair.1)).frame(maxWidth: .infinity, alignment: .trailing)
+            if style == .standard { Text(pair.0).frame(width: 9) }
+        }
+    }
+
+    private func iconValue(_ value: String) -> some View {
+        HStack(spacing: 2) {
+            if style != .valueOnly {
+                Image(systemName: "thermometer.medium").font(.system(size: 12))
+            }
+            Text(value).font(valueFont).frame(minWidth: 28, alignment: .trailing)
         }
     }
 
     private var battery: some View {
         let b = stats.battery
         return HStack(spacing: 3) {
-            Image(systemName: b.present ? batterySymbol(b) : "powerplug")
-                .font(.system(size: 13))
-            if b.present {
-                Text(Fmt.percent(b.percent))
-                    .font(.system(size: 11, weight: .medium).monospacedDigit())
-            } else {
-                Text("AC").font(.system(size: 11, weight: .medium))
+            if style != .valueOnly {
+                Image(systemName: b.present ? batterySymbol(b) : "powerplug").font(.system(size: 13))
             }
+            Text(b.present ? Fmt.percent(b.percent) : "AC").font(valueFont)
         }
     }
 
-    private func twoLine(top: (String, String), bottom: (String, String)) -> some View {
-        VStack(alignment: .trailing, spacing: -2) {
-            line(top)
-            line(bottom)
-        }
-        .font(.system(size: 9, weight: .semibold).monospacedDigit())
-    }
-
-    private func line(_ pair: (String, String)) -> some View {
-        HStack(spacing: 2) {
-            Text(pair.1).frame(maxWidth: .infinity, alignment: .trailing)
-            Text(pair.0).frame(width: 9)
+    private var clock: some View {
+        HStack(spacing: 4) {
+            if style == .iconAndValue {
+                Image(systemName: "clock").font(.system(size: 12))
+            }
+            Text(ClockTicker.shared.now, format: settings.clockFormatStyle)
+                .font(.system(size: 13, weight: .medium).monospacedDigit())
         }
     }
 }
@@ -111,11 +120,12 @@ func batterySymbol(_ b: BatterySample) -> String {
     }
 }
 
-/// Tiny CPU history bars: total in blue with the system share in red at the bottom.
+/// Tiny history bars: total in `color` with the system share in `systemColor` at the bottom.
 struct MiniBars: View {
     let totals: [Double]
     let system: [Double]
     var color: Color = Palette.user
+    var systemColor: Color = Palette.system
 
     var body: some View {
         Canvas { context, size in
@@ -133,7 +143,7 @@ struct MiniBars: View {
                 let sh = size.height * CGFloat(min(sys, total))
                 if sh > 0 {
                     context.fill(Path(CGRect(x: x, y: size.height - sh, width: barWidth, height: sh)),
-                                 with: .color(Palette.system))
+                                 with: .color(systemColor.opacity(color == systemColor ? 0.6 : 1)))
                 }
             }
         }

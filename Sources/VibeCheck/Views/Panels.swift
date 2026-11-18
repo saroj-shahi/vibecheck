@@ -72,24 +72,62 @@ struct ProcessList: View {
     enum Metric { case cpu, memory }
     let metric: Metric
     @Environment(SystemStats.self) private var stats
+    @AppStorage("groupProcessesByApp") private var byApp = true
 
     var body: some View {
-        let rows = metric == .cpu ? stats.topProcesses(by: \.cpu) : stats.topProcesses(by: \.memory)
         VStack(alignment: .leading, spacing: 4) {
-            SectionTitle(text: "Top processes")
-            if rows.isEmpty {
-                Text("Loading…").font(.callout).foregroundStyle(.tertiary)
-            }
-            ForEach(rows) { row in
-                HStack {
-                    Text(row.name).lineLimit(1).truncationMode(.middle)
-                    Spacer()
-                    Text(metric == .cpu ? String(format: "%.1f%%", row.cpu) : Fmt.bytes(row.memory))
-                        .monospacedDigit().foregroundStyle(.secondary)
+            HStack {
+                SectionTitle(text: byApp ? "Top apps" : "Top processes")
+                Spacer()
+                Picker("Group", selection: $byApp) {
+                    Text("Apps").tag(true)
+                    Text("Processes").tag(false)
                 }
-                .font(.callout)
+                .pickerStyle(.segmented).labelsHidden().controlSize(.mini).fixedSize()
+            }
+            if stats.processes.isEmpty {
+                Text("Loading…").font(.callout).foregroundStyle(.tertiary)
+            } else if byApp {
+                let apps = metric == .cpu ? stats.topApps(by: \.cpu) : stats.topApps(by: \.memory)
+                ForEach(apps) { app in
+                    row(name: app.name, detail: app.processCount > 1 ? "\(app.processCount)" : nil,
+                        value: value(cpu: app.cpu, memory: app.memory),
+                        icon: NSRunningApplication(processIdentifier: app.id)?.icon)
+                }
+            } else {
+                let rows = metric == .cpu ? stats.topProcesses(by: \.cpu) : stats.topProcesses(by: \.memory)
+                ForEach(rows) { row in
+                    self.row(name: row.name, detail: nil, value: value(cpu: row.cpu, memory: row.memory), icon: nil)
+                }
             }
         }
+    }
+
+    private func value(cpu: Double, memory: Double) -> String {
+        metric == .cpu ? String(format: "%.1f%%", cpu) : Fmt.bytes(memory)
+    }
+
+    private func row(name: String, detail: String?, value: String, icon: NSImage?) -> some View {
+        HStack(spacing: 6) {
+            if byApp {
+                Group {
+                    if let icon { Image(nsImage: icon).resizable() }
+                    else { Image(systemName: "gearshape").foregroundStyle(.tertiary) }
+                }
+                .frame(width: 16, height: 16)
+            }
+            Text(name).lineLimit(1).truncationMode(.middle)
+            if let detail {
+                Text(detail)
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .padding(.horizontal, 4)
+                    .background(Capsule().fill(.quaternary))
+                    .help("\(detail) processes")
+            }
+            Spacer()
+            Text(value).monospacedDigit().foregroundStyle(.secondary)
+        }
+        .font(.callout)
     }
 }
 
@@ -107,6 +145,7 @@ struct ModulePanel: View {
         case .disk: DiskPanel()
         case .sensors: SensorsPanel()
         case .battery: BatteryPanel()
+        case .clock: ClockPanel()
         }
     }
 }
@@ -388,6 +427,35 @@ struct SensorsPanel: View {
     private func celsius(_ value: Double) -> String { String(format: "%.0f °C", value) }
 }
 
+struct DeviceBatteryRow: View {
+    let device: DeviceBattery
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: device.symbol)
+                .frame(width: 18)
+                .foregroundStyle(.secondary)
+            Text(device.name).lineLimit(1).truncationMode(.tail)
+            Spacer()
+            if device.levels.isEmpty {
+                Text("No battery info").foregroundStyle(.tertiary)
+            } else {
+                ForEach(Array(device.levels.enumerated()), id: \.offset) { _, level in
+                    HStack(spacing: 2) {
+                        if !level.label.isEmpty {
+                            Text(level.label).foregroundStyle(.secondary)
+                        }
+                        Text("\(level.percent)%")
+                            .monospacedDigit()
+                            .foregroundStyle(level.percent <= 15 ? Color.red : Color.primary)
+                    }
+                }
+            }
+        }
+        .font(.callout)
+    }
+}
+
 struct BatteryPanel: View {
     @Environment(SystemStats.self) private var stats
 
@@ -417,6 +485,15 @@ struct BatteryPanel: View {
             } else {
                 Text("This Mac has no internal battery.")
                     .font(.callout).foregroundStyle(.secondary)
+            }
+
+            if !stats.devices.isEmpty {
+                VStack(spacing: 6) {
+                    SectionTitle(text: "Devices").frame(maxWidth: .infinity, alignment: .leading)
+                    ForEach(stats.devices) { device in
+                        DeviceBatteryRow(device: device)
+                    }
+                }
             }
         }
     }

@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 
@@ -47,6 +48,9 @@ final class SystemStats {
 
     private(set) var battery = BatterySample()
     private(set) var batteryHistory = History(capacity: historyLength)
+    private(set) var devices: [DeviceBattery] = []
+    @ObservationIgnored private var lastDeviceFetch: Date?
+    @ObservationIgnored private var fetchingDevices = false
     private(set) var uptime: TimeInterval = 0
     private(set) var processes: [ProcessRow] = []
 
@@ -111,6 +115,7 @@ final class SystemStats {
             volumes = DiskMonitor.volumes()
             battery = BatteryMonitor.sample()
             if battery.present { batteryHistory.append(battery.percent) }
+            refreshDevicesIfDue()
             uptime = SysctlReader.uptime()
         }
         tickCount += 1
@@ -127,6 +132,18 @@ final class SystemStats {
         onTick?()
 
         if processDemand > 0 { refreshProcesses() }
+    }
+
+    /// Bluetooth accessory levels change slowly; check once a minute in the background.
+    private func refreshDevicesIfDue() {
+        guard !fetchingDevices, lastDeviceFetch.map({ Date().timeIntervalSince($0) > 60 }) ?? true else { return }
+        fetchingDevices = true
+        lastDeviceFetch = Date()
+        Task {
+            let found = await DeviceBatteryMonitor.fetch()
+            self.devices = found
+            self.fetchingDevices = false
+        }
     }
 
     private func refreshProcesses() {
@@ -157,5 +174,23 @@ final class SystemStats {
 
     func topProcesses(by key: KeyPath<ProcessRow, Double>, limit: Int = 5) -> [ProcessRow] {
         Array(processes.sorted { $0[keyPath: key] > $1[keyPath: key] }.prefix(limit))
+    }
+
+    /// Processes summed per responsible app, so Chrome or Slack show as one line with all their helpers.
+    func topApps(by key: KeyPath<AppUsage, Double>, limit: Int = 5) -> [AppUsage] {
+        Self.groupByApp(processes) { NSRunningApplication(processIdentifier: $0)?.localizedName }
+            .sorted { $0[keyPath: key] > $1[keyPath: key] }
+            .prefix(limit).map { $0 }
+    }
+
+    nonisolated static func groupByApp(_ rows: [ProcessRow], appName: (Int32) -> String?) -> [AppUsage] {
+        let namesByPID = Dictionary(rows.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
+        return Dictionary(grouping: rows, by: \.responsible).map { owner, members in
+            AppUsage(id: owner,
+                     name: appName(owner) ?? namesByPID[owner] ?? members[0].name,
+                     cpu: members.reduce(0) { $0 + $1.cpu },
+                     memory: members.reduce(0) { $0 + $1.memory },
+                     processCount: members.count)
+        }
     }
 }

@@ -4,7 +4,7 @@ import ServiceManagement
 import SwiftUI
 
 enum Module: String, CaseIterable, Identifiable {
-    case cpu, gpu, memory, network, disk, sensors, battery
+    case cpu, gpu, memory, network, disk, sensors, battery, clock
 
     var id: String { rawValue }
 
@@ -17,6 +17,7 @@ enum Module: String, CaseIterable, Identifiable {
         case .disk: "Disk"
         case .sensors: "Sensors"
         case .battery: "Battery"
+        case .clock: "Clock"
         }
     }
 
@@ -29,6 +30,7 @@ enum Module: String, CaseIterable, Identifiable {
         case .disk: "internaldrive"
         case .sensors: "thermometer.medium"
         case .battery: "battery.75percent"
+        case .clock: "clock"
         }
     }
 
@@ -41,23 +43,36 @@ enum Module: String, CaseIterable, Identifiable {
         case .disk: Palette.read
         case .sensors: .orange
         case .battery: .green
+        case .clock: .indigo
         }
     }
 
-    /// Width of the menu bar item, in points.
-    var labelWidth: CGFloat {
+    /// Width of the menu bar item for a style, in points (the clock is measured separately).
+    func labelWidth(_ style: LabelStyle) -> CGFloat {
+        switch (self, style) {
+        case (.cpu, .standard), (.gpu, .standard): 60
+        case (.memory, .standard): 50
+        case (.cpu, _), (.gpu, _), (.memory, _): style == .iconAndValue ? 52 : 34
+        case (.network, .standard), (.disk, .standard): 64
+        case (.network, .iconAndValue), (.disk, .iconAndValue): 64
+        case (.network, _), (.disk, _): 46
+        case (.sensors, .valueOnly): 32
+        case (.sensors, _): 50
+        case (.battery, .valueOnly): 38
+        case (.battery, _): 54
+        case (.clock, _): 80
+        }
+    }
+
+    var labelStyles: [LabelStyle] {
         switch self {
-        case .cpu: 60
-        case .gpu: 60
-        case .memory: 50
-        case .network: 64
-        case .disk: 64
-        case .sensors: 50
-        case .battery: 54
+        case .sensors, .battery: [.standard, .valueOnly]
+        case .clock: [.standard, .iconAndValue]
+        default: LabelStyle.allCases
         }
     }
 
-    var enabledByDefault: Bool { self != .battery }
+    var enabledByDefault: Bool { self != .battery && self != .clock }
 }
 
 enum Palette {
@@ -93,6 +108,28 @@ enum Palette {
 
 extension Notification.Name {
     static let vibeCheckSettingsChanged = Notification.Name("VibeCheckSettingsChanged")
+}
+
+/// How a single item draws itself in the menu bar.
+enum LabelStyle: String, CaseIterable, Identifiable {
+    case standard, iconAndValue, valueOnly
+    var id: String { rawValue }
+
+    func title(for module: Module) -> String {
+        switch self {
+        case .standard:
+            switch module {
+            case .cpu, .gpu: "Graph + value"
+            case .memory: "Gauge + value"
+            case .network: "Rates + arrows"
+            case .disk: "Rates + R/W"
+            case .sensors, .battery: "Icon + value"
+            case .clock: "Time only"
+            }
+        case .iconAndValue: module == .clock ? "Icon + time" : "Icon + value"
+        case .valueOnly: "Value only"
+        }
+    }
 }
 
 enum MenuBarStyle: String, CaseIterable, Identifiable {
@@ -141,6 +178,24 @@ final class AppSettings {
             if let data = try? JSONEncoder().encode(alertRules) { defaults.set(data, forKey: "alertRules") }
         }
     }
+    private(set) var labelStyles: [Module: LabelStyle]
+    var colorfulMenuBar: Bool {
+        didSet { save(colorfulMenuBar, "colorfulMenuBar", structural: false) }
+    }
+    var clockFormat: ClockFormat {
+        didSet { save(clockFormat.rawValue, "clockFormat", structural: true) }
+    }
+    var clockShowSeconds: Bool {
+        didSet { save(clockShowSeconds, "clockShowSeconds", structural: true) }
+    }
+    var worldClocks: [WorldClock] {
+        didSet {
+            if let data = try? JSONEncoder().encode(worldClocks) { defaults.set(data, forKey: "worldClocks") }
+        }
+    }
+    /// While the clock panel is open its seconds tick even if the menu bar shows minutes only.
+    @ObservationIgnored var isClockPanelOpen = false
+
     var launchAtLogin: Bool {
         didSet {
             do {
@@ -174,8 +229,44 @@ final class AppSettings {
         hotkeysEnabled = defaults.object(forKey: "hotkeysEnabled") as? Bool ?? true
         hotkeyModifier = defaults.string(forKey: "hotkeyModifier").flatMap(HotkeyModifier.init(rawValue:))
             ?? .controlOptionCommand
+        let storedStyles = defaults.dictionary(forKey: "labelStyles") as? [String: String] ?? [:]
+        labelStyles = storedStyles.reduce(into: [:]) { result, entry in
+            if let module = Module(rawValue: entry.key), let style = LabelStyle(rawValue: entry.value) {
+                result[module] = style
+            }
+        }
+        colorfulMenuBar = defaults.object(forKey: "colorfulMenuBar") as? Bool ?? true
+        clockFormat = defaults.string(forKey: "clockFormat").flatMap(ClockFormat.init(rawValue:)) ?? .dayTime
+        clockShowSeconds = defaults.bool(forKey: "clockShowSeconds")
+        worldClocks = defaults.data(forKey: "worldClocks")
+            .flatMap { try? JSONDecoder().decode([WorldClock].self, from: $0) } ?? WorldClock.defaults
         alertRules = defaults.data(forKey: "alertRules")
             .flatMap { try? JSONDecoder().decode([AlertRule].self, from: $0) } ?? AlertRule.defaults
+    }
+
+    func labelStyle(_ module: Module) -> LabelStyle {
+        let style = labelStyles[module] ?? .standard
+        return module.labelStyles.contains(style) ? style : .standard
+    }
+
+    func setLabelStyle(_ style: LabelStyle, for module: Module) {
+        labelStyles[module] = style
+        defaults.set(Dictionary(uniqueKeysWithValues: labelStyles.map { ($0.key.rawValue, $0.value.rawValue) }),
+                     forKey: "labelStyles")
+        NotificationCenter.default.post(name: .vibeCheckSettingsChanged, object: nil)
+    }
+
+    var clockFormatStyle: ClockFormatStyle { ClockFormatStyle(format: clockFormat, seconds: clockShowSeconds) }
+
+    /// Menu bar width for a module in its current style. The clock is measured from a worst-case date string.
+    func labelWidth(_ module: Module) -> CGFloat {
+        let style = labelStyle(module)
+        guard module == .clock else { return module.labelWidth(style) }
+        let widest = DateComponents(calendar: .current, year: 2026, month: 9, day: 30, hour: 22, minute: 58, second: 58).date ?? Date()
+        let text = clockFormat.formatter(seconds: clockShowSeconds).string(from: widest)
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .medium)
+        let width = (text as NSString).size(withAttributes: [.font: font]).width
+        return ceil(width) + (style == .iconAndValue ? 22 : 6)
     }
 
     /// Modules that are switched on, in menu bar order.

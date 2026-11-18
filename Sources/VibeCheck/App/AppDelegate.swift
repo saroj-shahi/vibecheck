@@ -87,10 +87,10 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     func refreshLength() {
         switch kind {
         case .single(let module):
-            item.length = module.labelWidth
+            item.length = settings.labelWidth(module)
         case .combined:
             let modules = settings.orderedModules
-            item.length = modules.map(\.labelWidth).reduce(0, +)
+            item.length = modules.map(settings.labelWidth).reduce(0, +)
                 + Self.combinedSpacing * CGFloat(max(modules.count - 1, 0)) + 6
         }
     }
@@ -202,6 +202,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             } else if !enabled, let existing = items.removeValue(forKey: module) {
                 existing.remove()
             }
+            items[module]?.refreshLength() // label style or clock format may have changed
         }
     }
 

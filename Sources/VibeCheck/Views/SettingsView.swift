@@ -9,6 +9,8 @@ struct SettingsView: View {
                 .tabItem { Label("General", systemImage: "gearshape") }
             AlertSettings(onTestNotification: onTestNotification)
                 .tabItem { Label("Alerts", systemImage: "bell.badge") }
+            ClockSettings()
+                .tabItem { Label("Clock", systemImage: "clock") }
             ShortcutSettings()
                 .tabItem { Label("Shortcuts", systemImage: "keyboard") }
         }
@@ -28,14 +30,27 @@ private struct GeneralSettings: View {
                 }
                 .pickerStyle(.radioGroup)
                 ForEach(Module.allCases) { module in
-                    Toggle(isOn: Binding(
-                        get: { settings.isEnabled(module) },
-                        set: { settings.setEnabled(module, $0) }
-                    )) {
-                        Label(module.title, systemImage: module.symbol)
+                    HStack {
+                        Toggle(isOn: Binding(
+                            get: { settings.isEnabled(module) },
+                            set: { settings.setEnabled(module, $0) }
+                        )) {
+                            Label(module.title, systemImage: module.symbol)
+                        }
+                        .disabled(settings.isEnabled(module) && settings.enabledModules.count == 1)
+                        Spacer()
+                        Picker("Display", selection: Binding(
+                            get: { settings.labelStyle(module) },
+                            set: { settings.setLabelStyle($0, for: module) }
+                        )) {
+                            ForEach(module.labelStyles) { Text($0.title(for: module)).tag($0) }
+                        }
+                        .labelsHidden()
+                        .fixedSize()
+                        .disabled(!settings.isEnabled(module))
                     }
-                    .disabled(settings.isEnabled(module) && settings.enabledModules.count == 1)
                 }
+                Toggle("Colorful menu bar graphs", isOn: $settings.colorfulMenuBar)
             }
             Section("General") {
                 Picker("Update every", selection: $settings.refreshInterval) {
@@ -47,7 +62,7 @@ private struct GeneralSettings: View {
                 Toggle("Launch at login", isOn: $settings.launchAtLogin)
             }
             Section {
-                Text("VibeCheck 1.1 · Click any menu bar item to check the vibes.")
+                Text("VibeCheck 1.2 · Click any menu bar item to check the vibes.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -172,5 +187,73 @@ private struct ShortcutSettings: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+private struct ClockSettings: View {
+    @Environment(AppSettings.self) private var settings
+    @State private var search = ""
+
+    var body: some View {
+        @Bindable var settings = settings
+        Form {
+            Section("Menu bar clock") {
+                Toggle("Show clock in menu bar", isOn: Binding(
+                    get: { settings.isEnabled(.clock) },
+                    set: { settings.setEnabled(.clock, $0) }
+                ))
+                Picker("Format", selection: $settings.clockFormat) {
+                    ForEach(ClockFormat.allCases) { format in
+                        Text(format.formatter(seconds: settings.clockShowSeconds).string(from: Date())).tag(format)
+                    }
+                }
+                Toggle("Show seconds", isOn: $settings.clockShowSeconds)
+            }
+
+            Section("World clocks") {
+                if settings.worldClocks.isEmpty {
+                    Text("No world clocks yet.").foregroundStyle(.secondary)
+                }
+                ForEach($settings.worldClocks) { $clock in
+                    HStack {
+                        TextField("Name", text: $clock.name).labelsHidden().frame(maxWidth: 160)
+                        Text(clock.timeZoneID).font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                        Text(Date().formatted(Date.FormatStyle(date: .omitted, time: .shortened, timeZone: clock.timeZone)))
+                            .monospacedDigit().foregroundStyle(.secondary)
+                        Button(role: .destructive) {
+                            settings.worldClocks.removeAll { $0.id == clock.id }
+                        } label: { Image(systemName: "trash") }
+                            .buttonStyle(.borderless)
+                    }
+                }
+            }
+
+            Section("Add a world clock") {
+                TextField("Search cities or time zones", text: $search)
+                ForEach(matches, id: \.self) { identifier in
+                    HStack {
+                        Text(WorldClock.cityName(identifier))
+                        Text(identifier).font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Add") {
+                            settings.worldClocks.append(WorldClock(name: WorldClock.cityName(identifier), timeZoneID: identifier))
+                            search = ""
+                        }
+                        .disabled(settings.worldClocks.contains { $0.timeZoneID == identifier })
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private var matches: [String] {
+        let query = search.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return [] }
+        let normalized = query.replacingOccurrences(of: " ", with: "_")
+        return Array((TimeZone.knownTimeZoneIdentifiers + ["UTC"])
+            .filter { $0.localizedCaseInsensitiveContains(normalized) || $0.localizedCaseInsensitiveContains(query) }
+            .prefix(8))
     }
 }
