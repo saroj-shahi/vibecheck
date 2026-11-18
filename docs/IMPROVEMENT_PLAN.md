@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 25 commits · ~6,800 lines of Swift · 62 tests_
+_Last updated: 2026-11-18 · version 1.5 · 28 commits · ~6,800 lines of Swift · 62 tests_
 
 ---
 
@@ -263,7 +263,7 @@ Notes: `swift test` passes (58). The metadata lists all 5 actions and 4 phrases,
 
 | Commit | What |
 |---|---|
-| _(uncommitted)_ | `NotificationLog` (last 20, newest first, seen marker, saved to Application Support); `AlertEngine` records fired alerts and keep-awake endings (`log`, `notify(kind:)`); bell button with red dot and a popover list in the deck header (`NotificationHistoryView.swift`). 4 tests. |
+| `b314ba8` | `NotificationLog` (last 20, newest first, seen marker, saved to Application Support); `AlertEngine` records fired alerts and keep-awake endings (`log`, `notify(kind:)`); bell button with red dot and a popover list in the deck header (`NotificationHistoryView.swift`). 4 tests. |
 
 Notes: `swift test` passes (62). The deck UI wasn't seen on screen, and no real notification was triggered (that would have written a test entry into the owner's history). Test notifications from Settings aren't recorded.
 
