@@ -15,6 +15,8 @@ final class StatusItemController: NSObject {
         case single(Module)
         case combined
         case vibe
+        /// Standalone keep-awake cup: click toggles with the default length, right-click shows a menu.
+        case keepAwake
     }
 
     let kind: Kind
@@ -54,6 +56,9 @@ final class StatusItemController: NSObject {
         case .vibe:
             item.autosaveName = AppSettings.autosaveName("vibe", generation: settings.statusItemGeneration)
             label = AnyView(VibeItemLabel())
+        case .keepAwake:
+            item.autosaveName = AppSettings.autosaveName("keepawake", generation: settings.statusItemGeneration)
+            label = AnyView(KeepAwakeItemLabel())
         }
         labelView = AnyView(label.environment(stats).environment(settings).environment(fit))
         refreshLength()
@@ -71,6 +76,7 @@ final class StatusItemController: NSObject {
             ])
             button.target = self
             button.action = #selector(buttonClicked(_:))
+            if kind == .keepAwake { button.sendAction(on: [.leftMouseUp, .rightMouseUp]) }
             button.setAccessibilityLabel(kind == .combined ? "VibeCheck" : "VibeCheck \(title)")
         }
         if kind == .combined { observePlacement() }
@@ -126,6 +132,7 @@ final class StatusItemController: NSObject {
         case .single(let module): module.title
         case .vibe: "Vibe"
         case .combined: "VibeCheck"
+        case .keepAwake: "Keep Awake"
         }
     }
 
@@ -136,6 +143,13 @@ final class StatusItemController: NSObject {
     }
 
     @objc private func buttonClicked(_ sender: NSStatusBarButton) { onClick(self) }
+
+    /// Shows `menu` from this item as if it were the item's own menu (the standard status item pattern).
+    func show(_ menu: NSMenu) {
+        item.menu = menu
+        item.button?.performClick(nil)
+        item.menu = nil
+    }
 
     func remove() { NSStatusBar.system.removeStatusItem(item) }
 }
@@ -152,6 +166,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// The standalone ring shown with separate items.
     private var vibeItem: StatusItemController?
     private var settingsWindow: NSWindow?
+    /// The standalone Keep Awake item, when it's switched on in Settings.
+    private var keepAwakeItem: StatusItemController?
+    private let keepAwakeMenu = KeepAwakeMenu()
     /// Generation the separate items were created with; a reorder in Settings bumps it.
     private var itemGeneration = 0
 
@@ -205,6 +222,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.combinedItem?.refitAroundNotch()
                 self.combinedItem?.refreshLength()
                 self.syncVibeItem()
+                self.keepAwakeItem?.refreshLength()
             }
         }
         if CommandLine.arguments.contains("--deck-demo") { runDeckDemo() }
@@ -230,6 +248,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func syncItems() {
         deck.close()
+        defer { syncKeepAwakeItem() }
         if settings.menuBarStyle == .combined {
             items.values.forEach { $0.remove() }
             items.removeAll()
@@ -265,6 +284,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             items[module]?.refreshLength() // label style or clock format may have changed
         }
         syncVibeItem()
+    }
+
+    /// The Keep Awake item, in either menu bar style. Created last so it sits left of VibeCheck's other items.
+    /// Rebuilt with the others on a reorder (`syncItems` removes it first).
+    private func syncKeepAwakeItem() {
+        if settings.keepAwakeMenuBarItem {
+            if keepAwakeItem == nil || keepAwakeItemGeneration != settings.statusItemGeneration {
+                keepAwakeItem?.remove()
+                keepAwakeItemGeneration = settings.statusItemGeneration
+                keepAwakeItem = StatusItemController(kind: .keepAwake, stats: stats, settings: settings) { [weak self] item in
+                    self?.keepAwakeClicked(item)
+                }
+            }
+            keepAwakeItem?.refreshLength()
+        } else {
+            keepAwakeItem?.remove()
+            keepAwakeItem = nil
+        }
+    }
+    private var keepAwakeItemGeneration = -1
+
+    /// Click: start (with the default length) or stop. Right-click, ⌃-click or ⌥-click: the full menu.
+    private func keepAwakeClicked(_ item: StatusItemController) {
+        let event = NSApp.currentEvent
+        let wantsMenu = event?.type == .rightMouseUp
+            || event?.modifierFlags.contains(.control) == true || event?.modifierFlags.contains(.option) == true
+        deck.close()
+        if wantsMenu {
+            item.show(keepAwakeMenu.build())
+        } else {
+            KeepAwake.shared.toggle()
+        }
     }
 
     /// Separate items: the standalone item holds the ring and/or the keep-awake cup. Created after the

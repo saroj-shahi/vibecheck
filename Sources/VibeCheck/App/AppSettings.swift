@@ -283,6 +283,10 @@ final class AppSettings {
     var keepAwakeShowInMenuBar: Bool {
         didSet { save(keepAwakeShowInMenuBar, "keepAwakeShowInMenuBar", structural: true) }
     }
+    /// A standalone Keep Awake item in the menu bar (always visible). Click toggles, right-click shows a menu.
+    var keepAwakeMenuBarItem: Bool {
+        didSet { save(keepAwakeMenuBarItem, "keepAwakeMenuBarItem", structural: true) }
+    }
 
     /// While the clock panel is open its seconds tick even if the menu bar shows minutes only.
     @ObservationIgnored var isClockPanelOpen = false
@@ -352,6 +356,7 @@ final class AppSettings {
         keepAwakeBatteryFloor = defaults.object(forKey: "keepAwakeBatteryFloor") as? Int ?? 10
         keepAwakeAtLaunch = defaults.bool(forKey: "keepAwakeAtLaunch")
         keepAwakeShowInMenuBar = defaults.object(forKey: "keepAwakeShowInMenuBar") as? Bool ?? true
+        keepAwakeMenuBarItem = defaults.bool(forKey: "keepAwakeMenuBarItem")
         keepAwakeUntilMinute = defaults.object(forKey: "keepAwakeUntilMinute") as? Int ?? 18 * 60
         keepAwakeNotify = defaults.object(forKey: "keepAwakeNotify") as? Bool ?? true
         keepAwakeHotkey = defaults.object(forKey: "keepAwakeHotkey") as? Bool ?? true

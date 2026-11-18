@@ -146,7 +146,12 @@ struct KeepAwakeSettings: View {
                 Toggle("Notify me when a session ends by itself", isOn: $settings.keepAwakeNotify)
                 Toggle("\(settings.hotkeyModifier.symbols)A starts or stops a session", isOn: $settings.keepAwakeHotkey)
                     .disabled(!settings.hotkeysEnabled)
+                Toggle(isOn: $settings.keepAwakeMenuBarItem) {
+                    Text("Keep Awake item in the menu bar")
+                    Text("Always shown. Click it to start or stop, using the length in “Start sessions for” above. Right-click (or ⌥-click) for every option.")
+                }
                 Toggle("Show a cup in the menu bar while awake", isOn: $settings.keepAwakeShowInMenuBar)
+                    .disabled(settings.keepAwakeMenuBarItem)
             } footer: {
                 Text("With the display allowed to sleep, the screen turns off but downloads, builds and music keep going. Closing the lid still puts the Mac to sleep.")
                     .settingsFooter()

@@ -41,7 +41,8 @@ struct HiddenCountChip: View {
 /// Small cup shown in the menu bar while a keep-awake session runs.
 struct AwakeCup: View {
     @MainActor static func isShown(_ settings: AppSettings) -> Bool {
-        settings.keepAwakeShowInMenuBar && KeepAwake.shared.isActive
+        // Not while the standalone Keep Awake item is on: it already shows the state.
+        settings.keepAwakeShowInMenuBar && KeepAwake.shared.isActive && !settings.keepAwakeMenuBarItem
     }
 
     var body: some View {
@@ -65,5 +66,25 @@ struct AwakeCup: View {
                 .help("Keeping your Mac awake")
                 .accessibilityLabel("Keeping your Mac awake")
         }
+    }
+}
+
+/// The standalone Keep Awake item: an outlined cup while off; the filled cup (or focus timer) while on.
+struct KeepAwakeItemLabel: View {
+    @Environment(AppSettings.self) private var settings
+
+    var body: some View {
+        Group {
+            if KeepAwake.shared.isActive {
+                AwakeCup().foregroundStyle(settings.colorfulMenuBar ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.primary))
+            } else {
+                Image(systemName: "cup.and.saucer")
+                    .font(.system(size: 11, weight: .medium))
+                    .frame(height: 22)
+                    .help("Keep awake: click to start, right-click for options")
+                    .accessibilityLabel("Keep awake, off")
+            }
+        }
+        .padding(.horizontal, max(settings.menuBarSpacing.padding, 3))
     }
 }
