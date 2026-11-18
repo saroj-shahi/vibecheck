@@ -104,8 +104,7 @@ The full guide (logo usage, clear space, color roles, type, voice, motion) is in
 swift scripts/render_brand.swift   # rewrites branding/png/* and Resources/AppIcon.icns
 ```
 
-## Ideas for next steps
+## Roadmap
 
-- Per-process network history, public IP, Wi-Fi details
-- Fan control (needs a privileged helper), notification history, iCloud settings sync
-- A Liquid Glass `.icon` variant made in Icon Composer
+The prioritized backlog, what's been verified, known limits and the decisions log live in
+[`docs/IMPROVEMENT_PLAN.md`](docs/IMPROVEMENT_PLAN.md).
