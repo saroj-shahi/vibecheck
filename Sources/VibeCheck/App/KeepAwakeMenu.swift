@@ -50,6 +50,15 @@ final class KeepAwakeMenu: NSObject {
         }
         until.submenu = untilMenu
         menu.addItem(until)
+        let running = NSMenuItem(title: "While an App Is Running", action: nil, keyEquivalent: "")
+        let runningMenu = NSMenu()
+        let apps = KeepAwake.runningApps()
+        if apps.isEmpty { runningMenu.addItem(ActionItem("No apps running", enabled: false) {}) }
+        for app in apps {
+            runningMenu.addItem(ActionItem(app.name) { awake.start(.whileRunning(bundleID: app.bundleID, name: app.name)) })
+        }
+        running.submenu = runningMenu
+        menu.addItem(running)
 
         menu.addItem(.separator())
         menu.addItem(.sectionHeader(title: "Focus"))

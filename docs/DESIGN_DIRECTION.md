@@ -135,9 +135,11 @@ faster), its 12 pt radius and web fonts.
 
 ## Backlog from this direction
 
-- ⬜ **Keep-awake hold dial** (from another app): press and hold the cup, drag to 15m / 1h / 4h / ∞, release.
-  Needs the cup to become a custom control instead of a SwiftUI `Menu`.
-- ⬜ Pinned header: when a detail view scrolls, keep the header row fixed (needs the scroll view split).
+- ✅ **Keep-awake hold dial** (from another app, 2026-11-18): click the cup for the native keep-awake menu
+  (same as the menu bar item's right-click); press and hold 350 ms for a four-sector dial, drag up / right /
+  down / left for 15m / 1h / 4h / ∞, release to start. Release in the 12 pt dead zone cancels.
+- ✅ Pinned header (2026-11-18): a detail view's back / icon / title row sits above the scroll view.
+  Skipped: the separator that fades in once content scrolls (needs scroll offset; `onScrollGeometryChange` is macOS 15+).
 - ⬜ Palette: "recent" ordering (last 3 commands first) once there's a reason to remember them.
 - ⬜ Palette commands for process actions ("Quit Chrome") and alerts, with the same confirmation rules;
   ⌘↩ is where their second step goes.

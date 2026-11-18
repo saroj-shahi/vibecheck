@@ -53,6 +53,9 @@ final class DeckModel {
     /// ⌘↩ action list for the selected row, and its selection.
     var paletteActionsOpen = false { didSet { if paletteActionsOpen != oldValue { paletteActionIndex = 0 } } }
     var paletteActionIndex = 0
+    /// Keep-awake hold dial over the shell, and the length the drag points at.
+    var awakeDialOpen = false
+    var awakeDialSelection: Int?
     /// A command that asked for a second ↩ (Quit); cleared by any other key or selection change.
     var paletteConfirmID: String?
     var paletteOpen: Bool { paletteQuery != nil }
@@ -431,7 +434,11 @@ final class DeckController: NSObject {
         let results = DeckCommands.filter(DeckCommands.all(model: model, settings: settings),
                                           query: model.paletteQuery ?? "")
         if event.command, event.code == 36 || event.code == 76 {   // ⌘↩: actions for the selected row
-            if results.indices.contains(model.paletteIndex) { model.paletteActionsOpen.toggle() }
+            // A card holding only "Run" says nothing ↩ doesn't; beep instead.
+            if results.indices.contains(model.paletteIndex),
+               model.paletteActionsOpen || DeckCommands.actions(for: results[model.paletteIndex], model: model).count > 1 {
+                model.paletteActionsOpen.toggle()
+            } else { NSSound.beep() }
             return true
         }
         if event.command { return nil }

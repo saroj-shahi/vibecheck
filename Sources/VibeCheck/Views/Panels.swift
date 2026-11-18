@@ -10,23 +10,11 @@ struct Panel<Content: View>: View {
     @Environment(SystemStats.self) private var stats
     @Environment(\.deckNamespace) private var namespace
     @Environment(\.deckShowsBack) private var showsBack
-    @Environment(DeckModel.self) private var deckModel: DeckModel?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 8) {
-                if showsBack, let deckModel {
-                    DeckIconButton(symbol: "chevron.left", help: "Back (Esc)") { deckModel.go(.home) }
-                        .padding(.leading, -6)
-                }
-                Image(systemName: module.symbol)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(module.accent)
-                    .networkStatusDot(online: stats.network.interface != nil, size: 6, enabled: module == .network)
-                    .deckMatched("icon.\(module.rawValue)", namespace)
-                Text(module.title).font(.headline)
-                Spacer()
-            }
+            // In the deck the header row is pinned above the scroll view (DeckRoot draws it).
+            if !showsBack { PanelHeader(module: module) }
             // Hero: the one number that answers "how is it doing?", with a short summary beside it.
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(headline)
@@ -62,7 +50,8 @@ struct Panel<Content: View>: View {
             }
             .buttonStyle(.borderless)
         }
-        .padding(16)
+        .padding([.horizontal, .bottom], 16)
+        .padding(.top, showsBack ? 0 : 16)
         .frame(width: Deck.width)
         .background(
             // The tile's background grows into the whole detail view, fading as it goes.
@@ -70,6 +59,31 @@ struct Panel<Content: View>: View {
                 .fill(.clear)
                 .deckMatched("bg.\(module.rawValue)", namespace)
         )
+    }
+}
+
+/// Icon and title of a detail view; in the deck, a back chevron too.
+struct PanelHeader: View {
+    let module: Module
+    var showsBack = false
+    @Environment(SystemStats.self) private var stats
+    @Environment(\.deckNamespace) private var namespace
+    @Environment(DeckModel.self) private var deckModel: DeckModel?
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            if showsBack, let deckModel {
+                DeckIconButton(symbol: "chevron.left", help: "Back (Esc)") { deckModel.go(.home) }
+                    .padding(.leading, -6)
+            }
+            Image(systemName: module.symbol)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(module.accent)
+                .networkStatusDot(online: stats.network.interface != nil, size: 6, enabled: module == .network)
+                .deckMatched("icon.\(module.rawValue)", namespace)
+            Text(module.title).font(.headline)
+            Spacer()
+        }
     }
 }
 

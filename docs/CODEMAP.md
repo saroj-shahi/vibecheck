@@ -14,7 +14,7 @@ are added or split. Decisions and history are in [IMPROVEMENT_PLAN.md](IMPROVEME
 | `Vibe.swift` | Vibe score (vibing / mid / cooked), the verdict sentence and its culprit module |
 | `Alerts.swift` | `AlertMetric`, `AlertRule` (sentence alerts), `AlertEngine` (evaluate, notify, history log) |
 | `KeepAwake.swift` | Sessions (`AwakeEnd`, focus sessions, triggers: power / display / downloads / `AwakeSchedule`), IOKit assertion |
-| `KeepAwakeMenu.swift` | Native right-click menu of the Keep Awake menu bar item |
+| `KeepAwakeMenu.swift` | Native keep-awake menu: the menu bar item's right-click and the deck's cup |
 | `Deck.swift` | `DeckPanel` (borderless non-activating NSPanel), `DeckController` (open/close, frame, keys, outside clicks) |
 | `AgentUsage.swift` | `AgentUsageStore` (rescans agent logs every 60 s, merges live Claude limits) |
 | `ClaudeLimits.swift` | Live Claude limits from the user's `claude` CLI (`get_usage` control request); opt-in |
@@ -42,11 +42,11 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `PortSampler` (`lso
 | `CombinedViews.swift` | Combined item, `AwakeCup`, `KeepAwakeItemLabel` |
 | `DeckView.swift` | Deck shell (header, drawn search field, live chips, footer), home (quick toggles, tiles, culprit outline), tiles' spoken labels, glass hairline |
 | `CommandPalette.swift` | ⌘K palette results, ⌘↩ action card, `KeyCap`, `Caret` |
-| `Panels.swift` | Detail panels per module, `ProcessList`, `ListeningPortsSection`, `USBDevicesSection` |
+| `Panels.swift` | `Panel`, `PanelHeader` (pinned by `DeckRoot` in the deck), detail panels per module, `ProcessList`, `ListeningPortsSection`, `USBDevicesSection` |
 | `AgentsPanel.swift` | Agents detail: Now card, charts, agent cards, `LimitGauge`, `PaceBar`, `DailyBars` |
 | `MetricChart.swift` | Detail charts (resampling, `SeriesShape`, scrubbing) |
 | `SettingsView.swift` | Settings window: every pane, `ItemOptionsView`, `.settingsFooter()` |
-| `KeepAwakeViews.swift` | Cup menu items and button, Keep Awake settings pane |
+| `KeepAwakeViews.swift` | Deck cup (click → `KeepAwakeMenu`, hold → `AwakeDial`), Keep Awake settings pane |
 | `QuickTogglesView.swift`, `NotificationHistoryView.swift`, `VibeRing.swift`, `ClockPanel.swift`, `WeatherPanel.swift`, `Charts.swift` | as named |
 
 ## Tests/VibeCheckTests/

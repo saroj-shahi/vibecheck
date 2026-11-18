@@ -39,6 +39,15 @@ struct DeckCommandsTests {
         #expect(!model.paletteActionsOpen)
     }
 
+    @Test func awakeDialSegments() {
+        #expect(AwakeDial.segment(for: CGSize(width: 3, height: -5)) == nil)      // dead zone
+        #expect(AwakeDial.segment(for: CGSize(width: 0, height: -30)) == 0)       // up: 15m
+        #expect(AwakeDial.segment(for: CGSize(width: 30, height: 5)) == 1)        // right: 1h
+        #expect(AwakeDial.segment(for: CGSize(width: -4, height: 30)) == 2)       // down: 4h
+        #expect(AwakeDial.segment(for: CGSize(width: -30, height: 0)) == 3)       // left: until off
+        #expect(AwakeDial.segment(for: CGSize(width: -20, height: -21)) == 0)     // up-left leans up
+    }
+
     @Test func scoring() {
         #expect(DeckCommands.score("open", title: "Open CPU", keywords: "") == 400)        // title prefix
         #expect(DeckCommands.score("cpu", title: "Open CPU", keywords: "") == 300)         // word prefix

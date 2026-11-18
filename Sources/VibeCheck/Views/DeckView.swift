@@ -26,31 +26,45 @@ struct DeckRoot: View {
     let onHeight: (CGFloat) -> Void
     @Environment(DeckModel.self) private var model
     @Namespace private var namespace
+    @State private var contentHeight: CGFloat = 0
+    @State private var headerHeight: CGFloat = 0
 
     var body: some View {
-        ScrollView(.vertical) {
-            Group {
-                if case .module(let module) = model.route, !model.paletteOpen {
-                    ModulePanel(module: module)
-                        .environment(\.deckShowsBack, true)
-                        .transition(.opacity)
-                } else {
-                    DeckShell()
-                        .transition(.opacity)
-                }
+        let detail: Module? = if case .module(let module) = model.route, !model.paletteOpen { module } else { nil }
+        VStack(spacing: 0) {
+            // A detail view's header row stays put while its content scrolls.
+            if let detail {
+                PanelHeader(module: detail, showsBack: true)
+                    .padding([.horizontal, .top], 16)
+                    .padding(.bottom, 12)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
+                    .transition(.opacity)
             }
-            .environment(\.deckNamespace, namespace)
-            .background(GeometryReader { proxy in
-                Color.clear.preference(key: DeckHeightKey.self, value: proxy.size.height)
-            })
+            ScrollView(.vertical) {
+                Group {
+                    if let detail {
+                        ModulePanel(module: detail)
+                            .environment(\.deckShowsBack, true)
+                            .transition(.opacity)
+                    } else {
+                        DeckShell()
+                            .transition(.opacity)
+                    }
+                }
+                .background(GeometryReader { proxy in
+                    Color.clear.preference(key: DeckHeightKey.self, value: proxy.size.height)
+                })
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollIndicators(.automatic)
         }
-        .scrollBounceBehavior(.basedOnSize)
-        .scrollIndicators(.automatic)
+        .environment(\.deckNamespace, namespace)
         .frame(width: Deck.width)
         .frame(maxHeight: .infinity, alignment: .top)
         .onPreferenceChange(DeckHeightKey.self) { height in
-            MainActor.assumeIsolated { onHeight(height) }
+            MainActor.assumeIsolated { contentHeight = height }
         }
+        .onChange(of: contentHeight + (detail == nil ? 0 : headerHeight), initial: true) { _, total in onHeight(total) }
         .overlay { GlassHairline() }
     }
 }
@@ -100,6 +114,14 @@ struct DeckShell: View {
             .padding([.horizontal, .top], 16)
             .padding(.bottom, 12)
             DeckFooter()
+        }
+        .overlay(alignment: .topTrailing) {
+            if model.awakeDialOpen {
+                AwakeDialView(selection: model.awakeDialSelection)
+                    .padding(.top, 6)
+                    .padding(.trailing, 6)
+                    .transition(.opacity.combined(with: .scale(scale: 0.85, anchor: .topTrailing)))
+            }
         }
         .animation(Deck.animation, value: KeepAwake.shared.session)
         .animation(Deck.animation, value: QuickActions.shared.isMicMuted)

@@ -33,7 +33,9 @@ not the whole screen.
 | Login item registration | ✅ `--login-item status` reports enabled |
 | Deck look (dark mode), tiles, sparklines, keyboard focus ring | ✅ seen in the QA pass |
 | ⌘K command palette (search row, rows, selection, key caps) and the header search button, dark + light | 🟡 offscreen renders only (2026-11-18); typing, ↑↓/↩, hover chevron and the pre-26 hairline not seen live |
-| Deck shell round two (search field, footer, ⌘↩ action card, 104 pt tiles), dark + light | 🟡 offscreen renders only (2026-11-18); live chips, culprit outline, 1× hairline and ⌘↩ keys not seen at all |
+| Deck shell round two, live (2026-11-18 QA): header, search field, footer, palette typing / ⌘↩ card / esc ×3, keep-awake chip with hover × (assertion released), cup click menu, hold dial (synthetic CGEvent drag) → "Awake 1 h left", pinned header (Sensors with Details open), culprit outline (red, cooked; amber, mid) | ✅ seen in dark mode |
+| Deck in light mode | ✅ seen 2026-11-18; reads mid-grey in captures (glass over dark windows), owner looked and it's fine |
+| Mic-muted and shortcuts-paused chips, 1× hairline | ❌ not seen (mic not toggled on purpose; no 1× display tried) |
 | Ring mid (yellow) and cooked (red) in the menu bar, "Cooked" verdict in the deck | ✅ seen 2026-11-18 (7 then 10 busy `yes` loops; mid after ~45 s) |
 | Light mode, tile hover/press, unfold animation, ring bounce | ❌ never seen |
 | Chart scrubbing bubble (hover, values, "No data" gaps) | ✅ seen with synthetic mouse moves |
@@ -200,10 +202,8 @@ lyrics and companion tools, and its notch-style "Dynamic Island" bar. They're ou
 ### Design direction (from [DESIGN_DIRECTION.md](DESIGN_DIRECTION.md))
 
 - ~~⌘K command palette, type-to-act, tile hover chevron, glass hairline (macOS 14–15)~~: done 2026-11-18.
-- **P1** See the palette live: ⌘K, typing on the home grid, ↑↓/↩, Esc twice (part of the P0 QA pass).
 - ~~Round two: shell with search field, live chips, footer; 104 pt tiles; culprit outline; ⌘↩ actions~~: done 2026-11-18.
-- **P1** See round two live: chips (keep awake, mic muted, shortcuts paused) with hover ×, culprit outline under load, ⌘↩.
-- **P2** Keep-awake hold dial on the cup; pinned header while a detail view scrolls; palette "recent" ordering; process and alert commands.
+- **P2** Palette "recent" ordering; process and alert commands.
 
 ### Tech debt
 
@@ -362,6 +362,25 @@ tables above and the lessons below; add new dated entries under "Recent sessions
   `/usr/bin/security` (an "Always Allow" would cover every process that runs it).
 
 ### Recent sessions
+
+#### 2026-11-18: QA of the new deck
+
+Installed build checked on screen by the QA agent (owner hands off): see the round-two rows in the
+verified table. Fix from it: ⌘↩ on a row whose only action is Run now beeps instead of showing a one-item
+card. Synthetic drags need a CGEvent script (`qa` has no drag command). Light mode looked grey in captures; the owner checked it by eye and it's fine.
+
+#### 2026-11-18: pinned detail header
+
+`DeckRoot` draws a detail view's header row (`PanelHeader`) above the scroll view; `Panel` skips its own
+row when `deckShowsBack` is set. Window height = header + content. Checked with an offscreen render of
+the Sensors detail (layout and reported height); actual scrolling under the header not seen.
+
+#### 2026-11-18: keep-awake hold dial
+
+The deck's cup is now a custom control: click pops the native `KeepAwakeMenu` (which gained "While an App
+Is Running", so the SwiftUI `AwakeMenuItems` copy is gone); hold 350 ms opens a 15m / 1h / 4h / ∞ dial
+picked by drag direction. 2 tests. Dial checked with offscreen renders (dark + light); the gesture and the
+menu popping at the mouse are not seen live.
 
 #### 2026-11-18: design round two (outside reference)
 
