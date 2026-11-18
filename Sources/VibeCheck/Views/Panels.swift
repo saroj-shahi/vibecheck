@@ -5,6 +5,7 @@ import SwiftUI
 struct Panel<Content: View>: View {
     let module: Module
     let headline: String
+    var subtitle: String? = nil
     @ViewBuilder var content: Content
     @Environment(SystemStats.self) private var stats
     @Environment(\.deckNamespace) private var namespace
@@ -24,12 +25,25 @@ struct Panel<Content: View>: View {
                     .deckMatched("icon.\(module.rawValue)", namespace)
                 Text(module.title).font(.headline)
                 Spacer()
+            }
+            // Hero: the one number that answers "how is it doing?", with a short summary beside it.
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(headline)
-                    .font(.system(size: 22, weight: .semibold, design: .rounded).monospacedDigit())
+                    .font(.system(size: 34, weight: .semibold, design: .rounded).monospacedDigit())
+                    .tracking(-0.6)
                     .contentTransition(.numericText())
                     .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .deckMatched("value.\(module.rawValue)", namespace)
+                Spacer(minLength: 4)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.callout).foregroundStyle(.secondary)
+                        .multilineTextAlignment(.trailing)
+                        .lineLimit(2)
+                }
             }
+            .padding(.top, -6)
             content
             Divider()
             HStack {
@@ -79,10 +93,47 @@ struct StatRow: View {
 struct SectionTitle: View {
     let text: String
     var body: some View {
-        Text(text.uppercased())
-            .font(.caption2.weight(.semibold))
+        Text(text)
+            .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(.secondary)
-            .tracking(0.5)
+            .tracking(0.1)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// Secondary rows tucked behind a "Details" toggle; open/closed is remembered per module.
+struct DetailsDisclosure<Content: View>: View {
+    @AppStorage private var expanded: Bool
+    private let content: Content
+
+    init(_ module: Module, @ViewBuilder content: () -> Content) {
+        _expanded = AppStorage(wrappedValue: false, "details.\(module.rawValue)")
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                withAnimation(Deck.animation) { expanded.toggle() }
+            } label: {
+                HStack {
+                    Text("Details").font(.system(size: 13, weight: .medium))
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(expanded ? "Hide details" : "Show details")
+
+            if expanded {
+                VStack(alignment: .leading, spacing: 12) { content }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
     }
 }
 
@@ -95,7 +146,7 @@ struct ProcessList: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                SectionTitle(text: byApp ? "Top apps" : "Top processes")
+                SectionTitle(text: "Who's responsible")
                 Spacer()
                 Picker("Group", selection: $byApp) {
                     Text("Apps").tag(true)
@@ -174,39 +225,41 @@ struct CPUPanel: View {
 
     var body: some View {
         let cpu = stats.cpu
-        Panel(module: .cpu, headline: Fmt.percent(cpu.total)) {
-            MetricChart(lines: [.init(key: .cpu, color: Palette.user), .init(key: .cpuSystem, color: Palette.system)],
-                        maxValue: 1, format: Fmt.percent)
-
-            VStack(spacing: 4) {
-                StatRow(label: "User", value: Fmt.percent(cpu.user), color: Palette.user)
-                StatRow(label: "System", value: Fmt.percent(cpu.system), color: Palette.system)
-                StatRow(label: "Idle", value: Fmt.percent(cpu.idle), color: .gray.opacity(0.5))
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                SectionTitle(text: coreTitle)
-                HStack(alignment: .bottom, spacing: 3) {
-                    ForEach(Array(cpu.perCore.enumerated()), id: \.offset) { _, usage in
-                        GeometryReader { geo in
-                            RoundedRectangle(cornerRadius: 2).fill(.quaternary)
-                                .overlay(alignment: .bottom) {
-                                    RoundedRectangle(cornerRadius: 2).fill(Palette.user)
-                                        .frame(height: geo.size.height * CGFloat(usage))
-                                }
-                        }
-                    }
-                }
-                .frame(height: 32)
-            }
-
-            VStack(spacing: 4) {
-                StatRow(label: "Load average",
-                        value: stats.loadAverage.map { String(format: "%.2f", $0) }.joined(separator: "  "))
-                StatRow(label: "Thermal state", value: thermalLabel)
-            }
+        Panel(module: .cpu, headline: Fmt.percent(cpu.total),
+              subtitle: "User \(Fmt.percent(cpu.user)) · Sys \(Fmt.percent(cpu.system))") {
+            MetricChart(lines: [.init(key: .cpu, color: Palette.user),
+                                .init(key: .cpuSystem, color: Palette.system, name: "Sys")],
+                        maxValue: 1, height: 96, format: Fmt.percent)
 
             ProcessList(metric: .cpu)
+
+            DetailsDisclosure(.cpu) {
+                VStack(spacing: 4) {
+                    StatRow(label: "User", value: Fmt.percent(cpu.user), color: Palette.user)
+                    StatRow(label: "System", value: Fmt.percent(cpu.system), color: Palette.system)
+                    StatRow(label: "Idle", value: Fmt.percent(cpu.idle), color: .gray.opacity(0.5))
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    SectionTitle(text: coreTitle)
+                    HStack(alignment: .bottom, spacing: 3) {
+                        ForEach(Array(cpu.perCore.enumerated()), id: \.offset) { _, usage in
+                            GeometryReader { geo in
+                                RoundedRectangle(cornerRadius: 2).fill(.quaternary)
+                                    .overlay(alignment: .bottom) {
+                                        RoundedRectangle(cornerRadius: 2).fill(Palette.user)
+                                            .frame(height: geo.size.height * CGFloat(usage))
+                                    }
+                            }
+                        }
+                    }
+                    .frame(height: 32)
+                }
+                VStack(spacing: 4) {
+                    StatRow(label: "Load average",
+                            value: stats.loadAverage.map { String(format: "%.2f", $0) }.joined(separator: "  "))
+                    StatRow(label: "Thermal state", value: thermalLabel)
+                }
+            }
         }
     }
 
@@ -234,29 +287,23 @@ struct GPUPanel: View {
 
     var body: some View {
         let sample = stats.gpu
-        Panel(module: .gpu, headline: Fmt.percent(sample.utilization)) {
-            MetricChart(lines: [.init(key: .gpu, color: Palette.gpu)], maxValue: 1, format: Fmt.percent)
+        Panel(module: .gpu, headline: sample.gpus.isEmpty ? "—" : Fmt.percent(sample.utilization),
+              subtitle: sample.gpus.first.map { gpu in gpu.cores.map { "\(gpu.model) · \($0) cores" } ?? gpu.model }) {
+            MetricChart(lines: [.init(key: .gpu, color: Palette.gpu)], maxValue: 1, height: 96, format: Fmt.percent)
 
             if sample.gpus.isEmpty {
-                Text("No GPU statistics available.")
-                    .font(.callout).foregroundStyle(.secondary)
-            }
-            ForEach(sample.gpus) { gpu in
-                VStack(alignment: .leading, spacing: 6) {
-                    SectionTitle(text: gpu.cores.map { "\(gpu.model) · \($0) cores" } ?? gpu.model)
-                    StatRow(label: "Utilization", value: Fmt.percent(gpu.device), color: Palette.gpu)
-                    CapacityBar(fraction: gpu.device, color: Palette.gpu)
-                    if let r = gpu.renderer {
-                        StatRow(label: "Renderer", value: Fmt.percent(r), color: Palette.user)
-                    }
-                    if let t = gpu.tiler {
-                        StatRow(label: "Tiler", value: Fmt.percent(t), color: Palette.tiler)
-                    }
-                    if let used = gpu.memoryInUse {
-                        StatRow(label: "Memory in use", value: Fmt.bytes(used))
-                    }
-                    if let alloc = gpu.memoryAllocated {
-                        StatRow(label: "Memory allocated", value: Fmt.bytes(alloc))
+                Text("No GPU statistics available.").font(.callout).foregroundStyle(.secondary)
+            } else {
+                DetailsDisclosure(.gpu) {
+                    ForEach(sample.gpus) { gpu in
+                        VStack(alignment: .leading, spacing: 6) {
+                            if sample.gpus.count > 1 { SectionTitle(text: gpu.model) }
+                            StatRow(label: "Utilization", value: Fmt.percent(gpu.device), color: Palette.gpu)
+                            if let r = gpu.renderer { StatRow(label: "Renderer", value: Fmt.percent(r), color: Palette.user) }
+                            if let t = gpu.tiler { StatRow(label: "Tiler", value: Fmt.percent(t), color: Palette.tiler) }
+                            if let used = gpu.memoryInUse { StatRow(label: "Memory in use", value: Fmt.bytes(used)) }
+                            if let alloc = gpu.memoryAllocated { StatRow(label: "Memory allocated", value: Fmt.bytes(alloc)) }
+                        }
                     }
                 }
             }
@@ -269,39 +316,33 @@ struct MemoryPanel: View {
 
     var body: some View {
         let m = stats.memory
-        Panel(module: .memory, headline: Fmt.percent(m.usage)) {
+        Panel(module: .memory, headline: Fmt.percent(m.usage),
+              subtitle: "\(Fmt.bytes(m.used)) of \(Fmt.bytes(m.total))") {
             VStack(alignment: .leading, spacing: 6) {
                 StackedBar(segments: [(m.app, Palette.app), (m.wired, Palette.wired),
                                       (m.compressed, Palette.compressed), (m.cached, Palette.cached)],
                            total: m.total)
-                Text("\(Fmt.bytes(m.used)) used of \(Fmt.bytes(m.total))")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-
-            MetricChart(lines: [.init(key: .memory, color: Palette.app)], maxValue: 1, height: 50,
-                        format: Fmt.percent)
-
-            VStack(spacing: 4) {
-                StatRow(label: "App memory", value: Fmt.bytes(m.app), color: Palette.app)
-                StatRow(label: "Wired", value: Fmt.bytes(m.wired), color: Palette.wired)
-                StatRow(label: "Compressed", value: Fmt.bytes(m.compressed), color: Palette.compressed)
-                StatRow(label: "Cached files", value: Fmt.bytes(m.cached), color: Palette.cached)
-                StatRow(label: "Free", value: Fmt.bytes(m.free))
-            }
-
-            VStack(spacing: 4) {
-                HStack {
-                    Text("Pressure").foregroundStyle(.secondary)
-                    Spacer()
-                    Circle().fill(Palette.pressure(m.pressure)).frame(width: 8, height: 8)
-                    Text(m.pressure.label)
+                HStack(spacing: 5) {
+                    Circle().fill(Palette.pressure(m.pressure)).frame(width: 7, height: 7)
+                    Text("Pressure \(m.pressure.label.lowercased())")
                 }
-                .font(.callout)
-                StatRow(label: "Swap used",
-                        value: m.swapTotal > 0 ? "\(Fmt.bytes(m.swapUsed)) of \(Fmt.bytes(m.swapTotal))" : "None")
+                .font(.caption).foregroundStyle(.secondary)
             }
+            MetricChart(lines: [.init(key: .memory, color: Palette.app)], maxValue: 1, height: 64, format: Fmt.percent)
 
             ProcessList(metric: .memory)
+
+            DetailsDisclosure(.memory) {
+                VStack(spacing: 4) {
+                    StatRow(label: "App memory", value: Fmt.bytes(m.app), color: Palette.app)
+                    StatRow(label: "Wired", value: Fmt.bytes(m.wired), color: Palette.wired)
+                    StatRow(label: "Compressed", value: Fmt.bytes(m.compressed), color: Palette.compressed)
+                    StatRow(label: "Cached files", value: Fmt.bytes(m.cached), color: Palette.cached)
+                    StatRow(label: "Free", value: Fmt.bytes(m.free))
+                    StatRow(label: "Swap used",
+                            value: m.swapTotal > 0 ? "\(Fmt.bytes(m.swapUsed)) of \(Fmt.bytes(m.swapTotal))" : "None")
+                }
+            }
         }
     }
 }
@@ -311,40 +352,13 @@ struct NetworkPanel: View {
 
     var body: some View {
         let n = stats.network
-        Panel(module: .network, headline: n.interface ?? "Offline") {
-            HStack(spacing: 16) {
-                bigRate("Upload", n.upload, Palette.upload, "arrow.up")
-                bigRate("Download", n.download, Palette.download, "arrow.down")
-            }
+        Panel(module: .network, headline: n.interface == nil ? "Offline" : "↓ \(Fmt.compactRate(n.download))",
+              subtitle: n.interface == nil ? nil : "↑ \(Fmt.rate(n.upload))\n\(statusText(n))") {
             MetricChart(lines: [.init(key: .upload, color: Palette.upload), .init(key: .download, color: Palette.download)],
-                        mirrored: true, height: 80, format: Fmt.rate)
-            VStack(spacing: 4) {
-                StatRow(label: "Status", value: statusText(n), color: statusColor(n))
-                StatRow(label: "Interface", value: n.interface ?? "—")
-                StatRow(label: "Local IP", value: n.ipv4 ?? "—")
-                StatRow(label: "Downloaded since boot", value: Fmt.bytes(Double(n.totalDownloaded)))
-                StatRow(label: "Uploaded since boot", value: Fmt.bytes(Double(n.totalUploaded)))
-            }
-
-            if n.interfaces.count > 1 {
-                VStack(spacing: 4) {
-                    SectionTitle(text: "Interfaces").frame(maxWidth: .infinity, alignment: .leading)
-                    ForEach(n.interfaces.prefix(6)) { iface in
-                        HStack(spacing: 6) {
-                            Circle().fill(iface.isActive ? Color.green : Color.gray.opacity(0.4)).frame(width: 6, height: 6)
-                            Text(iface.displayName).lineLimit(1).truncationMode(.tail)
-                            Spacer()
-                            Text("↓ \(Fmt.compactRate(iface.download))  ↑ \(Fmt.compactRate(iface.upload))")
-                                .monospacedDigit().foregroundStyle(.secondary)
-                        }
-                        .font(.callout)
-                        .help("\(iface.bsdName): \(Fmt.bytes(Double(iface.totalIn))) in, \(Fmt.bytes(Double(iface.totalOut))) out since boot")
-                    }
-                }
-            }
+                        mirrored: true, height: 96, format: Fmt.rate)
 
             VStack(alignment: .leading, spacing: 4) {
-                SectionTitle(text: "Top apps")
+                SectionTitle(text: "Who's responsible")
                 let apps = stats.networkApps.prefix(5)
                 if apps.isEmpty {
                     Text("No app traffic right now.").font(.callout).foregroundStyle(.tertiary)
@@ -367,6 +381,32 @@ struct NetworkPanel: View {
                     .font(.callout)
                 }
             }
+
+            DetailsDisclosure(.network) {
+                VStack(spacing: 4) {
+                    StatRow(label: "Status", value: statusText(n), color: statusColor(n))
+                    StatRow(label: "Interface", value: n.interface ?? "—")
+                    StatRow(label: "Local IP", value: n.ipv4 ?? "—")
+                    StatRow(label: "Downloaded since boot", value: Fmt.bytes(Double(n.totalDownloaded)))
+                    StatRow(label: "Uploaded since boot", value: Fmt.bytes(Double(n.totalUploaded)))
+                }
+                if n.interfaces.count > 1 {
+                    VStack(spacing: 4) {
+                        SectionTitle(text: "Interfaces").frame(maxWidth: .infinity, alignment: .leading)
+                        ForEach(n.interfaces.prefix(6)) { iface in
+                            HStack(spacing: 6) {
+                                Circle().fill(iface.isActive ? Color.green : Color.gray.opacity(0.4)).frame(width: 6, height: 6)
+                                Text(iface.displayName).lineLimit(1).truncationMode(.tail)
+                                Spacer()
+                                Text("↓ \(Fmt.compactRate(iface.download))  ↑ \(Fmt.compactRate(iface.upload))")
+                                    .monospacedDigit().foregroundStyle(.secondary)
+                            }
+                            .font(.callout)
+                            .help("\(iface.bsdName): \(Fmt.bytes(Double(iface.totalIn))) in, \(Fmt.bytes(Double(iface.totalOut))) out since boot")
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -374,10 +414,10 @@ struct NetworkPanel: View {
         guard n.interface != nil else { return "Offline" }
         let up = n.upload >= MenuBarLabel.activeThreshold, down = n.download >= MenuBarLabel.activeThreshold
         switch (up, down) {
-        case (true, true): return "Connected · sending & receiving"
-        case (true, false): return "Connected · sending"
-        case (false, true): return "Connected · receiving"
-        case (false, false): return "Connected · idle"
+        case (true, true): return "Sending & receiving"
+        case (true, false): return "Sending"
+        case (false, true): return "Receiving"
+        case (false, false): return "Idle"
         }
     }
 
@@ -386,16 +426,6 @@ struct NetworkPanel: View {
         let active = max(n.upload, n.download) >= MenuBarLabel.activeThreshold
         return active ? .green : .gray
     }
-
-    private func bigRate(_ title: String, _ value: Double, _ color: Color, _ symbol: String) -> some View {
-        let active = value >= MenuBarLabel.activeThreshold
-        return VStack(alignment: .leading, spacing: 2) {
-            Label(title, systemImage: symbol).font(.caption)
-                .foregroundStyle(active ? AnyShapeStyle(color) : AnyShapeStyle(.secondary))
-            Text(Fmt.rate(value)).font(.title3.weight(.medium).monospacedDigit())
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
 }
 
 struct DiskPanel: View {
@@ -403,14 +433,18 @@ struct DiskPanel: View {
 
     var body: some View {
         let d = stats.disk
-        let primary = stats.volumes.first
-        Panel(module: .disk, headline: primary.map { Fmt.percent($0.usage) } ?? "—") {
-            HStack(spacing: 16) {
-                rate("Read", d.readRate, Palette.read)
-                rate("Write", d.writeRate, Palette.write)
+        let primary = stats.volumes.first { $0.path == "/" } ?? stats.volumes.first
+        Panel(module: .disk, headline: primary.map { Fmt.percent($0.usage) } ?? "—",
+              subtitle: primary.map { "\(Fmt.bytes($0.available)) free" }) {
+            MetricChart(lines: [.init(key: .read, color: Palette.read, name: "R"),
+                                .init(key: .write, color: Palette.write, name: "W")],
+                        mirrored: true, height: 80, format: Fmt.rate)
+            HStack {
+                Text("Read \(Fmt.rate(d.readRate))").foregroundStyle(Palette.read)
+                Spacer()
+                Text("Write \(Fmt.rate(d.writeRate))").foregroundStyle(Palette.write)
             }
-            MetricChart(lines: [.init(key: .read, color: Palette.read), .init(key: .write, color: Palette.write)],
-                        mirrored: true, format: Fmt.rate)
+            .font(.caption.monospacedDigit())
 
             VStack(alignment: .leading, spacing: 10) {
                 SectionTitle(text: "Volumes")
@@ -423,86 +457,69 @@ struct DiskPanel: View {
                         }
                         .font(.callout)
                         CapacityBar(fraction: v.usage, color: Palette.level(v.usage))
-                        Text("\(Fmt.bytes(v.used)) of \(Fmt.bytes(v.total)) used")
-                            .font(.caption2).foregroundStyle(.tertiary)
+                            .help("\(Fmt.bytes(v.used)) of \(Fmt.bytes(v.total)) used")
                     }
                 }
             }
         }
     }
-
-    private func rate(_ title: String, _ value: Double, _ color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(.caption).foregroundStyle(color)
-            Text(Fmt.rate(value)).font(.title3.weight(.medium).monospacedDigit())
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
 }
 
 struct SensorsPanel: View {
     @Environment(SystemStats.self) private var stats
-    @State private var showAll = false
 
     var body: some View {
         let s = stats.sensors
-        Panel(module: .sensors, headline: s.hottest.map(celsius) ?? "—") {
+        Panel(module: .sensors, headline: s.hottest.map(celsius) ?? "—", subtitle: fanSummary(s)) {
             if s.summary.isEmpty && s.fans.isEmpty {
-                Text("No sensors available on this Mac.")
-                    .font(.callout).foregroundStyle(.secondary)
+                Text("No sensors available on this Mac.").font(.callout).foregroundStyle(.secondary)
             }
-
             if s.hottest != nil {
-                MetricChart(lines: [.init(key: .temperature, color: .orange)], maxValue: 105, height: 60,
+                MetricChart(lines: [.init(key: .temperature, color: .orange)], maxValue: 105, height: 80,
                             format: { String(format: "%.0f °C", $0) })
             }
-
             if !s.summary.isEmpty {
                 VStack(spacing: 4) {
-                    SectionTitle(text: "Temperatures").frame(maxWidth: .infinity, alignment: .leading)
                     ForEach(s.summary) { t in
                         StatRow(label: t.name, value: celsius(t.celsius), color: Palette.temperature(t.celsius))
                     }
                 }
             }
 
-            if !s.fans.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    SectionTitle(text: s.fans.count == 1 ? "Fan" : "Fans")
-                    ForEach(s.fans) { fan in
-                        StatRow(label: s.fans.count == 1 ? "Speed" : "Fan \(fan.id + 1)",
-                                value: fan.rpm < 1 ? "Off" : String(format: "%.0f rpm", fan.rpm))
-                        CapacityBar(fraction: fan.level, color: .cyan)
-                        if let lo = fan.minRPM, let hi = fan.maxRPM {
-                            Text(String(format: "Range %.0f–%.0f rpm", lo, hi))
-                                .font(.caption2).foregroundStyle(.tertiary)
+            DetailsDisclosure(.sensors) {
+                if !s.fans.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        SectionTitle(text: s.fans.count == 1 ? "Fan" : "Fans")
+                        ForEach(s.fans) { fan in
+                            StatRow(label: s.fans.count == 1 ? "Speed" : "Fan \(fan.id + 1)",
+                                    value: fan.rpm < 1 ? "Off" : String(format: "%.0f rpm", fan.rpm))
+                            CapacityBar(fraction: fan.level, color: .cyan)
+                            if let lo = fan.minRPM, let hi = fan.maxRPM {
+                                Text(String(format: "Range %.0f–%.0f rpm", lo, hi)).font(.caption2).foregroundStyle(.tertiary)
+                            }
                         }
                     }
                 }
-            }
-
-            if s.systemPower != nil || s.adapterPower != nil {
-                VStack(spacing: 4) {
-                    SectionTitle(text: "Power").frame(maxWidth: .infinity, alignment: .leading)
-                    if let w = s.systemPower { StatRow(label: "System total", value: String(format: "%.1f W", w)) }
-                    if let w = s.adapterPower { StatRow(label: "From power adapter", value: String(format: "%.1f W", w)) }
-                }
-            }
-
-            if s.all.count > s.summary.count {
-                DisclosureGroup(isExpanded: $showAll) {
-                    ScrollView {
-                        VStack(spacing: 3) {
-                            ForEach(s.all) { t in StatRow(label: t.name, value: celsius(t.celsius)) }
-                        }
-                        .padding(.trailing, 8)
+                if s.systemPower != nil || s.adapterPower != nil {
+                    VStack(spacing: 4) {
+                        SectionTitle(text: "Power").frame(maxWidth: .infinity, alignment: .leading)
+                        if let w = s.systemPower { StatRow(label: "System total", value: String(format: "%.1f W", w)) }
+                        if let w = s.adapterPower { StatRow(label: "From power adapter", value: String(format: "%.1f W", w)) }
                     }
-                    .frame(maxHeight: 180)
-                } label: {
-                    Text("All sensors (\(s.all.count))").font(.callout)
+                }
+                if s.all.count > s.summary.count {
+                    VStack(spacing: 3) {
+                        SectionTitle(text: "All sensors (\(s.all.count))").frame(maxWidth: .infinity, alignment: .leading)
+                        ForEach(s.all) { t in StatRow(label: t.name, value: celsius(t.celsius)) }
+                    }
                 }
             }
         }
+    }
+
+    private func fanSummary(_ s: SensorsSample) -> String? {
+        guard let fan = s.fans.first else { return nil }
+        return fan.rpm < 1 ? "Fan off" : String(format: "Fan %.0f rpm", fan.rpm)
     }
 
     private func celsius(_ value: Double) -> String { String(format: "%.0f °C", value) }
@@ -542,46 +559,51 @@ struct BatteryPanel: View {
 
     var body: some View {
         let b = stats.battery
-        Panel(module: .battery, headline: b.present ? Fmt.percent(b.percent) : "AC") {
+        Panel(module: .battery, headline: b.present ? Fmt.percent(b.percent) : "AC",
+              subtitle: b.present ? subtitle(b) : "No internal battery") {
             if b.present {
                 CapacityBar(fraction: b.percent, color: b.percent < 0.2 ? .red : .green)
-                MetricChart(lines: [.init(key: .battery, color: .green)], maxValue: 1, height: 50, format: Fmt.percent)
-                VStack(spacing: 4) {
-                    StatRow(label: "Power source", value: b.onAC ? "Power adapter" : "Battery")
-                    StatRow(label: "State", value: stateLabel(b))
-                    if let mins = b.minutesRemaining {
-                        StatRow(label: b.isCharging ? "Time to full" : "Time remaining", value: Fmt.minutes(mins))
-                    }
-                    if let w = b.powerWatts, abs(w) > 0.05 {
-                        StatRow(label: w > 0 ? "Charging at" : "Drawing", value: String(format: "%.1f W", abs(w)))
-                    }
-                }
-                VStack(spacing: 4) {
-                    SectionTitle(text: "Health").frame(maxWidth: .infinity, alignment: .leading)
-                    if let h = b.health { StatRow(label: "Maximum capacity", value: Fmt.percent(h)) }
-                    if let c = b.cycleCount { StatRow(label: "Cycle count", value: "\(c)") }
-                    if let t = b.temperature { StatRow(label: "Temperature", value: String(format: "%.1f °C", t)) }
-                    if let cond = b.condition { StatRow(label: "Condition", value: cond) }
-                }
-            } else {
-                Text("This Mac has no internal battery.")
-                    .font(.callout).foregroundStyle(.secondary)
+                MetricChart(lines: [.init(key: .battery, color: .green)], maxValue: 1, height: 64, format: Fmt.percent)
             }
 
             if !stats.devices.isEmpty {
                 VStack(spacing: 6) {
                     SectionTitle(text: "Devices").frame(maxWidth: .infinity, alignment: .leading)
-                    ForEach(stats.devices) { device in
-                        DeviceBatteryRow(device: device)
+                    ForEach(stats.devices) { device in DeviceBatteryRow(device: device) }
+                }
+            }
+
+            if b.present {
+                DetailsDisclosure(.battery) {
+                    VStack(spacing: 4) {
+                        StatRow(label: "Power source", value: b.onAC ? "Power adapter" : "Battery")
+                        StatRow(label: "State", value: stateLabel(b))
+                        if let w = b.powerWatts, abs(w) > 0.05 {
+                            StatRow(label: w > 0 ? "Charging at" : "Drawing", value: String(format: "%.1f W", abs(w)))
+                        }
+                    }
+                    VStack(spacing: 4) {
+                        SectionTitle(text: "Health").frame(maxWidth: .infinity, alignment: .leading)
+                        if let h = b.health { StatRow(label: "Maximum capacity", value: Fmt.percent(h)) }
+                        if let c = b.cycleCount { StatRow(label: "Cycle count", value: "\(c)") }
+                        if let t = b.temperature { StatRow(label: "Temperature", value: String(format: "%.1f °C", t)) }
+                        if let cond = b.condition { StatRow(label: "Condition", value: cond) }
                     }
                 }
             }
         }
     }
 
+    private func subtitle(_ b: BatterySample) -> String {
+        if let mins = b.minutesRemaining {
+            return "\(stateLabel(b)) · \(Fmt.minutes(mins)) \(b.isCharging ? "to full" : "left")"
+        }
+        return stateLabel(b)
+    }
+
     private func stateLabel(_ b: BatterySample) -> String {
         if b.isCharging { return "Charging" }
         if b.isCharged || (b.onAC && b.percent >= 0.99) { return "Charged" }
-        return b.onAC ? "Not charging" : "Discharging"
+        return b.onAC ? "Not charging" : "On battery"
     }
 }

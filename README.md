@@ -19,7 +19,10 @@ into that module's detail view; Esc folds back, then closes. `⌘1`–`⌘9` jum
 | Weather | condition icon + temperature (off by default) | current conditions, next 12 hours, 7-day forecast with ranges ([Open-Meteo](https://open-meteo.com/), no key, city search instead of location access) |
 | Clock   | time (off by default)        | big time and date, month calendar (opens Calendar), world clocks with day/night and offset |
 
-Every chart has a **Live / 1H / 24H** switch. Hour and day history are averaged (6 s and 144 s buckets),
+Detail views lead with one big number and a short summary, then the chart, then **who's responsible**
+(top apps), with everything else behind a remembered **Details** toggle. Hover any chart to scrub it: a
+hairline and value bubble follow the pointer (with a trackpad tick at the peak). Every chart has a sliding
+**Live / 1H / 24H** pill, and switching ranges morphs the line instead of redrawing it. Hour and day history are averaged (6 s and 144 s buckets),
 saved to `~/Library/Application Support/VibeCheck/history.json`, and survive restarts; sleep shows as gaps.
 
 Settings (gear icon in any panel, or open the app again):

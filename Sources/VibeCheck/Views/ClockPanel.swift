@@ -6,13 +6,8 @@ struct ClockPanel: View {
 
     var body: some View {
         let now = ticker.now
-        Panel(module: .clock, headline: now.formatted(date: .omitted, time: .shortened)) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(now.formatted(.dateTime.hour().minute().second()))
-                    .font(.system(size: 30, weight: .semibold, design: .rounded).monospacedDigit())
-                Text(now.formatted(.dateTime.weekday(.wide).day().month(.wide).year()))
-                    .font(.callout).foregroundStyle(.secondary)
-            }
+        Panel(module: .clock, headline: now.formatted(.dateTime.hour().minute().second()),
+              subtitle: now.formatted(.dateTime.weekday(.wide).day().month(.wide))) {
 
             MonthCalendar(today: now)
 
