@@ -1,6 +1,9 @@
 import AppKit
 import ServiceManagement
 
+// Child processes (ps, lsof, nettop, claude) can exit early; a write to their pipe must not kill the app.
+signal(SIGPIPE, SIG_IGN)
+
 MainActor.assumeIsolated {
     // `VibeCheck --login-item on|off|status` manages launch at login for this app bundle, then exits.
     if let flag = CommandLine.arguments.firstIndex(of: "--login-item") {

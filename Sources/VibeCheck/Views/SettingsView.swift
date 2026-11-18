@@ -356,7 +356,7 @@ private struct GeneralSettings: View {
                     }
                 }
             } footer: {
-                Text("Reads Claude Code's sign-in from your Keychain (macOS asks first) and asks Anthropic for your plan usage. Nothing else is sent. Off by default.")
+                Text("Asks your Claude Code for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access; Claude Code signs in itself.")
                     .settingsFooter()
             }
             Section {

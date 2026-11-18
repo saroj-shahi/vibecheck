@@ -1,10 +1,9 @@
 import Foundation
 import Observation
-import Security
 
-/// Opt-in: asks Anthropic for Claude's real plan limits (5-hour and weekly) and hands them to the Agents module.
-/// The only network host is api.anthropic.com; the Claude Code sign-in token is read from the Keychain for
-/// each request and is never stored, logged or kept.
+/// Opt-in: asks the user's own Claude Code CLI for Claude's real plan limits (5-hour and weekly) and hands them
+/// to the Agents module. Claude Code signs in itself; no Keychain access, no network request from this app,
+/// no model request.
 @Observable
 @MainActor
 final class ClaudeLiveLimits {
@@ -15,7 +14,7 @@ final class ClaudeLiveLimits {
     nonisolated static let normalInterval: TimeInterval = 5 * 60
     nonisolated static let errorInterval: TimeInterval = 15 * 60
 
-    enum Outcome: Equatable { case none, live, signInUnreadable, keychainDenied, noAnswer }
+    enum Outcome: Equatable { case none, live, notInstalled, signedOut, noAnswer }
 
     var isOn: Bool = UserDefaults.standard.bool(forKey: ClaudeLiveLimits.defaultsKey) {
         didSet {
@@ -26,6 +25,8 @@ final class ClaudeLiveLimits {
     }
 
     private(set) var windows: [RateWindow] = []
+    /// Subscription type reported by Claude Code (e.g. "team", "max"); stored for display elsewhere.
+    private(set) var plan: String?
     private(set) var fetchedAt: Date?
     private(set) var outcome: Outcome = .none
     @ObservationIgnored private var lastAttempt = Date.distantPast
@@ -45,14 +46,13 @@ final class ClaudeLiveLimits {
 
     /// Fetches when the setting and the Agents module are on and the next fetch is due.
     private func tick(now: Date = Date()) {
-        // After a Keychain "Deny" don't ask again on a timer; switching the setting off and on retries.
-        guard isOn, AppSettings.shared.isEnabled(.agents), !fetching, outcome != .keychainDenied else { return }
-        let interval = (outcome == .signInUnreadable || outcome == .noAnswer) ? Self.errorInterval : Self.normalInterval
+        guard isOn, AppSettings.shared.isEnabled(.agents), !fetching else { return }
+        let interval = outcome == .live || outcome == .none ? Self.normalInterval : Self.errorInterval
         guard now.timeIntervalSince(lastAttempt) >= interval else { return }
         fetching = true
         lastAttempt = now
         Task {
-            let result = await Task.detached(priority: .utility) { await ClaudeLimitsClient.fetch() }.value
+            let result = await Task.detached(priority: .utility) { ClaudeLimitsClient.fetch() }.value
             ClaudeLiveLimits.shared.finish(result)
         }
     }
@@ -61,12 +61,13 @@ final class ClaudeLiveLimits {
         fetching = false
         guard isOn else { return }
         switch result {
-        case .windows(let list):
+        case .usage(let list, let plan):
             windows = list
+            self.plan = plan
             fetchedAt = Date()
             outcome = .live
-        case .signInUnreadable: outcome = .signInUnreadable
-        case .keychainDenied: outcome = .keychainDenied
+        case .notInstalled: outcome = .notInstalled
+        case .signedOut: outcome = .signedOut
         case .noAnswer: outcome = .noAnswer
         }
         AgentUsageStore.shared.reapply()
@@ -75,13 +76,13 @@ final class ClaudeLiveLimits {
     func statusText(now: Date = Date()) -> String {
         switch outcome {
         case .none: return "Waiting for the first update"
-        case .signInUnreadable: return "Couldn't read the Claude Code sign-in"
-        case .keychainDenied: return "Keychain access was denied. Switch this off and on to ask again."
-        case .noAnswer: return "Anthropic didn't answer"
+        case .notInstalled: return "Claude Code isn't installed"
+        case .signedOut: return "Claude Code is signed out"
+        case .noAnswer: return "Claude Code didn't answer"
         case .live:
             guard let fetchedAt else { return "Waiting for the first update" }
             let minutes = max(0, Int(now.timeIntervalSince(fetchedAt) / 60))
-            return "Live from Anthropic · updated " + (minutes == 0 ? "just now" : "\(minutes) min ago")
+            return "Live from Claude Code · updated " + (minutes == 0 ? "just now" : "\(minutes) min ago")
         }
     }
 
@@ -96,78 +97,128 @@ final class ClaudeLiveLimits {
     }
 }
 
-/// Keychain and network access. Only called when the setting is on.
+/// Runs the user's Claude Code CLI to read plan usage. Only called when the setting is on.
 enum ClaudeLimitsClient {
     enum Result: Sendable {
-        case windows([RateWindow])
-        case signInUnreadable
-        case keychainDenied
+        case usage([RateWindow], plan: String?)
+        case notInstalled
+        case signedOut
         case noAnswer
     }
 
-    static let endpoint = URL(string: "https://api.anthropic.com/api/oauth/usage")!
+    /// The `get_usage` answer, reduced to what we show.
+    struct Usage: Equatable {
+        var windows: [RateWindow]
+        var plan: String?
+        /// False when Claude Code says limits aren't available (signed out) or sent none.
+        var available: Bool
+    }
 
-    static func fetch(now: Date = Date()) async -> Result {
-        let token: String
-        switch readToken(now: now) {
-        case .token(let value): token = value
-        case .denied: return .keychainDenied
-        case .unavailable: return .signInUnreadable
+    /// What the line protocol produced for the `usage` request.
+    enum Reply: Equatable {
+        case payload(Data)
+        case failure
+    }
+
+    nonisolated static let timeout: TimeInterval = 30
+    nonisolated static let arguments = [
+        "--print", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose",
+        "--no-session-persistence", "--tools", "", "--strict-mcp-config", "--mcp-config", #"{"mcpServers":{}}"#,
+        "--setting-sources", "", "--settings", #"{"disableAllHooks":true}"#,
+    ]
+    nonisolated static let requests =
+        #"{"type":"control_request","request_id":"init","request":{"subtype":"initialize"}}"# + "\n" +
+        #"{"type":"control_request","request_id":"usage","request":{"subtype":"get_usage","skip_behaviors":true}}"# + "\n"
+
+    /// First executable Claude Code in the usual install locations.
+    nonisolated static func findCLI(home: String = NSHomeDirectory(), fileManager: FileManager = .default) -> URL? {
+        let candidates = [home + "/.local/bin/claude", home + "/.claude/local/claude",
+                          "/opt/homebrew/bin/claude", "/usr/local/bin/claude"]
+        return candidates.first { fileManager.isExecutableFile(atPath: $0) }.map { URL(fileURLWithPath: $0) }
+    }
+
+    /// Blocking; call off the main thread. Hard 30 s limit for the whole exchange.
+    nonisolated static func fetch() -> Result {
+        guard let cli = findCLI() else { return .notInstalled }
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("vibecheck-claude-" + UUID().uuidString)
+        guard (try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)) != nil else { return .noAnswer }
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let process = Process()
+        process.executableURL = cli
+        process.arguments = arguments
+        process.currentDirectoryURL = directory
+        var environment = ProcessInfo.processInfo.environment
+        environment["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+        process.environment = environment
+        let input = Pipe(), output = Pipe()
+        process.standardInput = input
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+
+        let collector = LineCollector()
+        output.fileHandleForReading.readabilityHandler = { handle in collector.add(handle.availableData) }
+        do { try process.run() } catch { output.fileHandleForReading.readabilityHandler = nil; return .noAnswer }
+        // Throwing write: if Claude Code has already exited, this fails instead of raising SIGPIPE.
+        guard (try? input.fileHandleForWriting.write(contentsOf: Data(requests.utf8))) != nil else {
+            output.fileHandleForReading.readabilityHandler = nil
+            if process.isRunning { process.terminate() }
+            return .noAnswer
         }
-        var request = URLRequest(url: endpoint, timeoutInterval: 15)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.timeoutIntervalForRequest = 15
-        configuration.timeoutIntervalForResource = 15
-        let session = URLSession(configuration: configuration)
-        defer { session.finishTasksAndInvalidate() }
-        guard let (data, response) = try? await session.data(for: request),
-              (response as? HTTPURLResponse)?.statusCode == 200 else { return .noAnswer }
-        let windows = parse(data)
-        return windows.isEmpty ? .noAnswer : .windows(windows)
-    }
 
-    enum TokenRead { case token(String), denied, unavailable }
-
-    /// The Claude Code OAuth access token. `denied` when the user turned down the Keychain prompt.
-    static func readToken(now: Date) -> TokenRead {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "Claude Code-credentials",
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        if status == errSecUserCanceled || status == errSecAuthFailed || status == errSecInteractionNotAllowed { return .denied }
-        guard status == errSecSuccess, let data = item as? Data,
-              let token = token(fromCredentials: data, now: now) else { return .unavailable }
-        return .token(token)
-    }
-
-    static func token(fromCredentials data: Data, now: Date) -> String? {
-        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let oauth = object["claudeAiOauth"] as? [String: Any],
-              let token = oauth["accessToken"] as? String, !token.isEmpty else { return nil }
-        if let expires = (oauth["expiresAt"] as? NSNumber)?.doubleValue,
-           Date(timeIntervalSince1970: expires / 1000) <= now { return nil }
-        return token
-    }
-
-    static func parse(_ data: Data) -> [RateWindow] {
-        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return [] }
-        return [("five_hour", 300), ("seven_day", 10080)].compactMap { key, minutes -> RateWindow? in
-            guard let window = object[key] as? [String: Any],
-                  let used = (window["utilization"] as? NSNumber)?.doubleValue, used.isFinite else { return nil }
-            guard let reset = date(window["resets_at"] as? String) else { return nil }   // no reset time: can't show it
-            return RateWindow(usedPercent: min(max(used, 0), 100), windowMinutes: minutes, resetsAt: reset)
+        let answered = collector.wait(timeout: timeout)
+        output.fileHandleForReading.readabilityHandler = nil
+        try? input.fileHandleForWriting.close()
+        if process.isRunning { process.terminate() }
+        guard answered, let reply = collector.reply else { return .noAnswer }
+        switch reply {
+        case .failure: return .noAnswer
+        case .payload(let data):
+            let usage = parse(data)
+            if !usage.available { return .signedOut }
+            return usage.windows.isEmpty ? .noAnswer : .usage(usage.windows, plan: usage.plan)
         }
     }
 
-    static func date(_ string: String?) -> Date? {
+    /// Line protocol: the first `control_response` for request id "usage" decides; other lines are ignored.
+    nonisolated static func reply(fromLines lines: [String]) -> Reply? {
+        for line in lines {
+            guard let data = line.data(using: .utf8),
+                  let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  object["type"] as? String == "control_response",
+                  let response = object["response"] as? [String: Any],
+                  response["request_id"] as? String == "usage" else { continue }
+            guard response["subtype"] as? String == "success",
+                  let payload = response["response"] as? [String: Any],
+                  let bytes = try? JSONSerialization.data(withJSONObject: payload) else { return .failure }
+            return .payload(bytes)
+        }
+        return nil
+    }
+
+    /// Pure parse of the `get_usage` payload.
+    nonisolated static func parse(_ data: Data) -> Usage {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return Usage(windows: [], plan: nil, available: false)
+        }
+        let plan = (object["subscription_type"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+        guard object["rate_limits_available"] as? Bool != false,
+              let limits = object["rate_limits"] as? [String: Any] else {
+            return Usage(windows: [], plan: plan, available: false)
+        }
+        let keys: [(String, Int, String?)] = [("five_hour", 300, nil), ("seven_day", 10080, nil),
+                                              ("seven_day_opus", 10080, "Weekly · Opus"),
+                                              ("seven_day_sonnet", 10080, "Weekly · Sonnet")]
+        let windows = keys.compactMap { key, minutes, name -> RateWindow? in
+            guard let window = limits[key] as? [String: Any],
+                  let used = (window["utilization"] as? NSNumber)?.doubleValue, used.isFinite,
+                  let reset = date(window["resets_at"] as? String) else { return nil }   // no reset time: can't show it
+            return RateWindow(usedPercent: min(max(used, 0), 100), windowMinutes: minutes, resetsAt: reset, name: name)
+        }
+        return Usage(windows: windows, plan: plan, available: true)
+    }
+
+    nonisolated static func date(_ string: String?) -> Date? {
         guard let string else { return nil }
         let fractional = ISO8601DateFormatter()
         fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -182,4 +233,33 @@ enum ClaudeLimitsClient {
         }
         return nil
     }
+}
+
+/// Collects process output on the reader thread and signals once the usage reply (or end of output) arrives.
+private final class LineCollector: @unchecked Sendable {
+    private let lock = NSLock()
+    private let semaphore = DispatchSemaphore(value: 0)
+    private var buffer = Data()
+    private var lines: [String] = []
+    private var finished = false
+    private var result: ClaudeLimitsClient.Reply?
+
+    func add(_ data: Data) {
+        lock.lock(); defer { lock.unlock() }
+        guard !finished else { return }
+        if data.isEmpty { finish(); return }   // end of output
+        buffer.append(data)
+        while let newline = buffer.firstIndex(of: 0x0A) {
+            if let line = String(data: buffer[buffer.startIndex..<newline], encoding: .utf8) { lines.append(line) }
+            buffer.removeSubrange(buffer.startIndex...newline)
+        }
+        if let reply = ClaudeLimitsClient.reply(fromLines: lines) { result = reply; finish() }
+    }
+
+    private func finish() { finished = true; semaphore.signal() }
+
+    /// True when the reply arrived before the timeout.
+    func wait(timeout: TimeInterval) -> Bool { semaphore.wait(timeout: .now() + timeout) == .success }
+
+    var reply: ClaudeLimitsClient.Reply? { lock.lock(); defer { lock.unlock() }; return result }
 }
