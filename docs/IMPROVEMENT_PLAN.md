@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 21 commits · ~6,800 lines of Swift · 56 tests_
+_Last updated: 2026-11-18 · version 1.5 · 23 commits · ~6,800 lines of Swift · 56 tests_
 
 ---
 
@@ -241,7 +241,7 @@ Notes: `swift test` passes (54). Release build: first scan of a week of logs (~1
 
 | Commit | What |
 |---|---|
-| _(uncommitted)_ | Stay awake until a time of day (deck "Until" menu with the next whole hours, Settings time picker), ⌃⌥⌘A toggle shortcut, notification when a session ends by itself (`AlertEngine.notify`), triggers: while plugged in / while an external display is connected (`AwakeTriggerAction`), Settings can be opened on a page (`SettingsRouter`), 2 tests. |
+| `36a9bae` | Stay awake until a time of day (deck "Until" menu with the next whole hours, Settings time picker), ⌃⌥⌘A toggle shortcut, notification when a session ends by itself (`AlertEngine.notify`), triggers: while plugged in / while an external display is connected (`AwakeTriggerAction`), Settings can be opened on a page (`SettingsRouter`), 2 tests. |
 
 Notes: `swift test` passes (56). Both triggers started a session in the built app (verified with `pmset -g assertions`); with no triggers nothing was held. Unplugging, the notification banner, the shortcut and the menus weren't exercised. Testing tip: in zsh, put launch arguments directly on the command line; an unquoted `$args` variable is not split into words.
 
