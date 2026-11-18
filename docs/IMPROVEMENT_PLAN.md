@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 14 commits · ~5,900 lines of Swift · 43 tests_
+_Last updated: 2026-11-18 · version 1.5 · 14 commits · ~6,200 lines of Swift · 48 tests_
 
 ---
 
@@ -36,6 +36,8 @@ What *was* verified: unit tests, real data via `--dump`, real window frames via 
 | Notch auto-fit on the built-in display | ⚠️ maths verified with real widths, not seen (menu bar was on the external display) |
 | Settings sidebar window, live preview, drag-to-reorder in a grouped Form | ⚠️ window opens at 760×560, contents not seen |
 | Launch at login across a real restart | ⚠️ registered, not rebooted |
+| Keep awake: power assertion held (display / system type) and released | ✅ `pmset -g assertions` against the built app + a unit test reading `IOPMCopyAssertionsByProcess` |
+| Keep awake: deck cup menu, status strip, menu bar cup, Settings pane | ❌ never seen |
 
 ---
 
@@ -85,6 +87,10 @@ Fix whatever turns up before starting new features.
   per-app traffic history.
 - **Battery:** charge history over days, health trend.
 - **Localization:** strings are inline English; move to a String Catalog.
+- **Keep awake, more keep-awake options:** "until a time of day" picker, a global shortcut to
+  toggle, a notification when a session ends by itself, triggers (on power adapter, external display, an
+  app launching, a schedule). Closed-lid mode would need root (`pmset disablesleep`); treat it like fan
+  control (P3, owner sign-off).
 - **Website / landing page** from the brand assets.
 - **GitHub social preview:** upload `branding/png/social-card.png` in repo settings (manual; no API).
 
@@ -142,6 +148,8 @@ Short record of choices future sessions shouldn't silently undo.
 | Combined item is the default for new installs; existing choices kept | Fits notched MacBooks; never override a user's choice |
 | Notch fit fills from the user's module order, optional cap | Owner wanted exactly Memory + Network beside the notch |
 | Brand assets generated from SVG by `scripts/render_brand.swift` | One source of truth; `NSImage` renders SVG natively, no extra tools |
+| Keep awake uses an IOKit assertion, not a `caffeinate` child process | Released automatically if the app dies; visible in `pmset -g assertions` |
+| Keep-awake sessions don't survive a restart; "Start a session when VibeCheck opens" covers that | Avoids a Mac that never sleeps after a forgotten session |
 | Slang only for vibing / mid / cooked; alerts and errors stay plain | Brand voice (see BRAND.md §6) |
 
 ---
@@ -201,6 +209,14 @@ strings, clipped mark in the lockup.
 | `dbda3a7` | Green/red status dot on the network glyph: menu bar (icon + value style and the offline glyph), deck tile and panel header (`NetworkStatusDot` in `MenuBarLabels.swift`). |
 
 Notes: builds and `swift test` passes; installed and the green dot was seen in the menu bar (icon + value style) via a screenshot. Red (offline), deck tile and panel header not yet seen on screen. Green = an interface is up, red = offline. The menu bar's standard (graph) style has no network icon, so no dot there.
+
+### 2026-11-18: keep awake
+
+| Commit | What |
+|---|---|
+| _(uncommitted)_ | Keep awake, modeled on classic keep-awake apps: `KeepAwake.swift` (sessions + IOKit assertion), `KeepAwakeViews.swift` (deck cup menu, status strip, Settings pane), cup in the combined and standalone items, notch fit counts the cup, 5 tests. |
+
+Notes: `swift test` passes (48). The built app was run with launch arguments (`-keepAwakeAtLaunch YES`, `-keepAwakeDisplayOn '<false/>'`), which don't touch saved settings; `pmset -g assertions` showed `PreventUserIdleDisplaySleep` / `PreventUserIdleSystemSleep` named "VibeCheck keep awake", gone after quitting. No UI was looked at on screen. Booleans passed as launch arguments must use plist syntax (`'<false/>'`), since the settings read them with `as? Bool`. With separate items, the standalone item now also appears (cup only) when the ring is off and a session runs.
 
 ---
 

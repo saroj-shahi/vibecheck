@@ -220,6 +220,26 @@ final class AppSettings {
         }
     }
 
+    /// Keep awake: length of a quick-start session in minutes (0 = indefinitely).
+    var keepAwakeDefaultMinutes: Int {
+        didSet { save(keepAwakeDefaultMinutes, "keepAwakeDefaultMinutes", structural: false) }
+    }
+    /// Keep the display on too; off lets the screen sleep while the Mac stays awake.
+    var keepAwakeDisplayOn: Bool {
+        didSet { save(keepAwakeDisplayOn, "keepAwakeDisplayOn", structural: false); KeepAwake.shared.check() }
+    }
+    /// End a session when on battery below this percent (0 = never).
+    var keepAwakeBatteryFloor: Int {
+        didSet { save(keepAwakeBatteryFloor, "keepAwakeBatteryFloor", structural: false); KeepAwake.shared.check() }
+    }
+    var keepAwakeAtLaunch: Bool {
+        didSet { save(keepAwakeAtLaunch, "keepAwakeAtLaunch", structural: false) }
+    }
+    /// Show a cup in the menu bar while a session runs.
+    var keepAwakeShowInMenuBar: Bool {
+        didSet { save(keepAwakeShowInMenuBar, "keepAwakeShowInMenuBar", structural: true) }
+    }
+
     /// While the clock panel is open its seconds tick even if the menu bar shows minutes only.
     @ObservationIgnored var isClockPanelOpen = false
 
@@ -278,6 +298,11 @@ final class AppSettings {
             .flatMap { try? JSONDecoder().decode(WeatherLocation.self, from: $0) }
         temperatureUnit = defaults.string(forKey: "temperatureUnit").flatMap(TemperatureUnit.init(rawValue:))
             ?? (Locale.current.measurementSystem == .us ? .fahrenheit : .celsius)
+        keepAwakeDefaultMinutes = defaults.object(forKey: "keepAwakeDefaultMinutes") as? Int ?? 0
+        keepAwakeDisplayOn = defaults.object(forKey: "keepAwakeDisplayOn") as? Bool ?? true
+        keepAwakeBatteryFloor = defaults.object(forKey: "keepAwakeBatteryFloor") as? Int ?? 10
+        keepAwakeAtLaunch = defaults.bool(forKey: "keepAwakeAtLaunch")
+        keepAwakeShowInMenuBar = defaults.object(forKey: "keepAwakeShowInMenuBar") as? Bool ?? true
         alertRules = defaults.data(forKey: "alertRules")
             .flatMap { try? JSONDecoder().decode([AlertRule].self, from: $0) } ?? AlertRule.defaults
     }

@@ -24,6 +24,9 @@ VibeCheck sums up your Mac in one glance and explains it in one click.
   e.g. _"Kinda mid: CPU has been busy at 72%. Xcode is the loudest at 140% CPU."_ Click a tile (or use the
   arrow keys and Return) and it unfolds into that module's detail view. Esc folds back, then closes.
   `⌘1`–`⌘9` jump between modules, `⌘,` opens Settings.
+- **Keep awake** (like `caffeinate`): the cup in the deck keeps your Mac from idle-sleeping
+  indefinitely, for 15 min to 5 hours, or while an app is running. Choose whether the display stays on, and
+  sessions stop by themselves on low battery. A small cup sits in the menu bar while it's on.
 - **Detail views** lead with one big number and a summary, then a chart, then **who's responsible** (top
   apps), with everything else behind a remembered **Details** toggle. Hover any chart to scrub it; switch
   **Live / 1H / 24H** and the line morphs. History survives restarts (sleep shows as gaps).
@@ -51,6 +54,8 @@ Open from the gear in the deck, `⌘,`, or by opening the app again.
   style (graph, icon or value only). **Fit around the camera notch** shows only what fits beside the notch
   (or at most _N_ stats) plus a "+N" badge.
 - **General:** update interval, launch at login.
+- **Keep Awake:** start/stop, default length, keep the display on, stop on battery below _N_%, start
+  when VibeCheck opens, cup in the menu bar.
 - **Alerts:** rules that read as sentences: _Tell me when **CPU usage** is **above** **90%** for **1 min**._
   Click a word to change it, drag the number sideways to adjust it, preview the banner.
 - **Clock:** locale-aware formats, seconds, world clocks.

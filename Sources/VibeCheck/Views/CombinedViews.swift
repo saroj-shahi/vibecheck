@@ -12,6 +12,7 @@ struct CombinedLabel: View {
         let shown = fit?.visibleCount.map { Array(all.prefix($0)) } ?? all
         HStack(spacing: settings.menuBarSpacing.between) {
             if settings.showVibeRing { VibeRing(vibe: stats.vibe.vibe).frame(height: 22) }
+            if AwakeCup.isShown(settings) { AwakeCup() }
             ForEach(shown) { MenuBarLabel(module: $0, padded: false) }
             if shown.count < all.count {
                 HiddenCountChip(count: all.count - shown.count)
@@ -34,5 +35,20 @@ struct HiddenCountChip: View {
             .frame(height: 22)
             .help("\(count) more in the deck. Click to see everything.")
             .accessibilityLabel("\(count) more stats in the deck")
+    }
+}
+
+/// Small cup shown in the menu bar while a keep-awake session runs.
+struct AwakeCup: View {
+    @MainActor static func isShown(_ settings: AppSettings) -> Bool {
+        settings.keepAwakeShowInMenuBar && KeepAwake.shared.isActive
+    }
+
+    var body: some View {
+        Image(systemName: "cup.and.saucer.fill")
+            .font(.system(size: 11, weight: .medium))
+            .frame(height: 22)
+            .help("Keeping your Mac awake")
+            .accessibilityLabel("Keeping your Mac awake")
     }
 }

@@ -65,6 +65,10 @@ struct DeckHome: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             header
+            if let session = KeepAwake.shared.session {
+                AwakeStatusStrip(session: session)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
             LazyVGrid(columns: columns, spacing: 10) {
                 ForEach(Array(model.modules.enumerated()), id: \.element) { index, module in
                     ModuleTile(module: module,
@@ -80,6 +84,7 @@ struct DeckHome: View {
             }
         }
         .padding(16)
+        .animation(Deck.animation, value: KeepAwake.shared.isActive)
     }
 
     private var header: some View {
@@ -98,6 +103,7 @@ struct DeckHome: View {
             }
             .accessibilityElement(children: .combine)
             Spacer(minLength: 4)
+            AwakeMenuButton()
             DeckIconButton(symbol: "gearshape", help: "Settings (⌘,)") {
                 (NSApp.delegate as? AppDelegate)?.showSettings()
             }

@@ -2,13 +2,14 @@ import AppKit
 import SwiftUI
 
 enum SettingsSection: String, CaseIterable, Identifiable {
-    case menuBar, general, alerts, clock, weather, shortcuts, backup
+    case menuBar, general, keepAwake, alerts, clock, weather, shortcuts, backup
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .menuBar: "Menu Bar"
         case .general: "General"
+        case .keepAwake: "Keep Awake"
         case .alerts: "Alerts"
         case .clock: "Clock"
         case .weather: "Weather"
@@ -21,6 +22,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         switch self {
         case .menuBar: "menubar.rectangle"
         case .general: "gearshape"
+        case .keepAwake: "cup.and.saucer"
         case .alerts: "bell.badge"
         case .clock: "clock"
         case .weather: "cloud.sun"
@@ -46,6 +48,7 @@ struct SettingsView: View {
                 switch section ?? .menuBar {
                 case .menuBar: MenuBarSettings()
                 case .general: GeneralSettings()
+                case .keepAwake: KeepAwakeSettings()
                 case .alerts: AlertSettings(onTestNotification: onTestNotification)
                 case .clock: ClockSettings()
                 case .weather: WeatherSettings()

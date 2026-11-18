@@ -45,8 +45,10 @@ struct VibeItemLabel: View {
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
-        VibeRing(vibe: stats.vibe.vibe)
-            .frame(height: 22)
+        HStack(spacing: settings.menuBarSpacing.between) {
+            if settings.showVibeRing { VibeRing(vibe: stats.vibe.vibe).frame(height: 22) }
+            if AwakeCup.isShown(settings) { AwakeCup() }
+        }
             .padding(.horizontal, max(settings.menuBarSpacing.padding, 2))
             .help(stats.vibe.verdict)
     }

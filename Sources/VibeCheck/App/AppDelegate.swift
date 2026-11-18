@@ -110,7 +110,8 @@ final class StatusItemController: NSObject {
                 }
                 let chip = NSHostingView(rootView: HiddenCountChip(count: 8)).fittingSize.width
                 let ring: CGFloat = settings.showVibeRing ? 16 : 0
-                let fitted = NotchFit.visibleCount(itemWidths: widths, fixed: ring + spacing.padding * 2,
+                let cup = AwakeCup.isShown(settings) ? NSHostingView(rootView: AwakeCup()).fittingSize.width + spacing.between : 0
+                let fitted = NotchFit.visibleCount(itemWidths: widths, fixed: ring + cup + spacing.padding * 2,
                                                    gap: spacing.between, chipWidth: chip, available: available)
                 limit = NotchFit.capped(fitted: fitted, total: widths.count, cap: settings.notchMaxStats)
             }
@@ -155,7 +156,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stats.onTick = { [weak self] in
             guard let self else { return }
             self.alerts.evaluate(self.settings.alertRules, stats: self.stats)
+            KeepAwake.shared.check()
         }
+        KeepAwake.shared.batteryProvider = { [unowned stats] in stats.battery }
+        if settings.keepAwakeAtLaunch { KeepAwake.shared.start(minutes: settings.keepAwakeDefaultMinutes) }
         stats.start(interval: settings.refreshInterval)
         syncItems()
         HotkeyManager.shared.onTrigger = { [weak self] module in self?.openFromShortcut(module) }
@@ -170,10 +174,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.stats.start(interval: self.settings.refreshInterval)
             }
         }
+        // The cup appears or disappears: resize items without closing the deck.
+        NotificationCenter.default.addObserver(forName: .vibeCheckKeepAwakeChanged, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.combinedItem?.refitAroundNotch()
+                self.combinedItem?.refreshLength()
+                self.syncVibeItem()
+            }
+        }
         if CommandLine.arguments.contains("--deck-demo") { runDeckDemo() }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        KeepAwake.shared.stop()
         stats.history.save()
     }
 
@@ -218,10 +232,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             items[module]?.refreshLength() // label style or clock format may have changed
         }
-        // Created after the modules so it sits to their left.
-        if settings.showVibeRing, vibeItem == nil {
+        syncVibeItem()
+    }
+
+    /// Separate items: the standalone item holds the ring and/or the keep-awake cup. Created after the
+    /// modules so it sits to their left.
+    private func syncVibeItem() {
+        guard settings.menuBarStyle == .separate else { return }
+        let needed = settings.showVibeRing || AwakeCup.isShown(settings)
+        if needed, vibeItem == nil {
             vibeItem = makeItem(.vibe)
-        } else if !settings.showVibeRing {
+        } else if !needed {
             vibeItem?.remove()
             vibeItem = nil
         }
