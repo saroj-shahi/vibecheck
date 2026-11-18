@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 60 commits · ~8,400 lines of Swift · 101 tests_
+_Last updated: 2026-11-18 · version 1.5 · 62 commits · ~8,900 lines of Swift · 105 tests_
 
 ---
 
@@ -73,6 +73,8 @@ not the whole screen.
 | Copilot quota from an old session; daily totals, last hour, working-now rule, tokens-per-hour metric | ✅ unit tests + `--dump` (Copilot: chat 9.3% used, completions 2.5%) |
 | 7-day chart | ✅ rendered offscreen; not seen in the real deck |
 | Working-now badge, tokens-per-hour alert in Settings and as a notification | ❌ never seen |
+| Per-item options: content rules, decoding, migration of "Limits left" | ✅ unit tests; migration checked on the owner's real settings |
+| Per-item options panel (Agents, Memory) | ✅ rendered offscreen through AppKit (`NSHostingView.cacheDisplay`, real controls); the slider button in the real Settings window seen, the expanded panel not |
 | Listening ports: `lsof -F` parsing | ✅ 7 unit tests (format checked against real `lsof` output) |
 | Listening ports section, quit from it | ❌ never seen |
 
@@ -260,6 +262,7 @@ Short record of choices future sessions shouldn't silently undo.
 | "Limits left" shows Claude Code first: live limits, else its local estimate; other agents only without Claude Code | Falling back to Codex's monthly limit made Claude Code usage look missing (owner report) |
 | "Limits left" has one fixed width (104 pt) in every state | Status item length is measured only at creation/settings changes; a growing label got clipped |
 | `build.sh` signs with an "Apple Development" identity when present (then the self-signed "VibeCheck Local Signing", then ad hoc) | Keychain "Always Allow" on another app's item is stored in its partition list as `teamid:` for apps with a Team ID, but as `cdhash:` (one exact build) for apps without one, so self-signed and ad hoc builds re-prompt after every update. Don't drop the Apple Development identity |
+| Per-item options live in `ItemOptions` (JSON per module, `itemOptions` key); the look stays in `LabelStyle` | Looks are shared across modules; options are module-specific and grow without new enum cases. Agents' icon follows the look picker, not an option |
 | After a Keychain "Deny", stop asking until the setting is switched again | Otherwise macOS would show the prompt every 15 minutes |
 | Agents module network use: only api.anthropic.com, only with live Claude limits on | Keeps "local logs only" true by default |
 | No cost estimates in the Agents module (owner, 2026-11-18) | It would need downloading a price list; never hard-code prices either |
@@ -512,6 +515,18 @@ Notes: a background agent built the port manager in separate files while the Age
 its `SystemStats` change was reviewed (sampling tied to `networkAppDemand`, list cleared when the view
 closes). 101 tests, zero warnings, installed (Apple Development signature). Nothing seen on screen except
 an offscreen render of the 7-day chart.
+
+### 2026-11-18: per-item menu bar options
+
+| Commit | What |
+|---|---|
+| `591f31d` | `ItemOptions.swift` + Settings → Menu Bar → Items: a slider button per item opens inline options with a live preview. Agents (which agents, % left/used or tokens today/week/window, which limits, reset time), Memory, Network, Disk, Battery, Sensors. Old "Limits left" migrated. 5 tests. |
+
+Notes: owner asked for deep per-item settings ("show only Claude or more, remaining or used, show time").
+Checked offscreen through AppKit, which renders real pickers and toggles (`ImageRenderer` doesn't); a
+`.fixedSize()` on pickers misaligned the right column and was removed. Don't drive the real Settings
+window with synthetic clicks while another app is in front: captures by window ID show it even when
+covered, but clicks land on the window on top (three clicks went to the Claude app this session).
 
 ---
 
