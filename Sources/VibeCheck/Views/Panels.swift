@@ -294,6 +294,7 @@ struct ListeningPortsSection: View {
     @State private var confirming: (target: ProcessKiller.Identity, asked: Date)?
     @State private var notice: (pid: Int32, text: String)?
     @State private var noticeClear: Task<Void, Never>?
+    @State private var showAll = false
     private let limit = 8
 
     var body: some View {
@@ -303,9 +304,17 @@ struct ListeningPortsSection: View {
             if ports.isEmpty {
                 Text("Nothing is listening.").font(.callout).foregroundStyle(.tertiary)
             }
-            ForEach(ports.prefix(limit)) { row($0) }
+            ForEach(showAll ? Array(ports) : Array(ports.prefix(limit))) { row($0) }
             if ports.count > limit {
-                Text("+\(ports.count - limit) more").font(.caption).foregroundStyle(.secondary)
+                Button {
+                    withAnimation(Deck.animation) { showAll.toggle() }
+                } label: {
+                    Text(showAll ? "Show fewer" : "+\(ports.count - limit) more")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint(showAll ? "Shows the first \(limit) ports" : "Shows all \(ports.count) ports")
             }
         }
     }
@@ -745,6 +754,8 @@ struct BatteryPanel: View {
                 }
             }
 
+            USBDevicesSection()
+
             if b.present {
                 DetailsDisclosure(.battery) {
                     VStack(spacing: 4) {
@@ -777,5 +788,46 @@ struct BatteryPanel: View {
         if b.isCharging { return "Charging" }
         if b.isCharged || (b.onAC && b.percent >= 0.99) { return "Charged" }
         return b.onAC ? "Not charging" : "On battery"
+    }
+}
+
+/// Connected USB devices, read every 5 s while this view is on screen.
+struct USBDevicesSection: View {
+    @State private var devices: [USBDevice] = []
+    @State private var loaded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                SectionTitle(text: "USB devices")
+                Spacer()
+                if loaded, !devices.isEmpty {
+                    Text("\(devices.count)").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                }
+            }
+            if loaded, devices.isEmpty {
+                Text("No USB devices connected.").font(.callout).foregroundStyle(.tertiary)
+            }
+            ForEach(devices) { device in
+                HStack(spacing: 6) {
+                    Image(systemName: "cable.connector").foregroundStyle(.secondary).frame(width: 16)
+                    Text(device.name).lineLimit(1)
+                    Spacer()
+                    if let vendor = device.vendor {
+                        Text(vendor).font(.caption).foregroundStyle(.tertiary).lineLimit(1)
+                    }
+                }
+                .font(.callout)
+                .accessibilityElement(children: .combine)
+            }
+        }
+        .task {
+            while !Task.isCancelled {
+                let found = await Task.detached(priority: .utility) { USBDeviceMonitor.devices() }.value
+                if found != devices { devices = found }
+                loaded = true
+                try? await Task.sleep(for: .seconds(5))
+            }
+        }
     }
 }
