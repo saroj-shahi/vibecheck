@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 80 commits · ~10,200 lines of Swift · 131 tests_
+_Last updated: 2026-11-18 · version 1.5 · 83 commits · ~10,300 lines of Swift · 133 tests_
 
 ---
 
@@ -122,8 +122,9 @@ Synthetic clicks don't open menu submenus.
 
 ### P1: Reuse what VibeCheck already knows
 
-1. ~~Kill process~~ _(V)_: done 2026-11-18 (`99b292e`, `7a0edf9`). Still open: "kill the process tree"
-   (children of a CLI process), and seeing the menu and confirmation on screen.
+1. ~~Kill process~~ _(V)_: done 2026-11-18 (`99b292e`, `7a0edf9`). ~~Kill the process tree~~ done 2026-11-18:
+   "Quit / Force Quit X and Subprocesses" for plain processes with children (tested with a throwaway shell).
+   Still open: seeing the menus and confirmation on screen.
 2. ~~Secure input warning~~ _(V)_: done 2026-11-18 (`cd4159a`). Still open: a hint in the deck when a global
    shortcut is pressed but blocked, and seeing the Settings warning on screen.
 3. **Agents: plan limits and cost** _(V)_:
@@ -340,6 +341,13 @@ tables above and the lessons below; add new dated entries under "Recent sessions
   `/usr/bin/security` (an "Always Allow" would cover every process that runs it).
 
 ### Recent sessions
+
+#### 2026-11-18: kill the process tree
+
+"and Subprocesses" menu items in the process and port lists (shared `QuitMenuItems`). The root is paused
+(SIGSTOP) while its tree is taken, so supervisors can't respawn children; each child is signalled only if
+it's still the child of the parent it was found under (pid reuse); protected children count as "still
+running". Unit-tested only; menus not seen on screen. P0 QA still needs the owner hands-off.
 
 #### 2026-11-18: QA round 3 (partial), plan cleanup
 

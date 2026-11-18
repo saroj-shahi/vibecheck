@@ -37,18 +37,54 @@ enum ProcessKiller {
         let started: UInt64   // microseconds since 1970
     }
 
-    static func identity(of pid: Int32) -> Identity? {
+    static func identity(of pid: Int32) -> Identity? { identityAndParent(of: pid)?.0 }
+
+    /// Identity plus parent pid, read in one call.
+    static func identityAndParent(of pid: Int32) -> (Identity, Int32)? {
         var info = proc_bsdinfo()
         let size = Int32(MemoryLayout<proc_bsdinfo>.size)
         guard proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, size) == size else { return nil }
-        return Identity(pid: pid, started: info.pbi_start_tvsec * 1_000_000 + info.pbi_start_tvusec)
+        return (Identity(pid: pid, started: info.pbi_start_tvsec * 1_000_000 + info.pbi_start_tvusec),
+                Int32(info.pbi_ppid))
     }
 
+    /// Quits one process, or with `subprocesses` its whole tree: children first (deepest first), then the
+    /// process itself. For CLI tools like `npm run dev`, whose children outlive a quit parent.
     @discardableResult
-    static func quit(_ target: Identity, mode: Mode) -> Outcome {
+    static func quit(_ target: Identity, mode: Mode, subprocesses: Bool = false) -> Outcome {
         guard identity(of: target.pid) == target else { return .failed("Already gone") }
         let pid = target.pid
         if let reason = protectionReason(pid: pid) { return .failed(reason) }
+        if subprocesses {
+            // Pause the root so a supervisor (nodemon, a shell loop) can't respawn children meanwhile.
+            kill(pid, SIGSTOP)
+            defer { kill(pid, SIGCONT) }   // a stopped process only acts on SIGTERM once continued
+            var parentOf: [Int32: Int32] = [:]
+            let order = descendants(of: pid) { parent in
+                let kids = children(of: parent)
+                for kid in kids { parentOf[kid] = parent }
+                return kids
+            }
+            // Each identity is taken only if the pid is still the child of the parent it was found under,
+            // so a pid recycled during the walk is never signalled.
+            let tree = order.compactMap { kid -> Identity? in
+                guard let (id, parent) = identityAndParent(of: kid), parent == parentOf[kid] else { return nil }
+                return id
+            }
+            var refused = 0
+            for child in tree {
+                if protectionReason(pid: child.pid) != nil { refused += 1; continue }
+                // "Already gone" is fine: a child often exits when its own parent does.
+                if case .failed(let text) = quit(child, mode: mode), text != "Already gone" { refused += 1 }
+            }
+            var outcome = quit(target, mode: mode)
+            // Parents (npm, shells) often exit as their children die: that's success, not "Already gone".
+            if outcome == .failed("Already gone"), identity(of: pid) != target { outcome = .sent }
+            if outcome == .sent, refused > 0 {
+                return .failed(refused == 1 ? "1 subprocess still running" : "\(refused) subprocesses still running")
+            }
+            return outcome
+        }
         let name = name(of: pid) ?? "It"
         if let app = NSRunningApplication(processIdentifier: pid) {
             let sent = mode == .quit ? app.terminate() : app.forceTerminate()
@@ -56,6 +92,36 @@ enum ProcessKiller {
         }
         if kill(pid, mode == .quit ? SIGTERM : SIGKILL) == 0 { return .sent }
         return .failed(errno == EPERM ? "Not allowed" : "Already gone")
+    }
+
+    /// Direct children of a process (one syscall), up to `max`.
+    nonisolated static func children(of pid: Int32, max: Int = 8192) -> [Int32] {
+        var buffer = [Int32](repeating: 0, count: max)
+        let count = buffer.withUnsafeMutableBytes { proc_listchildpids(pid, $0.baseAddress, Int32($0.count)) }
+        guard count > 0 else { return [] }
+        return buffer.prefix(min(Int(count), buffer.count)).filter { $0 > 0 }
+    }
+
+    /// Every descendant of `root`, deepest first (so children go before their parents). Guards against
+    /// cycles and caps the walk. Pure apart from `children`, for tests.
+    nonisolated static func descendants(of root: Int32, children: (Int32) -> [Int32],
+                                        limit: Int = 1024) -> [Int32] {
+        var seen: Set<Int32> = [root]
+        var order: [Int32] = []
+        func visit(_ pid: Int32) {
+            for child in children(pid) where child > 1 && !seen.contains(child) && seen.count <= limit {
+                seen.insert(child)
+                visit(child)
+                order.append(child)
+            }
+        }
+        visit(root)
+        return order
+    }
+
+    /// Whether to offer "and subprocesses": plain processes (apps clean up their own helpers) with children.
+    static func offersSubprocesses(pid: Int32) -> Bool {
+        !children(of: pid, max: 1).isEmpty && NSRunningApplication(processIdentifier: pid) == nil
     }
 
     /// What the pid really is right now: the app's name, else the process name. Menu labels use this,

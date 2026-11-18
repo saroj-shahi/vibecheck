@@ -144,7 +144,7 @@ struct ProcessList: View {
     @Environment(SystemStats.self) private var stats
     @AppStorage("groupProcessesByApp") private var byApp = true
     /// Process waiting for a Force Quit confirmation, and when it was asked (it expires).
-    @State private var confirming: (target: ProcessKiller.Identity, asked: Date)?
+    @State private var confirming: QuitConfirmation?
     /// Short result shown in a row after a failed quit.
     @State private var notice: (pid: Int32, text: String)?
     @State private var noticeClear: Task<Void, Never>?
@@ -188,7 +188,7 @@ struct ProcessList: View {
     private func row(pid: Int32, name: String, detail: String?, value: String, icon: NSImage?) -> some View {
         if let confirming, confirming.target.pid == pid, Date().timeIntervalSince(confirming.asked) < 20,
            ProcessKiller.identity(of: pid) == confirming.target {
-            confirmRow(confirming.target, name: name)
+            confirmRow(confirming, name: name)
         } else {
             HStack(spacing: 6) {
                 if byApp {
@@ -220,32 +220,61 @@ struct ProcessList: View {
         }
     }
 
-    @ViewBuilder
     private func menu(pid: Int32, name rowName: String) -> some View {
-        let name = ProcessKiller.name(of: pid) ?? rowName
-        if let reason = ProcessKiller.protectionReason(pid: pid) {
-            Text("Can't quit \(name): \(reason.lowercased())")
-        } else if let target = ProcessKiller.identity(of: pid) {
-            // The identity is taken when the menu is built, so a reused pid is refused at click time.
-            Button("Quit \(name)") { run(target, mode: .quit) }
-            Button("Force Quit \(name)…") { withAnimation(Deck.animation) { confirming = (target, Date()) } }
-        }
+        QuitMenuItems(pid: pid, rowName: rowName, run: run,
+                      askForceQuit: { c in withAnimation(Deck.animation) { confirming = c } })
     }
 
-    private func confirmRow(_ target: ProcessKiller.Identity, name rowName: String) -> some View {
-        ForceQuitConfirmRow(name: ProcessKiller.name(of: target.pid) ?? rowName,
+    private func confirmRow(_ confirmation: QuitConfirmation, name rowName: String) -> some View {
+        ForceQuitConfirmRow(name: ProcessKiller.name(of: confirmation.target.pid) ?? rowName,
+                            subprocesses: confirmation.subprocesses,
                             cancel: { withAnimation(Deck.animation) { confirming = nil } },
-                            confirm: { run(target, mode: .forceQuit) })
+                            confirm: { run(confirmation.target, mode: .forceQuit, subprocesses: confirmation.subprocesses) })
     }
 
-    private func run(_ target: ProcessKiller.Identity, mode: ProcessKiller.Mode) {
+    private func run(_ target: ProcessKiller.Identity, mode: ProcessKiller.Mode, subprocesses: Bool) {
         confirming = nil
-        guard case .failed(let text) = ProcessKiller.quit(target, mode: mode) else { return }
+        guard case .failed(let text) = ProcessKiller.quit(target, mode: mode, subprocesses: subprocesses)
+        else { return }
         notice = (target.pid, text)
         noticeClear?.cancel()
         noticeClear = Task { @MainActor in
             try? await Task.sleep(for: .seconds(3))
             if !Task.isCancelled { notice = nil }
+        }
+    }
+}
+
+/// A pending Force Quit, shown inline in the row; it expires after 20 s.
+struct QuitConfirmation {
+    let target: ProcessKiller.Identity
+    let subprocesses: Bool
+    let asked = Date()
+}
+
+/// Quit / Force Quit menu items (context menu and VoiceOver actions) shared by the process and port lists.
+/// Plain processes with children also get "and subprocesses" (a CLI's children outlive a quit parent).
+private struct QuitMenuItems: View {
+    let pid: Int32
+    let rowName: String
+    let run: (ProcessKiller.Identity, ProcessKiller.Mode, Bool) -> Void
+    let askForceQuit: (QuitConfirmation) -> Void
+
+    var body: some View {
+        let name = ProcessKiller.name(of: pid) ?? rowName
+        if let reason = ProcessKiller.protectionReason(pid: pid) {
+            Text("Can't quit \(name): \(reason.lowercased())")
+        } else if let target = ProcessKiller.identity(of: pid) {
+            // The identity is taken when the menu is built, so a reused pid is refused at click time.
+            Button("Quit \(name)") { run(target, .quit, false) }
+            Button("Force Quit \(name)…") { askForceQuit(QuitConfirmation(target: target, subprocesses: false)) }
+            if ProcessKiller.offersSubprocesses(pid: pid) {
+                Divider()
+                Button("Quit \(name) and Subprocesses") { run(target, .quit, true) }
+                Button("Force Quit \(name) and Subprocesses…") {
+                    askForceQuit(QuitConfirmation(target: target, subprocesses: true))
+                }
+            }
         }
     }
 }
@@ -267,12 +296,13 @@ private struct QuitAccessibility<Actions: View>: ViewModifier {
 /// Inline "Force quit X?" confirmation shared by the process and port lists.
 struct ForceQuitConfirmRow: View {
     let name: String
+    var subprocesses = false
     let cancel: () -> Void
     let confirm: () -> Void
 
     var body: some View {
         HStack(spacing: 6) {
-            Text("Force quit \(name)? Unsaved work is lost.")
+            Text("Force quit \(name)\(subprocesses ? " and its subprocesses" : "")? Unsaved work is lost.")
                 .lineLimit(2).fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 4)
             Button("Cancel", action: cancel)
@@ -291,7 +321,7 @@ struct ForceQuitConfirmRow: View {
 /// "Listening ports": TCP listeners with their owner, quit through the same path as ProcessList.
 struct ListeningPortsSection: View {
     @Environment(SystemStats.self) private var stats
-    @State private var confirming: (target: ProcessKiller.Identity, asked: Date)?
+    @State private var confirming: QuitConfirmation?
     @State private var notice: (pid: Int32, text: String)?
     @State private var noticeClear: Task<Void, Never>?
     @State private var showAll = false
@@ -324,8 +354,10 @@ struct ListeningPortsSection: View {
         if let confirming, confirming.target.pid == item.pid, Date().timeIntervalSince(confirming.asked) < 20,
            ProcessKiller.identity(of: item.pid) == confirming.target {
             ForceQuitConfirmRow(name: ProcessKiller.name(of: item.pid) ?? item.name,
+                                subprocesses: confirming.subprocesses,
                                 cancel: { withAnimation(Deck.animation) { self.confirming = nil } },
-                                confirm: { run(confirming.target, mode: .forceQuit) })
+                                confirm: { run(confirming.target, mode: .forceQuit,
+                                               subprocesses: confirming.subprocesses) })
         } else {
             HStack(spacing: 6) {
                 Group {
@@ -354,21 +386,15 @@ struct ListeningPortsSection: View {
         }
     }
 
-    @ViewBuilder
     private func menu(_ item: ListeningPort) -> some View {
-        let name = ProcessKiller.name(of: item.pid) ?? item.name
-        if let reason = ProcessKiller.protectionReason(pid: item.pid) {
-            Text("Can't quit \(name): \(reason.lowercased())")
-        } else if let target = ProcessKiller.identity(of: item.pid) {
-            // Identity is taken when the menu is built, so a reused pid is refused at click time.
-            Button("Quit \(name)") { run(target, mode: .quit) }
-            Button("Force Quit \(name)…") { withAnimation(Deck.animation) { confirming = (target, Date()) } }
-        }
+        QuitMenuItems(pid: item.pid, rowName: item.name, run: run,
+                      askForceQuit: { c in withAnimation(Deck.animation) { confirming = c } })
     }
 
-    private func run(_ target: ProcessKiller.Identity, mode: ProcessKiller.Mode) {
+    private func run(_ target: ProcessKiller.Identity, mode: ProcessKiller.Mode, subprocesses: Bool) {
         confirming = nil
-        guard case .failed(let text) = ProcessKiller.quit(target, mode: mode) else { return }
+        guard case .failed(let text) = ProcessKiller.quit(target, mode: mode, subprocesses: subprocesses)
+        else { return }
         notice = (target.pid, text)
         noticeClear?.cancel()
         noticeClear = Task { @MainActor in

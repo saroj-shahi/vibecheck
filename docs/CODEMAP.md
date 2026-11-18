@@ -18,7 +18,7 @@ are added or split. Decisions and history are in [IMPROVEMENT_PLAN.md](IMPROVEME
 | `Deck.swift` | `DeckPanel` (borderless non-activating NSPanel), `DeckController` (open/close, frame, keys, outside clicks) |
 | `AgentUsage.swift` | `AgentUsageStore` (rescans agent logs every 60 s, merges live Claude limits) |
 | `ClaudeLimits.swift` | Live Claude limits from the user's `claude` CLI (`get_usage` control request); opt-in |
-| `ProcessKiller.swift` | Quit / Force Quit with protected processes and pid start-time identity |
+| `ProcessKiller.swift` | Quit / Force Quit (optionally with subprocesses) with protected processes and pid start-time identity |
 | `QuickActions.swift` | Quick toggles: dark mode (System Events), mic mute (CoreAudio), empty Trash (Finder) |
 | `SecureInput.swift` | Which app holds Secure Event Input (shortcuts paused) |
 | `BluetoothSnooze.swift` | Bluetooth off while asleep (private IOBluetooth, CoreBluetooth permission) |

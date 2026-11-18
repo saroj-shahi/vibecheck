@@ -44,4 +44,39 @@ struct ProcessKillerTests {
         #expect(!child.isRunning)
         #expect(child.terminationReason == .uncaughtSignal)
     }
+
+    @Test func descendantsAreDeepestFirstAndSafe() {
+        let tree: [Int32: [Int32]] = [10: [11, 12], 11: [13], 13: [14], 12: [], 14: [10, 1]]  // cycle + launchd
+        let order = ProcessKiller.descendants(of: 10) { tree[$0] ?? [] }
+        #expect(Set(order) == [11, 12, 13, 14])
+        #expect(order.firstIndex(of: 14)! < order.firstIndex(of: 13)!)
+        #expect(order.firstIndex(of: 13)! < order.firstIndex(of: 11)!)
+        #expect(ProcessKiller.descendants(of: 99) { _ in [] }.isEmpty)
+        // The cap stops a runaway walk.
+        #expect(ProcessKiller.descendants(of: 2, children: { [$0 + 1] }, limit: 50).count <= 50)
+    }
+
+    /// Quits a throwaway shell and its two `sleep` children (never anything else).
+    @Test func quitsAProcessTree() async throws {
+        let shell = Process()
+        shell.executableURL = URL(fileURLWithPath: "/bin/sh")
+        shell.arguments = ["-c", "/bin/sleep 60 & /bin/sleep 60 & wait"]
+        try shell.run()
+        defer { if shell.isRunning { shell.terminate() } }
+        var kids: [Int32] = []
+        for _ in 0..<40 where kids.count < 2 {
+            try await Task.sleep(for: .milliseconds(50))
+            kids = ProcessKiller.children(of: shell.processIdentifier)
+        }
+        #expect(kids.count == 2)
+        #expect(ProcessKiller.offersSubprocesses(pid: shell.processIdentifier))
+        let target = try #require(ProcessKiller.identity(of: shell.processIdentifier))
+        #expect(ProcessKiller.quit(target, mode: .quit, subprocesses: true) == .sent)
+        for _ in 0..<40 where shell.isRunning || kids.contains(where: { kill($0, 0) == 0 }) {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(!shell.isRunning)
+        for kid in kids { #expect(kill(kid, 0) != 0, "sleep \(kid) still running") }
+        defer { for kid in kids { kill(kid, SIGKILL) } }
+    }
 }
