@@ -284,6 +284,18 @@ final class AppSettings {
     var keepAwakeOnSchedule: Bool {
         didSet { save(keepAwakeOnSchedule, "keepAwakeOnSchedule", structural: false); KeepAwake.shared.check() }
     }
+    /// Trigger: stay awake while an AI agent writes to its logs (`AgentWatch`).
+    var keepAwakeWhileAgentWorks: Bool {
+        didSet {
+            save(keepAwakeWhileAgentWorks, "keepAwakeWhileAgentWorks", structural: false)
+            AgentUsageStore.shared.refresh()
+            KeepAwake.shared.check()
+        }
+    }
+    /// Notify when an agent finishes a run of 10 minutes or more.
+    var notifyAgentFinished: Bool {
+        didSet { save(notifyAgentFinished, "notifyAgentFinished", structural: false); AgentUsageStore.shared.refresh() }
+    }
     var keepAwakeScheduleDays: Int {
         didSet { save(keepAwakeScheduleDays, "keepAwakeScheduleDays", structural: false); KeepAwake.shared.check() }
     }
@@ -401,6 +413,8 @@ final class AppSettings {
         keepAwakeWhileDownloading = defaults.bool(forKey: "keepAwakeWhileDownloading")
         keepAwakeDownloadsFolder = defaults.string(forKey: "keepAwakeDownloadsFolder") ?? ""
         keepAwakeOnSchedule = defaults.bool(forKey: "keepAwakeOnSchedule")
+        keepAwakeWhileAgentWorks = defaults.bool(forKey: "keepAwakeWhileAgentWorks")
+        notifyAgentFinished = defaults.bool(forKey: "notifyAgentFinished")
         keepAwakeScheduleDays = defaults.object(forKey: "keepAwakeScheduleDays") as? Int ?? AwakeSchedule.weekdays
         keepAwakeScheduleStart = defaults.object(forKey: "keepAwakeScheduleStart") as? Int ?? 9 * 60
         keepAwakeScheduleEnd = defaults.object(forKey: "keepAwakeScheduleEnd") as? Int ?? 17 * 60

@@ -48,42 +48,45 @@ struct VibeReport: Equatable, Sendable {
     var verdict: String
     /// The module behind the verdict (its tile gets outlined); nil while vibing.
     var culprit: Module? = nil
+    /// A few words for beside the menu bar ring ("CPU 96%"); nil while vibing.
+    var badge: String? = nil
 }
 
 enum VibeScore {
-    /// Each problem found, with how bad it is and which module it belongs to. Worst first.
-    static func reasons(_ input: VibeInput) -> [(Vibe, String, Module)] {
-        var found: [(Vibe, String, Module)] = []
+    /// Each problem found, with how bad it is, which module it belongs to and a short badge for the menu
+    /// bar. Worst first.
+    static func reasons(_ input: VibeInput) -> [(Vibe, String, Module, String)] {
+        var found: [(Vibe, String, Module, String)] = []
         let cpu = Int((input.cpuRecent * 100).rounded())
-        if input.cpuRecent >= 0.85 { found.append((.cooked, "CPU has been pinned at \(cpu)%", .cpu)) }
-        else if input.cpuRecent >= 0.6 { found.append((.mid, "CPU has been busy at \(cpu)%", .cpu)) }
+        if input.cpuRecent >= 0.85 { found.append((.cooked, "CPU has been pinned at \(cpu)%", .cpu, "CPU \(cpu)%")) }
+        else if input.cpuRecent >= 0.6 { found.append((.mid, "CPU has been busy at \(cpu)%", .cpu, "CPU \(cpu)%")) }
 
         switch input.memoryPressure {
-        case .critical: found.append((.cooked, "memory pressure is critical", .memory))
-        case .warning: found.append((.mid, "memory is getting tight", .memory))
+        case .critical: found.append((.cooked, "memory pressure is critical", .memory, "Memory"))
+        case .warning: found.append((.mid, "memory is getting tight", .memory, "Memory"))
         case .normal: break
         }
 
         if let t = input.hottest {
-            if t >= 90 { found.append((.cooked, "it's running hot at \(Int(t)) °C", .sensors)) }
-            else if t >= 80 { found.append((.mid, "it's warm at \(Int(t)) °C", .sensors)) }
+            if t >= 90 { found.append((.cooked, "it's running hot at \(Int(t)) °C", .sensors, "\(Int(t)) °C")) }
+            else if t >= 80 { found.append((.mid, "it's warm at \(Int(t)) °C", .sensors, "\(Int(t)) °C")) }
         }
 
         if let free = input.startupDiskFree {
             let pct = Int((free * 100).rounded())
-            if free < 0.05 { found.append((.cooked, "only \(pct)% disk space left", .disk)) }
-            else if free < 0.10 { found.append((.mid, "disk is \(100 - pct)% full", .disk)) }
+            if free < 0.05 { found.append((.cooked, "only \(pct)% disk space left", .disk, "Disk \(pct)% free")) }
+            else if free < 0.10 { found.append((.mid, "disk is \(100 - pct)% full", .disk, "Disk \(pct)% free")) }
         }
 
         if let battery = input.batteryOnBattery {
             let pct = Int((battery * 100).rounded())
-            if battery < 0.10 { found.append((.cooked, "battery is at \(pct)%", .battery)) }
-            else if battery < 0.20 { found.append((.mid, "battery is at \(pct)%", .battery)) }
+            if battery < 0.10 { found.append((.cooked, "battery is at \(pct)%", .battery, "Battery \(pct)%")) }
+            else if battery < 0.20 { found.append((.mid, "battery is at \(pct)%", .battery, "Battery \(pct)%")) }
         }
 
         switch input.thermalState {
-        case .critical: found.append((.cooked, "macOS is throttling to cool down", .sensors))
-        case .serious: found.append((.mid, "macOS is starting to throttle", .sensors))
+        case .critical: found.append((.cooked, "macOS is throttling to cool down", .sensors, "Throttling"))
+        case .serious: found.append((.mid, "macOS is starting to throttle", .sensors, "Throttling"))
         default: break
         }
         return found.sorted { $0.0 > $1.0 }
@@ -97,6 +100,12 @@ enum VibeScore {
     static func culprit(for vibe: Vibe, input: VibeInput) -> Module? {
         guard vibe != .vibing else { return nil }
         return reasons(input).first { $0.0 >= vibe }?.2
+    }
+
+    /// The short badge for the same problem as `culprit`; nil while vibing or settling down.
+    static func badge(for vibe: Vibe, input: VibeInput) -> String? {
+        guard vibe != .vibing else { return nil }
+        return reasons(input).first { $0.0 >= vibe }?.3
     }
 
     /// One friendly sentence for the deck header.

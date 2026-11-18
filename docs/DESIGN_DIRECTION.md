@@ -145,3 +145,55 @@ faster), its 12 pt radius and web fonts.
   ⌘↩ is where their second step goes.
 - ⬜ Quick toggle chip failure shake (3 pt, 240 ms) and symbol replace transition.
 - ⬜ Light mode pass on screen (still unverified, see the plan's P0).
+
+---
+
+## Round three (2026-11-18): the ADA teardown
+
+A third review, written as an Apple Design Award judge would read the app, summarized here. Nothing below
+is built yet (all ⬜). Where this section and the ones above differ, this one is newer.
+
+**Verdict on the current app.** The verdict-first idea, the single non-activating deck, the drawn ⌘K field
+and the culprit outline are award-grade. What holds it back: too many jobs at once (Empty Trash, Clock and
+Weather fail the "does this need to be in the menu bar?" test), separate items that a notched MacBook will
+evict, ~3.3% idle CPU driven by how many items redraw, hidden gestures (cup hold dial, click vs right-click),
+unverified accessibility, and no way for anyone else to install it. ADA entries come from the App Store,
+and the private APIs plus `ps` / `lsof` / `nettop` rule out the sandbox: aim for the bar, not the trophy,
+unless a sandboxed edition is made.
+
+**Menu bar: one ring that earns its width.**
+- 🟡 Ring that earns its width: on mid / cooked it grows to ring + badge ("CPU 96%") and shrinks back on
+  recovery, unless the culprit's own item is already shown (built 2026-11-18, not seen on screen). Still ⬜:
+  ring-only as the default for new installs.
+- ⬜ Keep-awake cup as a badge in the ring's gap instead of a second item (standalone cup stays an option).
+- ⬜ Auto-collapse to the combined item when macOS actually hides a separate item behind the notch, with a
+  one-time plain notice.
+- 🟡 Hover tooltip with the verdict sentence; accessibility label reads the verdict, not "CPU 96" (built
+  2026-11-18 for the ring and combined items; not seen on screen).
+- ⬜ ⌥-click toggles keep awake; drop a file / folder on the ring to stay awake until it finishes, drop an
+  app to stay awake while it runs.
+
+**Features that reuse what VibeCheck already knows**
+- ✅ **Agent watch** (2026-11-18; notification not seen on screen): keep-awake trigger "While an AI agent is working" (from `isWorking` in
+  `AgentUsageMonitor`) and an opt-in "Agent finished" notification after a long run.
+- ⬜ **Call guard:** camera / mic in use (`kCMIODevicePropertyDeviceIsRunningSomewhere`,
+  `kAudioDevicePropertyDeviceIsRunningSomewhere`) holds non-critical alerts, keeps the display awake and
+  warns before a call stutters, with the usual Quit rules. Focus filter (`SetFocusFilterIntent`) to choose
+  per Focus.
+- ⬜ **Vibe replay:** record each mid / cooked episode with culprit and duration; a 24 h vibe strip and a
+  repeat-offender line ("Chrome Helper cooked your Mac 4 times this week, 52 min total").
+
+**Layout and motion**
+- ⬜ Six tiles by default (CPU, Memory, Network, Sensors, Battery, Agents); Clock and Weather off for new
+  installs, Empty Trash moves from the toggles to ⌘K. Tiles never reorder by severity.
+- ⬜ Discoverability: the cup's tooltip names the hold gesture; one dismissible hint line after an update.
+- ⬜ Settings audit: anything a user wouldn't change in the first week goes under "Advanced".
+- ⬜ **Recovery check:** cooked / mid → vibing draws the brand's pulse-to-check through the ring's gap once
+  (trim 0 → 1, spring 0.5 / 0.75). Reduce Motion: 150 ms crossfade. Never on launch.
+- ⬜ **Culprit drain:** after quitting the culprit, its number rolls down, the outline drains (trim
+  reversing, 400 ms) and the header ring refills.
+- ⬜ Drop target: the ring dilates 10% while something is dragged over it.
+- ⬜ Custom SF Symbol for the menu bar ring (variable value, template rendering).
+
+Haptics only fire while a finger is on a Force Touch trackpad: use them for direct manipulation (dial
+detents, chart peaks), never for background events.

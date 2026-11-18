@@ -45,9 +45,25 @@ struct VibeItemLabel: View {
     @Environment(SystemStats.self) private var stats
     @Environment(AppSettings.self) private var settings
 
+    /// The ring earns width only with bad news: "CPU 96%" beside it while mid or cooked, unless the culprit's
+    /// own item is already in the menu bar (it would say the same thing twice).
+    static func shownBadge(_ report: VibeReport, ringShown: Bool, isShown: (Module) -> Bool) -> String? {
+        guard ringShown, let badge = report.badge else { return nil }
+        if let culprit = report.culprit, isShown(culprit) { return nil }
+        return badge
+    }
+
     var body: some View {
         HStack(spacing: settings.menuBarSpacing.between) {
-            if settings.showVibeRing { VibeRing(vibe: stats.vibe.vibe).frame(height: 22) }
+            if settings.showVibeRing {
+                HStack(spacing: 4) {
+                    VibeRing(vibe: stats.vibe.vibe)
+                    if let badge = Self.shownBadge(stats.vibe, ringShown: true, isShown: settings.isEnabled) {
+                        Text(badge).font(.system(size: 11, weight: .medium).monospacedDigit()).lineLimit(1)
+                    }
+                }
+                .frame(height: 22)
+            }
             if AwakeCup.isShown(settings) { AwakeCup() }
         }
             .padding(.horizontal, max(settings.menuBarSpacing.padding, 2))

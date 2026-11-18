@@ -1,7 +1,8 @@
 import Foundation
 import Observation
 
-/// Keeps the latest agent usage sample; rescans the logs once a minute while the Agents module is on.
+/// Keeps the latest agent usage sample; rescans the logs once a minute while the Agents module is on or
+/// agent watch (keep awake while working, finished notification) needs it.
 @Observable
 @MainActor
 final class AgentUsageStore {
@@ -26,7 +27,7 @@ final class AgentUsageStore {
 
     /// `fullWalk` also looks for new log files right away (otherwise that happens every 5 minutes).
     func refresh(fullWalk: Bool = false) {
-        guard AppSettings.shared.isEnabled(.agents), !scanning else { return }
+        guard Self.isNeeded(AppSettings.shared), !scanning else { return }
         scanning = true
         let scanner = scanner
         queue.async {
@@ -40,6 +41,10 @@ final class AgentUsageStore {
                 }
             }
         }
+    }
+
+    static func isNeeded(_ settings: AppSettings) -> Bool {
+        settings.isEnabled(.agents) || settings.keepAwakeWhileAgentWorks || settings.notifyAgentFinished
     }
 
     /// Publishes the last scan with fresh live Claude limits merged in (only assigns when it changed).

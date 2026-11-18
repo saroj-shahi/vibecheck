@@ -156,6 +156,11 @@ struct KeepAwakeSettings: View {
                     Text("While files are downloading")
                     Text("Watches \(settings.downloadsFolderURL.lastPathComponent) for files that are still arriving.")
                 }
+                Toggle(isOn: $settings.keepAwakeWhileAgentWorks) {
+                    Text("While an AI agent is working")
+                    Text("Claude Code, Codex, Copilot CLI or OpenCode wrote to its logs in the last 3 minutes.")
+                }
+                Toggle("Notify me when an agent finishes a run of 10 minutes or more", isOn: $settings.notifyAgentFinished)
                 Toggle("On a schedule", isOn: $settings.keepAwakeOnSchedule)
                 if settings.keepAwakeOnSchedule {
                     LabeledContent("Days") { ScheduleDaysPicker(days: $settings.keepAwakeScheduleDays) }

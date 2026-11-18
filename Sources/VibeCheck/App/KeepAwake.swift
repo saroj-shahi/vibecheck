@@ -30,7 +30,7 @@ enum AwakeEndReason: Equatable {
         case .timeUp: "Time's up."
         case .appQuit: "The app it was waiting on quit."
         case .lowBattery: "The battery got low."
-        case .triggerOff: "What started it is gone (unplugged, display disconnected, downloads done or schedule over)."
+        case .triggerOff: "What started it is gone (unplugged, display disconnected, downloads done, schedule over or agent finished)."
         case .focusDone: "Focus session done. Take a break."
         }
     }
@@ -166,9 +166,10 @@ enum AwakeTriggerAction: Equatable {
     /// schedule (until …)", or several;
     /// nil when no trigger is on and met.
     static func description(onPower: Bool, externalDisplay: Bool, downloading: Bool = false,
-                            schedule: String? = nil) -> String? {
+                            schedule: String? = nil, agentWorking: Bool = false) -> String? {
         let parts = [onPower ? "plugged in" : nil, externalDisplay ? "a display is connected" : nil,
-                     downloading ? "files are downloading" : nil, schedule].compactMap { $0 }
+                     downloading ? "files are downloading" : nil, schedule,
+                     agentWorking ? "an AI agent is working" : nil].compactMap { $0 }
         guard let last = parts.last else { return nil }
         let head = parts.dropLast().joined(separator: ", ")
         return "while " + (head.isEmpty ? last : head + " and " + last)
@@ -268,7 +269,9 @@ final class KeepAwake {
             externalDisplay: settings.keepAwakeWithDisplay && Self.hasExternalDisplay(),
             downloading: settings.keepAwakeWhileDownloading && DownloadsWatcher.shared.isActive,
             schedule: settings.keepAwakeOnSchedule && settings.keepAwakeSchedule.isActive(at: Date())
-                ? settings.keepAwakeSchedule.description() : nil)
+                ? settings.keepAwakeSchedule.description() : nil,
+            agentWorking: settings.keepAwakeWhileAgentWorks
+                && AgentWatch.anyWorking(AgentUsageStore.shared.sample.agents, now: Date()))
         let action = AwakeTriggerAction.decide(active: active, wasActive: triggerWasActive, session: session)
         triggerWasActive = active != nil
         switch action {

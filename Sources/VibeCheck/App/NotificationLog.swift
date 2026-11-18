@@ -3,14 +3,20 @@ import Observation
 
 /// One notification VibeCheck sent: an alert firing or a keep-awake session ending.
 struct LoggedNotification: Codable, Equatable, Identifiable {
-    enum Kind: String, Codable { case alert, keepAwake }
+    enum Kind: String, Codable { case alert, keepAwake, agent }
     var id = UUID()
     var date: Date
     var kind: Kind
     var title: String
     var body: String
 
-    var symbol: String { kind == .alert ? "bell.badge" : "cup.and.saucer" }
+    var symbol: String {
+        switch kind {
+        case .alert: "bell.badge"
+        case .keepAwake: "cup.and.saucer"
+        case .agent: "sparkles"
+        }
+    }
 }
 
 /// The last 20 notifications, newest first, saved to Application Support so they survive restarts.

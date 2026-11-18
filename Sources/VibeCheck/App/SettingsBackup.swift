@@ -11,6 +11,7 @@ enum SettingsBackup {
         "keepAwakeUntilMinute", "keepAwakeNotify", "keepAwakeHotkey", "keepAwakeOnPower", "keepAwakeWithDisplay",
         "keepAwakeWhileDownloading", "keepAwakeDownloadsFolder",
         "keepAwakeOnSchedule", "keepAwakeScheduleDays", "keepAwakeScheduleStart", "keepAwakeScheduleEnd",
+        "keepAwakeWhileAgentWorks", "notifyAgentFinished",
         "bluetoothOffWhileAsleep", "itemOptions", "keepAwakeMenuBarItem",  // not "claudeLiveLimits": Keychain access is opted into on each Mac
     ]
     static let formatKey = "VibeCheckSettingsVersion"

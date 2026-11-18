@@ -197,7 +197,8 @@ final class SystemStats {
         // Only while a view wants processes (the list is empty otherwise).
         let top = processDemand == 0 || processes.isEmpty ? nil : topApps(by: \.cpu, limit: 1).first.map { ($0.name, $0.cpu) }
         let report = VibeReport(vibe: level, verdict: VibeScore.verdict(for: level, input: input, topApp: top),
-                                culprit: VibeScore.culprit(for: level, input: input))
+                                culprit: VibeScore.culprit(for: level, input: input),
+                                badge: VibeScore.badge(for: level, input: input))
         if report != vibe { vibe = report }
     }
 

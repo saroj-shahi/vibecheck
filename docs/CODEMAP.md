@@ -22,6 +22,7 @@ are added or split. Decisions and history are in [IMPROVEMENT_PLAN.md](IMPROVEME
 | `QuickActions.swift` | Quick toggles: dark mode (System Events), mic mute (CoreAudio), empty Trash (Finder) |
 | `SecureInput.swift` | Which app holds Secure Event Input (shortcuts paused) |
 | `DeckCommands.swift` | ⌘K palette: the command list, ⌘↩ actions, and how typing filters it |
+| `AgentWatch.swift` | Agent runs from `AgentUsageStore`: working-now for the keep-awake trigger, long-run "is done" notification |
 | `DownloadsWatcher.swift` | Whether files are arriving in the watched folder (keep-awake "while downloading" trigger) |
 | `BluetoothSnooze.swift` | Bluetooth off while asleep (private IOBluetooth, CoreBluetooth permission) |
 | `Weather.swift` | Open-Meteo forecast + city search, `TemperatureUnit` |

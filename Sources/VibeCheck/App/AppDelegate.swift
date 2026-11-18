@@ -80,6 +80,49 @@ final class StatusItemController: NSObject {
             button.setAccessibilityLabel(kind == .combined ? "VibeCheck" : "VibeCheck \(title)")
         }
         if kind == .combined { observePlacement() }
+        updateVerdict()
+    }
+
+    // MARK: Verdict tooltip
+
+    /// The verdict last shown, so the tooltip and label are only touched when it changes.
+    private var shownVerdict: String?
+
+    /// Hover tooltip and VoiceOver label for the items that stand for the whole Mac (ring and combined):
+    /// the verdict sentence, so the answer is there without opening the deck. Other items keep their title.
+    static func verdictText(for kind: Kind, verdict: String) -> (toolTip: String, accessibility: String)? {
+        switch kind {
+        case .combined: (verdict, "VibeCheck. \(verdict)")
+        case .vibe: (verdict, "VibeCheck vibe. \(verdict)")
+        case .single, .keepAwake: nil
+        }
+    }
+
+    func updateVerdict() {
+        let verdict = stats.vibe.verdict
+        guard verdict != shownVerdict, let button = item.button,
+              let text = Self.verdictText(for: kind, verdict: verdict) else { return }
+        shownVerdict = verdict
+        button.toolTip = text.toolTip
+        button.setAccessibilityLabel(text.accessibility)
+    }
+
+    /// Ring item only: the shape of the badge last measured. The item's length isn't re-measured by itself, so
+    /// it's resized here when the badge appears, goes away or changes shape ("CPU 99%" → "CPU 100%"); digits
+    /// are monospaced, so a new value with as many digits keeps the width and the neighbours stay put.
+    private var measuredBadge: String?
+
+    static func badgeShape(_ badge: String?) -> String? {
+        badge.map { String($0.map { $0.isNumber ? "0" : $0 }) }
+    }
+
+    func updateBadgeWidth() {
+        guard kind == .vibe else { return }
+        let badge = VibeItemLabel.shownBadge(stats.vibe, ringShown: settings.showVibeRing, isShown: settings.isEnabled)
+        let shape = Self.badgeShape(badge)
+        guard shape != measuredBadge else { return }
+        measuredBadge = shape
+        refreshLength()
     }
 
     // MARK: Notch auto-fit (combined item)
@@ -171,6 +214,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let keepAwakeMenu = KeepAwakeMenu()
     /// Generation the separate items were created with; a reorder in Settings bumps it.
     private var itemGeneration = 0
+    private var agentWatch = AgentWatch()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         alerts.log = NotificationLog.shared
@@ -178,6 +222,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self else { return }
             self.alerts.evaluate(self.settings.alertRules, stats: self.stats)
             KeepAwake.shared.check()
+            self.vibeItem?.updateVerdict()
+            self.vibeItem?.updateBadgeWidth()
+            self.watchAgents()
+            self.combinedItem?.updateVerdict()
         }
         KeepAwake.shared.batteryProvider = { [unowned stats] in stats.battery }
         KeepAwake.shared.onSessionEnded = { [weak self] reason in
@@ -237,6 +285,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         showSettings()
         return false
+    }
+
+    /// Opt-in "agent is done" notification after a long run. Runs are tracked even while it's off; a run's
+    /// length counts from the first write VibeCheck saw (launch, or the first scan that picked it up).
+    private func watchAgents() {
+        let finished = agentWatch.update(AgentUsageStore.shared.sample.agents, now: Date())
+        guard settings.notifyAgentFinished else { return }
+        for run in finished {
+            let message = AgentWatch.message(run)
+            alerts.notify(title: message.title, body: message.body, kind: .agent)
+        }
     }
 
     private func makeItem(_ kind: StatusItemController.Kind) -> StatusItemController {

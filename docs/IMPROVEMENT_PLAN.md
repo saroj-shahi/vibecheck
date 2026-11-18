@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 87 commits · ~10,900 lines of Swift · 148 tests_
+_Last updated: 2026-11-18 · version 1.5 · 87 commits · ~10,900 lines of Swift · 164 tests_
 
 ---
 
@@ -53,6 +53,7 @@ not the whole screen.
 | Keep awake triggers: plugged in and external display start a session | ✅ built app with launch arguments + `pmset -g assertions` (on AC with the MSI display attached) |
 | Keep awake "while files are downloading": a `.crdownload` in a watched folder takes the assertion in ~8 s; renaming it (download done) releases it | ✅ built app with launch arguments + `pmset -g assertions`, scratch folder (2026-11-18) |
 | Keep awake "on a schedule": a window around now takes the assertion; it's released when the window ends | ✅ built app with launch arguments + `pmset -g assertions` (2026-11-18) |
+| Keep awake "while an AI agent is working": built app with the trigger on took the assertion ~3 s after launch while this Claude Code session wrote logs; with it off, none | ✅ built app with launch arguments + `pmset -g assertions` (2026-11-18). Ending after 3 quiet minutes and the "is done" notification not seen (unit tests only) |
 | Keep awake: trigger ending on unplug / display removal, end notification, ⌃⌥⌘A, "Until" menu | ❌ not exercised (logic covered by unit tests) |
 | App Intents metadata in the bundle (5 actions, 2 enums, 4 phrases) | ✅ `extract.actionsdata` inspected; signature verifies |
 | CPU / memory with the deck closed: ~3.3% / ~100 MB installed (was ~3.9% / 138–155 MB) | ✅ installed app measured 3× 40 s with `ps`; `sample` shows our tick at ~70 ms per 20 s vs ~250 ms SwiftUI layout |
@@ -204,6 +205,22 @@ lyrics and companion tools, and its notch-style "Dynamic Island" bar. They're ou
 - ~~⌘K command palette, type-to-act, tile hover chevron, glass hairline (macOS 14–15)~~: done 2026-11-18.
 - ~~Round two: shell with search field, live chips, footer; 104 pt tiles; culprit outline; ⌘↩ actions~~: done 2026-11-18.
 - **P2** Palette "recent" ordering; process and alert commands.
+- **Round three (ADA teardown, 2026-11-18)**, details in DESIGN_DIRECTION.md:
+  - ~~**P0** Verdict tooltip and verdict accessibility label on the ring / combined item~~: done 2026-11-18
+    (`StatusItemController.updateVerdict`, on every tick, only when the sentence changes). Not seen on screen.
+  - ~~Ring widens to a badge on mid / cooked~~: done 2026-11-18 ("CPU 96%", "Memory", "92 °C", "Throttling",
+    "Disk 3% free", "Battery 8%"), only when the culprit's own item isn't in the menu bar. Not seen on screen.
+  - **P1** Still open: ring-only item as the default for new installs; cup as a badge in the ring's gap.
+  - ~~**P1** Agent watch~~: done 2026-11-18. Keep-awake trigger "While an AI agent is working" (a write in the
+    last 3 min) and opt-in "<Agent> is done" after runs of 10+ min (`AgentWatch`). Agent logs are now also
+    scanned when either is on with the Agents module off. A brand-new session file can take up to 5 min to
+    be noticed (the full folder walk); a known file is checked every minute.
+  - **P2** Auto-collapse to combined when the notch hides an item; ⌥-click keep awake; drop a file / app on
+    the ring.
+  - **P2** Call guard (camera / mic in use) with a Focus filter; vibe replay (episodes, culprits, 24 h strip).
+  - **P2** Six-tile default, Clock and Weather off for new installs, Empty Trash toggle → ⌘K; Settings
+    "Advanced" audit; recovery-check and culprit-drain animations.
+  - **P3** Custom SF Symbol ring; study a sandboxed edition (needed for the App Store, and so for an ADA).
 
 ### Tech debt
 
@@ -299,6 +316,7 @@ Short record of choices future sessions shouldn't silently undo.
 | No cost estimates in the Agents module (owner, 2026-11-18) | It would need downloading a price list; never hard-code prices either |
 | Settings footers use `settingsFooter()` (caption, leading) | Grouped `Form` footers align trailing by default on macOS |
 | Chart areas add points with `addLine`, never `addLines` | `addLines` starts a new subpath and breaks the closed fill |
+| Agent watch counts an agent as working for 3 min after its last write (not the 2 min "working now" rule) | Long tool calls (tests, builds) write nothing for minutes; a shorter gap would end the session and notify mid-run |
 
 ---
 
@@ -362,6 +380,33 @@ tables above and the lessons below; add new dated entries under "Recent sessions
   `/usr/bin/security` (an "Always Allow" would cover every process that runs it).
 
 ### Recent sessions
+
+#### 2026-11-18: agent watch
+
+`App/AgentWatch.swift`: working = wrote usage in the last 3 min (longer than the 2 min "working now" badge so
+a long tool call doesn't split a run); a run ends after that quiet gap and notifies once if it lasted 10+ min.
+Trigger checked for real (table); the notification only by unit tests. Closing the lid still sleeps the Mac. Review fixes: the ring
+item only re-measures when the badge's shape (digit count) changes; a run cut by midnight (no usage today) is
+dropped without notifying. A run's length counts from the first write VibeCheck saw.
+
+#### 2026-11-18: ring badge
+
+The standalone ring shows a short badge for the problem behind a mid / cooked verdict (`VibeScore.badge`,
+`VibeReport.badge`), skipped when the culprit's module already has its own item. The item is re-measured
+when the badge changes (`StatusItemController.updateBadgeWidth`), since status item length isn't
+re-measured by itself. Unit tests; builds with no warnings. Not installed, not seen on screen.
+
+#### 2026-11-18: verdict tooltip
+
+The ring and combined items now carry the verdict sentence as their hover tooltip and VoiceOver label
+("VibeCheck. Kinda mid: …"); module and cup items keep their titles. Unit tests for the text; app builds
+with no warnings. Not installed and not seen on screen (hover and VoiceOver need the owner hands off).
+
+#### 2026-11-18: ADA-style design review
+
+Review only, no code. Findings and the new backlog are in DESIGN_DIRECTION.md "Round three" and the
+backlog above. Main points: the app does too many jobs, separate items don't survive the notch, idle cost
+scales with item count, accessibility is unverified, and private APIs rule out the App Store.
 
 #### 2026-11-18: QA of the new deck
 
