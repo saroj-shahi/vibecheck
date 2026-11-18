@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 28 commits · ~6,800 lines of Swift · 64 tests_
+_Last updated: 2026-11-18 · version 1.5 · 30 commits · ~6,800 lines of Swift · 64 tests_
 
 ---
 
@@ -275,7 +275,7 @@ Notes: `swift test` passes (62). The deck UI wasn't seen on screen, and no real 
 
 | Commit | What |
 |---|---|
-| _(uncommitted)_ | Sensors: dies only and at most every 4 s unless the Sensors panel is open (`sensorDemand`). Processes: 5 s interval on the deck home, dropped when the deck closes, verdict only while the deck shows it, name lookups only for the top apps. Agents scan: `stat` before opening, full walk every 5 min, `autoreleasepool` per file. `--dump` prints sensor counts. 2 tests. |
+| `a93e6b3` | Sensors: dies only and at most every 4 s unless the Sensors panel is open (`sensorDemand`). Processes: 5 s interval on the deck home, dropped when the deck closes, verdict only while the deck shows it, name lookups only for the top apps. Agents scan: `stat` before opening, full walk every 5 min, `autoreleasepool` per file. `--dump` prints sensor counts. 2 tests. |
 
 Notes: measured with the deck closed, new vs installed build side by side over 120 s: 2.65% vs 3.91% CPU, 112 vs 138 MB. `sample` showed VibeCheck's own tick work going from ~27 ms to ~6 ms per second; the rest is system/SwiftUI. Deck behaviour after the throttling wasn't looked at on screen.
 
