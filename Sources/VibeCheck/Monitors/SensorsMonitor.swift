@@ -39,9 +39,19 @@ final class SensorsMonitor {
     private let hid = HIDTemperatureSensors()
     private let smc = SMC()
 
-    func sample() -> SensorsSample {
+    /// Sensors behind the summary rows: SoC dies, SSD, battery.
+    static func isSummarySensor(_ name: String) -> Bool {
+        isHottestSensor(name) || name.hasPrefix("NAND") || name.hasPrefix("gas gauge")
+    }
+
+    /// The SoC dies: the hottest of them is what the menu bar, vibe score and alerts use.
+    static func isHottestSensor(_ name: String) -> Bool { name.contains("tdie") }
+
+    /// `allSensors` reads every channel (the Sensors panel lists them); otherwise only the SoC dies.
+    /// Each channel costs ~0.7 ms, so this matters on a 1–2 s refresh.
+    func sample(allSensors: Bool = true) -> SensorsSample {
         var result = SensorsSample()
-        let raw = hid?.read() ?? []
+        let raw = hid?.read(only: allSensors ? nil : Self.isHottestSensor) ?? []
         result.all = raw.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
 
         func group(_ label: String, where match: (String) -> Bool, useMax: Bool) {
@@ -125,10 +135,10 @@ private final class HIDTemperatureSensors {
         }
     }
 
-    func read() -> [TemperatureReading] {
+    func read(only include: ((String) -> Bool)? = nil) -> [TemperatureReading] {
         var readings: [TemperatureReading] = []
         var seen: [String: Int] = [:]
-        for (name, service) in services {
+        for (name, service) in services where include?(name) ?? true {
             guard let event = copyEvent(service, Self.temperatureEvent, 0, 0)?.takeRetainedValue() else { continue }
             let value = getFloat(event, Self.temperatureField)
             guard (1...130).contains(value) else { continue } // drop uncalibrated/garbage channels

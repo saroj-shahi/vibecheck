@@ -76,7 +76,20 @@ final class SystemStats {
 
     /// Number of open panels that list processes; `ps` only runs while this is > 0.
     var processDemand = 0 {
-        didSet { if processDemand > 0, oldValue == 0 { refreshProcesses() } }
+        didSet {
+            if processDemand > 0, oldValue == 0 { refreshProcesses() }
+            if processDemand == 0 { processes = [] } // stale lists only cost memory and verdict work
+        }
+    }
+    /// Seconds between `ps` runs while processes are wanted: the deck home only needs the loudest app
+    /// for its verdict, detail views list processes and refresh every tick.
+    var processInterval: TimeInterval = 0
+    @ObservationIgnored private var lastProcessFetch = Date.distantPast
+    @ObservationIgnored private var lastSensorRead = Date.distantPast
+
+    /// Number of open views listing every temperature sensor; otherwise only the summary sensors are read.
+    var sensorDemand = 0 {
+        didSet { if sensorDemand > 0, oldValue == 0 { sensors = sensorsMonitor.sample(allSensors: true) } }
     }
 
     private var timer: Timer?
@@ -118,7 +131,11 @@ final class SystemStats {
         readHistory.append(disk.readRate)
         writeHistory.append(disk.writeRate)
 
-        sensors = sensorsMonitor.sample()
+        // Temperatures change slowly: read at most every 4 s, except while the Sensors panel is open.
+        if sensorDemand > 0 || Date().timeIntervalSince(lastSensorRead) >= 3.9 {
+            sensors = sensorsMonitor.sample(allSensors: sensorDemand > 0)
+            lastSensorRead = Date()
+        }
         if let hottest = sensors.hottest { temperatureHistory.append(hottest) }
 
         // Slower-changing data refreshes every few ticks.
@@ -143,7 +160,7 @@ final class SystemStats {
         updateVibe()
         onTick?()
 
-        if processDemand > 0 { refreshProcesses() }
+        if processDemand > 0, Date().timeIntervalSince(lastProcessFetch) >= processInterval - 0.25 { refreshProcesses() }
         if networkAppDemand > 0 { refreshNetworkApps() }
     }
 
@@ -163,7 +180,8 @@ final class SystemStats {
     private func updateVibe() {
         let input = vibeInput
         let level = vibeTracker.update(VibeScore.evaluate(input))
-        let top = processes.isEmpty ? nil : topApps(by: \.cpu, limit: 1).first.map { ($0.name, $0.cpu) }
+        // Only while a view wants processes (the list is empty otherwise).
+        let top = processDemand == 0 || processes.isEmpty ? nil : topApps(by: \.cpu, limit: 1).first.map { ($0.name, $0.cpu) }
         let report = VibeReport(vibe: level, verdict: VibeScore.verdict(for: level, input: input, topApp: top))
         if report != vibe { vibe = report }
     }
@@ -193,6 +211,7 @@ final class SystemStats {
     private func refreshProcesses() {
         guard !fetchingProcesses else { return }
         fetchingProcesses = true
+        lastProcessFetch = Date()
         Task {
             let rows = await ProcessSampler.fetch()
             self.processes = rows
@@ -222,9 +241,14 @@ final class SystemStats {
 
     /// Processes summed per responsible app, so Chrome or Slack show as one line with all their helpers.
     func topApps(by key: KeyPath<AppUsage, Double>, limit: Int = 5) -> [AppUsage] {
-        Self.groupByApp(processes) { NSRunningApplication(processIdentifier: $0)?.localizedName }
+        // Rank with process names, then ask LaunchServices for the display name of the winners only.
+        Self.groupByApp(processes) { _ in nil }
             .sorted { $0[keyPath: key] > $1[keyPath: key] }
-            .prefix(limit).map { $0 }
+            .prefix(limit)
+            .map { app in
+                guard let name = NSRunningApplication(processIdentifier: app.id)?.localizedName else { return app }
+                return AppUsage(id: app.id, name: name, cpu: app.cpu, memory: app.memory, processCount: app.processCount)
+            }
     }
 
     nonisolated static func groupByApp(_ rows: [ProcessRow], appName: (Int32) -> String?) -> [AppUsage] {

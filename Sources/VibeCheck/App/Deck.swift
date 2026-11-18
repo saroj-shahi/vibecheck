@@ -107,6 +107,7 @@ final class DeckController: NSObject {
     private var monitors: [Any] = []
     private var holdsProcessDemand = false
     private var holdsNetworkDemand = false
+    private var holdsSensorDemand = false
     /// Bumped on every open/close so a stale close-fade can't hide a deck that was just reopened.
     private var generation = 0
     /// Set by `--deck-demo` so stray clicks elsewhere don't dismiss the deck mid-demo.
@@ -371,6 +372,12 @@ final class DeckController: NSObject {
         // Home needs processes too: the vibe verdict names the loudest app.
         let wantsProcesses = visible && [.home, .module(.cpu), .module(.memory)].contains(model.route)
         let wantsNetwork = visible && model.route == .module(.network)
+        let wantsSensors = visible && model.route == .module(.sensors)
+        stats.processInterval = model.route == .home ? 5 : 0
+        if wantsSensors != holdsSensorDemand {
+            stats.sensorDemand = max(0, stats.sensorDemand + (wantsSensors ? 1 : -1))
+            holdsSensorDemand = wantsSensors
+        }
         if wantsProcesses != holdsProcessDemand {
             stats.processDemand = max(0, stats.processDemand + (wantsProcesses ? 1 : -1))
             holdsProcessDemand = wantsProcesses

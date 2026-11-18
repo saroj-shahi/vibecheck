@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 28 commits · ~6,800 lines of Swift · 62 tests_
+_Last updated: 2026-11-18 · version 1.5 · 28 commits · ~6,800 lines of Swift · 64 tests_
 
 ---
 
@@ -41,6 +41,8 @@ What *was* verified: unit tests, real data via `--dump`, real window frames via 
 | Keep awake triggers: plugged in and external display start a session | ✅ built app with launch arguments + `pmset -g assertions` (on AC with the MSI display attached) |
 | Keep awake: trigger ending on unplug / display removal, end notification, ⌃⌥⌘A, "Until" menu | ❌ not exercised (logic covered by unit tests) |
 | App Intents metadata in the bundle (5 actions, 2 enums, 4 phrases) | ✅ `extract.actionsdata` inspected; signature verifies |
+| CPU / memory with the deck closed: 2.65% / 112 MB (was 3.9% / 138 MB) | ✅ A/B against the installed build over 120 s with `ps`; `sample` profiles before and after |
+| Deck home / CPU / Sensors views after the throttling (process list, all-sensor list) | ❌ never seen |
 | Notification history: cap, newest first, unseen count, persistence, alerts recorded | ✅ unit tests |
 | Notification history: bell, red dot, popover in the deck | ❌ never seen |
 | Shortcuts app lists the 5 VibeCheck actions | ✅ seen by the owner after installing (2026-11-18) |
@@ -73,11 +75,10 @@ Fix whatever turns up before starting new features.
 
 ### P1
 
-- **Performance budget.** Last measured ~0.7–3.6% CPU and 90–140 MB. Profile with Instruments, then:
-  - `ps` runs every tick while the deck home is open (for the verdict's "loudest app"); drop to every 5 s.
-  - `refitAroundNotch()` builds one `NSHostingView` per module to measure widths; cache widths per
-    module + style + spacing.
-  - Check SwiftUI redraw cost of menu bar labels at a 1 s interval.
+- **Performance, next round.** Done 2026-11-18 (see session history): 3.9% → 2.65% CPU with the deck
+  closed, 138 → 112 MB. What's left is mostly SwiftUI redrawing the menu bar each tick; try Instruments'
+  SwiftUI template, and skip label updates when the displayed text didn't change. Not done on purpose:
+  caching widths in `refitAroundNotch()`, which only runs when the item moves or settings change.
 - **Distribution.** Developer ID signing + notarization (`notarytool`), a DMG, and an update mechanism
   (Sparkle or a GitHub Releases check). Today it's ad hoc signed, so other Macs need right-click → Open.
 - **Swift 6 language mode.** The package uses tools 5.10 / language mode 5. Turn on strict concurrency
@@ -159,6 +160,9 @@ Short record of choices future sessions shouldn't silently undo.
 | Brand assets generated from SVG by `scripts/render_brand.swift` | One source of truth; `NSImage` renders SVG natively, no extra tools |
 | Keep-awake triggers are edge-triggered; a manual session always wins | A Stop by hand sticks until the condition goes away and comes back; triggers never cut short a session the user started |
 | Trigger endings don't notify; time-up, app-quit and low-battery endings do | Unplugging is something the user just did; the others happen behind their back |
+| Temperatures are read at most every 4 s and only the SoC dies (24 of 45 channels) unless the Sensors panel is open | Each HID channel costs ~0.7 ms; the menu bar, vibe and alerts only use the hottest die |
+| `ps` runs every 5 s on the deck home, every tick in CPU/Memory details, never with the deck closed (list is dropped) | The verdict only needs the loudest app; LaunchServices name lookups only for the top results |
+| Agents: full folder walk every 5 min (and when the panel opens); in between, `stat` known files and read only growth | The walk was most of the scan cost; `URL.resourceValues` is cached per URL, so use `stat` |
 | Notification history lives in `~/Library/Application Support/VibeCheck/notifications.json`, not in defaults, and isn't part of settings backup | It's history, not a setting (like `history.json`) |
 | App Intents metadata is generated in `build.sh` with Xcode's `appintentsmetadataprocessor` | SwiftPM doesn't run it; needs Xcode installed (build warns and skips otherwise). Keep the protocol list in `build.sh` in sync if new intent kinds (entities, queries) are added |
 | Intents run in the app and wait ~2.5 s after a cold launch | CPU and network rates need two samples |
@@ -266,6 +270,14 @@ Notes: `swift test` passes (58). The metadata lists all 5 actions and 4 phrases,
 | `b314ba8` | `NotificationLog` (last 20, newest first, seen marker, saved to Application Support); `AlertEngine` records fired alerts and keep-awake endings (`log`, `notify(kind:)`); bell button with red dot and a popover list in the deck header (`NotificationHistoryView.swift`). 4 tests. |
 
 Notes: `swift test` passes (62). The deck UI wasn't seen on screen, and no real notification was triggered (that would have written a test entry into the owner's history). Test notifications from Settings aren't recorded.
+
+### 2026-11-18: performance pass
+
+| Commit | What |
+|---|---|
+| _(uncommitted)_ | Sensors: dies only and at most every 4 s unless the Sensors panel is open (`sensorDemand`). Processes: 5 s interval on the deck home, dropped when the deck closes, verdict only while the deck shows it, name lookups only for the top apps. Agents scan: `stat` before opening, full walk every 5 min, `autoreleasepool` per file. `--dump` prints sensor counts. 2 tests. |
+
+Notes: measured with the deck closed, new vs installed build side by side over 120 s: 2.65% vs 3.91% CPU, 112 vs 138 MB. `sample` showed VibeCheck's own tick work going from ~27 ms to ~6 ms per second; the rest is system/SwiftUI. Deck behaviour after the throttling wasn't looked at on screen.
 
 ---
 

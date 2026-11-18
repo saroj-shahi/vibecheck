@@ -89,4 +89,37 @@ struct AgentUsageTests {
         try handle.close()
         #expect(scanner.scan(now: now).today.total == 14)
     }
+
+    /// Quick scans read growth in known files; new files only show up on the next full walk.
+    @Test func quickScansSkipTheWalk() throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: "vibecheck-walk-\(UUID().uuidString)")
+        let dir = root.appending(path: "claude/proj")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let now = Date()
+        let stamp = ISO8601DateFormatter().string(from: now.addingTimeInterval(-60))
+        func line(_ id: String) -> String { claudeLine(id: id, time: stamp, input: 1, output: 0, cacheWrite: 0, cacheRead: 0) + "\n" }
+        let first = dir.appending(path: "a.jsonl")
+        try line("a1").write(to: first, atomically: true, encoding: .utf8)
+
+        let scanner = AgentUsageScanner(claudeRoots: [root.appending(path: "claude")], codexRoots: [])
+        #expect(scanner.scan(now: now).today.total == 1)
+
+        let handle = try FileHandle(forWritingTo: first)
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data(line("a2").utf8))
+        try handle.close()
+        try line("b1").write(to: dir.appending(path: "b.jsonl"), atomically: true, encoding: .utf8)
+
+        #expect(scanner.scan(now: now.addingTimeInterval(60)).today.total == 2)            // growth seen, new file not yet
+        #expect(scanner.scan(now: now.addingTimeInterval(61), fullWalk: true).today.total == 3) // walk finds b.jsonl
+    }
+
+    @Test func summarySensorsAreTheOnesTheMenuBarUses() {
+        #expect(SensorsMonitor.isSummarySensor("PMU tdie3"))
+        #expect(SensorsMonitor.isSummarySensor("NAND CH0 temp"))
+        #expect(SensorsMonitor.isSummarySensor("gas gauge battery"))
+        #expect(!SensorsMonitor.isSummarySensor("PMU tdev1"))
+        #expect(SensorsMonitor.isHottestSensor("PMU tdie3") && !SensorsMonitor.isHottestSensor("NAND CH0 temp"))
+    }
 }

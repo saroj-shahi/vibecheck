@@ -21,12 +21,13 @@ final class AgentUsageStore {
         }
     }
 
-    func refresh() {
+    /// `fullWalk` also looks for new log files right away (otherwise that happens every 5 minutes).
+    func refresh(fullWalk: Bool = false) {
         guard AppSettings.shared.isEnabled(.agents), !scanning else { return }
         scanning = true
         let scanner = scanner
         queue.async {
-            let result = scanner.scan()
+            let result = scanner.scan(fullWalk: fullWalk)
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
                     let store = AgentUsageStore.shared

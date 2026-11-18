@@ -258,6 +258,12 @@ final class AgentUsageScanner: @unchecked Sendable {
     private var entryKeys: [String] = []
     private var seen = Set<String>()
     private var limits: (time: Date, windows: [RateWindow])?
+    /// Log files found by the last full walk, so quick scans skip walking the folder tree.
+    private var known: [(url: URL, agent: AgentKind)] = []
+    private var present = Set<AgentKind>()
+    private var lastWalk = Date.distantPast
+    /// How often the folder tree is walked to find new log files; in between, only known files are checked.
+    var walkInterval: TimeInterval = 300
 
     init(claudeRoots: [URL]? = nil, codexRoots: [URL]? = nil) {
         let home = FileManager.default.homeDirectoryForCurrentUser
@@ -269,16 +275,23 @@ final class AgentUsageScanner: @unchecked Sendable {
             ?? [URL(fileURLWithPath: env["CODEX_HOME"] ?? home.appending(path: ".codex").path).appending(path: "sessions")]
     }
 
-    func scan(now: Date = Date(), calendar: Calendar = .current) -> AgentUsageSample {
+    /// `fullWalk` forces looking for new files now (e.g. when the Agents panel opens).
+    func scan(now: Date = Date(), calendar: Calendar = .current, fullWalk: Bool = false) -> AgentUsageSample {
         let cutoff = calendar.date(byAdding: .day, value: -7, to: calendar.startOfDay(for: now)) ?? now
-        var present = Set<AgentKind>()
-        for (agent, roots) in [(AgentKind.claude, claudeRoots), (.codex, codexRoots)] {
-            for root in Set(roots.map(\.standardizedFileURL)) {
-                guard FileManager.default.fileExists(atPath: root.path) else { continue }
-                present.insert(agent)
-                for file in Self.logFiles(in: root, changedSince: cutoff) { read(file, agent: agent) }
+        if fullWalk || now.timeIntervalSince(lastWalk) >= walkInterval || now < lastWalk {
+            lastWalk = now
+            present = []
+            known = []
+            for (agent, roots) in [(AgentKind.claude, claudeRoots), (.codex, codexRoots)] {
+                for root in Set(roots.map(\.standardizedFileURL)) {
+                    guard FileManager.default.fileExists(atPath: root.path) else { continue }
+                    present.insert(agent)
+                    known += Self.logFiles(in: root, changedSince: cutoff).map { (url: $0, agent: agent) }
+                }
             }
         }
+        // Free each file's parsed JSON as we go; on a GCD queue it would otherwise pile up until the scan ends.
+        for file in known { autoreleasepool { read(file.url, agent: file.agent) } }
         // Keep one week (plus a day for the 24-hour chart near midnight).
         var keptEntries: [UsageEntry] = [], keptKeys: [String] = []
         for (entry, key) in zip(entries, entryKeys) where entry.time >= cutoff {
@@ -310,6 +323,10 @@ final class AgentUsageScanner: @unchecked Sendable {
 
     private func read(_ url: URL, agent: AgentKind) {
         var state = files[url.path] ?? FileState()
+        // Most files haven't grown since last time; a stat is far cheaper than opening them.
+        // (stat, not URL.resourceValues: those are cached on the URL and would never see the file grow.)
+        var info = stat()
+        if stat(url.path, &info) == 0, UInt64(info.st_size) == state.offset { return }
         guard let handle = try? FileHandle(forReadingFrom: url) else { return }
         defer { try? handle.close() }
         let size = (try? handle.seekToEnd()) ?? 0

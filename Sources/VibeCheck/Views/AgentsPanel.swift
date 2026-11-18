@@ -51,7 +51,7 @@ struct AgentsPanel: View {
                 }
             }
         }
-        .onAppear { store.refresh() }
+        .onAppear { store.refresh(fullWalk: true) }
     }
 }
 

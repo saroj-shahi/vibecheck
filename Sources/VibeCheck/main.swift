@@ -44,7 +44,7 @@ MainActor.assumeIsolated {
         print("BATT present \(b.present) \(Fmt.percent(b.percent)) charging \(b.isCharging) AC \(b.onAC) cycles \(b.cycleCount.map(String.init) ?? "-") health \(b.health.map(Fmt.percent) ?? "-") temp \(b.temperature.map { String(format: "%.1f", $0) } ?? "-") W \(b.powerWatts.map { String(format: "%.1f", $0) } ?? "-")")
         let sensors = SensorsMonitor().sample()
         for t in sensors.summary { print("TEMP \(t.name): \(String(format: "%.1f", t.celsius)) °C") }
-        print("     \(sensors.all.count) raw sensors")
+        print("     \(sensors.all.count) raw sensors, \(sensors.all.filter { SensorsMonitor.isSummarySensor($0.name) }.count) summary, \(sensors.all.filter { $0.name.contains("tdie") }.count) tdie")
         for f in sensors.fans { print("FAN  \(f.id): \(Int(f.rpm)) rpm (\(Int(f.minRPM ?? 0))–\(Int(f.maxRPM ?? 0)))") }
         print("PWR  system \(sensors.systemPower.map { String(format: "%.1f W", $0) } ?? "-") adapter \(sensors.adapterPower.map { String(format: "%.1f W", $0) } ?? "-")")
         let devices = DispatchSemaphore(value: 0)
