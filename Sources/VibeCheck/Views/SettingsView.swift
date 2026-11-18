@@ -87,6 +87,11 @@ private struct MenuBarSettings: View {
                 }
                 .pickerStyle(.segmented)
                 Toggle("Show vibe ring", isOn: $settings.showVibeRing)
+                Toggle(isOn: $settings.autoFitNotch) {
+                    Text("Fit around the camera notch")
+                    Text("On a display with a notch, the combined item shows as many stats as fit beside it (in the order below) plus a +N badge. Everything stays in the deck.")
+                }
+                .disabled(settings.menuBarStyle != .combined)
                 Toggle("Colorful graphs", isOn: $settings.colorfulMenuBar)
             }
 

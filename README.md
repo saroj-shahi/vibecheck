@@ -36,7 +36,7 @@ Settings (gear icon in any panel, or open the app again):
 - **Clock:** menu bar format (locale-aware), seconds, world clocks with city search.
 - **Weather:** city search, °C / °F.
 - **Backup:** export / import settings as a .plist, or reset to defaults.
-- **Menu Bar:** a live preview drawn with the real labels, style, spacing, vibe ring, and drag-to-reorder items.
+- **Menu Bar:** a live preview drawn with the real labels, style, spacing, vibe ring, and drag-to-reorder items. **Fit around the camera notch** (on by default): on a notched display the combined item shows as many stats as fit beside the notch, in your order, plus a "+N" badge; everything stays in the deck.
 - **Alerts:** rules read as sentences ("Tell me when **CPU usage** is **above** **90%** for **1 min**"); click a word to change it, drag the number sideways to adjust it, preview the banner. Notifications such as "CPU above 90% for 1 min", "temperature above 95 °C", "battery below 15%", "startup disk below 10% free". Each fires once, then re-arms after the value recovers (5 min cooldown).
 - **Shortcuts:** `⌃⌥⌘1`…`⌃⌥⌘9` open CPU, GPU, Memory, Network, Disk, Sensors, Battery, Clock, Weather from any app (modifier keys configurable).
 

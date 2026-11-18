@@ -183,6 +183,9 @@ final class AppSettings {
     var menuBarSpacing: MenuBarSpacing {
         didSet { save(menuBarSpacing.rawValue, "menuBarSpacing", structural: true) }
     }
+    var autoFitNotch: Bool {
+        didSet { save(autoFitNotch, "autoFitNotch", structural: true) }
+    }
     var showVibeRing: Bool {
         didSet { save(showVibeRing, "showVibeRing", structural: true) }
     }
@@ -259,6 +262,7 @@ final class AppSettings {
             }
         }
         menuBarSpacing = defaults.string(forKey: "menuBarSpacing").flatMap(MenuBarSpacing.init(rawValue:)) ?? .normal
+        autoFitNotch = defaults.object(forKey: "autoFitNotch") as? Bool ?? true
         showVibeRing = defaults.object(forKey: "showVibeRing") as? Bool ?? true
         colorfulMenuBar = defaults.object(forKey: "colorfulMenuBar") as? Bool ?? true
         clockFormat = defaults.string(forKey: "clockFormat").flatMap(ClockFormat.init(rawValue:)) ?? .dayTime

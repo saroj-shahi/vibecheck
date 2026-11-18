@@ -22,6 +22,10 @@ final class StatusItemController: NSObject {
     /// The label with its environment, kept so the item can measure it after settings change.
     private var labelView = AnyView(EmptyView())
     private let onClick: (StatusItemController) -> Void
+    private unowned let stats: SystemStats
+    private unowned let settings: AppSettings
+    /// Combined item only: how many stats fit beside the camera notch.
+    let fit = CombinedFit()
 
     var button: NSStatusBarButton? { item.button }
 
@@ -34,6 +38,8 @@ final class StatusItemController: NSObject {
     init(kind: Kind, stats: SystemStats, settings: AppSettings, onClick: @escaping (StatusItemController) -> Void) {
         self.kind = kind
         self.onClick = onClick
+        self.stats = stats
+        self.settings = settings
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         super.init()
 
@@ -49,7 +55,7 @@ final class StatusItemController: NSObject {
             item.autosaveName = "vibecheck.vibe"
             label = AnyView(VibeItemLabel())
         }
-        labelView = AnyView(label.environment(stats).environment(settings))
+        labelView = AnyView(label.environment(stats).environment(settings).environment(fit))
         refreshLength()
 
         if let button = item.button {
@@ -67,6 +73,50 @@ final class StatusItemController: NSObject {
             button.action = #selector(buttonClicked(_:))
             button.setAccessibilityLabel(kind == .combined ? "VibeCheck" : "VibeCheck \(title)")
         }
+        if kind == .combined { observePlacement() }
+    }
+
+    // MARK: Notch auto-fit (combined item)
+
+    private func observePlacement() {
+        let center = NotificationCenter.default
+        let refit: @Sendable (Notification) -> Void = { [weak self] _ in
+            MainActor.assumeIsolated { self?.refitAroundNotch() }
+        }
+        if let window = item.button?.window {
+            center.addObserver(forName: NSWindow.didMoveNotification, object: window, queue: .main, using: refit)
+            center.addObserver(forName: NSWindow.didChangeScreenNotification, object: window, queue: .main, using: refit)
+        }
+        center.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main, using: refit)
+        NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.activeSpaceDidChangeNotification,
+                                                          object: nil, queue: .main, using: refit)
+        // The item gets its final position shortly after launch.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in self?.refitAroundNotch() }
+    }
+
+    /// Shows only as many stats as fit between the camera notch and the item's right edge (which stays put
+    /// as the item resizes). On displays without a notch, or with the setting off, everything is shown.
+    func refitAroundNotch() {
+        guard kind == .combined else { return }
+        var limit: Int?
+        if settings.autoFitNotch, let button = item.button, let window = button.window, let screen = window.screen {
+            let rect = window.convertToScreen(button.convert(button.bounds, to: nil))
+            if let available = NotchFit.availableWidth(itemRect: rect, notchRight: screen.auxiliaryTopRightArea,
+                                                       notchLeft: screen.auxiliaryTopLeftArea) {
+                let spacing = settings.menuBarSpacing
+                let widths = settings.orderedModules.map { module in
+                    NSHostingView(rootView: MenuBarLabel(module: module, padded: false)
+                        .environment(stats).environment(settings)).fittingSize.width
+                }
+                let chip = NSHostingView(rootView: HiddenCountChip(count: 8)).fittingSize.width
+                let ring: CGFloat = settings.showVibeRing ? 16 : 0
+                limit = NotchFit.visibleCount(itemWidths: widths, fixed: ring + spacing.padding * 2,
+                                              gap: spacing.between, chipWidth: chip, available: available)
+            }
+        }
+        guard limit != fit.visibleCount else { return }
+        fit.visibleCount = limit
+        refreshLength()
     }
 
     private var title: String {
@@ -147,6 +197,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             vibeItem?.remove()
             vibeItem = nil
             if let combinedItem {
+                combinedItem.refitAroundNotch()
                 combinedItem.refreshLength()
             } else {
                 combinedItem = makeItem(.combined)
@@ -223,7 +274,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 for item in [self.combinedItem, self.vibeItem].compactMap({ $0 }) + Array(self.items.values) {
                     guard let button = item.button, let window = button.window else { continue }
                     let inScreen = window.convertToScreen(button.convert(button.bounds, to: nil))
-                    NSLog("%@", "VibeCheck deck-demo item \(item.kind): window=\(NSStringFromRect(window.frame)) buttonOnScreen=\(NSStringFromRect(inScreen)) screen=\(NSStringFromRect(window.screen?.frame ?? .zero)) visible=\(NSStringFromRect(window.screen?.visibleFrame ?? .zero))")
+                    NSLog("%@", "VibeCheck deck-demo item \(item.kind) shown=\(item.fit.visibleCount.map(String.init) ?? "all"): window=\(NSStringFromRect(window.frame)) buttonOnScreen=\(NSStringFromRect(inScreen)) screen=\(NSStringFromRect(window.screen?.frame ?? .zero)) visible=\(NSStringFromRect(window.screen?.visibleFrame ?? .zero))")
+                }
+                // What the combined item would show beside the notch, using the real label widths.
+                let spacing = self.settings.menuBarSpacing
+                let widths = self.settings.orderedModules.map { module in
+                    NSHostingView(rootView: MenuBarLabel(module: module, padded: false)
+                        .environment(self.stats).environment(self.settings)).fittingSize.width
+                }
+                let chip = NSHostingView(rootView: HiddenCountChip(count: 8)).fittingSize.width
+                for room in [189.0, 300.0] {
+                    let count = NotchFit.visibleCount(itemWidths: widths, fixed: 16 + spacing.padding * 2, gap: spacing.between,
+                                                      chipWidth: chip, available: room)
+                    let names = count.map { self.settings.orderedModules.prefix($0).map(\.title).joined(separator: ", ") } ?? "all"
+                    NSLog("%@", "VibeCheck deck-demo notch-fit room=\(Int(room)): \(names) + \(count.map { "+\(self.settings.orderedModules.count - $0)" } ?? "none")")
                 }
                 for screen in NSScreen.screens {
                     NSLog("%@", "VibeCheck deck-demo screen: frame=\(NSStringFromRect(screen.frame)) visible=\(NSStringFromRect(screen.visibleFrame))")
