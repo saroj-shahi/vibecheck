@@ -39,7 +39,7 @@ final class MemoryMonitor {
             }
         }
         if status == KERN_SUCCESS {
-            let page = Double(vm_kernel_page_size)
+            let page = Double(sysconf(_SC_PAGESIZE)) // same value as vm_kernel_page_size, without the global var
             let purgeable = Double(stats.purgeable_count)
             result.app = max(0, Double(stats.internal_page_count) - purgeable) * page
             result.wired = Double(stats.wire_count) * page

@@ -43,6 +43,7 @@ What *was* verified: unit tests, real data via `--dump`, real window frames via 
 | App Intents metadata in the bundle (5 actions, 2 enums, 4 phrases) | ✅ `extract.actionsdata` inspected; signature verifies |
 | CPU / memory with the deck closed: ~3.3% / ~100 MB installed (was ~3.9% / 138–155 MB) | ✅ installed app measured 3× 40 s with `ps`; `sample` shows our tick at ~70 ms per 20 s vs ~250 ms SwiftUI layout |
 | Deck home / CPU / Sensors views after the throttling (process list, all-sensor list) | ❌ never seen |
+| Swift 6 language mode: builds with zero warnings, tests pass, app runs (deck demo, keep awake, agents rescan) without runtime isolation crashes | ✅ `--deck-demo` + 80 s run, no crash reports |
 | Notification history: cap, newest first, unseen count, persistence, alerts recorded | ✅ unit tests |
 | Notification history: bell, red dot, popover in the deck | ❌ never seen |
 | Shortcuts app lists the 5 VibeCheck actions | ✅ seen by the owner after installing (2026-11-18) |
@@ -84,8 +85,6 @@ Fix whatever turns up before starting new features.
   whether it scales with the number of displays, and on a future macOS.
 - **Distribution.** Developer ID signing + notarization (`notarytool`), a DMG, and an update mechanism
   (Sparkle or a GitHub Releases check). Today it's ad hoc signed, so other Macs need right-click → Open.
-- **Swift 6 language mode.** The package uses tools 5.10 / language mode 5. Turn on strict concurrency
-  and fix warnings (most code is already `@MainActor`; samplers hop through `DispatchQueue.global`).
 - **Separate-items reorder.** Moving modules in Settings doesn't move existing separate items (macOS keeps
   autosaved positions). Either document ⌘-drag (done in the UI) or recreate items with new autosave names.
 
@@ -166,6 +165,7 @@ Short record of choices future sessions shouldn't silently undo.
 | Temperatures are read at most every 4 s and only the SoC dies (24 of 45 channels) unless the Sensors panel is open | Each HID channel costs ~0.7 ms; the menu bar, vibe and alerts only use the hottest die |
 | `ps` runs every 5 s on the deck home, every tick in CPU/Memory details, never with the deck closed (list is dropped) | The verdict only needs the loudest app; LaunchServices name lookups only for the top results |
 | Agents: full folder walk every 5 min (and when the panel opens); in between, `stat` known files and read only growth | The walk was most of the scan cost; `URL.resourceValues` is cached per URL, so use `stat` |
+| Swift 6 language mode (tools 6.0) | Strict concurrency is now a compile error; keep new main-thread state `@MainActor` and hop with `DispatchQueue.main.async { MainActor.assumeIsolated { … } }` from callbacks |
 | Notification history lives in `~/Library/Application Support/VibeCheck/notifications.json`, not in defaults, and isn't part of settings backup | It's history, not a setting (like `history.json`) |
 | App Intents metadata is generated in `build.sh` with Xcode's `appintentsmetadataprocessor` | SwiftPM doesn't run it; needs Xcode installed (build warns and skips otherwise). Keep the protocol list in `build.sh` in sync if new intent kinds (entities, queries) are added |
 | Intents run in the app and wait ~2.5 s after a cold launch | CPU and network rates need two samples |
@@ -290,6 +290,14 @@ only when the pixels change. Installed and measured: 3.5–7% CPU (worse). `samp
 SwiftUI regardless of the button's content. Observation tracking also can't see what `ImageRenderer`
 reads. Reverted. Measured the committed build at 2 s vs 5 s refresh (launch argument, settings untouched):
 3.80% vs 3.75%, so the remaining cost isn't tied to VibeCheck's update rate.
+
+### 2026-11-18: Swift 6 language mode
+
+| Commit | What |
+|---|---|
+| _(uncommitted)_ | `swift-tools-version:6.0`. Fixes: page size via `sysconf` instead of the global `vm_kernel_page_size`, `@MainActor` on `Deck.resizeCurve`, an explicit sensor filter closure (the ternary crashed the compiler's diagnostics), and `String(cBuffer:)` replacing deprecated `String(cString:)` on arrays. |
+
+Notes: only four concurrency fixes were needed. Zero warnings; 64 tests pass. Built app: `--dump` readings normal (interface names and IP after the C-string change), `--deck-demo` ran open/unfold/fold/close/Settings, a keep-awake session took its assertion, and the app ran 80 s past an agents rescan with no crash. Swift 6 runtime isolation checks can still fire in paths not exercised (notification permission callback, Bluetooth device fetch); watch for crash reports.
 
 ---
 

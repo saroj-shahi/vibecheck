@@ -51,7 +51,8 @@ final class SensorsMonitor {
     /// Each channel costs ~0.7 ms, so this matters on a 1–2 s refresh.
     func sample(allSensors: Bool = true) -> SensorsSample {
         var result = SensorsSample()
-        let raw = hid?.read(only: allSensors ? nil : Self.isHottestSensor) ?? []
+        let filter: ((String) -> Bool)? = allSensors ? nil : { Self.isHottestSensor($0) }
+        let raw = hid?.read(only: filter) ?? []
         result.all = raw.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
 
         func group(_ label: String, where match: (String) -> Bool, useMax: Bool) {

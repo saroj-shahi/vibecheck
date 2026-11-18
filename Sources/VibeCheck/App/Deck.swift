@@ -19,7 +19,7 @@ enum Deck {
     static let spring = Animation.spring(response: 0.38, dampingFraction: 0.86)
     /// Window resize curve matched to the spring so frame and content land together.
     static let resizeDuration: TimeInterval = 0.38
-    static let resizeCurve = CAMediaTimingFunction(controlPoints: 0.2, 0.9, 0.1, 1.0)
+    @MainActor static let resizeCurve = CAMediaTimingFunction(controlPoints: 0.2, 0.9, 0.1, 1.0)
 
     static var reduceMotion: Bool { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
     static var animation: Animation { reduceMotion ? .easeInOut(duration: 0.15) : spring }

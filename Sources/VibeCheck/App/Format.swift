@@ -49,3 +49,10 @@ enum Fmt {
         return "\(mins)m"
     }
 }
+
+extension String {
+    /// A C string from a fixed-size buffer filled by a system call (stops at the first NUL).
+    init(cBuffer buffer: [CChar]) {
+        self = String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+    }
+}

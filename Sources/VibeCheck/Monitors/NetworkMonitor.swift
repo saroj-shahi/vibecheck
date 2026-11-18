@@ -111,7 +111,7 @@ final class NetworkMonitor {
                     var nameBuffer = [CChar](repeating: 0, count: Int(IF_NAMESIZE))
                     if msg.ifm_flags & IFF_LOOPBACK == 0,
                        if_indextoname(UInt32(msg.ifm_index), &nameBuffer) != nil {
-                        result[String(cString: nameBuffer)] = (msg.ifm_data.ifi_ibytes, msg.ifm_data.ifi_obytes)
+                        result[String(cBuffer: nameBuffer)] = (msg.ifm_data.ifi_ibytes, msg.ifm_data.ifi_obytes)
                     }
                 }
                 offset += Int(header.ifm_msglen)
@@ -139,7 +139,7 @@ final class NetworkMonitor {
             var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
             if getnameinfo(addr, socklen_t(addr.pointee.sa_len), &host, socklen_t(host.count),
                            nil, 0, NI_NUMERICHOST) == 0 {
-                return String(cString: host)
+                return String(cBuffer: host)
             }
         }
         return nil
