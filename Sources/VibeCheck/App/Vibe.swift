@@ -46,42 +46,44 @@ struct VibeInput: Sendable {
 struct VibeReport: Equatable, Sendable {
     var vibe: Vibe
     var verdict: String
+    /// The module behind the verdict (its tile gets outlined); nil while vibing.
+    var culprit: Module? = nil
 }
 
 enum VibeScore {
-    /// Each problem found, with how bad it is. Worst first.
-    static func reasons(_ input: VibeInput) -> [(Vibe, String)] {
-        var found: [(Vibe, String)] = []
+    /// Each problem found, with how bad it is and which module it belongs to. Worst first.
+    static func reasons(_ input: VibeInput) -> [(Vibe, String, Module)] {
+        var found: [(Vibe, String, Module)] = []
         let cpu = Int((input.cpuRecent * 100).rounded())
-        if input.cpuRecent >= 0.85 { found.append((.cooked, "CPU has been pinned at \(cpu)%")) }
-        else if input.cpuRecent >= 0.6 { found.append((.mid, "CPU has been busy at \(cpu)%")) }
+        if input.cpuRecent >= 0.85 { found.append((.cooked, "CPU has been pinned at \(cpu)%", .cpu)) }
+        else if input.cpuRecent >= 0.6 { found.append((.mid, "CPU has been busy at \(cpu)%", .cpu)) }
 
         switch input.memoryPressure {
-        case .critical: found.append((.cooked, "memory pressure is critical"))
-        case .warning: found.append((.mid, "memory is getting tight"))
+        case .critical: found.append((.cooked, "memory pressure is critical", .memory))
+        case .warning: found.append((.mid, "memory is getting tight", .memory))
         case .normal: break
         }
 
         if let t = input.hottest {
-            if t >= 90 { found.append((.cooked, "it's running hot at \(Int(t)) °C")) }
-            else if t >= 80 { found.append((.mid, "it's warm at \(Int(t)) °C")) }
+            if t >= 90 { found.append((.cooked, "it's running hot at \(Int(t)) °C", .sensors)) }
+            else if t >= 80 { found.append((.mid, "it's warm at \(Int(t)) °C", .sensors)) }
         }
 
         if let free = input.startupDiskFree {
             let pct = Int((free * 100).rounded())
-            if free < 0.05 { found.append((.cooked, "only \(pct)% disk space left")) }
-            else if free < 0.10 { found.append((.mid, "disk is \(100 - pct)% full")) }
+            if free < 0.05 { found.append((.cooked, "only \(pct)% disk space left", .disk)) }
+            else if free < 0.10 { found.append((.mid, "disk is \(100 - pct)% full", .disk)) }
         }
 
         if let battery = input.batteryOnBattery {
             let pct = Int((battery * 100).rounded())
-            if battery < 0.10 { found.append((.cooked, "battery is at \(pct)%")) }
-            else if battery < 0.20 { found.append((.mid, "battery is at \(pct)%")) }
+            if battery < 0.10 { found.append((.cooked, "battery is at \(pct)%", .battery)) }
+            else if battery < 0.20 { found.append((.mid, "battery is at \(pct)%", .battery)) }
         }
 
         switch input.thermalState {
-        case .critical: found.append((.cooked, "macOS is throttling to cool down"))
-        case .serious: found.append((.mid, "macOS is starting to throttle"))
+        case .critical: found.append((.cooked, "macOS is throttling to cool down", .sensors))
+        case .serious: found.append((.mid, "macOS is starting to throttle", .sensors))
         default: break
         }
         return found.sorted { $0.0 > $1.0 }
@@ -89,6 +91,12 @@ enum VibeScore {
 
     static func evaluate(_ input: VibeInput) -> Vibe {
         reasons(input).map(\.0).max() ?? .vibing
+    }
+
+    /// The module whose problem sets the verdict at this level; nil while vibing or settling down.
+    static func culprit(for vibe: Vibe, input: VibeInput) -> Module? {
+        guard vibe != .vibing else { return nil }
+        return reasons(input).first { $0.0 >= vibe }?.2
     }
 
     /// One friendly sentence for the deck header.

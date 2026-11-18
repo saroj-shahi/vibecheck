@@ -11,6 +11,18 @@ struct VibeTests {
                 == "Your Mac is vibing. Nothing's working hard.")
     }
 
+    @Test func culpritIsTheModuleBehindTheVerdict() {
+        #expect(VibeScore.culprit(for: .vibing, input: VibeInput(cpuRecent: 0.9)) == nil)
+        #expect(VibeScore.culprit(for: .cooked, input: VibeInput(cpuRecent: 0.7, hottest: 95)) == .sensors)
+        #expect(VibeScore.culprit(for: .mid, input: VibeInput(cpuRecent: 0.7)) == .cpu)
+        #expect(VibeScore.culprit(for: .mid, input: VibeInput(memoryPressure: .warning)) == .memory)
+        #expect(VibeScore.culprit(for: .mid, input: VibeInput(startupDiskFree: 0.08)) == .disk)
+        #expect(VibeScore.culprit(for: .cooked, input: VibeInput(batteryOnBattery: 0.05)) == .battery)
+        #expect(VibeScore.culprit(for: .mid, input: VibeInput(thermalState: .serious)) == .sensors)
+        // The tracker can lag the input: a mid verdict with nothing left at mid names no one.
+        #expect(VibeScore.culprit(for: .mid, input: VibeInput(cpuRecent: 0.1)) == nil)
+    }
+
     @Test func worstProblemDecidesTheVibe() {
         #expect(VibeScore.evaluate(VibeInput(cpuRecent: 0.7)) == .mid)
         #expect(VibeScore.evaluate(VibeInput(cpuRecent: 0.9)) == .cooked)

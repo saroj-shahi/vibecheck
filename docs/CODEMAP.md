@@ -11,7 +11,7 @@ are added or split. Decisions and history are in [IMPROVEMENT_PLAN.md](IMPROVEME
 | `AppSettings.swift` | `Module` enum (10 modules, order, symbols, label styles), `LabelStyle`, `Palette`, `AppSettings` (every setting, defaults domain `local.vibecheck.app`), `autosaveName` |
 | `ItemOptions.swift` | Per-item menu bar options (Agents: which agents, % left/used/tokens, windows, reset; Memory, Network, Disk, Battery, Sensors) + `AgentUsageSample.menuBarContent` |
 | `SystemStats.swift` | The tick: samples every monitor, histories, demand counters (`processDemand`, `networkAppDemand`, `sensorDemand`), vibe input, listening ports |
-| `Vibe.swift` | Vibe score (vibing / mid / cooked) and the verdict sentence |
+| `Vibe.swift` | Vibe score (vibing / mid / cooked), the verdict sentence and its culprit module |
 | `Alerts.swift` | `AlertMetric`, `AlertRule` (sentence alerts), `AlertEngine` (evaluate, notify, history log) |
 | `KeepAwake.swift` | Sessions (`AwakeEnd`, focus sessions, triggers: power / display / downloads / `AwakeSchedule`), IOKit assertion |
 | `KeepAwakeMenu.swift` | Native right-click menu of the Keep Awake menu bar item |
@@ -21,7 +21,7 @@ are added or split. Decisions and history are in [IMPROVEMENT_PLAN.md](IMPROVEME
 | `ProcessKiller.swift` | Quit / Force Quit (optionally with subprocesses) with protected processes and pid start-time identity |
 | `QuickActions.swift` | Quick toggles: dark mode (System Events), mic mute (CoreAudio), empty Trash (Finder) |
 | `SecureInput.swift` | Which app holds Secure Event Input (shortcuts paused) |
-| `DeckCommands.swift` | ⌘K palette: the command list and how typing filters it |
+| `DeckCommands.swift` | ⌘K palette: the command list, ⌘↩ actions, and how typing filters it |
 | `DownloadsWatcher.swift` | Whether files are arriving in the watched folder (keep-awake "while downloading" trigger) |
 | `BluetoothSnooze.swift` | Bluetooth off while asleep (private IOBluetooth, CoreBluetooth permission) |
 | `Weather.swift` | Open-Meteo forecast + city search, `TemperatureUnit` |
@@ -40,13 +40,13 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `PortSampler` (`lso
 |---|---|
 | `MenuBarLabels.swift` | Every menu bar label (fixed widths!), `AgentLimitsLabel`, `ClaudeEstimateLabel` |
 | `CombinedViews.swift` | Combined item, `AwakeCup`, `KeepAwakeItemLabel` |
-| `DeckView.swift` | Deck home (header, keep-awake strip, secure input strip, quick toggles, tiles), tiles' spoken labels, glass hairline |
-| `CommandPalette.swift` | ⌘K palette view (search row, rows, `KeyCap`) |
+| `DeckView.swift` | Deck shell (header, drawn search field, live chips, footer), home (quick toggles, tiles, culprit outline), tiles' spoken labels, glass hairline |
+| `CommandPalette.swift` | ⌘K palette results, ⌘↩ action card, `KeyCap`, `Caret` |
 | `Panels.swift` | Detail panels per module, `ProcessList`, `ListeningPortsSection`, `USBDevicesSection` |
 | `AgentsPanel.swift` | Agents detail: Now card, charts, agent cards, `LimitGauge`, `PaceBar`, `DailyBars` |
 | `MetricChart.swift` | Detail charts (resampling, `SeriesShape`, scrubbing) |
 | `SettingsView.swift` | Settings window: every pane, `ItemOptionsView`, `.settingsFooter()` |
-| `KeepAwakeViews.swift` | Cup menu items, status strip, Keep Awake settings pane |
+| `KeepAwakeViews.swift` | Cup menu items and button, Keep Awake settings pane |
 | `QuickTogglesView.swift`, `NotificationHistoryView.swift`, `VibeRing.swift`, `ClockPanel.swift`, `WeatherPanel.swift`, `Charts.swift` | as named |
 
 ## Tests/VibeCheckTests/

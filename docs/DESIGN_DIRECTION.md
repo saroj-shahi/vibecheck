@@ -94,9 +94,52 @@ specified in BRAND.md.
   with no axes, and detail one click away. We skip its menu-of-menus structure; matched-geometry unfolds
   replace nested dropdowns.
 
+---
+
+## Round two (2026-11-18): precision, and the outside reference
+
+A second pass with the same brief, using the owner's popover mockup
+(`docs/otherapp-popover-mockup.html`, a different app) as the reference for the shell. Where this
+section and the ones above differ, this one is newer.
+
+**The shell, top to bottom** (home and palette; a detail view keeps its own header with the back chevron):
+
+| Zone | Height | Rule |
+|---|---|---|
+| Header | ~50 pt | Ring + verdict title, then only **bell and cup**. Search, Settings and Quit moved out. ✅ |
+| Search field | 28 pt | Always visible, drawn (the panel never takes focus): placeholder "Search or run an action" and a ⌘K key cap; click it or just type. While the palette is open it shows the query and caret. ✅ |
+| Live chips | 0 or 26 pt | One pill per thing happening now: keep awake / focus (accent, time left), mic muted (red), shortcuts paused (orange). Hover shows × to stop. Replaces the 32 pt status strips; the row doesn't exist when nothing is live. ✅ |
+| Body | flexible | Quick toggles + bento grid, or palette results. |
+| Footer | 30 pt, 0.5 pt top hairline | Settings (⌘,) · "VibeCheck 1.5" · Quit. While the palette is open it becomes key hints (↩ ⌘↩ esc) and the result count. ✅ |
+
+**Precision**
+
+- **Whole-pixel tiles.** 8 pt gutters: (360 − 32 − 16) / 3 = **104 pt** tiles, so edges land on whole pixels at 1× and 2×. ✅
+- **10 pt minimum type.** The 9 pt hover chevron is now 10 pt. ✅
+- **Display-aware hairline.** 0.5 pt at 2×; at 1× it's 1 px at half the opacity, because 0.5 pt on a 1× display is a smear. ✅
+
+**Micro-interactions**
+
+1. **The culprit tile.** When the vibe is mid or cooked, the tile of the module behind the verdict gets a
+   1 pt inner stroke in the state color at 40% (240 ms ease-out in, 400 ms ease-in out). When cooked, the
+   hero number turns red too; mid stays outline-only because yellow text is unreadable on light glass. The
+   verdict says *why*; the grid says *where*. ✅
+2. **Live chip stop.** Hovering a chip fades in an 18 pt × (150 ms ease-out); clicking it stops the session or
+   unmutes. ✅
+3. **⌘↩ actions.** On a palette row, ⌘↩ opens a small action list (Run, and the matching Settings pane);
+   ↑↓ ↩ drive it, esc closes it. ✅
+
+**Taken from another app, left out on purpose:** its four-column toggle tiles (our tiles carry data), blue
+accent fills on active tiles (state color is earned), grouped results while typing (a flat ranked list is
+faster), its 12 pt radius and web fonts.
+
 ## Backlog from this direction
 
+- ⬜ **Keep-awake hold dial** (from another app): press and hold the cup, drag to 15m / 1h / 4h / ∞, release.
+  Needs the cup to become a custom control instead of a SwiftUI `Menu`.
 - ⬜ Pinned header: when a detail view scrolls, keep the header row fixed (needs the scroll view split).
 - ⬜ Palette: "recent" ordering (last 3 commands first) once there's a reason to remember them.
-- ⬜ Palette commands for process actions ("Quit Chrome") and alerts, with the same confirmation rules.
+- ⬜ Palette commands for process actions ("Quit Chrome") and alerts, with the same confirmation rules;
+  ⌘↩ is where their second step goes.
+- ⬜ Quick toggle chip failure shake (3 pt, 240 ms) and symbol replace transition.
 - ⬜ Light mode pass on screen (still unverified, see the plan's P0).

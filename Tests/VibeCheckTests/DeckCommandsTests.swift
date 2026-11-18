@@ -8,6 +8,37 @@ struct DeckCommandsTests {
         DeckCommand(id: title, title: title, symbol: "circle", keywords: keywords) {}
     }
 
+    @Test func actionsOfferTheMatchingSettingsPane() {
+        let model = DeckModel()
+        var withPane = command("Keep awake")
+        withPane.settingsSection = .keepAwake
+        #expect(DeckCommands.actions(for: withPane, model: model).map(\.title) == ["Run", "Open Keep Awake settings"])
+        #expect(DeckCommands.actions(for: command("Mute the microphone"), model: model).map(\.title) == ["Run"])
+    }
+
+    @Test func actionsRunGoesThroughConfirmation() {
+        let model = DeckModel()
+        var ran = false
+        let quit = DeckCommand(id: "quit", title: "Quit VibeCheck", symbol: "power", confirm: true) { ran = true }
+        let run = DeckCommands.actions(for: quit, model: model)[0]
+        #expect(run.title == "Quit VibeCheck")
+        run.run()
+        #expect(!ran && model.paletteConfirmID == "quit")   // first ↩ only arms it
+    }
+
+    @Test func movingTheSelectionClosesTheActions() {
+        let model = DeckModel()
+        model.openPalette()
+        model.paletteActionsOpen = true
+        model.paletteActionIndex = 1
+        model.paletteIndex = 2
+        #expect(!model.paletteActionsOpen)
+        model.paletteActionsOpen = true
+        #expect(model.paletteActionIndex == 0)
+        model.typeInPalette("a")
+        #expect(!model.paletteActionsOpen)
+    }
+
     @Test func scoring() {
         #expect(DeckCommands.score("open", title: "Open CPU", keywords: "") == 400)        // title prefix
         #expect(DeckCommands.score("cpu", title: "Open CPU", keywords: "") == 300)         // word prefix

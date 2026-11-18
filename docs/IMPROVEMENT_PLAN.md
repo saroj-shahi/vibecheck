@@ -33,6 +33,7 @@ not the whole screen.
 | Login item registration | ✅ `--login-item status` reports enabled |
 | Deck look (dark mode), tiles, sparklines, keyboard focus ring | ✅ seen in the QA pass |
 | ⌘K command palette (search row, rows, selection, key caps) and the header search button, dark + light | 🟡 offscreen renders only (2026-11-18); typing, ↑↓/↩, hover chevron and the pre-26 hairline not seen live |
+| Deck shell round two (search field, footer, ⌘↩ action card, 104 pt tiles), dark + light | 🟡 offscreen renders only (2026-11-18); live chips, culprit outline, 1× hairline and ⌘↩ keys not seen at all |
 | Ring mid (yellow) and cooked (red) in the menu bar, "Cooked" verdict in the deck | ✅ seen 2026-11-18 (7 then 10 busy `yes` loops; mid after ~45 s) |
 | Light mode, tile hover/press, unfold animation, ring bounce | ❌ never seen |
 | Chart scrubbing bubble (hover, values, "No data" gaps) | ✅ seen with synthetic mouse moves |
@@ -200,7 +201,9 @@ lyrics and companion tools, and its notch-style "Dynamic Island" bar. They're ou
 
 - ~~⌘K command palette, type-to-act, tile hover chevron, glass hairline (macOS 14–15)~~: done 2026-11-18.
 - **P1** See the palette live: ⌘K, typing on the home grid, ↑↓/↩, Esc twice (part of the P0 QA pass).
-- **P2** Pinned header while a detail view scrolls; palette "recent" ordering; process and alert commands.
+- ~~Round two: shell with search field, live chips, footer; 104 pt tiles; culprit outline; ⌘↩ actions~~: done 2026-11-18.
+- **P1** See round two live: chips (keep awake, mic muted, shortcuts paused) with hover ×, culprit outline under load, ⌘↩.
+- **P2** Keep-awake hold dial on the cup; pinned header while a detail view scrolls; palette "recent" ordering; process and alert commands.
 
 ### Tech debt
 
@@ -359,6 +362,17 @@ tables above and the lessons below; add new dated entries under "Recent sessions
   `/usr/bin/security` (an "Always Allow" would cover every process that runs it).
 
 ### Recent sessions
+
+#### 2026-11-18: design round two (outside reference)
+
+Second pass of the Creative Director brief, using the owner's popover mockup
+(`docs/otherapp-popover-mockup.html`, another app) for the shell. Header keeps only bell and cup; a drawn
+search field is always visible; live chips replace the keep-awake and secure-input strips; a footer holds
+Settings, version and Quit (key hints while the palette is open). Tiles are 104 pt (8 pt gutters), the
+hover chevron is 10 pt and an overlay, the pre-26 hairline knows 1× displays, the vibe report names a
+culprit module whose tile gets outlined, and ⌘↩ opens Run / Settings actions on a palette row. 4 tests.
+Checked with offscreen renders (dark + light, home / palette / actions); chips and culprit not rendered.
+Hold dial deferred (the cup is a SwiftUI `Menu`).
 
 #### 2026-11-18: design direction + ⌘K palette
 

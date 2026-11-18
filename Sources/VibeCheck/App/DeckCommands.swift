@@ -10,6 +10,8 @@ struct DeckCommand: Identifiable {
     var keywords = ""
     /// Needs a second ↩ (or click) before it runs: things that can't be undone with one more keystroke.
     var confirm = false
+    /// The Settings pane that goes with this command, offered in its ⌘↩ actions.
+    var settingsSection: SettingsSection?
     let run: @MainActor () -> Void
 }
 
@@ -25,7 +27,8 @@ enum DeckCommands {
 
         for module in model.modules {
             list.append(DeckCommand(id: "module.\(module.rawValue)", title: "Open \(module.title)", symbol: module.symbol,
-                                    shortcut: module.shortcutKey.map { "⌘\($0)" }, keywords: "show view details") {
+                                    shortcut: module.shortcutKey.map { "⌘\($0)" }, keywords: "show view details",
+                                    settingsSection: .menuBar) {
                 model.closePalette()
                 model.go(.module(module))
             })
@@ -38,17 +41,17 @@ enum DeckCommands {
                                 title: awake.isActive ? "Stop keeping awake"
                                     : length == 0 ? "Keep awake" : "Keep awake for \(AwakePreset.title(length))",
                                 symbol: awake.isActive ? "cup.and.saucer" : "cup.and.saucer.fill",
-                                keywords: "caffeinate sleep stop") {
+                                keywords: "caffeinate sleep stop", settingsSection: .keepAwake) {
             if awake.isActive { awake.stop() } else { awake.start(minutes: length) }
             model.closePalette()
         })
         if length != 0 {
             list.append(DeckCommand(id: "awake.forever", title: "Keep awake until stopped", symbol: "infinity",
-                                    keywords: "caffeinate sleep indefinitely") { awake.start(minutes: 0); model.closePalette() })
+                                    keywords: "caffeinate sleep indefinitely", settingsSection: .keepAwake) { awake.start(minutes: 0); model.closePalette() })
         }
         for minutes in FocusPreset.minutes {
             list.append(DeckCommand(id: "focus.\(minutes)", title: "Focus for \(minutes) minutes", symbol: "timer",
-                                    keywords: "pomodoro timer session") { awake.startFocus(minutes: minutes); model.closePalette() })
+                                    keywords: "pomodoro timer session", settingsSection: .keepAwake) { awake.startFocus(minutes: minutes); model.closePalette() })
         }
 
         let quick = QuickActions.shared
@@ -71,6 +74,20 @@ enum DeckCommands {
         list.append(DeckCommand(id: "quit", title: "Quit VibeCheck", symbol: "power", keywords: "exit close", confirm: true) {
             NSApp.terminate(nil)
         })
+        return list
+    }
+
+    /// The ⌘↩ list for a row: run it, and open the Settings pane that goes with it (when there is one).
+    static func actions(for command: DeckCommand, model: DeckModel) -> [DeckCommand] {
+        var list = [DeckCommand(id: "action.run", title: command.confirm ? command.title : "Run", symbol: "return") {
+            activate(command, model: model)
+        }]
+        if let section = command.settingsSection {
+            list.append(DeckCommand(id: "action.settings", title: "Open \(section.title) settings", symbol: section.symbol) {
+                model.requestClose?()
+                (NSApp.delegate as? AppDelegate)?.showSettings(section)
+            })
+        }
         return list
     }
 

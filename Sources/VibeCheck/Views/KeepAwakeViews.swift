@@ -68,32 +68,6 @@ struct AwakeMenuButton: View {
     }
 }
 
-/// Slim row under the deck header while a session runs: what's going on and a Stop button.
-struct AwakeStatusStrip: View {
-    let session: AwakeSession
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: session.focus ? "timer" : "cup.and.saucer.fill")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
-            TimelineView(.periodic(from: .now, by: 15)) { context in
-                Text(session.focus ? "Focus · \(session.remaining(now: context.date))"
-                                   : "Staying awake \(session.remaining(now: context.date))")
-                    .font(.system(size: 12))
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 4)
-            Button(session.focus ? "End" : "Stop") { KeepAwake.shared.stop() }
-                .controlSize(.small)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.quaternary.opacity(0.55)))
-        .accessibilityElement(children: .combine)
-    }
-}
-
 // MARK: - Settings
 
 struct KeepAwakeSettings: View {

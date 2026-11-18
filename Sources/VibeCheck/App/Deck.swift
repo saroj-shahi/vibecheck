@@ -15,6 +15,8 @@ enum Deck {
     static let width: CGFloat = 360
     static let cornerRadius: CGFloat = 18
     static let columns = 3
+    /// Between tiles, both ways; with 16 pt padding it makes tiles exactly 104 pt wide.
+    static let gutter: CGFloat = 8
     /// Unfold / fold spring (response 0.38, damping 0.86).
     static let spring = Animation.spring(response: 0.38, dampingFraction: 0.86)
     /// Window resize curve matched to the spring so frame and content land together.
@@ -45,7 +47,12 @@ final class DeckModel {
     /// ⌘K palette: nil when closed, else what has been typed.
     private(set) var paletteQuery: String?
     /// Selected row among the filtered results.
-    var paletteIndex = 0 { didSet { if paletteIndex != oldValue { paletteConfirmID = nil } } }
+    var paletteIndex = 0 {
+        didSet { if paletteIndex != oldValue { paletteConfirmID = nil; paletteActionsOpen = false } }
+    }
+    /// ⌘↩ action list for the selected row, and its selection.
+    var paletteActionsOpen = false { didSet { if paletteActionsOpen != oldValue { paletteActionIndex = 0 } } }
+    var paletteActionIndex = 0
     /// A command that asked for a second ↩ (Quit); cleared by any other key or selection change.
     var paletteConfirmID: String?
     var paletteOpen: Bool { paletteQuery != nil }
@@ -54,6 +61,7 @@ final class DeckModel {
         withAnimation(Deck.reduceMotion ? nil : .easeOut(duration: 0.15)) { paletteQuery = query }
         paletteIndex = 0
         paletteConfirmID = nil
+        paletteActionsOpen = false
     }
 
     func closePalette() {
@@ -61,12 +69,14 @@ final class DeckModel {
         withAnimation(Deck.reduceMotion ? nil : .easeOut(duration: 0.12)) { paletteQuery = nil }
         paletteIndex = 0
         paletteConfirmID = nil
+        paletteActionsOpen = false
     }
 
     func typeInPalette(_ text: String) {
         paletteQuery = (paletteQuery ?? "") + text
         paletteIndex = 0
         paletteConfirmID = nil
+        paletteActionsOpen = false
     }
 
     func deleteInPalette() {
@@ -75,6 +85,7 @@ final class DeckModel {
         paletteQuery = query
         paletteIndex = 0
         paletteConfirmID = nil
+        paletteActionsOpen = false
     }
 
     func go(_ route: DeckRoute, animated: Bool = true) {
@@ -417,9 +428,30 @@ final class DeckController: NSObject {
 
     /// Keys while the palette is open; nil lets the normal handling run (⌘-digits, ⌘W, ⌘,).
     private func handlePaletteKey(_ event: KeyPress) -> Bool? {
-        if event.command { return nil }
         let results = DeckCommands.filter(DeckCommands.all(model: model, settings: settings),
                                           query: model.paletteQuery ?? "")
+        if event.command, event.code == 36 || event.code == 76 {   // ⌘↩: actions for the selected row
+            if results.indices.contains(model.paletteIndex) { model.paletteActionsOpen.toggle() }
+            return true
+        }
+        if event.command { return nil }
+        if model.paletteActionsOpen, results.indices.contains(model.paletteIndex) {
+            let actions = DeckCommands.actions(for: results[model.paletteIndex], model: model)
+            switch event.code {
+            case 53: model.paletteActionsOpen = false
+            case 36, 76:
+                if actions.indices.contains(model.paletteActionIndex) {
+                    model.paletteActionsOpen = false
+                    actions[model.paletteActionIndex].run()
+                }
+            case 125: model.paletteActionIndex = min(model.paletteActionIndex + 1, actions.count - 1)
+            case 126: model.paletteActionIndex = max(model.paletteActionIndex - 1, 0)
+            default:
+                model.paletteActionsOpen = false
+                return handlePaletteKey(event)
+            }
+            return true
+        }
         switch event.code {
         case 53: // Escape: clear the query, then close the palette
             if model.paletteQuery?.isEmpty == false { model.openPalette() } else { model.closePalette() }
