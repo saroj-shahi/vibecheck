@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 30 commits · ~6,800 lines of Swift · 64 tests_
+_Last updated: 2026-11-18 · version 1.5 · 34 commits · ~6,800 lines of Swift · 64 tests_
 
 ---
 
@@ -295,7 +295,7 @@ reads. Reverted. Measured the committed build at 2 s vs 5 s refresh (launch argu
 
 | Commit | What |
 |---|---|
-| _(uncommitted)_ | `swift-tools-version:6.0`. Fixes: page size via `sysconf` instead of the global `vm_kernel_page_size`, `@MainActor` on `Deck.resizeCurve`, an explicit sensor filter closure (the ternary crashed the compiler's diagnostics), and `String(cBuffer:)` replacing deprecated `String(cString:)` on arrays. |
+| `e267d99` | `swift-tools-version:6.0`. Fixes: page size via `sysconf` instead of the global `vm_kernel_page_size`, `@MainActor` on `Deck.resizeCurve`, an explicit sensor filter closure (the ternary crashed the compiler's diagnostics), and `String(cBuffer:)` replacing deprecated `String(cString:)` on arrays. |
 
 Notes: only four concurrency fixes were needed. Zero warnings; 64 tests pass. Built app: `--dump` readings normal (interface names and IP after the C-string change), `--deck-demo` ran open/unfold/fold/close/Settings, a keep-awake session took its assertion, and the app ran 80 s past an agents rescan with no crash. Swift 6 runtime isolation checks can still fire in paths not exercised (notification permission callback, Bluetooth device fetch); watch for crash reports.
 
