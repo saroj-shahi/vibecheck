@@ -23,6 +23,7 @@ struct VibeRing: View {
         .animation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.5, dampingFraction: 0.75),
                    value: vibe)
         .accessibilityElement()
+        .accessibilityAddTraits(.isImage)
         .accessibilityLabel("Vibe: \(vibe.title)")
 
         if reduceMotion {

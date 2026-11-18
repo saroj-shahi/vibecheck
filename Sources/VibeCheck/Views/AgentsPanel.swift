@@ -86,8 +86,10 @@ private struct AgentCard: View {
                 Spacer()
                 Text(Fmt.tokens(summary.today.total)).font(.system(size: 13, weight: .semibold).monospacedDigit())
             }
-            if let block = summary.block {
-                Text("This 5-hour window: \(Fmt.tokens(block.tokens.total)) · resets \(block.end.formatted(date: .omitted, time: .shortened))")
+            // The local estimate only when there's no real limit: its reset time is a guess and would
+            // contradict the provider's own (seen in QA: "resets 5:00 PM" above "Resets in … (5:34 PM)").
+            if let block = summary.block, !summary.limits.contains(where: { $0.windowMinutes == 300 }) {
+                Text("This 5-hour window (estimate): \(Fmt.tokens(block.tokens.total)) · resets about \(block.end.formatted(date: .omitted, time: .shortened))")
                     .font(.caption).foregroundStyle(.secondary)
             }
             if !summary.limits.isEmpty {
