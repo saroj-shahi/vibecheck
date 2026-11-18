@@ -143,10 +143,11 @@ struct ProcessList: View {
     let metric: Metric
     @Environment(SystemStats.self) private var stats
     @AppStorage("groupProcessesByApp") private var byApp = true
-    /// Row waiting for a Force Quit confirmation.
-    @State private var confirming: Int32?
+    /// Process waiting for a Force Quit confirmation, and when it was asked (it expires).
+    @State private var confirming: (target: ProcessKiller.Identity, asked: Date)?
     /// Short result shown in a row after a failed quit.
     @State private var notice: (pid: Int32, text: String)?
+    @State private var noticeClear: Task<Void, Never>?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -185,8 +186,9 @@ struct ProcessList: View {
 
     @ViewBuilder
     private func row(pid: Int32, name: String, detail: String?, value: String, icon: NSImage?) -> some View {
-        if confirming == pid {
-            confirmRow(pid: pid, name: name)
+        if let confirming, confirming.target.pid == pid, Date().timeIntervalSince(confirming.asked) < 20,
+           ProcessKiller.identity(of: pid) == confirming.target {
+            confirmRow(confirming.target, name: name)
         } else {
             HStack(spacing: 6) {
                 if byApp {
@@ -214,7 +216,7 @@ struct ProcessList: View {
             .font(.callout)
             .contentShape(Rectangle())
             .contextMenu { menu(pid: pid, name: name) }
-            .accessibilityActions { menu(pid: pid, name: name) }
+            .modifier(QuitAccessibility(pid: pid, actions: { menu(pid: pid, name: name) }))
         }
     }
 
@@ -223,21 +225,22 @@ struct ProcessList: View {
         let name = ProcessKiller.name(of: pid) ?? rowName
         if let reason = ProcessKiller.protectionReason(pid: pid) {
             Text("Can't quit \(name): \(reason.lowercased())")
-        } else {
-            Button("Quit \(name)") { run(pid: pid, mode: .quit) }
-            Button("Force Quit \(name)…") { withAnimation(Deck.animation) { confirming = pid } }
+        } else if let target = ProcessKiller.identity(of: pid) {
+            // The identity is taken when the menu is built, so a reused pid is refused at click time.
+            Button("Quit \(name)") { run(target, mode: .quit) }
+            Button("Force Quit \(name)…") { withAnimation(Deck.animation) { confirming = (target, Date()) } }
         }
     }
 
-    private func confirmRow(pid: Int32, name rowName: String) -> some View {
-        let name = ProcessKiller.name(of: pid) ?? rowName
+    private func confirmRow(_ target: ProcessKiller.Identity, name rowName: String) -> some View {
+        let name = ProcessKiller.name(of: target.pid) ?? rowName
         return HStack(spacing: 6) {
             Text("Force quit \(name)? Unsaved work is lost.")
                 .lineLimit(2).fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 4)
             Button("Cancel") { withAnimation(Deck.animation) { confirming = nil } }
                 .keyboardShortcut(.cancelAction)
-            Button("Force Quit") { run(pid: pid, mode: .forceQuit) }
+            Button("Force Quit") { run(target, mode: .forceQuit) }
                 .tint(.red)
         }
         .font(.callout)
@@ -247,13 +250,28 @@ struct ProcessList: View {
         .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(.red.opacity(0.12)))
     }
 
-    private func run(pid: Int32, mode: ProcessKiller.Mode) {
+    private func run(_ target: ProcessKiller.Identity, mode: ProcessKiller.Mode) {
         confirming = nil
-        if case .failed(let text) = ProcessKiller.quit(pid: pid, mode: mode) {
-            notice = (pid, text)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                if notice?.pid == pid { notice = nil }
-            }
+        guard case .failed(let text) = ProcessKiller.quit(target, mode: mode) else { return }
+        notice = (target.pid, text)
+        noticeClear?.cancel()
+        noticeClear = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(3))
+            if !Task.isCancelled { notice = nil }
+        }
+    }
+}
+
+/// VoiceOver: quit actions on rows that can be quit; the reason as a hint on rows that can't.
+private struct QuitAccessibility<Actions: View>: ViewModifier {
+    let pid: Int32
+    @ViewBuilder let actions: () -> Actions
+
+    func body(content: Content) -> some View {
+        if let reason = ProcessKiller.protectionReason(pid: pid) {
+            content.accessibilityHint("Can't be quit: \(reason.lowercased())")
+        } else {
+            content.accessibilityActions { actions() }
         }
     }
 }

@@ -34,7 +34,12 @@ struct ProcessKillerTests {
         try child.run()
         defer { if child.isRunning { child.terminate() } }
         #expect(ProcessKiller.protectionReason(pid: child.processIdentifier) == nil)
-        #expect(ProcessKiller.quit(pid: child.processIdentifier, mode: .quit) == .sent)
+        let target = try #require(ProcessKiller.identity(of: child.processIdentifier))
+        // Same pid, different start time (what a reused pid looks like): refused.
+        let stale = ProcessKiller.Identity(pid: target.pid, started: target.started - 1)
+        #expect(ProcessKiller.quit(stale, mode: .quit) == .failed("Already gone"))
+        #expect(child.isRunning)
+        #expect(ProcessKiller.quit(target, mode: .quit) == .sent)
         for _ in 0..<40 where child.isRunning { try await Task.sleep(for: .milliseconds(50)) }
         #expect(!child.isRunning)
         #expect(child.terminationReason == .uncaughtSignal)

@@ -30,8 +30,24 @@ enum ProcessKiller {
                          currentUID: getuid(), ownPID: ProcessInfo.processInfo.processIdentifier)
     }
 
+    /// A pid plus its start time: pids get reused, so a menu or confirmation built for one process must
+    /// never signal a different process that later got the same pid.
+    struct Identity: Equatable {
+        let pid: Int32
+        let started: UInt64   // microseconds since 1970
+    }
+
+    static func identity(of pid: Int32) -> Identity? {
+        var info = proc_bsdinfo()
+        let size = Int32(MemoryLayout<proc_bsdinfo>.size)
+        guard proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, size) == size else { return nil }
+        return Identity(pid: pid, started: info.pbi_start_tvsec * 1_000_000 + info.pbi_start_tvusec)
+    }
+
     @discardableResult
-    static func quit(pid: Int32, mode: Mode) -> Outcome {
+    static func quit(_ target: Identity, mode: Mode) -> Outcome {
+        guard identity(of: target.pid) == target else { return .failed("Already gone") }
+        let pid = target.pid
         if let reason = protectionReason(pid: pid) { return .failed(reason) }
         let name = name(of: pid) ?? "It"
         if let app = NSRunningApplication(processIdentifier: pid) {
