@@ -159,7 +159,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             KeepAwake.shared.check()
         }
         KeepAwake.shared.batteryProvider = { [unowned stats] in stats.battery }
+        KeepAwake.shared.onSessionEnded = { [weak self] reason in
+            guard let self, reason.notifies, self.settings.keepAwakeNotify else { return }
+            self.alerts.notify(title: "Keep awake ended", body: "\(reason.message) Your Mac can sleep again.")
+        }
+        NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
+                                               object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { KeepAwake.shared.check() }
+        }
+        HotkeyManager.shared.onKeepAwake = { KeepAwake.shared.toggle() }
         if settings.keepAwakeAtLaunch { KeepAwake.shared.start(minutes: settings.keepAwakeDefaultMinutes) }
+        KeepAwake.shared.check() // triggers (plugged in, external display) apply right away
         stats.start(interval: settings.refreshInterval)
         syncItems()
         HotkeyManager.shared.onTrigger = { [weak self] module in self?.openFromShortcut(module) }
@@ -252,7 +262,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func configureHotkeys() {
         if settings.hotkeysEnabled {
-            HotkeyManager.shared.register(modifier: settings.hotkeyModifier)
+            HotkeyManager.shared.register(modifier: settings.hotkeyModifier, keepAwake: settings.keepAwakeHotkey)
         } else {
             HotkeyManager.shared.unregisterAll()
         }
@@ -266,7 +276,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         deck.open(from: button, route: .module(module))
     }
 
-    func showSettings() {
+    func showSettings(_ section: SettingsSection? = nil) {
+        if let section { SettingsRouter.shared.section = section }
         deck.close()
         if settingsWindow == nil {
             let view = SettingsView(onTestNotification: { [weak self] in self?.alerts.sendTest() })

@@ -16,6 +16,13 @@ struct AwakeMenuItems: View {
             ForEach(AwakePreset.minutes, id: \.self) { minutes in
                 Button(AwakePreset.title(minutes)) { awake.start(minutes: minutes) }
             }
+            Menu("Until") {
+                ForEach(AwakePreset.upcomingHours(), id: \.self) { date in
+                    Button(date.formatted(date: .omitted, time: .shortened)) { awake.start(.at(date)) }
+                }
+                Divider()
+                Button("Choose a Time…") { (NSApp.delegate as? AppDelegate)?.showSettings(.keepAwake) }
+            }
             Menu("While an App Is Running") {
                 let apps = KeepAwake.runningApps()
                 if apps.isEmpty { Text("No apps running") }
@@ -106,8 +113,21 @@ struct KeepAwakeSettings: View {
                 Picker("Start sessions for", selection: $settings.keepAwakeDefaultMinutes) {
                     ForEach(AwakePreset.minutes, id: \.self) { Text(AwakePreset.title($0)).tag($0) }
                 }
+                LabeledContent("Or stay awake until") {
+                    HStack {
+                        DatePicker("Time", selection: untilTime, displayedComponents: .hourAndMinute)
+                            .labelsHidden()
+                        Button("Start") {
+                            awake.start(.at(AwakePreset.nextOccurrence(ofMinute: settings.keepAwakeUntilMinute)))
+                        }
+                    }
+                }
             } footer: {
-                Text("The cup in the deck has more choices, like staying awake while an app is running.")
+                Text("The cup in the deck has more choices, like staying awake while an app is running. A time that has already passed today means tomorrow.")
+            }
+            Section("Automatically keep awake") {
+                Toggle("While plugged in", isOn: $settings.keepAwakeOnPower)
+                Toggle("While an external display is connected", isOn: $settings.keepAwakeWithDisplay)
             }
             Section {
                 Toggle("Keep the display on", isOn: $settings.keepAwakeDisplayOn)
@@ -116,12 +136,26 @@ struct KeepAwakeSettings: View {
                     ForEach([10, 20, 30, 50], id: \.self) { Text("\($0)%").tag($0) }
                 }
                 Toggle("Start a session when VibeCheck opens", isOn: $settings.keepAwakeAtLaunch)
+                Toggle("Notify me when a session ends by itself", isOn: $settings.keepAwakeNotify)
+                Toggle("\(settings.hotkeyModifier.symbols)A starts or stops a session", isOn: $settings.keepAwakeHotkey)
+                    .disabled(!settings.hotkeysEnabled)
                 Toggle("Show a cup in the menu bar while awake", isOn: $settings.keepAwakeShowInMenuBar)
             } footer: {
                 Text("With the display allowed to sleep, the screen turns off but downloads, builds and music keep going. Closing the lid still puts the Mac to sleep.")
             }
         }
         .formStyle(.grouped)
+    }
+
+    /// The stored minute-of-day as a Date for the time picker.
+    private var untilTime: Binding<Date> {
+        Binding {
+            Calendar.current.date(bySettingHour: settings.keepAwakeUntilMinute / 60, minute: settings.keepAwakeUntilMinute % 60,
+                                  second: 0, of: Date()) ?? Date()
+        } set: { date in
+            let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+            settings.keepAwakeUntilMinute = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+        }
     }
 
     private func status(_ now: Date) -> String {

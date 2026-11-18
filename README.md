@@ -25,8 +25,10 @@ VibeCheck sums up your Mac in one glance and explains it in one click.
   arrow keys and Return) and it unfolds into that module's detail view. Esc folds back, then closes.
   `⌘1`–`⌘9` jump between modules, `⌘,` opens Settings.
 - **Keep awake** (like `caffeinate`): the cup in the deck keeps your Mac from idle-sleeping
-  indefinitely, for 15 min to 5 hours, or while an app is running. Choose whether the display stays on, and
-  sessions stop by themselves on low battery. A small cup sits in the menu bar while it's on.
+  indefinitely, for 15 min to 5 hours, until a time of day, or while an app is running. It can also switch
+  on by itself while plugged in or while an external display is connected. `⌃⌥⌘A` toggles it from any app,
+  sessions stop by themselves on low battery, and you get a notification when one ends on its own. A small
+  cup sits in the menu bar while it's on.
 - **Detail views** lead with one big number and a summary, then a chart, then **who's responsible** (top
   apps), with everything else behind a remembered **Details** toggle. Hover any chart to scrub it; switch
   **Live / 1H / 24H** and the line morphs. History survives restarts (sleep shows as gaps).
@@ -55,13 +57,14 @@ Open from the gear in the deck, `⌘,`, or by opening the app again.
   style (graph, icon or value only). **Fit around the camera notch** shows only what fits beside the notch
   (or at most _N_ stats) plus a "+N" badge.
 - **General:** update interval, launch at login.
-- **Keep Awake:** start/stop, default length, keep the display on, stop on battery below _N_%, start
-  when VibeCheck opens, cup in the menu bar.
+- **Keep Awake:** start/stop, default length, stay awake until a time, automatic triggers (plugged in,
+  external display), keep the display on, stop on battery below _N_%, start when VibeCheck opens,
+  notification on end, `⌃⌥⌘A` shortcut, cup in the menu bar.
 - **Alerts:** rules that read as sentences: _Tell me when **CPU usage** is **above** **90%** for **1 min**._
   Click a word to change it, drag the number sideways to adjust it, preview the banner.
 - **Clock:** locale-aware formats, seconds, world clocks.
 - **Weather:** city search, °C / °F.
-- **Shortcuts:** `⌃⌥⌘1`…`⌃⌥⌘9` and `⌃⌥⌘0` open each module from any app.
+- **Shortcuts:** `⌃⌥⌘1`…`⌃⌥⌘9` and `⌃⌥⌘0` open each module from any app; `⌃⌥⌘A` toggles keep awake.
 - **Backup:** export, import or reset settings.
 
 ## Install

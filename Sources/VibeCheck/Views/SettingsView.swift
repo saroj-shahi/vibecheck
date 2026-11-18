@@ -32,14 +32,23 @@ enum SettingsSection: String, CaseIterable, Identifiable {
     }
 }
 
+/// Which Settings page is showing; shared so other parts of the app can open a specific page.
+@Observable
+@MainActor
+final class SettingsRouter {
+    static let shared = SettingsRouter()
+    var section: SettingsSection? = .menuBar
+}
+
 /// Sidebar settings window.
 struct SettingsView: View {
     let onTestNotification: () -> Void
-    @State private var section: SettingsSection? = .menuBar
 
     var body: some View {
+        @Bindable var router = SettingsRouter.shared
+        let section = router.section
         NavigationSplitView {
-            List(SettingsSection.allCases, selection: $section) { item in
+            List(SettingsSection.allCases, selection: $router.section) { item in
                 Label(item.title, systemImage: item.symbol).tag(item)
             }
             .navigationSplitViewColumnWidth(min: 170, ideal: 180, max: 210)
@@ -549,7 +558,7 @@ private struct ShortcutSettings: View {
                 }
             }
             Section {
-                Text("Press a shortcut from any app to open that panel; press it again to close. Shortcuts for items that are switched off just beep.")
+                Text("Press a shortcut from any app to open that panel; press it again to close. Shortcuts for items that are switched off just beep. \(settings.hotkeyModifier.symbols)A starts or stops keeping your Mac awake (see Keep Awake).")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

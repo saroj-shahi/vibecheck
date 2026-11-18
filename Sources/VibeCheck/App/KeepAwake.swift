@@ -15,19 +15,25 @@ enum AwakeEnd: Hashable {
     case at(Date)
     /// While an app keeps running.
     case whileRunning(bundleID: String, name: String)
+    /// Started by a trigger (power adapter, external display); ends when the trigger goes away.
+    case whileTriggered(String)
 }
 
 /// Why a session stopped by itself.
 enum AwakeEndReason: Equatable {
-    case timeUp, appQuit, lowBattery
+    case timeUp, appQuit, lowBattery, triggerOff
 
     var message: String {
         switch self {
         case .timeUp: "Time's up."
         case .appQuit: "The app it was waiting on quit."
         case .lowBattery: "The battery got low."
+        case .triggerOff: "What started it is gone (unplugged or display disconnected)."
         }
     }
+
+    /// Worth a notification: the Mac will start sleeping again without the user doing anything.
+    var notifies: Bool { self != .triggerOff }
 }
 
 struct AwakeSession: Equatable {
@@ -38,7 +44,7 @@ struct AwakeSession: Equatable {
     static func endReason(_ session: AwakeSession, now: Date, battery: BatterySample, batteryFloor: Int,
                           isRunning: (String) -> Bool) -> AwakeEndReason? {
         switch session.end {
-        case .never: break
+        case .never, .whileTriggered: break
         case .at(let date): if now >= date { return .timeUp }
         case .whileRunning(let bundleID, _): if !isRunning(bundleID) { return .appQuit }
         }
@@ -53,6 +59,7 @@ struct AwakeSession: Equatable {
         switch end {
         case .never: return "until you stop it"
         case .whileRunning(_, let name): return "until \(name) quits"
+        case .whileTriggered(let description): return description
         case .at(let date):
             let minutes = max(0, Int((date.timeIntervalSince(now) / 60).rounded(.up)))
             if minutes < 60 { return "\(max(minutes, 1)) min left" }
@@ -78,6 +85,37 @@ enum AwakePreset {
     static func end(_ minutes: Int, from now: Date = Date()) -> AwakeEnd {
         minutes > 0 ? .at(now.addingTimeInterval(Double(minutes) * 60)) : .never
     }
+
+    /// The next time the clock shows this time of day (minutes after midnight): later today, or tomorrow.
+    static func nextOccurrence(ofMinute minuteOfDay: Int, after now: Date = Date(), calendar: Calendar = .current) -> Date {
+        let parts = DateComponents(hour: minuteOfDay / 60 % 24, minute: minuteOfDay % 60)
+        return calendar.nextDate(after: now, matching: parts, matchingPolicy: .nextTime) ?? now.addingTimeInterval(86400)
+    }
+
+    /// Whole hours to offer in the deck's "Until" menu: the next `count`, starting at least 15 minutes out.
+    static func upcomingHours(after now: Date = Date(), count: Int = 6, calendar: Calendar = .current) -> [Date] {
+        guard let first = calendar.nextDate(after: now.addingTimeInterval(15 * 60), matching: DateComponents(minute: 0),
+                                            matchingPolicy: .nextTime) else { return [] }
+        return (0..<count).compactMap { calendar.date(byAdding: .hour, value: $0, to: first) }
+    }
+}
+
+/// What the automatic triggers want right now. Edge-triggered so a manual Stop sticks until the
+/// condition goes away and comes back.
+enum AwakeTriggerAction: Equatable {
+    case start(String), stop, none
+
+    static func decide(active: String?, wasActive: Bool, session: AwakeSession?) -> AwakeTriggerAction {
+        if let active { return !wasActive && session == nil ? .start(active) : .none }
+        if case .whileTriggered = session?.end { return .stop }
+        return .none
+    }
+
+    /// "while plugged in", "while a display is connected", or both; nil when no trigger is on and met.
+    static func description(onPower: Bool, externalDisplay: Bool) -> String? {
+        let parts = [onPower ? "plugged in" : nil, externalDisplay ? "a display is connected" : nil].compactMap { $0 }
+        return parts.isEmpty ? nil : "while " + parts.joined(separator: " and ")
+    }
 }
 
 /// Keeps the Mac from idle-sleeping (like `caffeinate`), with sessions that end on a timer, when an app quits,
@@ -98,6 +136,9 @@ final class KeepAwake {
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var appObserver: NSObjectProtocol?
     @ObservationIgnored var batteryProvider: () -> BatterySample = { BatterySample() }
+    /// Called when a session ends by itself (not when stopped by hand).
+    @ObservationIgnored var onSessionEnded: ((AwakeEndReason) -> Void)?
+    @ObservationIgnored private var triggerWasActive = false
 
     private var settings: AppSettings { .shared }
 
@@ -134,12 +175,16 @@ final class KeepAwake {
         timer = nil
         if let appObserver { NSWorkspace.shared.notificationCenter.removeObserver(appObserver) }
         appObserver = nil
-        if let reason { NSLog("%@", "VibeCheck keep-awake ended: \(reason)") }
+        if let reason {
+            NSLog("%@", "VibeCheck keep-awake ended: \(reason)")
+            onSessionEnded?(reason)
+        }
         NotificationCenter.default.post(name: .vibeCheckKeepAwakeChanged, object: nil)
     }
 
     /// Ends the session if its condition is met; also picks up a changed "keep display on" setting.
     func check(now: Date = Date()) {
+        evaluateTriggers()
         guard let session else { return }
         let running = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier))
         if let reason = AwakeSession.endReason(session, now: now, battery: batteryProvider(),
@@ -148,6 +193,30 @@ final class KeepAwake {
             stop(reason: reason)
         } else if assertionKeepsDisplayOn != settings.keepAwakeDisplayOn {
             applyAssertion()
+        }
+    }
+
+    // MARK: Triggers
+
+    private func evaluateTriggers() {
+        let battery = batteryProvider()
+        let active = AwakeTriggerAction.description(
+            onPower: settings.keepAwakeOnPower && (!battery.present || battery.onAC),
+            externalDisplay: settings.keepAwakeWithDisplay && Self.hasExternalDisplay())
+        let action = AwakeTriggerAction.decide(active: active, wasActive: triggerWasActive, session: session)
+        triggerWasActive = active != nil
+        switch action {
+        case .start(let description): start(.whileTriggered(description))
+        case .stop: stop(reason: .triggerOff)
+        case .none: break
+        }
+    }
+
+    /// Any display that isn't the built-in panel (on a desktop Mac, any display).
+    static func hasExternalDisplay() -> Bool {
+        NSScreen.screens.contains { screen in
+            guard let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return false }
+            return CGDisplayIsBuiltin(id.uint32Value) == 0
         }
     }
 

@@ -247,6 +247,25 @@ final class AppSettings {
     var keepAwakeAtLaunch: Bool {
         didSet { save(keepAwakeAtLaunch, "keepAwakeAtLaunch", structural: false) }
     }
+    /// Time of day for "until" sessions started from Settings, in minutes after midnight.
+    var keepAwakeUntilMinute: Int {
+        didSet { save(keepAwakeUntilMinute, "keepAwakeUntilMinute", structural: false) }
+    }
+    /// Notify when a session ends by itself.
+    var keepAwakeNotify: Bool {
+        didSet { save(keepAwakeNotify, "keepAwakeNotify", structural: false) }
+    }
+    /// Global shortcut (modifier + A) that starts or stops a session.
+    var keepAwakeHotkey: Bool {
+        didSet { save(keepAwakeHotkey, "keepAwakeHotkey", structural: true) }
+    }
+    /// Triggers: stay awake automatically while plugged in / while an external display is connected.
+    var keepAwakeOnPower: Bool {
+        didSet { save(keepAwakeOnPower, "keepAwakeOnPower", structural: false); KeepAwake.shared.check() }
+    }
+    var keepAwakeWithDisplay: Bool {
+        didSet { save(keepAwakeWithDisplay, "keepAwakeWithDisplay", structural: false); KeepAwake.shared.check() }
+    }
     /// Show a cup in the menu bar while a session runs.
     var keepAwakeShowInMenuBar: Bool {
         didSet { save(keepAwakeShowInMenuBar, "keepAwakeShowInMenuBar", structural: true) }
@@ -315,6 +334,11 @@ final class AppSettings {
         keepAwakeBatteryFloor = defaults.object(forKey: "keepAwakeBatteryFloor") as? Int ?? 10
         keepAwakeAtLaunch = defaults.bool(forKey: "keepAwakeAtLaunch")
         keepAwakeShowInMenuBar = defaults.object(forKey: "keepAwakeShowInMenuBar") as? Bool ?? true
+        keepAwakeUntilMinute = defaults.object(forKey: "keepAwakeUntilMinute") as? Int ?? 18 * 60
+        keepAwakeNotify = defaults.object(forKey: "keepAwakeNotify") as? Bool ?? true
+        keepAwakeHotkey = defaults.object(forKey: "keepAwakeHotkey") as? Bool ?? true
+        keepAwakeOnPower = defaults.bool(forKey: "keepAwakeOnPower")
+        keepAwakeWithDisplay = defaults.bool(forKey: "keepAwakeWithDisplay")
         alertRules = defaults.data(forKey: "alertRules")
             .flatMap { try? JSONDecoder().decode([AlertRule].self, from: $0) } ?? AlertRule.defaults
     }

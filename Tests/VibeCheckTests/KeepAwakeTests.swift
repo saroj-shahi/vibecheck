@@ -47,6 +47,36 @@ struct KeepAwakeTests {
         #expect(AwakePreset.title(300) == "5 hours")
     }
 
+    var utc: Calendar { var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "UTC")!; return c }
+
+    @Test func untilTimeRollsOverToTomorrow() {
+        let at1430 = Date(timeIntervalSince1970: 1_800_023_400) // 14:30 UTC (1_800_000_000 is 08:00)
+        let six = AwakePreset.nextOccurrence(ofMinute: 18 * 60, after: at1430, calendar: utc)
+        #expect(six.timeIntervalSince(at1430) == 3.5 * 3600)
+        let nine = AwakePreset.nextOccurrence(ofMinute: 9 * 60, after: at1430, calendar: utc)
+        #expect(nine.timeIntervalSince(at1430) == 18.5 * 3600)
+        let hours = AwakePreset.upcomingHours(after: at1430, count: 3, calendar: utc)
+        #expect(hours.map { $0.timeIntervalSince(at1430) / 60 } == [30, 90, 150])
+        let at1450 = at1430.addingTimeInterval(20 * 60) // under 15 minutes to 15:00, so start at 16:00
+        #expect(AwakePreset.upcomingHours(after: at1450, count: 1, calendar: utc).first?.timeIntervalSince(at1450) == Double(70 * 60))
+    }
+
+    @Test func triggersAreEdgeTriggered() {
+        let manual = AwakeSession(started: now, end: .never)
+        let triggered = AwakeSession(started: now, end: .whileTriggered("while plugged in"))
+        #expect(AwakeTriggerAction.decide(active: "while plugged in", wasActive: false, session: nil) == .start("while plugged in"))
+        #expect(AwakeTriggerAction.decide(active: "while plugged in", wasActive: true, session: nil) == .none) // stopped by hand
+        #expect(AwakeTriggerAction.decide(active: "while plugged in", wasActive: false, session: manual) == .none) // manual wins
+        #expect(AwakeTriggerAction.decide(active: nil, wasActive: true, session: triggered) == .stop)
+        #expect(AwakeTriggerAction.decide(active: nil, wasActive: true, session: manual) == .none)
+        #expect(AwakeTriggerAction.description(onPower: true, externalDisplay: false) == "while plugged in")
+        #expect(AwakeTriggerAction.description(onPower: true, externalDisplay: true) == "while plugged in and a display is connected")
+        #expect(AwakeTriggerAction.description(onPower: false, externalDisplay: false) == nil)
+        #expect(triggered.remaining(now: now) == "while plugged in")
+        #expect(AwakeSession.endReason(triggered, now: now, battery: onBattery, batteryFloor: 0) { _ in true } == nil)
+        #expect(!AwakeEndReason.triggerOff.notifies && AwakeEndReason.timeUp.notifies)
+    }
+
     /// Starts a real session and checks that macOS lists VibeCheck's assertion, then that stopping releases it.
     @MainActor @Test func realAssertionIsHeldAndReleased() {
         func ours() -> [String] {

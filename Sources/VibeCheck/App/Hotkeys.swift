@@ -8,6 +8,8 @@ final class HotkeyManager {
     static let shared = HotkeyManager()
 
     var onTrigger: ((Module) -> Void)?
+    var onKeepAwake: (() -> Void)?
+    private static let keepAwakeID: UInt32 = 100
 
     private var refs: [EventHotKeyRef] = []
     private var handlerInstalled = false
@@ -15,7 +17,7 @@ final class HotkeyManager {
     private static let keyCodes = [kVK_ANSI_1, kVK_ANSI_2, kVK_ANSI_3, kVK_ANSI_4, kVK_ANSI_5,
                                    kVK_ANSI_6, kVK_ANSI_7, kVK_ANSI_8, kVK_ANSI_9, kVK_ANSI_0]
 
-    func register(modifier: HotkeyModifier) {
+    func register(modifier: HotkeyModifier, keepAwake: Bool = false) {
         unregisterAll()
         installHandlerIfNeeded()
         let flags: Int
@@ -32,6 +34,14 @@ final class HotkeyManager {
             if status == noErr, let ref { refs.append(ref) }
             else { NSLog("VibeCheck: shortcut \(modifier.symbols)\(Module.allCases[index].shortcutKey ?? "?") unavailable (\(status))") }
         }
+        if keepAwake {
+            var ref: EventHotKeyRef?
+            let status = RegisterEventHotKey(UInt32(kVK_ANSI_A), UInt32(flags),
+                                             EventHotKeyID(signature: Self.signature, id: Self.keepAwakeID),
+                                             GetApplicationEventTarget(), 0, &ref)
+            if status == noErr, let ref { refs.append(ref) }
+            else { NSLog("VibeCheck: shortcut \(modifier.symbols)A unavailable (\(status))") }
+        }
     }
 
     func unregisterAll() {
@@ -40,6 +50,7 @@ final class HotkeyManager {
     }
 
     fileprivate func fire(_ index: Int) {
+        if index == Int(Self.keepAwakeID) { onKeepAwake?(); return }
         guard Module.allCases.indices.contains(index) else { return }
         onTrigger?(Module.allCases[index])
     }

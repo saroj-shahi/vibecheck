@@ -118,6 +118,12 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
         fired.formIntersection(ids)
     }
 
+    /// A one-off notification from elsewhere in the app (e.g. keep awake ending).
+    func notify(title: String, body: String) {
+        requestPermissionIfNeeded()
+        post(title: title, body: body)
+    }
+
     func sendTest() {
         requestPermissionIfNeeded()
         post(title: "VibeCheck", body: "Notifications are working. Your Mac's vibes are being watched. 👀")
