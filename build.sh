@@ -34,7 +34,17 @@ fi
 # The icon is rendered from branding/svg by scripts/render_brand.swift and committed.
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 
-codesign --force --sign - "$APP"
+# Sign with a stable identity when one exists, so macOS keeps Keychain "Always Allow" (and other
+# permissions) across builds. Ad hoc signatures change every build, so macOS asks again each time.
+# Override with VIBECHECK_SIGN_IDENTITY; default is the local self-signed "VibeCheck Local Signing".
+IDENTITY="${VIBECHECK_SIGN_IDENTITY:-VibeCheck Local Signing}"
+if security find-identity -v -p codesigning | grep -qF "\"$IDENTITY\""; then
+  codesign --force --sign "$IDENTITY" "$APP"
+  echo "Signed with \"$IDENTITY\""
+else
+  codesign --force --sign - "$APP"
+  echo "Signed ad hoc (no \"$IDENTITY\" certificate; Keychain access is asked again after each build)"
+fi
 echo "Built $APP"
 
 if [ "${1:-}" = "--install" ]; then
