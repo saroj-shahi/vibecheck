@@ -34,16 +34,21 @@ fi
 # The icon is rendered from branding/svg by scripts/render_brand.swift and committed.
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 
-# Sign with a stable identity when one exists, so macOS keeps Keychain "Always Allow" (and other
-# permissions) across builds. Ad hoc signatures change every build, so macOS asks again each time.
-# Override with VIBECHECK_SIGN_IDENTITY; default is the local self-signed "VibeCheck Local Signing".
-IDENTITY="${VIBECHECK_SIGN_IDENTITY:-VibeCheck Local Signing}"
-if security find-identity -v -p codesigning | grep -qF "\"$IDENTITY\""; then
+# Signing identity, best first (override with VIBECHECK_SIGN_IDENTITY):
+# 1. "Apple Development: …" (free with an Apple ID in Xcode). It carries a Team ID, and Keychain
+#    "Always Allow" on another app's item is recorded per team, so it survives updates.
+# 2. "VibeCheck Local Signing" (self-signed). Stable identity, but no Team ID: Keychain records the exact
+#    build (cdhash), so macOS asks again after every update.
+# 3. Ad hoc.
+IDENTITIES=$(security find-identity -v -p codesigning)
+DEVELOPMENT=$(printf '%s\n' "$IDENTITIES" | sed -n 's/.*"\(Apple Development: [^"]*\)".*/\1/p' | head -1)
+IDENTITY="${VIBECHECK_SIGN_IDENTITY:-${DEVELOPMENT:-VibeCheck Local Signing}}"
+if printf '%s\n' "$IDENTITIES" | grep -qF "\"$IDENTITY\""; then
   codesign --force --sign "$IDENTITY" "$APP"
   echo "Signed with \"$IDENTITY\""
 else
   codesign --force --sign - "$APP"
-  echo "Signed ad hoc (no \"$IDENTITY\" certificate; Keychain access is asked again after each build)"
+  echo "Signed ad hoc (no \"$IDENTITY\" certificate)"
 fi
 echo "Built $APP"
 
