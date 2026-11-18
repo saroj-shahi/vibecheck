@@ -30,13 +30,18 @@ struct DeckRoot: View {
     var body: some View {
         ScrollView(.vertical) {
             Group {
-                switch model.route {
-                case .home:
-                    DeckHome()
-                case .module(let module):
-                    ModulePanel(module: module)
-                        .environment(\.deckShowsBack, true)
-                        .transition(.opacity)
+                if model.paletteOpen {
+                    CommandPaletteView()
+                        .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
+                } else {
+                    switch model.route {
+                    case .home:
+                        DeckHome()
+                    case .module(let module):
+                        ModulePanel(module: module)
+                            .environment(\.deckShowsBack, true)
+                            .transition(.opacity)
+                    }
                 }
             }
             .environment(\.deckNamespace, namespace)
@@ -50,6 +55,21 @@ struct DeckRoot: View {
         .frame(maxHeight: .infinity, alignment: .top)
         .onPreferenceChange(DeckHeightKey.self) { height in
             MainActor.assumeIsolated { onHeight(height) }
+        }
+        .overlay { GlassHairline() }
+    }
+}
+
+/// 0.5 pt inner edge so the pre-Liquid Glass blur reads as a sheet of glass (white 10% dark, black 8% light).
+/// Liquid Glass (macOS 26) draws its own edge, so nothing is added there.
+private struct GlassHairline: View {
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        if #unavailable(macOS 26) {
+            RoundedRectangle(cornerRadius: Deck.cornerRadius, style: .continuous)
+                .strokeBorder(scheme == .dark ? Color.white.opacity(0.10) : Color.black.opacity(0.08), lineWidth: 0.5)
+                .allowsHitTesting(false)
         }
     }
 }
@@ -117,6 +137,7 @@ struct DeckHome: View {
                     .font(.system(size: 15, weight: .semibold))
                     .contentTransition(.interpolate)
                 Spacer(minLength: 4)
+                DeckIconButton(symbol: "magnifyingglass", help: "Search actions (⌘K)") { model.openPalette() }
                 NotificationBellButton()
                 AwakeMenuButton()
                 DeckIconButton(symbol: "gearshape", help: "Settings (⌘,)") {
@@ -215,6 +236,13 @@ struct ModuleTile: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                     Spacer(minLength: 0)
+                    // Hover reveal: says "this opens" without a permanent glyph on every tile.
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .opacity(hovering ? 0.6 : 0)
+                        .offset(x: hovering || Deck.reduceMotion ? 0 : -2)
+                        .accessibilityHidden(true)
                 }
                 Text(content.value)
                     .font(.system(size: 17, weight: .semibold, design: .rounded).monospacedDigit())
@@ -247,7 +275,7 @@ struct ModuleTile: View {
             .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(TilePressStyle())
-        .onHover { hovering in withAnimation(.easeOut(duration: 0.12)) { self.hovering = hovering } }
+        .onHover { hovering in withAnimation(.easeOut(duration: hovering ? 0.15 : 0.12)) { self.hovering = hovering } }
         .accessibilityLabel("\(module.title), \(content.spoken)")
         .accessibilityHint("Shows \(module.title) details")
         .help("\(module.title) — click for details")

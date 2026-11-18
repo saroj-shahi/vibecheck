@@ -148,6 +148,8 @@ Motion explains what changed; it never decorates.
 | Vibe change | Ring fill and color animate (spring 0.5 / 0.75) with one small bounce; needs two consecutive samples first |
 | Range switch | The chart line morphs between ranges; the pill slides (spring 0.3 / 0.8) |
 | Press | 97% scale, spring 0.2 / 0.7 |
+| Tile hover | Fill 55% → 90%, a chevron fades in at the top right (150 ms ease-out) |
+| Palette selection | 14% accent fill moves to the row, ↩ replaces its shortcut (120 ms ease-out) |
 | Reduce Motion | Every spring becomes a 150 ms crossfade |
 
 ## 8. Asset checklist

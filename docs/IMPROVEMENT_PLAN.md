@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 86 commits · ~10,600 lines of Swift · 142 tests_
+_Last updated: 2026-11-18 · version 1.5 · 87 commits · ~10,900 lines of Swift · 148 tests_
 
 ---
 
@@ -13,7 +13,8 @@ VibeCheck is a native macOS (14+) menu bar system monitor: CPU, GPU, memory, net
 battery, clock and weather, summed up by a **vibe score** (vibing / mid / cooked). Clicking the menu bar
 item opens the **deck**, a Liquid Glass panel with live tiles that unfold into detail views. Settings is a
 sidebar window with a live menu bar preview. Full feature list: [README](../README.md). Brand:
-[branding/BRAND.md](../branding/BRAND.md).
+[branding/BRAND.md](../branding/BRAND.md). Design direction (deck layout, materials, micro-interactions,
+⌘K): [DESIGN_DIRECTION.md](DESIGN_DIRECTION.md).
 
 **Installed** at `/Applications/VibeCheck.app` with launch at login on. The owner's setup (as of the QA pass):
 separate items, tight spacing, ring on; Memory, Disk and Clock off; notch cap 0 (as many as fit).
@@ -31,6 +32,7 @@ not the whole screen.
 | Alerts, history, charts resampling, vibe score, notch fit, settings backup, layout widths | ✅ unit tests |
 | Login item registration | ✅ `--login-item status` reports enabled |
 | Deck look (dark mode), tiles, sparklines, keyboard focus ring | ✅ seen in the QA pass |
+| ⌘K command palette (search row, rows, selection, key caps) and the header search button, dark + light | 🟡 offscreen renders only (2026-11-18); typing, ↑↓/↩, hover chevron and the pre-26 hairline not seen live |
 | Ring mid (yellow) and cooked (red) in the menu bar, "Cooked" verdict in the deck | ✅ seen 2026-11-18 (7 then 10 busy `yes` loops; mid after ~45 s) |
 | Light mode, tile hover/press, unfold animation, ring bounce | ❌ never seen |
 | Chart scrubbing bubble (hover, values, "No data" gaps) | ✅ seen with synthetic mouse moves |
@@ -194,6 +196,12 @@ Synthetic clicks don't open menu submenus.
 Not planned: another app's window, Dock, mouse, keyboard, clipboard, file, screenshot, recording, uninstaller,
 lyrics and companion tools, and its notch-style "Dynamic Island" bar. They're outside a system monitor.
 
+### Design direction (from [DESIGN_DIRECTION.md](DESIGN_DIRECTION.md))
+
+- ~~⌘K command palette, type-to-act, tile hover chevron, glass hairline (macOS 14–15)~~: done 2026-11-18.
+- **P1** See the palette live: ⌘K, typing on the home grid, ↑↓/↩, Esc twice (part of the P0 QA pass).
+- **P2** Pinned header while a detail view scrolls; palette "recent" ordering; process and alert commands.
+
 ### Tech debt
 
 - `Sources/VibeCheck/Views/Panels.swift` is large; split per module.
@@ -279,6 +287,8 @@ Short record of choices future sessions shouldn't silently undo.
 | Alerts and the vibe score don't depend on which modules are shown (owner, 2026-11-18) | A CPU alert should fire even with the CPU item hidden; so CPU, memory, disk, sensors and battery are always sampled. Only samples nothing else needs (accessory batteries) are gated |
 | Keep Awake item: click toggles with the default length, right-click/⌃/⌥-click opens the menu (owner, 2026-11-18) | The owner wanted the default set in Settings and started by a click; the menu keeps the other options one click away |
 | Quick toggles act through System Events / Finder / CoreAudio only; Trash is emptied by Finder, never by deleting files | The user's own undo and Finder's rules apply; Automation permission is asked on first use (`NSAppleEventsUsageDescription`) |
+| ⌘K palette draws its query instead of using a TextField; keys come from the deck's key monitor | The deck is a non-activating panel that never takes focus from the user's app; a real field would need it to |
+| Palette never offers Empty Trash or process kills; Quit needs a second ↩ | Type-to-act means "q" + Return would quit; Return in a list is too easy to hit by accident |
 | A finished focus session always notifies | It's the point of a focus timer; other keep-awake endings follow the notify setting |
 | Separate items' autosave names carry a generation (`vibecheck.cpu.g3`) bumped on each Settings reorder; generation 0 keeps the original names | macOS 27 remembers item positions by autosave name outside the app's defaults; new names are placed in creation order, each to the left (probe app). Don't revert to fixed names |
 | Limit lists key on `RateWindow.key` (length + name) | Copilot's two monthly quotas share a length; keying on length drew one twice |
@@ -349,6 +359,15 @@ tables above and the lessons below; add new dated entries under "Recent sessions
   `/usr/bin/security` (an "Always Allow" would cover every process that runs it).
 
 ### Recent sessions
+
+#### 2026-11-18: design direction + ⌘K palette
+
+Ran the owner's "menu bar Creative Director" brief against the deck; result in
+`docs/DESIGN_DIRECTION.md` (five sections, BRAND.md still wins). Built what it asked for that was missing:
+⌘K palette (modules, keep awake, focus, Dark/Mic, every Settings pane, Quit), type-to-act on the home
+grid, a search button in the header, a tile hover chevron (150 ms ease-out) and a 0.5 pt hairline on the
+pre-Liquid Glass material. Checked with offscreen renders (`NSHostingView.cacheDisplay` in a throwaway
+test), not live.
 
 #### 2026-11-18: keep awake on a schedule
 

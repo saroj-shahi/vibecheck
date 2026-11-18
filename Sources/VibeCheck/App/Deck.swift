@@ -39,8 +39,46 @@ final class DeckModel {
     private(set) var originIndex: Int?
 
     @ObservationIgnored var onRouteChange: ((DeckRoute) -> Void)?
+    /// Closes the deck window (set by the controller).
+    @ObservationIgnored var requestClose: (() -> Void)?
+
+    /// ⌘K palette: nil when closed, else what has been typed.
+    private(set) var paletteQuery: String?
+    /// Selected row among the filtered results.
+    var paletteIndex = 0 { didSet { if paletteIndex != oldValue { paletteConfirmID = nil } } }
+    /// A command that asked for a second ↩ (Quit); cleared by any other key or selection change.
+    var paletteConfirmID: String?
+    var paletteOpen: Bool { paletteQuery != nil }
+
+    func openPalette(_ query: String = "") {
+        withAnimation(Deck.reduceMotion ? nil : .easeOut(duration: 0.15)) { paletteQuery = query }
+        paletteIndex = 0
+        paletteConfirmID = nil
+    }
+
+    func closePalette() {
+        guard paletteQuery != nil else { return }
+        withAnimation(Deck.reduceMotion ? nil : .easeOut(duration: 0.12)) { paletteQuery = nil }
+        paletteIndex = 0
+        paletteConfirmID = nil
+    }
+
+    func typeInPalette(_ text: String) {
+        paletteQuery = (paletteQuery ?? "") + text
+        paletteIndex = 0
+        paletteConfirmID = nil
+    }
+
+    func deleteInPalette() {
+        guard var query = paletteQuery, !query.isEmpty else { return }
+        query.removeLast()
+        paletteQuery = query
+        paletteIndex = 0
+        paletteConfirmID = nil
+    }
 
     func go(_ route: DeckRoute, animated: Bool = true) {
+        closePalette()   // e.g. ⌘2 while the palette is open
         guard route != self.route else { return }
         if case .module(let module) = route { originIndex = modules.firstIndex(of: module) }
         if animated {
@@ -158,6 +196,7 @@ final class DeckController: NSObject {
         panel.setContentSize(initial.size)
 
         model.onRouteChange = { [weak self] _ in self?.updateSamplerDemand() }
+        model.requestClose = { [weak self] in self?.close() }
     }
 
     // MARK: Showing and hiding
@@ -216,6 +255,7 @@ final class DeckController: NSObject {
     func close() {
         guard isVisible else { return }
         removeMonitors()
+        model.closePalette()
         generation += 1
         let closing = generation
         let panel = self.panel
@@ -330,6 +370,12 @@ final class DeckController: NSObject {
     private func handleKey(_ event: KeyPress) -> Bool {
         guard isVisible, event.windowNumber == panel.windowNumber else { return false }
 
+        if event.command, event.characters == "k" {
+            if model.paletteOpen { model.closePalette() } else { model.openPalette() }
+            return true
+        }
+        if model.paletteOpen, let handled = handlePaletteKey(event) { return handled }
+
         if event.command {
             switch event.characters {
             case ",": close(); (NSApp.delegate as? AppDelegate)?.showSettings(); return true
@@ -360,8 +406,43 @@ final class DeckController: NSObject {
             }
             return true
         default:
+            // Type-to-act: a letter or digit on the home grid opens the palette already filtered.
+            if model.route == .home, let text = Self.typedText(event) {
+                model.openPalette(text)
+                return true
+            }
             return false
         }
+    }
+
+    /// Keys while the palette is open; nil lets the normal handling run (⌘-digits, ⌘W, ⌘,).
+    private func handlePaletteKey(_ event: KeyPress) -> Bool? {
+        if event.command { return nil }
+        let results = DeckCommands.filter(DeckCommands.all(model: model, settings: settings),
+                                          query: model.paletteQuery ?? "")
+        switch event.code {
+        case 53: // Escape: clear the query, then close the palette
+            if model.paletteQuery?.isEmpty == false { model.openPalette() } else { model.closePalette() }
+        case 36, 76:
+            if results.indices.contains(model.paletteIndex) { DeckCommands.activate(results[model.paletteIndex], model: model) }
+        case 125: model.paletteIndex = min(model.paletteIndex + 1, max(results.count - 1, 0))
+        case 126: model.paletteIndex = max(model.paletteIndex - 1, 0)
+        case 51: model.deleteInPalette()
+        case 123, 124: break
+        default:
+            if let text = Self.typedText(event, allowSpace: true) { model.typeInPalette(text) }
+        }
+        return true
+    }
+
+    /// Printable text from a key press (letters, digits, punctuation), nil for control keys.
+    nonisolated static func typedText(_ event: KeyPress, allowSpace: Bool = false) -> String? {
+        guard !event.command, let chars = event.characters, chars.count == 1, let scalar = chars.unicodeScalars.first
+        else { return nil }
+        if scalar == " " { return allowSpace ? " " : nil }
+        let printable = CharacterSet.alphanumerics.union(.punctuationCharacters).union(.symbols)
+        guard printable.contains(scalar), scalar.value < 0xF700 else { return nil }   // F700+: arrow/function keys
+        return chars
     }
 
     // MARK: Samplers

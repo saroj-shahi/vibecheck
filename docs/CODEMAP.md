@@ -21,6 +21,7 @@ are added or split. Decisions and history are in [IMPROVEMENT_PLAN.md](IMPROVEME
 | `ProcessKiller.swift` | Quit / Force Quit (optionally with subprocesses) with protected processes and pid start-time identity |
 | `QuickActions.swift` | Quick toggles: dark mode (System Events), mic mute (CoreAudio), empty Trash (Finder) |
 | `SecureInput.swift` | Which app holds Secure Event Input (shortcuts paused) |
+| `DeckCommands.swift` | ⌘K palette: the command list and how typing filters it |
 | `DownloadsWatcher.swift` | Whether files are arriving in the watched folder (keep-awake "while downloading" trigger) |
 | `BluetoothSnooze.swift` | Bluetooth off while asleep (private IOBluetooth, CoreBluetooth permission) |
 | `Weather.swift` | Open-Meteo forecast + city search, `TemperatureUnit` |
@@ -39,7 +40,8 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `PortSampler` (`lso
 |---|---|
 | `MenuBarLabels.swift` | Every menu bar label (fixed widths!), `AgentLimitsLabel`, `ClaudeEstimateLabel` |
 | `CombinedViews.swift` | Combined item, `AwakeCup`, `KeepAwakeItemLabel` |
-| `DeckView.swift` | Deck home (header, keep-awake strip, secure input strip, quick toggles, tiles), tiles' spoken labels |
+| `DeckView.swift` | Deck home (header, keep-awake strip, secure input strip, quick toggles, tiles), tiles' spoken labels, glass hairline |
+| `CommandPalette.swift` | ⌘K palette view (search row, rows, `KeyCap`) |
 | `Panels.swift` | Detail panels per module, `ProcessList`, `ListeningPortsSection`, `USBDevicesSection` |
 | `AgentsPanel.swift` | Agents detail: Now card, charts, agent cards, `LimitGauge`, `PaceBar`, `DailyBars` |
 | `MetricChart.swift` | Detail charts (resampling, `SeriesShape`, scrubbing) |
