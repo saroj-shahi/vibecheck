@@ -41,7 +41,8 @@ What *was* verified: unit tests, real data via `--dump`, real window frames via 
 | Keep awake triggers: plugged in and external display start a session | ✅ built app with launch arguments + `pmset -g assertions` (on AC with the MSI display attached) |
 | Keep awake: trigger ending on unplug / display removal, end notification, ⌃⌥⌘A, "Until" menu | ❌ not exercised (logic covered by unit tests) |
 | App Intents metadata in the bundle (5 actions, 2 enums, 4 phrases) | ✅ `extract.actionsdata` inspected; signature verifies |
-| Shortcuts / Spotlight actually listing and running the actions | ❌ needs the app installed in /Applications and a look in Shortcuts |
+| Shortcuts app lists the 5 VibeCheck actions | ✅ seen by the owner after installing (2026-11-18) |
+| Running the actions; Spotlight / Siri phrases | ❌ not tried yet |
 | Agents: Claude Code / Codex token totals from real logs | ✅ `--dump` (today's Claude total matched an independent Python count) + unit tests |
 | Agents: menu bar item, tile, detail panel | ❌ never seen |
 
@@ -254,7 +255,7 @@ Notes: `swift test` passes (56). Both triggers started a session in the built ap
 |---|---|
 | `deaa7cc` | `Intents.swift`: Get Mac Vibe, Get Mac Stat (9 stats), Open VibeCheck Deck, Keep Mac Awake, Let Mac Sleep, plus Spotlight/Siri phrases. `build.sh` compiles with `-emit-const-values-path` and runs `appintentsmetadataprocessor` into `Contents/Resources/Metadata.appintents`. `AppDelegate.openDeck(_:)`. 2 tests. |
 
-Notes: `swift test` passes (58). The metadata lists all 5 actions and 4 phrases, and the signed bundle verifies. Not checked: the actions appearing in the Shortcuts app and running, which needs the build installed in /Applications.
+Notes: `swift test` passes (58). The metadata lists all 5 actions and 4 phrases, and the signed bundle verifies. After installing, the owner saw the actions in the Shortcuts app. Running them and the Spotlight/Siri phrases are not checked yet.
 
 ---
 
