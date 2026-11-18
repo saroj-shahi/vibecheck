@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 44 commits · ~7,200 lines of Swift · 77 tests_
+_Last updated: 2026-11-18 · version 1.5 · 48 commits · ~7,600 lines of Swift · 87 tests_
 
 ---
 
@@ -65,6 +65,9 @@ not the whole screen.
 | Quit / Force Quit: right-click menu, inline confirmation, notice in the deck | ❌ never seen |
 | Secure input: detection and app lookup with secure input really on | ✅ probe test (`EnableSecureEventInput`) |
 | Secure input: warning in Settings → Shortcuts | ❌ never seen |
+| Limits gauges and the stacked menu bar label | ✅ rendered offscreen (`ImageRenderer`, dark mode) with sample limits; not seen in the real deck |
+| Live Claude limits: parsing, merge, Keychain-deny handling | ✅ unit tests with fixture JSON |
+| Live Claude limits: Keychain prompt, real fetch, Settings status line | ❌ not tried (owner's call; the setting is off) |
 
 ---
 
@@ -113,15 +116,18 @@ Synthetic clicks don't open menu submenus.
    (children of a CLI process), and seeing the menu and confirmation on screen.
 2. ~~Secure input warning~~ _(V)_: done 2026-11-18 (`cd4159a`). Still open: a hint in the deck when a global
    shortcut is pressed but blocked, and seeing the Settings warning on screen.
-3. **Agents: plan limits and cost** _(V)_, replacing the old "Agents module, next steps":
-   - Codex already reports rate limits in its logs; show the 5-hour and weekly percentages with reset times.
-   - Claude plan limits only come from Anthropic with the user's login; ask the owner before reading any
-     credential, and keep it opt-in.
-   - API-equivalent cost: another app keeps prices in a JSON file in its repo, fetched at runtime, so prices
-     can change without a release. Do the same (our own file, cached, with a "prices as of" date).
-     Never hard-code prices.
-   - More agents: OpenCode, GitHub Copilot, Gemini CLI. Also "in progress now" (a session written in the
-     last minute), a tokens-per-hour alert rule, and a 7-day chart.
+3. **Agents: plan limits and cost** _(V)_:
+   - ~~Limits UI~~ done 2026-11-18 (`3b8581d`): "% left" gauges with pace knob, burn per hour, reset countdown,
+     "Limits left" stacked menu bar style.
+   - ~~Claude's real limits~~ done 2026-11-18 (`91806ca`), opt-in in Settings → General. **Never fetched for
+     real yet**: the owner has to switch it on and allow the Keychain prompt. The endpoint
+     (`/api/oauth/usage`, `anthropic-beta: oauth-2025-04-20`) is undocumented; if it changes, the status
+     line says "Anthropic didn't answer".
+   - Still open: API-equivalent cost (needs the owner's OK to download a price list, e.g. LiteLLM's public
+     `model_prices_and_context_window.json`, which usage tools uses; asked 2026-11-18, not answered yet).
+   - Still open: more agents. This Mac has data for OpenCode (`~/.local/share/opencode`), Gemini CLI
+     (`~/.gemini`), GitHub Copilot (`~/.copilot`) and Cursor (`~/.cursor`); check which of them log tokens.
+     Also "in progress now", a tokens-per-hour alert rule, and a 7-day chart.
 4. **Port manager** _(V)_. Listening TCP ports with the owning process (`lsof -nP -iTCP -sTCP:LISTEN`, only
    while the view is open), in the Network detail view; kill through item 1.
 5. **Distribution.** Developer ID signing + notarization (`notarytool`), a DMG, an update check (Sparkle or
@@ -230,7 +236,7 @@ Short record of choices future sessions shouldn't silently undo.
 | Notification history lives in `~/Library/Application Support/VibeCheck/notifications.json`, not in defaults, and isn't part of settings backup | It's history, not a setting (like `history.json`) |
 | App Intents metadata is generated in `build.sh` with Xcode's `appintentsmetadataprocessor` | SwiftPM doesn't run it; needs Xcode installed (build warns and skips otherwise). Keep the protocol list in `build.sh` in sync if new intent kinds (entities, queries) are added |
 | Intents run in the app and wait ~2.5 s after a cold launch | CPU and network rates need two samples |
-| Agents module reads local logs only, no network, no credentials | Privacy; works offline; no keychain prompts |
+| Agents module reads local logs only by default; network and credentials only with live Claude limits switched on | Privacy; works offline; no Keychain prompts unless asked for |
 | Agent totals include cache reads (as usage tools usually count them) | Numbers line up with the tool people already compare against; the breakdown is in Details |
 | Agents is module 10; ⌘0 / ⌃⌥⌘0 open it | The number row has no "10"; `Module.shortcutKey` maps 1–9 then 0 |
 | Keep awake uses an IOKit assertion, not a `caffeinate` child process | Released automatically if the app dies; visible in `pmset -g assertions` |
@@ -241,6 +247,9 @@ Short record of choices future sessions shouldn't silently undo.
 | another app (GPL-3.0) is a source of ideas only, never code | Copying GPL code would make VibeCheck GPL |
 | Quit actions hold the pid's start time and refuse if it changed | pids are reused; a stale menu must never signal a different process |
 | Secure input warning says where macOS "points", not who holds it | `kCGSSessionSecureInputPID` records the frontmost app when secure input starts (a CLI tool's was reported as Chrome, then Slack) |
+| Live Claude limits are opt-in, off by default, and not in settings backup | It reads another app's credential; that choice is made on each Mac, never restored silently |
+| After a Keychain "Deny", stop asking until the setting is switched again | Otherwise macOS would show the prompt every 15 minutes |
+| Agents module network use: only api.anthropic.com, only with live Claude limits on | Keeps "local logs only" true by default |
 | Agent prices come from a fetched price file with a date, never hard-coded | Prices change; a stale built-in table would show wrong costs |
 | Settings footers use `settingsFooter()` (caption, leading) | Grouped `Form` footers align trailing by default on macOS |
 | Chart areas add points with `addLine`, never `addLines` | `addLines` starts a new subpath and breaks the closed fill |
@@ -411,6 +420,21 @@ gap) and a builder for the secure input warning in separate files, while the qui
 here. 77 tests pass, zero warnings, installed. Live probe: with secure input on, the lookup found the key
 in `IOConsoleUsers`, but the pid named the frontmost app (Chrome, later Slack), not the CLI tool that
 turned it on, so the wording is hedged. Nothing new was seen on screen.
+
+### 2026-11-18: limits UI and live Claude limits (agent in parallel)
+
+| Commit | What |
+|---|---|
+| `3b8581d` | `LimitGauge` / `PaceBar` in `AgentsPanel.swift`: "% left", burn per hour, pace knob, reset countdown, orange when ahead of the clock. `AgentLimitsLabel` "Limits left" menu bar style. `RateWindow` pace math. 4 tests. |
+| `91806ca` | `ClaudeLimits.swift`: opt-in live 5-hour and weekly limits from Anthropic using Claude Code's Keychain sign-in; merged into the Claude summary while fresh; Settings → General toggle and status. 6 tests. |
+
+Notes: the owner asked for limits like the "Usage for Claude" app. A background agent built the fetcher
+(not allowed to read the Keychain or call Anthropic; fixture tests only) while the UI was built here.
+Review fixes before committing: no repeat Keychain prompts after a Deny, drop windows with no reset time
+or already reset, keep the opt-in out of backups. The new UI was checked as offscreen renders (no screen
+use; the owner was busy): warning color and column widths were fixed after the first render. 87 tests,
+zero warnings, installed. To use: Settings → Menu Bar → Agents → "Limits left"; Settings → General →
+"Show Claude's real plan limits". Ad hoc signing means each new build may ask for Keychain access again.
 
 ---
 
