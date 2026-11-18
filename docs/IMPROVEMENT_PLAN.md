@@ -102,7 +102,7 @@ hardware access.
 - [x] Detail views: Network (+ listening ports), Sensors, Agents, CPU Details toggle, Live/1H/24H (2026-11-18). Weather not seen (switched off); haptics and the morph animation can't be captured
 - [ ] Vibe ring: colors and bounce (force "mid" by running a CPU-heavy task for 30 s+)
 - [ ] Settings: drag to reorder (skipped: would change the owner's order), number drag, banner preview (all panes, item options panel, alert sentences seen)
-- [ ] Alerts: "Send Test Notification" shows a banner after allowing notifications
+- [x] Alerts: "Send Test Notification" shows a banner (owner saw it, 2026-11-18)
 - [x] Global shortcuts: ⌃⌥⌘2 from another app opened GPU (2026-11-18)
 - [ ] Reduce Motion and Increase Contrast on: everything still readable, springs become fades
 - [ ] VoiceOver: tiles read as sentences ✅ (accessibility tree, 2026-11-18); alert number adjustable not checked; VoiceOver itself not run (system setting)
@@ -568,8 +568,8 @@ Seen on screen (owner hands-off): deck home (verdict on its own line), Network w
 Sensors, Agents (Now card, "Saroj · Team", "Codex · Free", Copilot's two quotas, real limits with pace
 warnings), CPU with 1H / 24H and the Details toggle, ⌃⌥⌘2 from another app, the Agents options panel in
 the real Settings window (live preview 89% / 58%), the Alerts pane ("below 15% instantly"). The deck's
-accessibility tree reads every control and each tile as a sentence. A test notification was sent; whether
-the banner appeared wasn't confirmed. Not checked: light mode, Reduce Motion / Increase Contrast /
+accessibility tree reads every control and each tile as a sentence. A test notification was sent and the owner
+saw the banner. Not checked: light mode, Reduce Motion / Increase Contrast /
 VoiceOver (system settings, not ours to change), drag-to-reorder (would change the owner's order).
 Notes for the next pass: drive buttons through accessibility (`AXPress` by label, `AXSelected` on sidebar
 rows) instead of clicks: it needs no focus, and macOS won't let VibeCheck take focus from another app
