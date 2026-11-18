@@ -1,6 +1,32 @@
 import AppKit
+import ServiceManagement
 
 MainActor.assumeIsolated {
+    // `VibeCheck --login-item on|off|status` manages launch at login for this app bundle, then exits.
+    if let flag = CommandLine.arguments.firstIndex(of: "--login-item") {
+        let action = CommandLine.arguments.dropFirst(flag + 1).first ?? "status"
+        let service = SMAppService.mainApp
+        do {
+            switch action {
+            case "on": try service.register()
+            case "off": try service.unregister()
+            default: break
+            }
+        } catch {
+            print("error: \(error.localizedDescription)")
+        }
+        let status: String
+        switch service.status {
+        case .enabled: status = "enabled"
+        case .notRegistered: status = "not registered"
+        case .requiresApproval: status = "requires approval in System Settings > General > Login Items"
+        case .notFound: status = "not found"
+        @unknown default: status = "unknown"
+        }
+        print("login item (\(Bundle.main.bundlePath)): \(status)")
+        exit(0)
+    }
+
     // `VibeCheck --dump` prints one sample of every monitor and exits (handy for debugging).
     if CommandLine.arguments.contains("--dump") {
         let cpu = CPUMonitor()

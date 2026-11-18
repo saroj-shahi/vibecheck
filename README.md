@@ -46,6 +46,7 @@ Settings (gear icon in any panel, or open the app again):
 ./build.sh            # builds build/VibeCheck.app
 open build/VibeCheck.app
 ./build.sh --install  # also copies it to /Applications
+/Applications/VibeCheck.app/Contents/MacOS/VibeCheck --login-item on   # or off / status
 ```
 
 Debug: `swift build && .build/debug/VibeCheck --dump` prints one sample from every monitor.
