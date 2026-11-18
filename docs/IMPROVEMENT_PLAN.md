@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 77 commits · ~10,100 lines of Swift · 129 tests_
+_Last updated: 2026-11-18 · version 1.5 · 79 commits · ~10,300 lines of Swift · 131 tests_
 
 ---
 
@@ -270,6 +270,7 @@ Short record of choices future sessions shouldn't silently undo.
 | Account name and plan: Claude from `~/.claude.json` (`oauthAccount.displayName`, `organizationType`), Codex from `plan_type` in its logs; never `~/.codex/auth.json` | Only non-secret fields; credential files stay unread |
 | `SIGPIPE` is ignored app-wide | Child processes (`ps`, `lsof`, `nettop`, `claude`) can exit before we write to them |
 | Alerts and the vibe score don't depend on which modules are shown (owner, 2026-11-18) | A CPU alert should fire even with the CPU item hidden; so CPU, memory, disk, sensors and battery are always sampled. Only samples nothing else needs (accessory batteries) are gated |
+| Keep Awake item: click toggles with the default length, right-click/⌃/⌥-click opens the menu (owner, 2026-11-18) | The owner wanted the default set in Settings and started by a click; the menu keeps the other options one click away |
 | Quick toggles act through System Events / Finder / CoreAudio only; Trash is emptied by Finder, never by deleting files | The user's own undo and Finder's rules apply; Automation permission is asked on first use (`NSAppleEventsUsageDescription`) |
 | A finished focus session always notifies | It's the point of a focus timer; other keep-awake endings follow the notify setting |
 | Separate items' autosave names carry a generation (`vibecheck.cpu.g3`) bumped on each Settings reorder; generation 0 keeps the original names | macOS 27 remembers item positions by autosave name outside the app's defaults; new names are placed in creation order, each to the left (probe app). Don't revert to fixed names |
@@ -602,6 +603,17 @@ USB list and ports change were done here. 122 tests, zero warnings, installed. N
 
 Notes: the row was rendered offscreen (Dark highlighted, Trash disabled when empty). No toggle was run for
 real; nothing seen in the real deck. 129 tests, zero warnings, installed.
+
+### 2026-11-18: Keep Awake menu bar item
+
+| Commit | What |
+|---|---|
+| `b9b9fb2` | `StatusItemController.Kind.keepAwake`, `KeepAwakeItemLabel`, `KeepAwakeMenu` (native NSMenu), `keepAwakeMenuBarItem` setting; the ring item's cup hides while it's on. 2 tests. |
+
+Notes: switched on for the owner (they asked for it). Seen on the built-in display (left of the notch, where
+macOS puts items that don't fit): outlined cup, then filled blue after a click with the assertion held
+(`pmset -g assertions`). Stopped again with ⌃⌥⌘A after the cursor guard paused the second click. The
+right-click menu wasn't opened on screen.
 
 ---
 
