@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 57 commits · ~7,900 lines of Swift · 90 tests_
+_Last updated: 2026-11-18 · version 1.5 · 60 commits · ~8,400 lines of Swift · 101 tests_
 
 ---
 
@@ -70,6 +70,11 @@ not the whole screen.
 | Live Claude limits: Keychain prompt, real fetch, menu bar "Limits left" | ✅ on 2026-11-18 the owner turned it on and allowed Keychain access; the real menu bar item showed 36% / 66% left (captured). Settings status line not seen |
 | Copilot CLI and OpenCode parsing, dedupe, SQLite read, scanner pass | ✅ unit tests + `--dump` on real data (both present; 0 tokens this week, which matches the files' dates) |
 | Copilot / OpenCode cards and Copilot quota gauge in the deck | ❌ never seen |
+| Copilot quota from an old session; daily totals, last hour, working-now rule, tokens-per-hour metric | ✅ unit tests + `--dump` (Copilot: chat 9.3% used, completions 2.5%) |
+| 7-day chart | ✅ rendered offscreen; not seen in the real deck |
+| Working-now badge, tokens-per-hour alert in Settings and as a notification | ❌ never seen |
+| Listening ports: `lsof -F` parsing | ✅ 7 unit tests (format checked against real `lsof` output) |
+| Listening ports section, quit from it | ❌ never seen |
 
 ---
 
@@ -128,11 +133,9 @@ Synthetic clicks don't open menu submenus.
    - ~~API-equivalent cost~~: dropped 2026-11-18, the owner chose no costs (it would need a price-list download).
    - ~~More agents~~: GitHub Copilot CLI and OpenCode done 2026-11-18 (`0443c87`). Gemini CLI (only
      Antigravity settings on this Mac) and Cursor (usage kept on its servers) have no local token counts.
-   - Still open: Copilot's monthly quota only shows if a Copilot session file changed in the last 7 days
-     (older files aren't read); consider always reading the newest session for quotas.
-   - Still open: "in progress now", a tokens-per-hour alert rule, and a 7-day chart.
-4. **Port manager** _(V)_. Listening TCP ports with the owning process (`lsof -nP -iTCP -sTCP:LISTEN`, only
-   while the view is open), in the Network detail view; kill through item 1.
+   - ~~Copilot quota from older sessions, "working now", tokens-per-hour alert, 7-day chart~~: done
+     2026-11-18 (`1e6d8db`).
+4. ~~Port manager~~ _(V)_: done 2026-11-18 (`ebd0ed8`), in the Network view. Not seen on screen.
 5. **Distribution.** Developer ID signing + notarization (`notarytool`), a DMG, an update check (Sparkle or
    GitHub Releases), and a Homebrew cask _(V)_. On this Mac it's signed with the owner's free "Apple Development" certificate (Team ID `77HKFF78Z8`,
    expires Nov 2027; Xcode can renew it); other Macs still need Developer ID + notarization.
@@ -497,6 +500,18 @@ Apple Development certificate in Xcode; it was invalid until they installed Appl
 After one more "Always Allow" the partition list gained `teamid:77HKFF78Z8`. Verified: a second build with
 a different CDHash (`44e0…` → `9199…`) showed live limits right after launch, with the owner set to deny
 any prompt. Launch at login still enabled. The "VibeCheck Local Signing" certificate is no longer needed.
+
+### 2026-11-18: port manager, agents extras (agent in parallel)
+
+| Commit | What |
+|---|---|
+| `ebd0ed8` | `PortSampler.swift` + "Listening ports" in the Network view (only while it's open, every 5 s), quit via `ProcessKiller`; Force Quit confirmation shared with the process list. 7 tests. |
+| `1e6d8db` | Agents: "Working now" badge, 7-day chart, "Agent tokens per hour" alert metric, Copilot quota from its newest session. 4 tests. |
+
+Notes: a background agent built the port manager in separate files while the Agents items were done here;
+its `SystemStats` change was reviewed (sampling tied to `networkAppDemand`, list cleared when the view
+closes). 101 tests, zero warnings, installed (Apple Development signature). Nothing seen on screen except
+an offscreen render of the 7-day chart.
 
 ---
 
