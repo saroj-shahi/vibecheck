@@ -75,12 +75,13 @@ Fix whatever turns up before starting new features.
 
 ### P1
 
-- **Performance, next round: menu bar rendering.** After the 2026-11-18 pass the installed app idles at
-  ~3.3% CPU (was ~3.9%) and ~100 MB. VibeCheck's own sampling is now ~70 ms per 20 s; SwiftUI layout and
-  drawing of the menu bar item is ~250 ms per 20 s, so that's the next target: Instruments' SwiftUI
-  template, avoid relayout of the `NSHostingView` in the status button each tick, and skip label updates
-  when the displayed text didn't change. Not done on purpose:
-  caching widths in `refitAroundNotch()`, which only runs when the item moves or settings change.
+- **Performance: what's left is macOS, not VibeCheck.** Installed app idles at ~3.3–3.8% CPU, ~100 MB.
+  Investigated 2026-11-18: almost all of it is `NSStatusItem _updateReplicants`, AppKit redrawing the
+  status item's copy for each display's menu bar (~30 ms per display per redraw). On this macOS that
+  path runs through AppKit's own `NSHostingView`, even when the button holds a plain image, and the cost
+  is the same at a 5 s refresh as at 2 s, so redraws aren't driven by our ticks. Don't retry: rendering the
+  label to an image (made it worse) or slowing the refresh (no change). Worth checking only if it grows:
+  whether it scales with the number of displays, and on a future macOS.
 - **Distribution.** Developer ID signing + notarization (`notarytool`), a DMG, and an update mechanism
   (Sparkle or a GitHub Releases check). Today it's ad hoc signed, so other Macs need right-click → Open.
 - **Swift 6 language mode.** The package uses tools 5.10 / language mode 5. Turn on strict concurrency
@@ -280,6 +281,15 @@ Notes: `swift test` passes (62). The deck UI wasn't seen on screen, and no real 
 | `a93e6b3` | Sensors: dies only and at most every 4 s unless the Sensors panel is open (`sensorDemand`). Processes: 5 s interval on the deck home, dropped when the deck closes, verdict only while the deck shows it, name lookups only for the top apps. Agents scan: `stat` before opening, full walk every 5 min, `autoreleasepool` per file. `--dump` prints sensor counts. 2 tests. |
 
 Notes: VibeCheck's own tick work went from ~27 ms to ~4–6 ms per second (`sample`). Installed and measured with the deck closed: ~3.3% CPU and ~100 MB, down from ~3.9% and 138–155 MB. The first side-by-side test (2.65%) overstated it: the second copy's menu bar item was hidden for lack of room, so it skipped the SwiftUI drawing that is now the biggest cost (and the commit message quotes that 2.65%). Testing tip: compare builds one at a time, not side by side. Deck behaviour after the throttling wasn't looked at on screen.
+
+### 2026-11-18: menu bar rendering investigation (no code change)
+
+Tried replacing the hosted SwiftUI label in the status button with an image rendered by `ImageRenderer`
+only when the pixels change. Installed and measured: 3.5–7% CPU (worse). `sample` still showed
+`_redrawReplicantSnapshot` → `NSHostingView.layout`, so the replicant snapshots go through AppKit's own
+SwiftUI regardless of the button's content. Observation tracking also can't see what `ImageRenderer`
+reads. Reverted. Measured the committed build at 2 s vs 5 s refresh (launch argument, settings untouched):
+3.80% vs 3.75%, so the remaining cost isn't tied to VibeCheck's update rate.
 
 ---
 
