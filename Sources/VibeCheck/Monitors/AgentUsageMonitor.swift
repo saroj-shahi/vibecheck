@@ -140,6 +140,11 @@ struct AgentSummary: Equatable, Identifiable {
     var modelsToday: [(name: String, tokens: Int)] = []
     var id: AgentKind { agent }
 
+    /// Wrote usage in the last two minutes: a session is most likely running right now.
+    func isWorking(now: Date) -> Bool {
+        lastActive.map { now.timeIntervalSince($0) < 120 } ?? false
+    }
+
     static func == (a: AgentSummary, b: AgentSummary) -> Bool {
         a.agent == b.agent && a.today == b.today && a.week == b.week && a.block == b.block && a.limits == b.limits
             && a.lastActive == b.lastActive && a.modelsToday.map(\.name) == b.modelsToday.map(\.name)
@@ -154,11 +159,16 @@ struct AgentUsageSample: Equatable {
     var week = TokenCounts()
     /// Total tokens per hour for the last 24 hours, oldest first.
     var hourly: [Double] = Array(repeating: 0, count: 24)
+    /// Total tokens per day for the last 7 days (today last).
+    var daily: [Double] = Array(repeating: 0, count: 7)
+    /// Tokens in the last 60 minutes (the tokens-per-hour alert).
+    var lastHour = 0
     var projectsToday: [(name: String, tokens: Int)] = []
     var scanned = false
 
     static func == (a: AgentUsageSample, b: AgentUsageSample) -> Bool {
         a.agents == b.agents && a.today == b.today && a.week == b.week && a.hourly == b.hourly && a.scanned == b.scanned
+            && a.daily == b.daily && a.lastHour == b.lastHour
             && a.projectsToday.map(\.name) == b.projectsToday.map(\.name)
             && a.projectsToday.map(\.tokens) == b.projectsToday.map(\.tokens)
     }
@@ -344,8 +354,12 @@ enum AgentLogParser {
         let firstHour = hourStart.addingTimeInterval(-23 * 3600)
         var sample = AgentUsageSample(scanned: true)
         var projects: [String: Int] = [:]
+        let hourAgo = now.addingTimeInterval(-3600)
         for entry in entries where entry.time >= weekStart {
             sample.week += entry.tokens
+            let day = calendar.dateComponents([.day], from: weekStart, to: calendar.startOfDay(for: entry.time)).day ?? -1
+            if (0..<7).contains(day) { sample.daily[day] += Double(entry.tokens.total) }
+            if entry.time >= hourAgo, entry.time <= now { sample.lastHour += entry.tokens.total }
             if entry.time >= today {
                 sample.today += entry.tokens
                 projects[entry.project, default: 0] += entry.tokens.total
@@ -433,7 +447,14 @@ final class AgentUsageScanner: @unchecked Sendable {
                 for root in Set(roots.map(\.standardizedFileURL)) {
                     guard FileManager.default.fileExists(atPath: root.path) else { continue }
                     present.insert(agent)
-                    known += Self.logFiles(in: root, changedSince: cutoff).map { (url: $0, agent: agent) }
+                    var files = Self.logFiles(in: root, changedSince: cutoff)
+                    // Copilot's monthly quota lives in its session logs: read the newest one even when it's older
+                    // than a week (its usage is dropped below; the quota is shown until it resets).
+                    if agent == .copilot, files.isEmpty, let newest = Self.logFiles(in: root, changedSince: .distantPast)
+                        .max(by: { Self.modified($0) < Self.modified($1) }) {
+                        files.append(newest)
+                    }
+                    known += files.map { (url: $0, agent: agent) }
                 }
             }
         }
@@ -450,6 +471,12 @@ final class AgentUsageScanner: @unchecked Sendable {
         seen = Set(keptKeys.filter { !$0.isEmpty })
         return AgentLogParser.summarize(entries, limits: limits.mapValues(\.windows), present: present,
                                         now: now, calendar: calendar)
+    }
+
+    private static func modified(_ url: URL) -> Date {
+        var info = stat()
+        guard stat(url.path, &info) == 0 else { return .distantPast }
+        return Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec))
     }
 
     private static func logFiles(in root: URL, changedSince cutoff: Date) -> [URL] {

@@ -20,6 +20,15 @@ struct AgentsPanel: View {
                     HourlyBars(values: sample.hourly, color: Palette.agents)
                         .frame(height: 56)
                 }
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        SectionTitle(text: "Last 7 days")
+                        Spacer()
+                        Text(Fmt.tokens(sample.week.total)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                    }
+                    DailyBars(values: sample.daily, color: Palette.agents)
+                        .frame(height: 64)
+                }
                 ForEach(sample.agents) { AgentCard(summary: $0) }
                 if !sample.projectsToday.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
@@ -62,6 +71,9 @@ private struct AgentCard: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 Text(summary.agent.title).font(.system(size: 13, weight: .semibold))
+                TimelineView(.periodic(from: .now, by: 30)) { context in
+                    if summary.isWorking(now: context.date) { WorkingBadge() }
+                }
                 Spacer()
                 Text(Fmt.tokens(summary.today.total)).font(.system(size: 13, weight: .semibold).monospacedDigit())
             }
@@ -189,5 +201,52 @@ extension RateWindow {
     func gaugeColor(now: Date) -> Color {
         let level = usedPercent / 100
         return isAheadOfPace(now: now) && level <= 0.65 ? .orange : Palette.level(level)
+    }
+}
+
+/// Green pulsing dot + "Working now" while an agent has written usage in the last two minutes.
+private struct WorkingBadge: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulse = false
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Circle().fill(.green).frame(width: 6, height: 6)
+                .opacity(pulse ? 0.35 : 1)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.9).repeatForever(autoreverses: true), value: pulse)
+            Text("Working now").font(.caption2.weight(.medium)).foregroundStyle(.green)
+        }
+        .onAppear { pulse = true }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// Seven daily bars with weekday initials; today is the last, full-strength bar.
+struct DailyBars: View {
+    let values: [Double]
+    let color: Color
+
+    var body: some View {
+        let peak = max(values.max() ?? 0, 1)
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        HStack(alignment: .bottom, spacing: 6) {
+            ForEach(Array(values.enumerated()), id: \.offset) { index, value in
+                let day = calendar.date(byAdding: .day, value: index - (values.count - 1), to: today) ?? today
+                VStack(spacing: 3) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(value > 0 ? color.opacity(index == values.count - 1 ? 1 : 0.6) : Color.secondary.opacity(0.2))
+                        .frame(height: max(3, CGFloat(value / peak) * 48))
+                        .frame(maxHeight: .infinity, alignment: .bottom)
+                    Text(day.formatted(.dateTime.weekday(.narrow)))
+                        .font(.system(size: 9, weight: index == values.count - 1 ? .bold : .regular))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .help("\(day.formatted(.dateTime.weekday(.wide))): \(Fmt.tokens(Int(value)))")
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Tokens per day, last 7 days")
     }
 }

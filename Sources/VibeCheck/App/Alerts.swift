@@ -2,7 +2,7 @@ import Foundation
 import UserNotifications
 
 enum AlertMetric: String, Codable, CaseIterable, Identifiable {
-    case cpu, gpu, memory, temperature, batteryLevel, diskFree
+    case cpu, gpu, memory, temperature, batteryLevel, diskFree, agentTokens
 
     var id: String { rawValue }
 
@@ -14,11 +14,25 @@ enum AlertMetric: String, Codable, CaseIterable, Identifiable {
         case .temperature: "Temperature"
         case .batteryLevel: "Battery level"
         case .diskFree: "Startup disk free space"
+        case .agentTokens: "Agent tokens per hour"
         }
     }
 
-    var unit: String { self == .temperature ? "°C" : "%" }
-    var range: ClosedRange<Double> { self == .temperature ? 30...110 : 1...100 }
+    var unit: String {
+        switch self {
+        case .temperature: "°C"
+        case .agentTokens: "M"   // millions of tokens in the last 60 minutes
+        default: "%"
+        }
+    }
+
+    var range: ClosedRange<Double> {
+        switch self {
+        case .temperature: 30...110
+        case .agentTokens: 1...500
+        default: 1...100
+        }
+    }
 }
 
 enum AlertComparison: String, Codable, CaseIterable, Identifiable {
@@ -86,7 +100,15 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
         case .batteryLevel: stats.battery.present ? stats.battery.percent * 100 : nil
         case .diskFree:
             (stats.volumes.first { $0.path == "/" } ?? stats.volumes.first).map { (1 - $0.usage) * 100 }
+        case .agentTokens:
+            agentTokensPerHour(AgentUsageStore.shared.sample, enabled: AppSettings.shared.isEnabled(.agents))
         }
+    }
+
+    /// Millions of tokens in the last 60 minutes, across all agents; nil until the first scan or with Agents off.
+    nonisolated static func agentTokensPerHour(_ sample: AgentUsageSample, enabled: Bool) -> Double? {
+        guard enabled, sample.scanned, !sample.agents.isEmpty else { return nil }
+        return Double(sample.lastHour) / 1_000_000
     }
 
     func evaluate(_ rules: [AlertRule], stats: SystemStats, now: Date = Date()) {
