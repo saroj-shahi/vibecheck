@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 39 commits · ~6,900 lines of Swift · 68 tests_
+_Last updated: 2026-11-18 · version 1.5 · 45 commits · ~7,200 lines of Swift · 77 tests_
 
 ---
 
@@ -61,6 +61,10 @@ not the whole screen.
 | Agents: detail panel | ❌ never seen |
 | Bluetooth off while asleep: private calls resolve, permission read without prompting, `--dump` line | ✅ unit test + `--dump` |
 | Bluetooth off while asleep: permission prompt, toggle and footer in Settings, actually off during sleep / on after wake | ❌ not tried (needs the owner to allow Bluetooth and sleep the Mac) |
+| Quit / Force Quit: protection rules, start-time identity check, quitting a real child process | ✅ unit tests |
+| Quit / Force Quit: right-click menu, inline confirmation, notice in the deck | ❌ never seen |
+| Secure input: detection and app lookup with secure input really on | ✅ probe test (`EnableSecureEventInput`) |
+| Secure input: warning in Settings → Shortcuts | ❌ never seen |
 
 ---
 
@@ -105,13 +109,10 @@ Synthetic clicks don't open menu submenus.
 
 ### P1: Reuse what VibeCheck already knows
 
-1. **Kill process** _(V)_. Quit / Force Quit / kill process tree from the CPU and Memory "Who's
-   responsible" rows (context menu + a confirm for Force Quit). The data is already there. Use
-   `NSRunningApplication.terminate()` / `forceTerminate()` for apps, `kill(2)` for plain processes; never
-   touch PID 1, `WindowServer`, `loginwindow`, or VibeCheck itself.
-2. **Secure input warning** _(V)_. When an app holds Secure Event Input (`IsSecureEventInputEnabled()` +
-   the owning PID from `ioreg -l -w 0 | grep kCGSSessionSecureInputPID`), global shortcuts silently stop
-   working. Show which app it is in Settings → Shortcuts and as a hint when a shortcut fails. Small.
+1. ~~Kill process~~ _(V)_: done 2026-11-18 (`99b292e`, `7a0edf9`). Still open: "kill the process tree"
+   (children of a CLI process), and seeing the menu and confirmation on screen.
+2. ~~Secure input warning~~ _(V)_: done 2026-11-18 (`cd4159a`). Still open: a hint in the deck when a global
+   shortcut is pressed but blocked, and seeing the Settings warning on screen.
 3. **Agents: plan limits and cost** _(V)_, replacing the old "Agents module, next steps":
    - Codex already reports rate limits in its logs; show the 5-hour and weekly percentages with reset times.
    - Claude plan limits only come from Anthropic with the user's login; ask the owner before reading any
@@ -238,6 +239,8 @@ Short record of choices future sessions shouldn't silently undo.
 | Bluetooth sleep: never touch Bluetooth at shutdown; only re-enable what VibeCheck turned off | Unlike similar Bluetooth tools: a Mac shouldn't boot with Bluetooth off, and a user's own "off" must stick |
 | Every IOBluetooth power call is guarded by `CBManager.authorization == .allowedAlways` | Without Bluetooth permission macOS aborts the process (TCC); the prompt is shown when the toggle is switched on, never at sleep |
 | another app (GPL-3.0) is a source of ideas only, never code | Copying GPL code would make VibeCheck GPL |
+| Quit actions hold the pid's start time and refuse if it changed | pids are reused; a stale menu must never signal a different process |
+| Secure input warning says where macOS "points", not who holds it | `kCGSSessionSecureInputPID` records the frontmost app when secure input starts (a CLI tool's was reported as Chrome, then Slack) |
 | Agent prices come from a fetched price file with a date, never hard-coded | Prices change; a stale built-in table would show wrong costs |
 | Settings footers use `settingsFooter()` (caption, leading) | Grouped `Form` footers align trailing by default on macOS |
 | Chart areas add points with `addLine`, never `addLines` | `addLines` starts a new subpath and breaks the closed fill |
@@ -394,6 +397,20 @@ To check: turn it on, allow Bluetooth, sleep and wake, then
 `log show --last 10m --predicate 'process == "VibeCheck" AND eventMessage CONTAINS "Bluetooth"'`
 should show "Bluetooth off for sleep" and "Bluetooth back on (wake)". Same caveats as similar tools: a
 Bluetooth keyboard or mouse can't wake the Mac, and Apple Watch unlock won't work while asleep.
+
+### 2026-11-18: quit processes, secure input warning (agents in parallel)
+
+| Commit | What |
+|---|---|
+| `99b292e` | `ProcessKiller.swift`: Quit / Force Quit from the CPU and Memory process rows (context menu, inline confirmation); protected: kernel_task, launchd, WindowServer, loginwindow, VibeCheck, other users. 3 tests. |
+| `7a0edf9` | Review fixes: start-time identity so a reused pid is never signalled, confirmations expire after 20 s, cancellable notice, VoiceOver hint on protected rows. |
+| `cd4159a` | `SecureInput.swift`: Settings → Shortcuts warns while secure keyboard entry blocks the shortcuts. 6 tests. |
+
+Notes: worked with two background agents: a read-only reviewer on the quit commit (found the pid-reuse
+gap) and a builder for the secure input warning in separate files, while the quit feature was finished
+here. 77 tests pass, zero warnings, installed. Live probe: with secure input on, the lookup found the key
+in `IOConsoleUsers`, but the pid named the frontmost app (Chrome, later Slack), not the CLI tool that
+turned it on, so the wording is hedged. Nothing new was seen on screen.
 
 ---
 
