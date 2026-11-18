@@ -315,6 +315,7 @@ private struct MenuBarPreview: View {
 
 private struct GeneralSettings: View {
     @Environment(AppSettings.self) private var settings
+    @AppStorage("showQuickToggles") private var showQuickToggles = true
 
     private var bluetoothFooter: String {
         let snooze = BluetoothSnooze.shared
@@ -338,6 +339,12 @@ private struct GeneralSettings: View {
                     Text("5 seconds").tag(5.0)
                 }
                 Toggle("Launch at login", isOn: $settings.launchAtLogin)
+            }
+            Section {
+                Toggle("Show quick toggles in the deck", isOn: $showQuickToggles)
+            } footer: {
+                Text("A row for dark mode, microphone mute and Empty Trash. Dark mode and Empty Trash ask macOS for Automation access the first time.")
+                    .settingsFooter()
             }
             Section {
                 Toggle("Turn Bluetooth off while the Mac sleeps", isOn: $settings.bluetoothOffWhileAsleep)

@@ -59,6 +59,7 @@ struct DeckRoot: View {
 struct DeckHome: View {
     @Environment(DeckModel.self) private var model
     @Environment(SystemStats.self) private var stats
+    @AppStorage("showQuickToggles") private var showQuickToggles = true
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: Deck.columns)
 
@@ -68,6 +69,9 @@ struct DeckHome: View {
             if let session = KeepAwake.shared.session {
                 AwakeStatusStrip(session: session)
                     .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+            if showQuickToggles {
+                QuickTogglesView()
             }
             LazyVGrid(columns: columns, spacing: 10) {
                 ForEach(Array(model.modules.enumerated()), id: \.element) { index, module in
