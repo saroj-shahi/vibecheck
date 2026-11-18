@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 51 commits · ~7,900 lines of Swift · 90 tests_
+_Last updated: 2026-11-18 · version 1.5 · 53 commits · ~7,900 lines of Swift · 90 tests_
 
 ---
 
@@ -65,9 +65,9 @@ not the whole screen.
 | Quit / Force Quit: right-click menu, inline confirmation, notice in the deck | ❌ never seen |
 | Secure input: detection and app lookup with secure input really on | ✅ probe test (`EnableSecureEventInput`) |
 | Secure input: warning in Settings → Shortcuts | ❌ never seen |
-| Limits gauges and the stacked menu bar label | ✅ rendered offscreen (`ImageRenderer`, dark mode) with sample limits; not seen in the real deck |
+| Limits gauges in the deck | ✅ rendered offscreen with sample limits; not seen in the real deck |
 | Live Claude limits: parsing, merge, Keychain-deny handling | ✅ unit tests with fixture JSON |
-| Live Claude limits: Keychain prompt, real fetch, Settings status line | ❌ not tried (owner's call; the setting is off) |
+| Live Claude limits: Keychain prompt, real fetch, menu bar "Limits left" | ✅ on 2026-11-18 the owner turned it on and allowed Keychain access; the real menu bar item showed 36% / 66% left (captured). Settings status line not seen |
 | Copilot CLI and OpenCode parsing, dedupe, SQLite read, scanner pass | ✅ unit tests + `--dump` on real data (both present; 0 tokens this week, which matches the files' dates) |
 | Copilot / OpenCode cards and Copilot quota gauge in the deck | ❌ never seen |
 
@@ -253,6 +253,8 @@ Short record of choices future sessions shouldn't silently undo.
 | Quit actions hold the pid's start time and refuse if it changed | pids are reused; a stale menu must never signal a different process |
 | Secure input warning says where macOS "points", not who holds it | `kCGSSessionSecureInputPID` records the frontmost app when secure input starts (a CLI tool's was reported as Chrome, then Slack) |
 | Live Claude limits are opt-in, off by default, and not in settings backup | It reads another app's credential; that choice is made on each Mac, never restored silently |
+| "Limits left" shows Claude Code first: live limits, else its local estimate; other agents only without Claude Code | Falling back to Codex's monthly limit made Claude Code usage look missing (owner report) |
+| "Limits left" has one fixed width (104 pt) in every state | Status item length is measured only at creation/settings changes; a growing label got clipped |
 | After a Keychain "Deny", stop asking until the setting is switched again | Otherwise macOS would show the prompt every 15 minutes |
 | Agents module network use: only api.anthropic.com, only with live Claude limits on | Keeps "local logs only" true by default |
 | No cost estimates in the Agents module (owner, 2026-11-18) | It would need downloading a price list; never hard-code prices either |
@@ -452,6 +454,19 @@ Copilot and OpenCode do; Gemini (Antigravity) and Cursor don't. `--dump` on real
 with 0 tokens this week, which matches their files (Copilot sessions from 3 Nov, OpenCode free-model
 calls). An older test started reading the real home folder once the new defaults existed; it now passes
 empty locations. 90 tests, zero warnings, installed. Nothing seen on screen.
+
+### 2026-11-18: "can't see Claude Code usage" fix
+
+| Commit | What |
+|---|---|
+| `1537aa4` | "Limits left" prefers Claude Code: live limits, else a `ClaudeEstimateLabel` (tokens this 5-hour window + reset, over today). Fixed 104 pt width so the item isn't clipped. Test rewritten for the new rule. |
+
+Notes: the owner had "Limits left" on but live Claude limits off, so the label fell back to Codex's monthly
+limit. With the owner's OK the setting was switched on (`defaults write … claudeLiveLimits -bool true` +
+relaunch); they allowed Keychain access, and the real menu bar item showed Claude's 36% / 66% left after the
+fix. Each new ad hoc build asks for Keychain access again until the app is properly signed (Distribution,
+P1). The built-in display's menu bar shows fewer VibeCheck items than the external one (notch), so
+accessibility listings of the items vary with the active display.
 
 ---
 
