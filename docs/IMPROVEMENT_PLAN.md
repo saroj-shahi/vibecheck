@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 37 commits · ~6,800 lines of Swift · 65 tests_
+_Last updated: 2026-11-18 · version 1.5 · 39 commits · ~6,900 lines of Swift · 68 tests_
 
 ---
 
@@ -59,6 +59,8 @@ not the whole screen.
 | Agents: Claude Code / Codex token totals from real logs | ✅ `--dump` (today's Claude total matched an independent Python count) + unit tests |
 | Agents: menu bar item, tile | ✅ seen |
 | Agents: detail panel | ❌ never seen |
+| Bluetooth off while asleep: private calls resolve, permission read without prompting, `--dump` line | ✅ unit test + `--dump` |
+| Bluetooth off while asleep: permission prompt, toggle and footer in Settings, actually off during sleep / on after wake | ❌ not tried (needs the owner to allow Bluetooth and sleep the Mac) |
 
 ---
 
@@ -190,6 +192,8 @@ Short record of choices future sessions shouldn't silently undo.
 | Keep awake uses an IOKit assertion, not a `caffeinate` child process | Released automatically if the app dies; visible in `pmset -g assertions` |
 | Keep-awake sessions don't survive a restart; "Start a session when VibeCheck opens" covers that | Avoids a Mac that never sleeps after a forgotten session |
 | Slang only for vibing / mid / cooked; alerts and errors stay plain | Brand voice (see BRAND.md §6) |
+| Bluetooth sleep: never touch Bluetooth at shutdown; only re-enable what VibeCheck turned off | Unlike similar Bluetooth tools: a Mac shouldn't boot with Bluetooth off, and a user's own "off" must stick |
+| Every IOBluetooth power call is guarded by `CBManager.authorization == .allowedAlways` | Without Bluetooth permission macOS aborts the process (TCC); the prompt is shown when the toggle is switched on, never at sleep |
 | Settings footers use `settingsFooter()` (caption, leading) | Grouped `Form` footers align trailing by default on macOS |
 | Chart areas add points with `addLine`, never `addLines` | `addLines` starts a new subpath and breaks the closed fill |
 
@@ -331,6 +335,20 @@ P0). Not seen: Network / Sensors / Agents / Weather detail, light mode, animatio
 notifications, accessibility modes. After installing, only the Settings fixes were looked at again; the deck
 header fix was seen in the debug build, the chart fix in the GPU chart there. Testing tip: in zsh,
 `set -- $var` doesn't split words; use `${=var}`.
+
+### 2026-11-18: Bluetooth off while asleep (from similar Bluetooth tools)
+
+| Commit | What |
+|---|---|
+| `a1bafd5` | `BluetoothSnooze.swift`: off at `willSleep`, on at `didWake` only if we turned it off, stored marker repaired at launch, nothing at shutdown. Toggle + footer in Settings → General (off by default), `NSBluetoothAlwaysUsageDescription`, permission asked when switched on, `--dump` line, backup key, 3 tests. |
+
+Notes: `swift test` passes (68), zero warnings, installed and running. A first version crashed `--dump` with a
+TCC privacy abort: reading the controller state needs Bluetooth permission (and an Info.plist usage string),
+so every call is now guarded. Not verified: the prompt, the Settings toggle on screen, and a real sleep/wake.
+To check: turn it on, allow Bluetooth, sleep and wake, then
+`log show --last 10m --predicate 'process == "VibeCheck" AND eventMessage CONTAINS "Bluetooth"'`
+should show "Bluetooth off for sleep" and "Bluetooth back on (wake)". Same caveats as similar tools: a
+Bluetooth keyboard or mouse can't wake the Mac, and Apple Watch unlock won't work while asleep.
 
 ---
 
