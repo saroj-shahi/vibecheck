@@ -14,7 +14,14 @@ Each module gets its own menu bar item; click one for a detailed panel.
 | Sensors | hottest temperature         | SoC/CPU, SSD and battery temperatures with history, fan speed and range, system and adapter power, full list of every sensor |
 | Battery | icon + % (off by default)    | state, time remaining, power draw, health, cycle count |
 
-Settings (gear icon in any panel, or open the app again): choose menu bar items, update interval, launch at login.
+Every chart has a **Live / 1H / 24H** switch. Hour and day history are averaged (6 s and 144 s buckets),
+saved to `~/Library/Application Support/VibeCheck/history.json`, and survive restarts; sleep shows as gaps.
+
+Settings (gear icon in any panel, or open the app again):
+
+- **General:** separate items or **one combined item** (icon tabs switch modules), which items to show, update interval, launch at login.
+- **Alerts:** notifications such as "CPU above 90% for 1 min", "temperature above 95 °C", "battery below 15%", "startup disk below 10% free". Each fires once, then re-arms after the value recovers (5 min cooldown).
+- **Shortcuts:** `⌃⌥⌘1`…`⌃⌥⌘7` open CPU, GPU, Memory, Network, Disk, Sensors, Battery from any app (modifier keys configurable).
 
 ## Build & run
 
@@ -26,6 +33,8 @@ open build/VibeCheck.app
 
 Debug: `swift build && .build/debug/VibeCheck --dump` prints one sample from every monitor.
 
+Tests: `swift test` (alert timing/cooldown and history bucketing/persistence).
+
 ## Layout
 
 - `Sources/VibeCheck/Monitors/` — data collectors (Mach host stats, sysctl, IOKit, IOPowerSources, SMC, HID temperature sensors, `ps`)
@@ -35,4 +44,5 @@ Debug: `swift build && .build/debug/VibeCheck --dump` prints one sample from eve
 ## Ideas for next steps
 
 - Per-process network usage, public IP, Wi-Fi details
-- Combined single-item mode, notifications/alerts, weather & clock modules
+- Bluetooth device batteries, per-app memory grouping, menu bar display options
+- Clock & world clocks, weather, per-interface and per-app network usage

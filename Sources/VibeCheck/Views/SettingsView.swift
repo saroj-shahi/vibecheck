@@ -1,12 +1,32 @@
 import SwiftUI
 
 struct SettingsView: View {
+    let onTestNotification: () -> Void
+
+    var body: some View {
+        TabView {
+            GeneralSettings()
+                .tabItem { Label("General", systemImage: "gearshape") }
+            AlertSettings(onTestNotification: onTestNotification)
+                .tabItem { Label("Alerts", systemImage: "bell.badge") }
+            ShortcutSettings()
+                .tabItem { Label("Shortcuts", systemImage: "keyboard") }
+        }
+        .frame(width: 500, height: 540)
+    }
+}
+
+private struct GeneralSettings: View {
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
         @Bindable var settings = settings
         Form {
-            Section("Menu bar items") {
+            Section("Menu bar") {
+                Picker("Style", selection: $settings.menuBarStyle) {
+                    ForEach(MenuBarStyle.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.radioGroup)
                 ForEach(Module.allCases) { module in
                     Toggle(isOn: Binding(
                         get: { settings.isEnabled(module) },
@@ -27,12 +47,130 @@ struct SettingsView: View {
                 Toggle("Launch at login", isOn: $settings.launchAtLogin)
             }
             Section {
-                Text("VibeCheck 1.0 · Click any menu bar item to check the vibes.")
+                Text("VibeCheck 1.1 · Click any menu bar item to check the vibes.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
-        .frame(width: 380)
-        .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+private struct AlertSettings: View {
+    let onTestNotification: () -> Void
+    @Environment(AppSettings.self) private var settings
+
+    var body: some View {
+        @Bindable var settings = settings
+        Form {
+            Section {
+                if settings.alertRules.isEmpty {
+                    Text("No alerts yet.").foregroundStyle(.secondary)
+                }
+                ForEach($settings.alertRules) { $rule in
+                    AlertRuleRow(rule: $rule) {
+                        settings.alertRules.removeAll { $0.id == rule.id }
+                    }
+                }
+            } header: {
+                Text("Notify me when…")
+            } footer: {
+                Text("Each alert fires once, then waits until the value is back to normal (and at least 5 minutes) before it can fire again.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section {
+                HStack {
+                    Button("Add Alert") {
+                        settings.alertRules.append(AlertRule(metric: .cpu, comparison: .above, threshold: 80, duration: 60))
+                    }
+                    Button("Restore Defaults") { settings.alertRules = AlertRule.defaults }
+                    Spacer()
+                    Button("Send Test Notification", action: onTestNotification)
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+private struct AlertRuleRow: View {
+    @Binding var rule: AlertRule
+    let onDelete: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Toggle("Enabled", isOn: $rule.enabled)
+                    .labelsHidden().toggleStyle(.switch).controlSize(.mini)
+                Picker("Metric", selection: $rule.metric) {
+                    ForEach(AlertMetric.allCases) { Text($0.title).tag($0) }
+                }
+                .labelsHidden().fixedSize()
+                Spacer()
+                Button(role: .destructive, action: onDelete) { Image(systemName: "trash") }
+                    .buttonStyle(.borderless)
+                    .help("Delete alert")
+            }
+            HStack(spacing: 6) {
+                Text("is")
+                Picker("Comparison", selection: $rule.comparison) {
+                    ForEach(AlertComparison.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .labelsHidden().fixedSize()
+                TextField("Threshold", value: threshold, format: .number)
+                    .labelsHidden().frame(width: 50).multilineTextAlignment(.trailing)
+                Text(rule.metric.unit)
+                Text("for")
+                Picker("Duration", selection: $rule.duration) {
+                    ForEach(AlertRule.durations, id: \.0) { Text($0.1).tag($0.0) }
+                }
+                .labelsHidden().fixedSize()
+            }
+            .disabled(!rule.enabled)
+        }
+        .padding(.vertical, 2)
+        .onChange(of: rule.metric) { _, metric in
+            rule.comparison = (metric == .batteryLevel || metric == .diskFree) ? .below : .above
+            rule.threshold = min(max(rule.threshold, metric.range.lowerBound), metric.range.upperBound)
+        }
+    }
+
+    private var threshold: Binding<Double> {
+        Binding(get: { rule.threshold }, set: { value in
+            let r = rule.metric.range
+            rule.threshold = min(max(value, r.lowerBound), r.upperBound)
+        })
+    }
+}
+
+private struct ShortcutSettings: View {
+    @Environment(AppSettings.self) private var settings
+
+    var body: some View {
+        @Bindable var settings = settings
+        Form {
+            Section {
+                Toggle("Enable keyboard shortcuts", isOn: $settings.hotkeysEnabled)
+                Picker("Modifier keys", selection: $settings.hotkeyModifier) {
+                    ForEach(HotkeyModifier.allCases) { Text($0.symbols).tag($0) }
+                }
+                .disabled(!settings.hotkeysEnabled)
+            }
+            Section("Shortcuts") {
+                ForEach(Array(Module.allCases.enumerated()), id: \.element) { index, module in
+                    HStack {
+                        Label(module.title, systemImage: module.symbol)
+                        Spacer()
+                        Text("\(settings.hotkeyModifier.symbols)\(index + 1)")
+                            .font(.body.monospaced())
+                            .foregroundStyle(settings.isEnabled(module) ? .primary : .tertiary)
+                    }
+                }
+            }
+            Section {
+                Text("Press a shortcut from any app to open that panel; press it again to close. Shortcuts for items that are switched off just beep.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
     }
 }

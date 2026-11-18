@@ -46,8 +46,13 @@ final class SystemStats {
     private(set) var temperatureHistory = History(capacity: historyLength)
 
     private(set) var battery = BatterySample()
+    private(set) var batteryHistory = History(capacity: historyLength)
     private(set) var uptime: TimeInterval = 0
     private(set) var processes: [ProcessRow] = []
+
+    let history = HistoryStore()
+    /// Called after every sample; the app delegate hooks alerts in here.
+    var onTick: (() -> Void)?
 
     let cpuMonitor = CPUMonitor()
     private let memoryMonitor = MemoryMonitor()
@@ -105,9 +110,21 @@ final class SystemStats {
         if tickCount % 5 == 0 {
             volumes = DiskMonitor.volumes()
             battery = BatteryMonitor.sample()
+            if battery.present { batteryHistory.append(battery.percent) }
             uptime = SysctlReader.uptime()
         }
         tickCount += 1
+
+        var values: [HistoryKey: Double] = [
+            .cpu: cpu.total, .cpuSystem: cpu.system, .memory: memory.usage,
+            .download: network.download, .upload: network.upload,
+            .read: disk.readRate, .write: disk.writeRate,
+        ]
+        if !gpu.gpus.isEmpty { values[.gpu] = gpu.utilization }
+        if let hottest = sensors.hottest { values[.temperature] = hottest }
+        if battery.present { values[.battery] = battery.percent }
+        history.record(values)
+        onTick?()
 
         if processDemand > 0 { refreshProcesses() }
     }
@@ -119,6 +136,22 @@ final class SystemStats {
             let rows = await ProcessSampler.fetch()
             self.processes = rows
             self.fetchingProcesses = false
+        }
+    }
+
+    /// Recent samples (one per refresh) for the "Live" chart range.
+    func live(_ key: HistoryKey) -> [Double] {
+        switch key {
+        case .cpu: cpuHistory.values
+        case .cpuSystem: cpuSystemHistory.values
+        case .gpu: gpuHistory.values
+        case .memory: memoryHistory.values
+        case .temperature: temperatureHistory.values
+        case .download: downloadHistory.values
+        case .upload: uploadHistory.values
+        case .read: readHistory.values
+        case .write: writeHistory.values
+        case .battery: batteryHistory.values
         }
     }
 

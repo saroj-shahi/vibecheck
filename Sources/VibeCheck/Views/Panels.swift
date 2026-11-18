@@ -117,10 +117,8 @@ struct CPUPanel: View {
     var body: some View {
         let cpu = stats.cpu
         Panel(module: .cpu, headline: Fmt.percent(cpu.total)) {
-            AreaChart(series: [ChartSeries(values: stats.cpuHistory.values, color: Palette.user),
-                               ChartSeries(values: stats.cpuSystemHistory.values, color: Palette.system)],
-                      maxValue: 1)
-                .frame(height: 70)
+            MetricChart(lines: [.init(key: .cpu, color: Palette.user), .init(key: .cpuSystem, color: Palette.system)],
+                        maxValue: 1, format: Fmt.percent)
 
             VStack(spacing: 4) {
                 StatRow(label: "User", value: Fmt.percent(cpu.user), color: Palette.user)
@@ -179,8 +177,7 @@ struct GPUPanel: View {
     var body: some View {
         let sample = stats.gpu
         Panel(module: .gpu, headline: Fmt.percent(sample.utilization)) {
-            AreaChart(series: [ChartSeries(values: stats.gpuHistory.values, color: Palette.gpu)], maxValue: 1)
-                .frame(height: 70)
+            MetricChart(lines: [.init(key: .gpu, color: Palette.gpu)], maxValue: 1, format: Fmt.percent)
 
             if sample.gpus.isEmpty {
                 Text("No GPU statistics available.")
@@ -223,8 +220,8 @@ struct MemoryPanel: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
 
-            AreaChart(series: [ChartSeries(values: stats.memoryHistory.values, color: Palette.app)], maxValue: 1)
-                .frame(height: 50)
+            MetricChart(lines: [.init(key: .memory, color: Palette.app)], maxValue: 1, height: 50,
+                        format: Fmt.percent)
 
             VStack(spacing: 4) {
                 StatRow(label: "App memory", value: Fmt.bytes(m.app), color: Palette.app)
@@ -261,9 +258,8 @@ struct NetworkPanel: View {
                 bigRate("Upload", n.upload, Palette.upload, "arrow.up")
                 bigRate("Download", n.download, Palette.download, "arrow.down")
             }
-            MirrorChart(up: ChartSeries(values: stats.uploadHistory.values, color: Palette.upload),
-                        down: ChartSeries(values: stats.downloadHistory.values, color: Palette.download))
-                .frame(height: 80)
+            MetricChart(lines: [.init(key: .upload, color: Palette.upload), .init(key: .download, color: Palette.download)],
+                        mirrored: true, height: 80, format: Fmt.rate)
             VStack(spacing: 4) {
                 StatRow(label: "Interface", value: n.interface ?? "—")
                 StatRow(label: "Local IP", value: n.ipv4 ?? "—")
@@ -293,9 +289,8 @@ struct DiskPanel: View {
                 rate("Read", d.readRate, Palette.read)
                 rate("Write", d.writeRate, Palette.write)
             }
-            MirrorChart(up: ChartSeries(values: stats.readHistory.values, color: Palette.read),
-                        down: ChartSeries(values: stats.writeHistory.values, color: Palette.write))
-                .frame(height: 70)
+            MetricChart(lines: [.init(key: .read, color: Palette.read), .init(key: .write, color: Palette.write)],
+                        mirrored: true, format: Fmt.rate)
 
             VStack(alignment: .leading, spacing: 10) {
                 SectionTitle(text: "Volumes")
@@ -337,10 +332,9 @@ struct SensorsPanel: View {
                     .font(.callout).foregroundStyle(.secondary)
             }
 
-            if !stats.temperatureHistory.values.isEmpty {
-                AreaChart(series: [ChartSeries(values: stats.temperatureHistory.values, color: .orange)],
-                          maxValue: 105)
-                    .frame(height: 60)
+            if s.hottest != nil {
+                MetricChart(lines: [.init(key: .temperature, color: .orange)], maxValue: 105, height: 60,
+                            format: { String(format: "%.0f °C", $0) })
             }
 
             if !s.summary.isEmpty {
@@ -402,6 +396,7 @@ struct BatteryPanel: View {
         Panel(module: .battery, headline: b.present ? Fmt.percent(b.percent) : "AC") {
             if b.present {
                 CapacityBar(fraction: b.percent, color: b.percent < 0.2 ? .red : .green)
+                MetricChart(lines: [.init(key: .battery, color: .green)], maxValue: 1, height: 50, format: Fmt.percent)
                 VStack(spacing: 4) {
                     StatRow(label: "Power source", value: b.onAC ? "Power adapter" : "Battery")
                     StatRow(label: "State", value: stateLabel(b))

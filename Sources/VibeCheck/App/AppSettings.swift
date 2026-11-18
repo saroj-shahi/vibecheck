@@ -95,6 +95,25 @@ extension Notification.Name {
     static let vibeCheckSettingsChanged = Notification.Name("VibeCheckSettingsChanged")
 }
 
+enum MenuBarStyle: String, CaseIterable, Identifiable {
+    case separate, combined
+    var id: String { rawValue }
+    var title: String { self == .separate ? "Separate items" : "One combined item" }
+}
+
+/// Modifier combination for the global shortcuts; the key is the module's number (1 = CPU, 2 = GPU, ...).
+enum HotkeyModifier: String, CaseIterable, Identifiable {
+    case controlOptionCommand, controlOption, optionCommand
+    var id: String { rawValue }
+    var symbols: String {
+        switch self {
+        case .controlOptionCommand: "⌃⌥⌘"
+        case .controlOption: "⌃⌥"
+        case .optionCommand: "⌥⌘"
+        }
+    }
+}
+
 @Observable
 @MainActor
 final class AppSettings {
@@ -106,6 +125,20 @@ final class AppSettings {
         didSet {
             defaults.set(refreshInterval, forKey: "refreshInterval")
             NotificationCenter.default.post(name: .vibeCheckSettingsChanged, object: nil)
+        }
+    }
+    var menuBarStyle: MenuBarStyle {
+        didSet { save(menuBarStyle.rawValue, "menuBarStyle", structural: true) }
+    }
+    var hotkeysEnabled: Bool {
+        didSet { save(hotkeysEnabled, "hotkeysEnabled", structural: true) }
+    }
+    var hotkeyModifier: HotkeyModifier {
+        didSet { save(hotkeyModifier.rawValue, "hotkeyModifier", structural: true) }
+    }
+    var alertRules: [AlertRule] {
+        didSet {
+            if let data = try? JSONEncoder().encode(alertRules) { defaults.set(data, forKey: "alertRules") }
         }
     }
     var launchAtLogin: Bool {
@@ -137,6 +170,20 @@ final class AppSettings {
         let interval = defaults.double(forKey: "refreshInterval")
         refreshInterval = interval > 0 ? interval : 2
         launchAtLogin = SMAppService.mainApp.status == .enabled
+        menuBarStyle = defaults.string(forKey: "menuBarStyle").flatMap(MenuBarStyle.init(rawValue:)) ?? .separate
+        hotkeysEnabled = defaults.object(forKey: "hotkeysEnabled") as? Bool ?? true
+        hotkeyModifier = defaults.string(forKey: "hotkeyModifier").flatMap(HotkeyModifier.init(rawValue:))
+            ?? .controlOptionCommand
+        alertRules = defaults.data(forKey: "alertRules")
+            .flatMap { try? JSONDecoder().decode([AlertRule].self, from: $0) } ?? AlertRule.defaults
+    }
+
+    /// Modules that are switched on, in menu bar order.
+    var orderedModules: [Module] { Module.allCases.filter(enabledModules.contains) }
+
+    private func save(_ value: Any, _ key: String, structural: Bool) {
+        defaults.set(value, forKey: key)
+        if structural { NotificationCenter.default.post(name: .vibeCheckSettingsChanged, object: nil) }
     }
 
     func isEnabled(_ module: Module) -> Bool { enabledModules.contains(module) }

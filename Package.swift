@@ -13,6 +13,7 @@ let package = Package(
                 .linkedFramework("SystemConfiguration"),
                 .linkedFramework("ServiceManagement"),
             ]
-        )
+        ),
+        .testTarget(name: "VibeCheckTests", dependencies: ["VibeCheck"], path: "Tests/VibeCheckTests"),
     ]
 )

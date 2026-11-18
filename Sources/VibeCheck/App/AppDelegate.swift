@@ -1,4 +1,5 @@
 import AppKit
+import Observation
 import SwiftUI
 
 /// Hosting view that lets clicks fall through to the status bar button underneath.
@@ -6,38 +7,71 @@ final class PassthroughHostingView<Content: View>: NSHostingView<Content> {
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
 
+/// Which tab the combined panel is showing (shortcuts switch it).
+@Observable
 @MainActor
-final class ModuleStatusItem: NSObject, NSPopoverDelegate {
-    let module: Module
+final class CombinedSelection {
+    var module: Module = .cpu
+}
+
+/// One status bar item: either a single module or the combined item holding all enabled modules.
+@MainActor
+final class StatusItemController: NSObject, NSPopoverDelegate {
+    enum Kind: Equatable {
+        case single(Module)
+        case combined
+    }
+
+    static let combinedSpacing: CGFloat = 4
+
+    let kind: Kind
     private let item: NSStatusItem
     private let popover = NSPopover()
     private unowned let stats: SystemStats
+    private unowned let settings: AppSettings
+    private unowned let selection: CombinedSelection
 
-    init(module: Module, stats: SystemStats, settings: AppSettings) {
-        self.module = module
+    init(kind: Kind, stats: SystemStats, settings: AppSettings, selection: CombinedSelection) {
+        self.kind = kind
         self.stats = stats
-        item = NSStatusBar.system.statusItem(withLength: module.labelWidth)
-        item.autosaveName = "vibecheck.\(module.rawValue)"
+        self.settings = settings
+        self.selection = selection
+        item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         super.init()
 
+        let label: AnyView
+        let content: AnyView
+        switch kind {
+        case .single(let module):
+            item.autosaveName = "vibecheck.\(module.rawValue)"
+            label = AnyView(MenuBarLabel(module: module))
+            content = AnyView(ModulePanel(module: module))
+        case .combined:
+            item.autosaveName = "vibecheck.combined"
+            label = AnyView(CombinedLabel())
+            content = AnyView(CombinedPanel())
+        }
+        refreshLength()
+
         if let button = item.button {
-            let label = PassthroughHostingView(rootView: MenuBarLabel(module: module).environment(stats))
-            label.sizingOptions = []
-            label.translatesAutoresizingMaskIntoConstraints = false
-            button.addSubview(label)
+            let host = PassthroughHostingView(rootView: label
+                .environment(stats).environment(settings).environment(selection))
+            host.sizingOptions = []
+            host.translatesAutoresizingMaskIntoConstraints = false
+            button.addSubview(host)
             NSLayoutConstraint.activate([
-                label.leadingAnchor.constraint(equalTo: button.leadingAnchor),
-                label.trailingAnchor.constraint(equalTo: button.trailingAnchor),
-                label.topAnchor.constraint(equalTo: button.topAnchor),
-                label.bottomAnchor.constraint(equalTo: button.bottomAnchor),
+                host.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+                host.trailingAnchor.constraint(equalTo: button.trailingAnchor),
+                host.topAnchor.constraint(equalTo: button.topAnchor),
+                host.bottomAnchor.constraint(equalTo: button.bottomAnchor),
             ])
             button.target = self
-            button.action = #selector(toggle(_:))
-            button.setAccessibilityLabel("VibeCheck \(module.title)")
+            button.action = #selector(buttonClicked(_:))
+            button.setAccessibilityLabel(kind == .combined ? "VibeCheck" : "VibeCheck \(title)")
         }
 
-        let controller = NSHostingController(rootView: ModulePanel(module: module)
-            .environment(stats).environment(settings))
+        let controller = NSHostingController(rootView: content
+            .environment(stats).environment(settings).environment(selection))
         controller.sizingOptions = .preferredContentSize
         popover.contentViewController = controller
         popover.behavior = .transient
@@ -45,13 +79,49 @@ final class ModuleStatusItem: NSObject, NSPopoverDelegate {
         popover.delegate = self
     }
 
-    var wantsProcesses: Bool { module == .cpu || module == .memory }
+    private var title: String {
+        if case .single(let module) = kind { return module.title }
+        return "VibeCheck"
+    }
 
-    @objc private func toggle(_ sender: NSStatusBarButton) {
-        if popover.isShown { popover.performClose(sender); return }
+    func refreshLength() {
+        switch kind {
+        case .single(let module):
+            item.length = module.labelWidth
+        case .combined:
+            let modules = settings.orderedModules
+            item.length = modules.map(\.labelWidth).reduce(0, +)
+                + Self.combinedSpacing * CGFloat(max(modules.count - 1, 0)) + 6
+        }
+    }
+
+    private var wantsProcesses: Bool {
+        switch kind {
+        case .single(let module): module == .cpu || module == .memory
+        case .combined: true
+        }
+    }
+
+    @objc private func buttonClicked(_ sender: NSStatusBarButton) {
+        popover.isShown ? close() : open()
+    }
+
+    /// Shortcut behaviour: open (on the right tab), or close if that panel is already showing.
+    func handleShortcut(for module: Module) {
+        if kind == .combined {
+            if popover.isShown, selection.module == module { close(); return }
+            selection.module = module
+            if !popover.isShown { open() }
+        } else {
+            popover.isShown ? close() : open()
+        }
+    }
+
+    private func open() {
+        guard let button = item.button else { return }
         if wantsProcesses { stats.processDemand += 1 }
         NSApp.activate()
-        popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
     }
 
@@ -73,19 +143,34 @@ final class ModuleStatusItem: NSObject, NSPopoverDelegate {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let stats = SystemStats()
     private let settings = AppSettings.shared
-    private var items: [Module: ModuleStatusItem] = [:]
+    private let selection = CombinedSelection()
+    private let alerts = AlertEngine()
+    private var items: [Module: StatusItemController] = [:]
+    private var combinedItem: StatusItemController?
     private var settingsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        stats.onTick = { [weak self] in
+            guard let self else { return }
+            self.alerts.evaluate(self.settings.alertRules, stats: self.stats)
+        }
         stats.start(interval: settings.refreshInterval)
         syncItems()
+        HotkeyManager.shared.onTrigger = { [weak self] module in self?.openFromShortcut(module) }
+        configureHotkeys()
+
         NotificationCenter.default.addObserver(forName: .vibeCheckSettingsChanged, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
                 self.syncItems()
+                self.configureHotkeys()
                 self.stats.start(interval: self.settings.refreshInterval)
             }
         }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        stats.history.save()
     }
 
     /// Re-opening the app (e.g. double-clicking it in Finder) shows Settings.
@@ -95,22 +180,56 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func syncItems() {
+        if settings.menuBarStyle == .combined {
+            items.values.forEach { $0.remove() }
+            items.removeAll()
+            if let combinedItem {
+                combinedItem.refreshLength()
+            } else {
+                combinedItem = StatusItemController(kind: .combined, stats: stats, settings: settings, selection: selection)
+            }
+            return
+        }
+
+        combinedItem?.remove()
+        combinedItem = nil
         // Insert in reverse so the left-to-right order matches Module.allCases.
         for module in Module.allCases.reversed() {
             let enabled = settings.isEnabled(module)
             if enabled, items[module] == nil {
-                items[module] = ModuleStatusItem(module: module, stats: stats, settings: settings)
+                items[module] = StatusItemController(kind: .single(module), stats: stats,
+                                                     settings: settings, selection: selection)
             } else if !enabled, let existing = items.removeValue(forKey: module) {
                 existing.remove()
             }
         }
     }
 
+    private func configureHotkeys() {
+        if settings.hotkeysEnabled {
+            HotkeyManager.shared.register(modifier: settings.hotkeyModifier)
+        } else {
+            HotkeyManager.shared.unregisterAll()
+        }
+    }
+
+    private func openFromShortcut(_ module: Module) {
+        guard settings.isEnabled(module) else { NSSound.beep(); return }
+        if let combinedItem {
+            combinedItem.handleShortcut(for: module)
+        } else if let item = items[module] {
+            items.values.filter { $0 !== item }.forEach { $0.close() }
+            item.handleShortcut(for: module)
+        }
+    }
+
     func showSettings() {
         items.values.forEach { $0.close() }
+        combinedItem?.close()
         if settingsWindow == nil {
-            let controller = NSHostingController(rootView: SettingsView().environment(settings))
-            controller.sizingOptions = .preferredContentSize
+            let view = SettingsView(onTestNotification: { [weak self] in self?.alerts.sendTest() })
+                .environment(settings)
+            let controller = NSHostingController(rootView: view)
             let window = NSWindow(contentViewController: controller)
             window.title = "VibeCheck Settings"
             window.styleMask = [.titled, .closable]
