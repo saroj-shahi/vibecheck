@@ -46,13 +46,13 @@ final class StatusItemController: NSObject {
         let label: AnyView
         switch kind {
         case .single(let module):
-            item.autosaveName = "vibecheck.\(module.rawValue)"
+            item.autosaveName = AppSettings.autosaveName(module.rawValue, generation: settings.statusItemGeneration)
             label = AnyView(MenuBarLabel(module: module))
         case .combined:
             item.autosaveName = "vibecheck.combined"
             label = AnyView(CombinedLabel())
         case .vibe:
-            item.autosaveName = "vibecheck.vibe"
+            item.autosaveName = AppSettings.autosaveName("vibe", generation: settings.statusItemGeneration)
             label = AnyView(VibeItemLabel())
         }
         labelView = AnyView(label.environment(stats).environment(settings).environment(fit))
@@ -152,6 +152,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// The standalone ring shown with separate items.
     private var vibeItem: StatusItemController?
     private var settingsWindow: NSWindow?
+    /// Generation the separate items were created with; a reorder in Settings bumps it.
+    private var itemGeneration = 0
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         alerts.log = NotificationLog.shared
@@ -173,6 +175,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if settings.keepAwakeAtLaunch { KeepAwake.shared.start(minutes: settings.keepAwakeDefaultMinutes) }
         KeepAwake.shared.check() // triggers (plugged in, external display) apply right away
         stats.start(interval: settings.refreshInterval)
+        itemGeneration = settings.statusItemGeneration
         syncItems()
         HotkeyManager.shared.onTrigger = { [weak self] module in self?.openFromShortcut(module) }
         configureHotkeys()
@@ -237,6 +240,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         combinedItem?.remove()
         combinedItem = nil
+        // Reordered in Settings: rebuild every item under new names, right to left, so they land in order.
+        if itemGeneration != settings.statusItemGeneration {
+            itemGeneration = settings.statusItemGeneration
+            items.values.forEach { $0.remove() }
+            items.removeAll()
+            vibeItem?.remove()
+            vibeItem = nil
+        }
         // Insert in reverse so the left-to-right order matches Module.allCases.
         for module in settings.moduleOrder.reversed() {
             let enabled = settings.isEnabled(module)

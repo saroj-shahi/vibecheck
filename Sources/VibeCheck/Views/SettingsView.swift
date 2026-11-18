@@ -85,7 +85,7 @@ private struct MenuBarSettings: View {
             } header: {
                 Text("Preview")
             } footer: {
-                Text("Live, using your real stats. With separate items macOS sets the gaps between items, and their order is changed by ⌘-dragging them in the menu bar.")
+                Text("Live, using your real stats. With separate items macOS sets the gaps between them. Reordering below moves them in the menu bar too; ⌘-dragging there works as well, until the next reorder here.")
                     .settingsFooter()
             }
 
@@ -120,7 +120,7 @@ private struct MenuBarSettings: View {
             } header: {
                 Text("Items")
             } footer: {
-                Text("Drag to reorder. The order is used by the combined item and the deck.")
+                Text("Drag to reorder, or right-click a row for Move Up / Move Down. The menu bar items, the combined item and the deck follow this order.")
                     .settingsFooter()
             }
         }

@@ -422,9 +422,24 @@ final class AppSettings {
     }
 
     func moveModules(from source: IndexSet, to destination: Int) {
+        let before = moduleOrder
         moduleOrder.move(fromOffsets: source, toOffset: destination)
         defaults.set(moduleOrder.map(\.rawValue), forKey: "moduleOrder")
+        // macOS keeps each separate item where it last was (by autosave name), so a new order needs new names.
+        if moduleOrder != before { statusItemGeneration += 1 }
         NotificationCenter.default.post(name: .vibeCheckSettingsChanged, object: nil)
+    }
+
+    /// Bumped on every reorder; part of the separate items' autosave names (0 = the original names).
+    var statusItemGeneration: Int {
+        get { defaults.integer(forKey: "statusItemGeneration") }
+        set { defaults.set(newValue, forKey: "statusItemGeneration") }
+    }
+
+    /// Autosave name for a status item. macOS remembers positions by this name; new names are placed
+    /// in creation order, each to the left of the items already there.
+    nonisolated static func autosaveName(_ base: String, generation: Int) -> String {
+        generation > 0 ? "vibecheck.\(base).g\(generation)" : "vibecheck.\(base)"
     }
 
     private func save(_ value: Any, _ key: String, structural: Bool) {
