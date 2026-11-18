@@ -508,7 +508,7 @@ private struct AlertRuleRow: View {
 
     private func select(_ metric: AlertMetric) {
         rule.metric = metric
-        rule.comparison = (metric == .batteryLevel || metric == .diskFree) ? .below : .above
+        rule.comparison = (metric == .batteryLevel || metric == .diskFree || metric == .accessoryBattery) ? .below : .above
         rule.threshold = min(max(rule.threshold, metric.range.lowerBound), metric.range.upperBound)
     }
 

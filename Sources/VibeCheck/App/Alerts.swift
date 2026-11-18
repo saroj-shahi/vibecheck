@@ -2,7 +2,7 @@ import Foundation
 import UserNotifications
 
 enum AlertMetric: String, Codable, CaseIterable, Identifiable {
-    case cpu, gpu, memory, temperature, batteryLevel, diskFree, agentTokens
+    case cpu, gpu, memory, temperature, batteryLevel, diskFree, agentTokens, accessoryBattery
 
     var id: String { rawValue }
 
@@ -15,6 +15,7 @@ enum AlertMetric: String, Codable, CaseIterable, Identifiable {
         case .batteryLevel: "Battery level"
         case .diskFree: "Startup disk free space"
         case .agentTokens: "Agent tokens per hour"
+        case .accessoryBattery: "Accessory battery"
         }
     }
 
@@ -63,10 +64,12 @@ struct AlertRule: Codable, Identifiable, Equatable {
         AlertRule(metric: .diskFree, comparison: .below, threshold: 10, duration: 0),
     ]
 
-    func describe(current: Double) -> String {
+    /// `detail` names what the reading belongs to (e.g. the accessory), giving "MX Keys is at 18%." instead of "Now 18%.".
+    func describe(current: Double, detail: String? = nil) -> String {
         let when = duration > 0 ? " for \(Self.durationLabel(duration))" : ""
+        let reading = "\(Int(current.rounded()))\(metric.unit)"
         return "\(metric.title) has been \(comparison.rawValue) \(Int(threshold))\(metric.unit)\(when). "
-            + "Now \(Int(current.rounded()))\(metric.unit)."
+            + (detail.map { "\($0) is at \(reading)." } ?? "Now \(reading).")
     }
 }
 
@@ -102,7 +105,14 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
             (stats.volumes.first { $0.path == "/" } ?? stats.volumes.first).map { (1 - $0.usage) * 100 }
         case .agentTokens:
             agentTokensPerHour(AgentUsageStore.shared.sample, enabled: AppSettings.shared.isEnabled(.agents))
+        case .accessoryBattery: lowestAccessory(in: stats.devices).map { Double($0.percent) }
         }
+    }
+
+    /// The connected accessory with the lowest battery; devices that report no level are ignored.
+    nonisolated static func lowestAccessory(in devices: [DeviceBattery]) -> (name: String, percent: Int)? {
+        devices.compactMap { device in device.lowest.map { (name: device.name, percent: $0) } }
+            .min { $0.percent < $1.percent }
     }
 
     /// Millions of tokens in the last 60 minutes, across all agents; nil until the first scan or with Agents off.
@@ -112,10 +122,13 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
     }
 
     func evaluate(_ rules: [AlertRule], stats: SystemStats, now: Date = Date()) {
-        evaluate(rules, now: now) { Self.value(for: $0, in: stats) }
+        evaluate(rules, now: now, detail: { $0 == .accessoryBattery ? Self.lowestAccessory(in: stats.devices)?.name : nil },
+                 value: { Self.value(for: $0, in: stats) })
     }
 
-    func evaluate(_ rules: [AlertRule], now: Date = Date(), value valueFor: (AlertMetric) -> Double?) {
+    /// `detail` optionally names the source of a metric's reading (the accessory) for the notification text.
+    func evaluate(_ rules: [AlertRule], now: Date = Date(), detail: (AlertMetric) -> String? = { _ in nil },
+                  value valueFor: (AlertMetric) -> Double?) {
         let active = rules.filter(\.enabled)
         if !active.isEmpty { requestPermissionIfNeeded() }
 
@@ -133,7 +146,7 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
             if !fired.contains(rule.id), cooledDown, now.timeIntervalSince(since) >= rule.duration {
                 fired.insert(rule.id)
                 lastFired[rule.id] = now
-                let title = "VibeCheck · \(rule.metric.title)", body = rule.describe(current: value)
+                let title = "VibeCheck · \(rule.metric.title)", body = rule.describe(current: value, detail: detail(rule.metric))
                 post(title: title, body: body)
                 log?.record(.alert, title: title, body: body, at: now)
             }

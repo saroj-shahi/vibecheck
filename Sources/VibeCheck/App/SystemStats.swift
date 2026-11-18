@@ -149,7 +149,12 @@ final class SystemStats {
             volumes = DiskMonitor.volumes()
             battery = BatteryMonitor.sample()
             if battery.present { batteryHistory.append(battery.percent) }
-            refreshDevicesIfDue()
+            // `system_profiler` once a minute is the most expensive sample: only when something shows it.
+            if Self.needsDevices(batteryOn: AppSettings.shared.isEnabled(.battery), rules: AppSettings.shared.alertRules) {
+                refreshDevicesIfDue()
+            } else if !devices.isEmpty {
+                devices = []
+            }
             uptime = SysctlReader.uptime()
         }
         tickCount += 1
@@ -193,6 +198,11 @@ final class SystemStats {
         let top = processDemand == 0 || processes.isEmpty ? nil : topApps(by: \.cpu, limit: 1).first.map { ($0.name, $0.cpu) }
         let report = VibeReport(vibe: level, verdict: VibeScore.verdict(for: level, input: input, topApp: top))
         if report != vibe { vibe = report }
+    }
+
+    /// Accessory batteries are shown by the Battery module and checked by "Accessory battery" alerts.
+    nonisolated static func needsDevices(batteryOn: Bool, rules: [AlertRule]) -> Bool {
+        batteryOn || rules.contains { $0.enabled && $0.metric == .accessoryBattery }
     }
 
     /// Bluetooth accessory levels change slowly; check once a minute in the background.
