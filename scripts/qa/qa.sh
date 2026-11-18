@@ -29,7 +29,7 @@ guard() {
 }
 remember() { here > $STATE; }
 case $1 in
-  item) osascript -e "tell application \"System Events\" to tell process \"VibeCheck\" to get {position, size} of (first menu bar item of menu bar 1 whose description is \"VibeCheck $2\")" 2>/dev/null \
+  item) osascript -e "tell application \"System Events\" to tell process \"VibeCheck\" to get {position, size} of (first menu bar item of menu bar 1 whose description starts with \"VibeCheck $2\")" 2>/dev/null \
           | tr -d ' ' | awk -F, '{printf "%d %d\n", $1+$3/2, $2+$4/2}' ;;
   click) guard; $DIR/click $2 $3; sleep 0.15; remember ;;
   move) guard; $DIR/click $2 $3 move; sleep 0.15; remember ;;

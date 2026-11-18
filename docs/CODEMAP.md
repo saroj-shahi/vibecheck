@@ -1,7 +1,7 @@
 # VibeCheck code map
 
 Where things live, so a task can open the right file first. One line per file; keep it current when files
-are added or split. Decisions and history are in [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md).
+are added or split. Plans, decisions and history are in [ROADMAP.md](ROADMAP.md).
 
 ## App/ (state, logic, system access)
 

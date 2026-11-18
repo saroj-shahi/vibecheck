@@ -124,5 +124,5 @@ swift scripts/render_brand.swift   # rewrites branding/png/* and Resources/AppIc
 
 ## Roadmap
 
-The prioritized backlog, what's been verified, known limits and the decisions log live in
-[`docs/IMPROVEMENT_PLAN.md`](docs/IMPROVEMENT_PLAN.md).
+Features by priority, what has shipped, what's been verified, the design rules, known limits and the
+decisions log live in [`docs/ROADMAP.md`](docs/ROADMAP.md).

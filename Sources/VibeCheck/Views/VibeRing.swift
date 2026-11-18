@@ -67,6 +67,5 @@ struct VibeItemLabel: View {
             if AwakeCup.isShown(settings) { AwakeCup() }
         }
             .padding(.horizontal, max(settings.menuBarSpacing.padding, 2))
-            .help(stats.vibe.verdict)
     }
 }
