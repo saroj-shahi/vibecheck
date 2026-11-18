@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 67 commits · ~9,400 lines of Swift · 114 tests_
+_Last updated: 2026-11-18 · version 1.5 · 69 commits · ~9,400 lines of Swift · 114 tests_
 
 ---
 
@@ -69,16 +69,16 @@ not the whole screen.
 | Live Claude limits: parsing, merge, Keychain-deny handling | ✅ unit tests with fixture JSON |
 | Live Claude limits: Keychain prompt, real fetch, menu bar "Limits left" | ✅ on 2026-11-18 the owner turned it on and allowed Keychain access; the real menu bar item showed 36% / 66% left (captured). Settings status line not seen |
 | Copilot CLI and OpenCode parsing, dedupe, SQLite read, scanner pass | ✅ unit tests + `--dump` on real data (both present; 0 tokens this week, which matches the files' dates) |
-| Copilot / OpenCode cards and Copilot quota gauge in the deck | ❌ never seen |
+| Copilot cards and both quota gauges in the deck | ✅ seen in the QA pass |
 | Copilot quota from an old session; daily totals, last hour, working-now rule, tokens-per-hour metric | ✅ unit tests + `--dump` (Copilot: chat 9.3% used, completions 2.5%) |
 | 7-day chart | ✅ rendered offscreen; not seen in the real deck |
-| Working-now badge, tokens-per-hour alert in Settings and as a notification | ❌ never seen |
+| Working-now badge, Now card, plan badges, limit gauges in the real deck | ✅ seen in the QA pass (tokens-per-hour alert not triggered) |
 | Per-item options: content rules, decoding, migration of "Limits left" | ✅ unit tests; migration checked on the owner's real settings |
 | Per-item options panel (Agents, Memory) | ✅ rendered offscreen through AppKit (`NSHostingView.cacheDisplay`, real controls); the slider button in the real Settings window seen, the expanded panel not |
 | Live limits from Claude Code: real exchange from the app's code | ✅ probe test (0.9 s, plan "team") and the real menu bar item showed 9% / 61% left afterwards |
 | Account/plan badges, Now card, Copilot's two quotas, per-day burn | ✅ rendered offscreen from real logs (AppKit, dark mode): "Claude Code · Saroj · Team", "Codex · Free", Now "VibeCheck · Opus 5.5 · 276K written" |
 | Listening ports: `lsof -F` parsing | ✅ 7 unit tests (format checked against real `lsof` output) |
-| Listening ports section, quit from it | ❌ never seen |
+| Listening ports section | ✅ seen in the real deck (quit from it not tried) |
 
 ---
 
@@ -98,14 +98,14 @@ hardware access.
 **On-screen QA pass** (remaining). Needs the owner to keep hands off the Mac (see "How to run it" below).
 
 - [x] Menu bar: separate items on both displays (2026-11-18). Combined item + notch fit still not seen (owner uses separate items now)
-- [ ] Deck: light mode, tile hover and press, unfold/fold animation (dark mode, Esc, arrows, ⌘2 done)
-- [ ] Detail views: Network, Sensors, Agents, Weather; Details toggle, peak haptic, Live/1H/24H morph (CPU, GPU, Battery, scrubbing done)
+- [ ] Deck: light mode, tile hover and press, unfold/fold animation (dark mode, Esc, arrows, ⌘1/⌘2/⌘6/⌘0 done)
+- [x] Detail views: Network (+ listening ports), Sensors, Agents, CPU Details toggle, Live/1H/24H (2026-11-18). Weather not seen (switched off); haptics and the morph animation can't be captured
 - [ ] Vibe ring: colors and bounce (force "mid" by running a CPU-heavy task for 30 s+)
-- [ ] Settings: drag to reorder, alert sentence tokens, number drag, banner preview (all panes + preview seen)
+- [ ] Settings: drag to reorder (skipped: would change the owner's order), number drag, banner preview (all panes, item options panel, alert sentences seen)
 - [ ] Alerts: "Send Test Notification" shows a banner after allowing notifications
-- [ ] Global shortcuts ⌃⌥⌘1–9 from another app
+- [x] Global shortcuts: ⌃⌥⌘2 from another app opened GPU (2026-11-18)
 - [ ] Reduce Motion and Increase Contrast on: everything still readable, springs become fades
-- [ ] VoiceOver: tiles read as sentences, alert number is adjustable
+- [ ] VoiceOver: tiles read as sentences ✅ (accessibility tree, 2026-11-18); alert number adjustable not checked; VoiceOver itself not run (system setting)
 
 **Bluetooth off while asleep** (owner will test): turn it on in Settings → General, allow the Bluetooth
 prompt, sleep and wake, then check the log (command in the session history entry).
@@ -557,6 +557,26 @@ Notes: no `NSStatusItem Preferred Position` keys exist in the app's defaults on 
 found in Control Center's preferences, so positions can't be reset by deleting keys. A throwaway probe app
 showed new names are placed in creation order (each new item to the left) and old names come back where
 they were. Not triggered on the owner's Mac, to keep their current arrangement.
+
+### 2026-11-18: QA pass, round 2
+
+| Commit | What |
+|---|---|
+| `0437a53` | Claude card hides the local estimate when a real session limit exists ("estimate", "resets about" otherwise); vibe ring has an image role for accessibility. |
+
+Seen on screen (owner hands-off): deck home (verdict on its own line), Network with listening ports,
+Sensors, Agents (Now card, "Saroj · Team", "Codex · Free", Copilot's two quotas, real limits with pace
+warnings), CPU with 1H / 24H and the Details toggle, ⌃⌥⌘2 from another app, the Agents options panel in
+the real Settings window (live preview 89% / 58%), the Alerts pane ("below 15% instantly"). The deck's
+accessibility tree reads every control and each tile as a sentence. A test notification was sent; whether
+the banner appeared wasn't confirmed. Not checked: light mode, Reduce Motion / Increase Contrast /
+VoiceOver (system settings, not ours to change), drag-to-reorder (would change the owner's order).
+Notes for the next pass: drive buttons through accessibility (`AXPress` by label, `AXSelected` on sidebar
+rows) instead of clicks: it needs no focus, and macOS won't let VibeCheck take focus from another app
+(`activate` was refused). A driver that pauses when the cursor moves caught the owner using the Mac twice.
+Not bugs: Weather tile missing (Weather is switched off); "On battery" (the Mac was unplugged); "VibeCheck 2"
+at 50% CPU in the process list (the brief Claude Code limits check, a child process).
+Open: "+N more" under listening ports isn't clickable.
 
 ---
 
