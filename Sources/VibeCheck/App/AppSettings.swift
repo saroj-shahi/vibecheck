@@ -178,8 +178,13 @@ final class AppSettings {
         }
     }
     private(set) var labelStyles: [Module: LabelStyle]
+    /// User-chosen order for the combined item, the deck grid and (on creation) separate items.
+    private(set) var moduleOrder: [Module]
     var menuBarSpacing: MenuBarSpacing {
         didSet { save(menuBarSpacing.rawValue, "menuBarSpacing", structural: true) }
+    }
+    var showVibeRing: Bool {
+        didSet { save(showVibeRing, "showVibeRing", structural: true) }
     }
     var colorfulMenuBar: Bool {
         didSet { save(colorfulMenuBar, "colorfulMenuBar", structural: false) }
@@ -240,10 +245,13 @@ final class AppSettings {
         let interval = defaults.double(forKey: "refreshInterval")
         refreshInterval = interval > 0 ? interval : 2
         launchAtLogin = SMAppService.mainApp.status == .enabled
-        menuBarStyle = defaults.string(forKey: "menuBarStyle").flatMap(MenuBarStyle.init(rawValue:)) ?? .separate
+        // New installs start with the single combined item; existing choices are kept.
+        menuBarStyle = defaults.string(forKey: "menuBarStyle").flatMap(MenuBarStyle.init(rawValue:)) ?? .combined
         hotkeysEnabled = defaults.object(forKey: "hotkeysEnabled") as? Bool ?? true
         hotkeyModifier = defaults.string(forKey: "hotkeyModifier").flatMap(HotkeyModifier.init(rawValue:))
             ?? .controlOptionCommand
+        let storedOrder = (defaults.array(forKey: "moduleOrder") as? [String] ?? []).compactMap(Module.init(rawValue:))
+        moduleOrder = Self.completeOrder(storedOrder)
         let storedStyles = defaults.dictionary(forKey: "labelStyles") as? [String: String] ?? [:]
         labelStyles = storedStyles.reduce(into: [:]) { result, entry in
             if let module = Module(rawValue: entry.key), let style = LabelStyle(rawValue: entry.value) {
@@ -251,6 +259,7 @@ final class AppSettings {
             }
         }
         menuBarSpacing = defaults.string(forKey: "menuBarSpacing").flatMap(MenuBarSpacing.init(rawValue:)) ?? .normal
+        showVibeRing = defaults.object(forKey: "showVibeRing") as? Bool ?? true
         colorfulMenuBar = defaults.object(forKey: "colorfulMenuBar") as? Bool ?? true
         clockFormat = defaults.string(forKey: "clockFormat").flatMap(ClockFormat.init(rawValue:)) ?? .dayTime
         clockShowSeconds = defaults.bool(forKey: "clockShowSeconds")
@@ -286,8 +295,21 @@ final class AppSettings {
         return ceil((text as NSString).size(withAttributes: [.font: font]).width) + 2
     }
 
-    /// Modules that are switched on, in menu bar order.
-    var orderedModules: [Module] { Module.allCases.filter(enabledModules.contains) }
+    /// Modules that are switched on, in the user's order.
+    var orderedModules: [Module] { moduleOrder.filter(enabledModules.contains) }
+
+    /// Keeps the stored order and appends any module it doesn't mention (e.g. added in an update).
+    nonisolated static func completeOrder(_ stored: [Module]) -> [Module] {
+        var seen = Set<Module>()
+        let unique = stored.filter { seen.insert($0).inserted }
+        return unique + Module.allCases.filter { !seen.contains($0) }
+    }
+
+    func moveModules(from source: IndexSet, to destination: Int) {
+        moduleOrder.move(fromOffsets: source, toOffset: destination)
+        defaults.set(moduleOrder.map(\.rawValue), forKey: "moduleOrder")
+        NotificationCenter.default.post(name: .vibeCheckSettingsChanged, object: nil)
+    }
 
     private func save(_ value: Any, _ key: String, structural: Bool) {
         defaults.set(value, forKey: key)

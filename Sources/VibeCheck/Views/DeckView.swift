@@ -83,18 +83,21 @@ struct DeckHome: View {
     }
 
     private var header: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "waveform.path.ecg")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.mint)
-                .frame(width: 30, height: 30)
-                .background(Circle().fill(.mint.opacity(0.15)))
-            VStack(alignment: .leading, spacing: 1) {
-                Text("VibeCheck").font(.system(size: 13, weight: .semibold))
-                Text("Up \(Fmt.uptime(stats.uptime)) · ⌘1–9 to jump")
-                    .font(.system(size: 11)).foregroundStyle(.secondary)
+        HStack(alignment: .top, spacing: 10) {
+            VibeRing(vibe: stats.vibe.vibe, size: 30, lineWidth: 3.5, monochromeWhenVibing: false)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(stats.vibe.vibe.title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .contentTransition(.interpolate)
+                Text(stats.vibe.verdict)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .contentTransition(.opacity)
             }
-            Spacer()
+            .accessibilityElement(children: .combine)
+            Spacer(minLength: 4)
             DeckIconButton(symbol: "gearshape", help: "Settings (⌘,)") {
                 (NSApp.delegate as? AppDelegate)?.showSettings()
             }

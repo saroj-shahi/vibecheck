@@ -2,7 +2,12 @@
 
 A lightweight macOS menu bar system monitor that tells you if your Mac is vibing or cooked (macOS 14+), written in Swift with SwiftUI + AppKit.
 
-Each module gets its own menu bar item (or one combined item). Clicking opens the **deck**: a glass panel
+A **vibe ring** sums it all up: full and monochrome while your Mac is vibing, two-thirds and yellow when
+it's mid, one-third and red when it's cooked (sustained CPU, memory pressure, heat, low disk or battery,
+thermal throttling). The deck header turns that into a sentence, e.g. "Kinda mid: CPU has been busy at 72%.
+Xcode is the loudest at 140% CPU." States only change after two consecutive samples, so nothing flickers.
+
+Each module gets its own menu bar item (or one combined item, the default for new installs). Clicking opens the **deck**: a glass panel
 under the menu bar with a live tile per stat. Click a tile (or use the arrow keys and Return) and it unfolds
 into that module's detail view; Esc folds back, then closes. `⌘1`–`⌘9` jump between modules inside the deck,
 `⌘,` opens Settings. Separate items open the deck straight on their module.
@@ -31,7 +36,8 @@ Settings (gear icon in any panel, or open the app again):
 - **Clock:** menu bar format (locale-aware), seconds, world clocks with city search.
 - **Weather:** city search, °C / °F.
 - **Backup:** export / import settings as a .plist, or reset to defaults.
-- **Alerts:** notifications such as "CPU above 90% for 1 min", "temperature above 95 °C", "battery below 15%", "startup disk below 10% free". Each fires once, then re-arms after the value recovers (5 min cooldown).
+- **Menu Bar:** a live preview drawn with the real labels, style, spacing, vibe ring, and drag-to-reorder items.
+- **Alerts:** rules read as sentences ("Tell me when **CPU usage** is **above** **90%** for **1 min**"); click a word to change it, drag the number sideways to adjust it, preview the banner. Notifications such as "CPU above 90% for 1 min", "temperature above 95 °C", "battery below 15%", "startup disk below 10% free". Each fires once, then re-arms after the value recovers (5 min cooldown).
 - **Shortcuts:** `⌃⌥⌘1`…`⌃⌥⌘9` open CPU, GPU, Memory, Network, Disk, Sensors, Battery, Clock, Weather from any app (modifier keys configurable).
 
 ## Build & run

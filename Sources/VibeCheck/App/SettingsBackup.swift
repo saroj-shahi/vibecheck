@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 enum SettingsBackup {
     static let keys = [
         "enabledModules", "knownModules", "refreshInterval", "menuBarStyle", "menuBarSpacing", "labelStyles",
-        "colorfulMenuBar", "hotkeysEnabled", "hotkeyModifier", "alertRules", "clockFormat", "clockShowSeconds",
+        "colorfulMenuBar", "showVibeRing", "moduleOrder", "hotkeysEnabled", "hotkeyModifier", "alertRules", "clockFormat", "clockShowSeconds",
         "worldClocks", "weatherLocation", "temperatureUnit", "chartRange", "groupProcessesByApp",
     ]
     static let formatKey = "VibeCheckSettingsVersion"

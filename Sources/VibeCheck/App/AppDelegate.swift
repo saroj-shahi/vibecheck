@@ -14,6 +14,7 @@ final class StatusItemController: NSObject {
     enum Kind: Equatable {
         case single(Module)
         case combined
+        case vibe
     }
 
     let kind: Kind
@@ -44,6 +45,9 @@ final class StatusItemController: NSObject {
         case .combined:
             item.autosaveName = "vibecheck.combined"
             label = AnyView(CombinedLabel())
+        case .vibe:
+            item.autosaveName = "vibecheck.vibe"
+            label = AnyView(VibeItemLabel())
         }
         labelView = AnyView(label.environment(stats).environment(settings))
         refreshLength()
@@ -66,8 +70,11 @@ final class StatusItemController: NSObject {
     }
 
     private var title: String {
-        if case .single(let module) = kind { return module.title }
-        return "VibeCheck"
+        switch kind {
+        case .single(let module): module.title
+        case .vibe: "Vibe"
+        case .combined: "VibeCheck"
+        }
     }
 
     /// Sizes the item to its label's natural width. Values use fixed-width slots, so this stays stable.
@@ -89,6 +96,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var deck = DeckController(stats: stats, settings: settings)
     private var items: [Module: StatusItemController] = [:]
     private var combinedItem: StatusItemController?
+    /// The standalone ring shown with separate items.
+    private var vibeItem: StatusItemController?
     private var settingsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -135,6 +144,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if settings.menuBarStyle == .combined {
             items.values.forEach { $0.remove() }
             items.removeAll()
+            vibeItem?.remove()
+            vibeItem = nil
             if let combinedItem {
                 combinedItem.refreshLength()
             } else {
@@ -146,7 +157,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         combinedItem?.remove()
         combinedItem = nil
         // Insert in reverse so the left-to-right order matches Module.allCases.
-        for module in Module.allCases.reversed() {
+        for module in settings.moduleOrder.reversed() {
             let enabled = settings.isEnabled(module)
             if enabled, items[module] == nil {
                 items[module] = makeItem(.single(module))
@@ -155,6 +166,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             items[module]?.refreshLength() // label style or clock format may have changed
         }
+        // Created after the modules so it sits to their left.
+        if settings.showVibeRing, vibeItem == nil {
+            vibeItem = makeItem(.vibe)
+        } else if !settings.showVibeRing {
+            vibeItem?.remove()
+            vibeItem = nil
+        }
+        vibeItem?.refreshLength()
     }
 
     private func configureHotkeys() {
@@ -177,11 +196,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         deck.close()
         if settingsWindow == nil {
             let view = SettingsView(onTestNotification: { [weak self] in self?.alerts.sendTest() })
-                .environment(settings)
+                .environment(settings).environment(stats)
             let controller = NSHostingController(rootView: view)
+            controller.sizingOptions = [.minSize]
             let window = NSWindow(contentViewController: controller)
             window.title = "VibeCheck Settings"
-            window.styleMask = [.titled, .closable]
+            window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
+            window.toolbarStyle = .unified
+            window.setContentSize(NSSize(width: 760, height: 560))
             window.isReleasedWhenClosed = false
             window.center()
             settingsWindow = window
@@ -194,7 +216,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func runDeckDemo() {
         func log(_ step: String) {
             let window = NSApp.windows.first { $0 is DeckPanel }
-            NSLog("VibeCheck deck-demo \(step): visible=\(window?.isVisible ?? false) frame=\(NSStringFromRect(window?.frame ?? .zero)) route=\(deck.route)")
+            NSLog("%@", "VibeCheck deck-demo \(step): visible=\(window?.isVisible ?? false) frame=\(NSStringFromRect(window?.frame ?? .zero)) route=\(deck.route)")
         }
         let steps: [(Double, String, () -> Void)] = [
             (1.0, "launch", {
@@ -205,7 +227,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             (1.6, "home", { self.deck.model.go(.module(.cpu)) }),
             (2.4, "cpu", { self.deck.model.go(.home) }),
             (3.2, "home-again", { self.deck.close() }),
-            (3.8, "closed", { self.deck.ignoresOutsideClicks = false }),
+            (3.8, "closed", { self.deck.ignoresOutsideClicks = false; self.showSettings() }),
+            (4.8, "settings", {
+                let window = NSApp.windows.first { $0.title == "VibeCheck Settings" }
+                NSLog("%@", "VibeCheck deck-demo settings-window: visible=\(window?.isVisible ?? false) frame=\(NSStringFromRect(window?.frame ?? .zero)) vibe=\(self.stats.vibe.vibe.title) verdict=\(self.stats.vibe.verdict)")
+                window?.close()
+            }),
         ]
         for (time, name, action) in steps {
             DispatchQueue.main.asyncAfter(deadline: .now() + time) { log(name); action() }

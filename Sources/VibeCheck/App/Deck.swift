@@ -354,7 +354,8 @@ final class DeckController: NSObject {
     /// `ps` and `nettop` only run while a view that shows their data is on screen.
     private func updateSamplerDemand() {
         let visible = isVisible
-        let wantsProcesses = visible && (model.route == .module(.cpu) || model.route == .module(.memory))
+        // Home needs processes too: the vibe verdict names the loudest app.
+        let wantsProcesses = visible && [.home, .module(.cpu), .module(.memory)].contains(model.route)
         let wantsNetwork = visible && model.route == .module(.network)
         if wantsProcesses != holdsProcessDemand {
             stats.processDemand = max(0, stats.processDemand + (wantsProcesses ? 1 : -1))

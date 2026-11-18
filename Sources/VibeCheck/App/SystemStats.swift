@@ -53,6 +53,9 @@ final class SystemStats {
     @ObservationIgnored private var fetchingDevices = false
     private(set) var uptime: TimeInterval = 0
     private(set) var processes: [ProcessRow] = []
+    private(set) var vibe = VibeReport(vibe: .vibing, verdict: "Checking the vibes…")
+    @ObservationIgnored private var vibeTracker = VibeTracker()
+    @ObservationIgnored var refreshInterval: TimeInterval = 2
     private(set) var networkApps: [AppNetworkUsage] = []
     @ObservationIgnored private var fetchingNetworkApps = false
 
@@ -81,6 +84,7 @@ final class SystemStats {
     private var fetchingProcesses = false
 
     func start(interval: TimeInterval) {
+        refreshInterval = interval
         timer?.invalidate()
         if tickCount == 0 { tick() }
         let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
@@ -136,10 +140,32 @@ final class SystemStats {
         if let hottest = sensors.hottest { values[.temperature] = hottest }
         if battery.present { values[.battery] = battery.percent }
         history.record(values)
+        updateVibe()
         onTick?()
 
         if processDemand > 0 { refreshProcesses() }
         if networkAppDemand > 0 { refreshNetworkApps() }
+    }
+
+    var vibeInput: VibeInput {
+        let window = max(1, Int((30 / max(refreshInterval, 0.5)).rounded()))
+        let recent = cpuHistory.suffix(window)
+        let startup = volumes.first { $0.path == "/" } ?? volumes.first
+        return VibeInput(
+            cpuRecent: recent.isEmpty ? cpu.total : recent.reduce(0, +) / Double(recent.count),
+            memoryPressure: memory.pressure,
+            hottest: sensors.hottest,
+            startupDiskFree: startup.map { 1 - $0.usage },
+            batteryOnBattery: battery.present && !battery.onAC ? battery.percent : nil,
+            thermalState: thermalState)
+    }
+
+    private func updateVibe() {
+        let input = vibeInput
+        let level = vibeTracker.update(VibeScore.evaluate(input))
+        let top = processes.isEmpty ? nil : topApps(by: \.cpu, limit: 1).first.map { ($0.name, $0.cpu) }
+        let report = VibeReport(vibe: level, verdict: VibeScore.verdict(for: level, input: input, topApp: top))
+        if report != vibe { vibe = report }
     }
 
     /// Bluetooth accessory levels change slowly; check once a minute in the background.

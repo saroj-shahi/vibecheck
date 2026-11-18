@@ -1,24 +1,181 @@
+import AppKit
 import SwiftUI
 
-struct SettingsView: View {
-    let onTestNotification: () -> Void
+enum SettingsSection: String, CaseIterable, Identifiable {
+    case menuBar, general, alerts, clock, weather, shortcuts, backup
+    var id: String { rawValue }
 
-    var body: some View {
-        TabView {
-            GeneralSettings()
-                .tabItem { Label("General", systemImage: "gearshape") }
-            AlertSettings(onTestNotification: onTestNotification)
-                .tabItem { Label("Alerts", systemImage: "bell.badge") }
-            ClockSettings()
-                .tabItem { Label("Clock", systemImage: "clock") }
-            WeatherSettings()
-                .tabItem { Label("Weather", systemImage: "cloud.sun") }
-            ShortcutSettings()
-                .tabItem { Label("Shortcuts", systemImage: "keyboard") }
+    var title: String {
+        switch self {
+        case .menuBar: "Menu Bar"
+        case .general: "General"
+        case .alerts: "Alerts"
+        case .clock: "Clock"
+        case .weather: "Weather"
+        case .shortcuts: "Shortcuts"
+        case .backup: "Backup"
         }
-        .frame(width: 500, height: 540)
+    }
+
+    var symbol: String {
+        switch self {
+        case .menuBar: "menubar.rectangle"
+        case .general: "gearshape"
+        case .alerts: "bell.badge"
+        case .clock: "clock"
+        case .weather: "cloud.sun"
+        case .shortcuts: "keyboard"
+        case .backup: "externaldrive.badge.timemachine"
+        }
     }
 }
+
+/// Sidebar settings window.
+struct SettingsView: View {
+    let onTestNotification: () -> Void
+    @State private var section: SettingsSection? = .menuBar
+
+    var body: some View {
+        NavigationSplitView {
+            List(SettingsSection.allCases, selection: $section) { item in
+                Label(item.title, systemImage: item.symbol).tag(item)
+            }
+            .navigationSplitViewColumnWidth(min: 170, ideal: 180, max: 210)
+        } detail: {
+            Group {
+                switch section ?? .menuBar {
+                case .menuBar: MenuBarSettings()
+                case .general: GeneralSettings()
+                case .alerts: AlertSettings(onTestNotification: onTestNotification)
+                case .clock: ClockSettings()
+                case .weather: WeatherSettings()
+                case .shortcuts: ShortcutSettings()
+                case .backup: BackupSettings()
+                }
+            }
+            .navigationTitle((section ?? .menuBar).title)
+        }
+        .toolbar(removing: .sidebarToggle)
+        .frame(minWidth: 700, minHeight: 520)
+    }
+}
+
+// MARK: - Menu Bar
+
+private struct MenuBarSettings: View {
+    @Environment(AppSettings.self) private var settings
+
+    var body: some View {
+        @Bindable var settings = settings
+        Form {
+            Section {
+                MenuBarPreview()
+            } header: {
+                Text("Preview")
+            } footer: {
+                Text("Live, using your real stats. With separate items macOS sets the gaps between items, and their order is changed by ⌘-dragging them in the menu bar.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section("Style") {
+                Picker("Show as", selection: $settings.menuBarStyle) {
+                    ForEach(MenuBarStyle.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.radioGroup)
+                Picker("Spacing", selection: $settings.menuBarSpacing) {
+                    ForEach(MenuBarSpacing.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                Toggle("Show vibe ring", isOn: $settings.showVibeRing)
+                Toggle("Colorful graphs", isOn: $settings.colorfulMenuBar)
+            }
+
+            Section {
+                ForEach(settings.moduleOrder) { module in
+                    ModuleRow(module: module)
+                }
+                .onMove { settings.moveModules(from: $0, to: $1) }
+            } header: {
+                Text("Items")
+            } footer: {
+                Text("Drag to reorder. The order is used by the combined item and the deck.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+private struct ModuleRow: View {
+    let module: Module
+    @Environment(AppSettings.self) private var settings
+
+    var body: some View {
+        HStack {
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
+            Toggle(isOn: Binding(get: { settings.isEnabled(module) }, set: { settings.setEnabled(module, $0) })) {
+                Label(module.title, systemImage: module.symbol)
+            }
+            .disabled(settings.isEnabled(module) && settings.enabledModules.count == 1)
+            Spacer()
+            Picker("Display", selection: Binding(get: { settings.labelStyle(module) },
+                                                 set: { settings.setLabelStyle($0, for: module) })) {
+                ForEach(module.labelStyles) { Text($0.title(for: module)).tag($0) }
+            }
+            .labelsHidden()
+            .fixedSize()
+            .disabled(!settings.isEnabled(module))
+        }
+        .contextMenu {
+            if let index = settings.moduleOrder.firstIndex(of: module) {
+                Button("Move Up") { settings.moveModules(from: [index], to: max(0, index - 1)) }
+                    .disabled(index == 0)
+                Button("Move Down") { settings.moveModules(from: [index], to: min(settings.moduleOrder.count, index + 2)) }
+                    .disabled(index == settings.moduleOrder.count - 1)
+            }
+        }
+    }
+}
+
+/// A slice of menu bar drawn with the real labels, so what you see here is what you get.
+private struct MenuBarPreview: View {
+    @Environment(AppSettings.self) private var settings
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 14) {
+                Spacer(minLength: 0)
+                if settings.menuBarStyle == .combined {
+                    CombinedLabel()
+                } else {
+                    HStack(spacing: 10) {
+                        if settings.showVibeRing { VibeItemLabel() }
+                        ForEach(settings.orderedModules) { MenuBarLabel(module: $0) }
+                    }
+                }
+                HStack(spacing: 14) {
+                    Image(systemName: "wifi")
+                    Image(systemName: "switch.2")
+                    Text(Date(), format: .dateTime.weekday(.abbreviated).hour().minute())
+                }
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            }
+            .frame(height: 26)
+            .padding(.horizontal, 12)
+        }
+        .defaultScrollAnchor(.trailing)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.bar))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
+        .animation(.spring(response: 0.3, dampingFraction: 0.85), value: settings.orderedModules)
+        .accessibilityLabel("Menu bar preview")
+    }
+}
+
+// MARK: - General & Backup
 
 private struct GeneralSettings: View {
     @Environment(AppSettings.self) private var settings
@@ -26,43 +183,7 @@ private struct GeneralSettings: View {
     var body: some View {
         @Bindable var settings = settings
         Form {
-            Section("Menu bar") {
-                Picker("Style", selection: $settings.menuBarStyle) {
-                    ForEach(MenuBarStyle.allCases) { Text($0.title).tag($0) }
-                }
-                .pickerStyle(.radioGroup)
-                ForEach(Module.allCases) { module in
-                    HStack {
-                        Toggle(isOn: Binding(
-                            get: { settings.isEnabled(module) },
-                            set: { settings.setEnabled(module, $0) }
-                        )) {
-                            Label(module.title, systemImage: module.symbol)
-                        }
-                        .disabled(settings.isEnabled(module) && settings.enabledModules.count == 1)
-                        Spacer()
-                        Picker("Display", selection: Binding(
-                            get: { settings.labelStyle(module) },
-                            set: { settings.setLabelStyle($0, for: module) }
-                        )) {
-                            ForEach(module.labelStyles) { Text($0.title(for: module)).tag($0) }
-                        }
-                        .labelsHidden()
-                        .fixedSize()
-                        .disabled(!settings.isEnabled(module))
-                    }
-                }
-                Toggle("Colorful menu bar graphs", isOn: $settings.colorfulMenuBar)
-                Picker("Spacing", selection: $settings.menuBarSpacing) {
-                    ForEach(MenuBarSpacing.allCases) { Text($0.title).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                Text(settings.menuBarStyle == .combined
-                     ? "Spacing tightens the gaps inside each stat and between stats in the combined item."
-                     : "Spacing tightens the padding inside each item. macOS controls the gap between separate items; use one combined item for the tightest layout.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Section("General") {
+            Section {
                 Picker("Update every", selection: $settings.refreshInterval) {
                     Text("1 second").tag(1.0)
                     Text("2 seconds").tag(2.0)
@@ -71,22 +192,37 @@ private struct GeneralSettings: View {
                 }
                 Toggle("Launch at login", isOn: $settings.launchAtLogin)
             }
-            Section("Backup") {
-                HStack {
-                    Button("Export Settings…") { SettingsBackup.runExport() }
-                    Button("Import Settings…") { SettingsBackup.runImport() }
-                    Spacer()
-                    Button("Reset to Defaults…", role: .destructive) { SettingsBackup.runReset() }
-                }
-            }
             Section {
-                Text("VibeCheck 1.3 · Click any menu bar item to check the vibes.")
+                Text("VibeCheck 1.4 · Click the menu bar item to check the vibes. ⌃⌥⌘1–9 open a module from anywhere.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
     }
 }
+
+private struct BackupSettings: View {
+    var body: some View {
+        Form {
+            Section {
+                LabeledContent("Export your settings to a file") {
+                    Button("Export…") { SettingsBackup.runExport() }
+                }
+                LabeledContent("Replace settings from a file") {
+                    Button("Import…") { SettingsBackup.runImport() }
+                }
+            }
+            Section {
+                LabeledContent("Go back to the defaults (history is kept)") {
+                    Button("Reset…", role: .destructive) { SettingsBackup.runReset() }
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+// MARK: - Alerts
 
 private struct AlertSettings: View {
     let onTestNotification: () -> Void
@@ -101,21 +237,32 @@ private struct AlertSettings: View {
                 }
                 ForEach($settings.alertRules) { $rule in
                     AlertRuleRow(rule: $rule) {
-                        settings.alertRules.removeAll { $0.id == rule.id }
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            settings.alertRules.removeAll { $0.id == rule.id }
+                        }
                     }
+                    .transition(.move(edge: .top).combined(with: .opacity))
                 }
             } header: {
-                Text("Notify me when…")
+                HStack {
+                    Text("Alerts")
+                    Spacer()
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            settings.alertRules.insert(AlertRule(metric: .cpu, comparison: .above, threshold: 80, duration: 60), at: 0)
+                        }
+                    } label: { Label("Add Alert", systemImage: "plus") }
+                        .buttonStyle(.borderless)
+                }
             } footer: {
-                Text("Each alert fires once, then waits until the value is back to normal (and at least 5 minutes) before it can fire again.")
+                Text("Click a highlighted word to change it; drag a number sideways to adjust it (hold ⌥ for fine steps). Each alert fires once, then waits until things recover and at least 5 minutes pass.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section {
                 HStack {
-                    Button("Add Alert") {
-                        settings.alertRules.append(AlertRule(metric: .cpu, comparison: .above, threshold: 80, duration: 60))
+                    Button("Restore Default Alerts") {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { settings.alertRules = AlertRule.defaults }
                     }
-                    Button("Restore Defaults") { settings.alertRules = AlertRule.defaults }
                     Spacer()
                     Button("Send Test Notification", action: onTestNotification)
                 }
@@ -125,53 +272,231 @@ private struct AlertSettings: View {
     }
 }
 
+/// "Tell me when [CPU usage] is [above] [90%] for [1 min]."
 private struct AlertRuleRow: View {
     @Binding var rule: AlertRule
     let onDelete: () -> Void
+    @State private var showPreview = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(alignment: .top, spacing: 8) {
                 Toggle("Enabled", isOn: $rule.enabled)
                     .labelsHidden().toggleStyle(.switch).controlSize(.mini)
-                Picker("Metric", selection: $rule.metric) {
-                    ForEach(AlertMetric.allCases) { Text($0.title).tag($0) }
+                    .padding(.top, 2)
+                FlowLayout(spacing: 5, lineSpacing: 6) {
+                    Text("Tell me when")
+                    TokenMenu(title: rule.metric.title) {
+                        ForEach(AlertMetric.allCases) { metric in
+                            Button(metric.title) { select(metric) }
+                        }
+                    }
+                    Text("is")
+                    TokenMenu(title: rule.comparison.rawValue) {
+                        ForEach(AlertComparison.allCases) { comparison in
+                            Button(comparison.rawValue) { rule.comparison = comparison }
+                        }
+                    }
+                    NumberToken(value: $rule.threshold, unit: rule.metric.unit, range: rule.metric.range)
+                    Text("for")
+                    TokenMenu(title: AlertRule.durationLabel(rule.duration)) {
+                        ForEach(AlertRule.durations, id: \.0) { seconds, label in
+                            Button(label) { rule.duration = seconds }
+                        }
+                    }
                 }
-                .labelsHidden().fixedSize()
-                Spacer()
+                .opacity(rule.enabled ? 1 : 0.45)
+                .disabled(!rule.enabled)
+                Spacer(minLength: 0)
+                Button { preview() } label: { Image(systemName: "eye") }
+                    .buttonStyle(.borderless)
+                    .help("Preview the notification")
                 Button(role: .destructive, action: onDelete) { Image(systemName: "trash") }
                     .buttonStyle(.borderless)
                     .help("Delete alert")
             }
-            HStack(spacing: 6) {
-                Text("is")
-                Picker("Comparison", selection: $rule.comparison) {
-                    ForEach(AlertComparison.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .labelsHidden().fixedSize()
-                TextField("Threshold", value: threshold, format: .number)
-                    .labelsHidden().frame(width: 50).multilineTextAlignment(.trailing)
-                Text(rule.metric.unit)
-                Text("for")
-                Picker("Duration", selection: $rule.duration) {
-                    ForEach(AlertRule.durations, id: \.0) { Text($0.1).tag($0.0) }
-                }
-                .labelsHidden().fixedSize()
+            if showPreview {
+                NotificationPreview(title: "VibeCheck · \(rule.metric.title)", message: rule.describe(current: exampleValue))
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
-            .disabled(!rule.enabled)
         }
         .padding(.vertical, 2)
-        .onChange(of: rule.metric) { _, metric in
-            rule.comparison = (metric == .batteryLevel || metric == .diskFree) ? .below : .above
-            rule.threshold = min(max(rule.threshold, metric.range.lowerBound), metric.range.upperBound)
+    }
+
+    private var exampleValue: Double {
+        let r = rule.metric.range
+        return min(max(rule.threshold + (rule.comparison == .above ? 6 : -6), r.lowerBound), r.upperBound)
+    }
+
+    private func select(_ metric: AlertMetric) {
+        rule.metric = metric
+        rule.comparison = (metric == .batteryLevel || metric == .diskFree) ? .below : .above
+        rule.threshold = min(max(rule.threshold, metric.range.lowerBound), metric.range.upperBound)
+    }
+
+    private func preview() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { showPreview = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.4) {
+            withAnimation(.easeOut(duration: 0.25)) { showPreview = false }
+        }
+    }
+}
+
+/// A highlighted word that opens a menu.
+private struct TokenMenu<Content: View>: View {
+    let title: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        Menu { content } label: {
+            Text(title).fontWeight(.medium)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .padding(.horizontal, 7)
+        .padding(.vertical, 1)
+        .background(Capsule().fill(Color.accentColor.opacity(0.14)))
+        .foregroundStyle(Color.accentColor)
+    }
+}
+
+/// Converts a horizontal drag into a value change: 1 unit per 4 pt, or per 12 pt with ⌥ held.
+enum AlertScrub {
+    static func value(start: Double, dx: CGFloat, fine: Bool, range: ClosedRange<Double>) -> Double {
+        let perPoint = fine ? 1.0 / 12 : 1.0 / 4
+        return min(max((start + Double(dx) * perPoint).rounded(), range.lowerBound), range.upperBound)
+    }
+}
+
+/// A number you can drag sideways to adjust (with a trackpad tick every 5) or click to type.
+private struct NumberToken: View {
+    @Binding var value: Double
+    let unit: String
+    let range: ClosedRange<Double>
+    @State private var editing = false
+    @State private var dragStart: Double?
+    @State private var lastTick: Int?
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        Group {
+            if editing {
+                TextField("Value", value: Binding(get: { value }, set: { value = min(max($0, range.lowerBound), range.upperBound) }),
+                          format: .number)
+                    .labelsHidden()
+                    .frame(width: 48)
+                    .focused($focused)
+                    .onSubmit { editing = false }
+                    .onChange(of: focused) { _, isFocused in if !isFocused { editing = false } }
+                    .onAppear { focused = true }
+            } else {
+                Text("\(Int(value))\(unit)")
+                    .fontWeight(.semibold)
+                    .monospacedDigit()
+                    .contentTransition(.numericText(value: value))
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 1)
+                    .background(Capsule().fill(Color.accentColor.opacity(dragStart == nil ? 0.14 : 0.26)))
+                    .foregroundStyle(Color.accentColor)
+                    .onHover { inside in inside ? NSCursor.resizeLeftRight.push() : NSCursor.pop() }
+                    .gesture(DragGesture(minimumDistance: 2)
+                        .onChanged { drag in
+                            if dragStart == nil { dragStart = value }
+                            let fine = NSEvent.modifierFlags.contains(.option)
+                            let next = AlertScrub.value(start: dragStart ?? value, dx: drag.translation.width, fine: fine, range: range)
+                            if next != value {
+                                withAnimation(.snappy(duration: 0.12)) { value = next }
+                                let tick = Int(next) / 5
+                                if tick != lastTick {
+                                    NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
+                                    lastTick = tick
+                                }
+                            }
+                        }
+                        .onEnded { _ in dragStart = nil; lastTick = nil })
+                    .onTapGesture { editing = true }
+                    .help("Drag sideways to adjust (⌥ for fine steps), or click to type")
+            }
+        }
+        .accessibilityElement()
+        .accessibilityLabel("Threshold")
+        .accessibilityValue("\(Int(value)) \(unit)")
+        .accessibilityAdjustableAction { direction in
+            let step = direction == .increment ? 1.0 : -1.0
+            value = min(max(value + step, range.lowerBound), range.upperBound)
+        }
+    }
+}
+
+/// A miniature of the banner the alert will post.
+private struct NotificationPreview: View {
+    let title: String
+    let message: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .frame(width: 28, height: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.system(size: 12, weight: .semibold))
+                Text(message).font(.system(size: 12)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.regularMaterial))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
+        .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Notification preview: \(title). \(message)")
+    }
+}
+
+/// Wraps its children onto new lines when they don't fit, like words in a sentence.
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 6
+    var lineSpacing: CGFloat = 6
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = arrange(subviews, width: proposal.width ?? .infinity)
+        let width = rows.map(\.width).max() ?? 0
+        let height = rows.map(\.height).reduce(0, +) + lineSpacing * CGFloat(max(rows.count - 1, 0))
+        return CGSize(width: proposal.width.map { min($0, width) } ?? width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for row in arrange(subviews, width: bounds.width) {
+            var x = bounds.minX
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2), proposal: .unspecified)
+                x += size.width + spacing
+            }
+            y += row.height + lineSpacing
         }
     }
 
-    private var threshold: Binding<Double> {
-        Binding(get: { rule.threshold }, set: { value in
-            let r = rule.metric.range
-            rule.threshold = min(max(value, r.lowerBound), r.upperBound)
-        })
+    private struct Row { var indices: [Int] = []; var width: CGFloat = 0; var height: CGFloat = 0 }
+
+    private func arrange(_ subviews: Subviews, width: CGFloat) -> [Row] {
+        var rows: [Row] = [Row()]
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            let extra = rows[rows.count - 1].indices.isEmpty ? size.width : size.width + spacing
+            if rows[rows.count - 1].width + extra > width, !rows[rows.count - 1].indices.isEmpty {
+                rows.append(Row())
+            }
+            var row = rows[rows.count - 1]
+            row.width += row.indices.isEmpty ? size.width : size.width + spacing
+            row.height = max(row.height, size.height)
+            row.indices.append(index)
+            rows[rows.count - 1] = row
+        }
+        return rows
     }
 }
 
