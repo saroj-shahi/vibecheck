@@ -152,8 +152,8 @@ Synthetic clicks don't open menu submenus.
 - ~~Connected USB devices~~ _(V)_: done 2026-11-18 (`667cdf6`); not seen with a real device (none plugged in).
 - **Fully unload switched-off modules** _(V)_: audited 2026-11-18, everything is still sampled when off. The costly
   one (accessory batteries via `system_profiler`) is now gated (`6341833`). The rest are cheap and feed the vibe
-  score, alerts, keep awake and Shortcuts; gating them needs a decision on whether alerts and the vibe should
-  ignore switched-off modules.
+  score, alerts, keep awake and Shortcuts. Owner decided (2026-11-18): alerts and the vibe stay independent of
+  which modules are shown, so these keep sampling. Done.
 - **Timer, stopwatch, focus sessions** _(V)_, tied to keep awake: a focus session keeps the Mac awake until it ends.
 - **Downloads watcher** _(V)_: files arriving in a chosen folder; enables a "while downloads are active"
   keep-awake trigger.
@@ -268,6 +268,7 @@ Short record of choices future sessions shouldn't silently undo.
 | Per-item options live in `ItemOptions` (JSON per module, `itemOptions` key); the look stays in `LabelStyle` | Looks are shared across modules; options are module-specific and grow without new enum cases. Agents' icon follows the look picker, not an option |
 | Account name and plan: Claude from `~/.claude.json` (`oauthAccount.displayName`, `organizationType`), Codex from `plan_type` in its logs; never `~/.codex/auth.json` | Only non-secret fields; credential files stay unread |
 | `SIGPIPE` is ignored app-wide | Child processes (`ps`, `lsof`, `nettop`, `claude`) can exit before we write to them |
+| Alerts and the vibe score don't depend on which modules are shown (owner, 2026-11-18) | A CPU alert should fire even with the CPU item hidden; so CPU, memory, disk, sensors and battery are always sampled. Only samples nothing else needs (accessory batteries) are gated |
 | Separate items' autosave names carry a generation (`vibecheck.cpu.g3`) bumped on each Settings reorder; generation 0 keeps the original names | macOS 27 remembers item positions by autosave name outside the app's defaults; new names are placed in creation order, each to the left (probe app). Don't revert to fixed names |
 | Limit lists key on `RateWindow.key` (length + name) | Copilot's two monthly quotas share a length; keying on length drew one twice |
 | Agents module: no network of its own; live Claude limits run the local `claude` CLI | Keeps "local logs only" true for VibeCheck itself |
