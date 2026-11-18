@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 34 commits · ~6,800 lines of Swift · 64 tests_
+_Last updated: 2026-11-18 · version 1.5 · 37 commits · ~6,800 lines of Swift · 65 tests_
 
 ---
 
@@ -15,13 +15,14 @@ item opens the **deck**, a Liquid Glass panel with live tiles that unfold into d
 sidebar window with a live menu bar preview. Full feature list: [README](../README.md). Brand:
 [branding/BRAND.md](../branding/BRAND.md).
 
-**Installed** at `/Applications/VibeCheck.app` with launch at login on. The owner's setup: one combined
-item, tight spacing, auto-fit around the notch capped at 2 stats (Memory, Network shown first).
+**Installed** at `/Applications/VibeCheck.app` with launch at login on. The owner's setup (as of the QA pass):
+separate items, tight spacing, ring on; Memory, Disk and Clock off; notch cap 0 (as many as fit).
 
 ### Verified vs. not verified
 
-Development so far had **no screen recording permission**, so nothing has been looked at on screen.
-What *was* verified: unit tests, real data via `--dump`, real window frames via `--deck-demo`, and logs.
+Until the 2026-11-18 QA pass there was no screen recording permission. Now there is: capture single
+VibeCheck windows with `screencapture -l <windowID>` (see the QA pass session notes for the helpers),
+not the whole screen.
 
 | Area | Status |
 |---|---|
@@ -29,27 +30,35 @@ What *was* verified: unit tests, real data via `--dump`, real window frames via 
 | Deck window size and position (open, unfold, fold, close; multi-display; notch geometry) | ✅ frames logged with `--deck-demo` |
 | Alerts, history, charts resampling, vibe score, notch fit, settings backup, layout widths | ✅ unit tests |
 | Login item registration | ✅ `--login-item status` reports enabled |
-| Liquid Glass look, tile hover/press, unfold animation, ring bounce | ❌ never seen |
-| Chart scrubbing, range morph, haptics, drag-to-adjust numbers | ❌ never touched |
-| Global shortcuts actually opening the deck | ❌ key simulation was blocked |
+| Deck look (dark mode), tiles, sparklines, keyboard focus ring | ✅ seen in the QA pass |
+| Light mode, tile hover/press, unfold animation, ring bounce, mid/cooked colors | ❌ never seen |
+| Chart scrubbing bubble (hover, values, "No data" gaps) | ✅ seen with synthetic mouse moves |
+| Range morph, peak haptic, drag-to-adjust numbers | ❌ never touched |
+| Deck keys: Esc (detail → home), arrows (focus ring), ⌘2 (opens GPU) | ✅ synthetic key events, logged + seen |
+| Global shortcuts ⌃⌥⌘1–9 from another app | ❌ not tried |
 | Notifications actually appearing (permission prompt, banner) | ❌ |
 | Notch auto-fit on the built-in display | ⚠️ maths verified with real widths, not seen (menu bar was on the external display) |
-| Settings sidebar window, live preview, drag-to-reorder in a grouped Form | ⚠️ window opens at 760×560, contents not seen |
+| Settings: all 8 panes, live preview | ✅ seen |
+| Settings: drag to reorder, number drag, token menus, banner preview | ❌ not touched |
 | Launch at login across a real restart | ⚠️ registered, not rebooted |
 | Keep awake: power assertion held (display / system type) and released | ✅ `pmset -g assertions` against the built app + a unit test reading `IOPMCopyAssertionsByProcess` |
-| Keep awake: deck cup menu, status strip, menu bar cup, Settings pane | ❌ never seen |
+| Keep awake: deck cup menu, menu bar cup, Settings pane | ✅ seen ("Until" submenu not opened: synthetic clicks don't open submenus) |
+| Keep awake: status strip while a session runs | ❌ never seen |
 | Keep awake triggers: plugged in and external display start a session | ✅ built app with launch arguments + `pmset -g assertions` (on AC with the MSI display attached) |
 | Keep awake: trigger ending on unplug / display removal, end notification, ⌃⌥⌘A, "Until" menu | ❌ not exercised (logic covered by unit tests) |
 | App Intents metadata in the bundle (5 actions, 2 enums, 4 phrases) | ✅ `extract.actionsdata` inspected; signature verifies |
 | CPU / memory with the deck closed: ~3.3% / ~100 MB installed (was ~3.9% / 138–155 MB) | ✅ installed app measured 3× 40 s with `ps`; `sample` shows our tick at ~70 ms per 20 s vs ~250 ms SwiftUI layout |
-| Deck home / CPU / Sensors views after the throttling (process list, all-sensor list) | ❌ never seen |
+| Deck home, CPU (process list), GPU, Battery views | ✅ seen |
+| Network, Sensors (all-sensor list), Agents, Weather detail views | ❌ never seen |
 | Swift 6 language mode: builds with zero warnings, tests pass, app runs (deck demo, keep awake, agents rescan) without runtime isolation crashes | ✅ `--deck-demo` + 80 s run, no crash reports |
 | Notification history: cap, newest first, unseen count, persistence, alerts recorded | ✅ unit tests |
-| Notification history: bell, red dot, popover in the deck | ❌ never seen |
+| Notification history: bell, popover empty state | ✅ seen |
+| Notification history: red dot, list with entries | ❌ never seen |
 | Shortcuts app lists the 5 VibeCheck actions | ✅ seen by the owner after installing (2026-11-18) |
 | Running the actions; Spotlight / Siri phrases | ❌ not tried yet |
 | Agents: Claude Code / Codex token totals from real logs | ✅ `--dump` (today's Claude total matched an independent Python count) + unit tests |
-| Agents: menu bar item, tile, detail panel | ❌ never seen |
+| Agents: menu bar item, tile | ✅ seen |
+| Agents: detail panel | ❌ never seen |
 
 ---
 
@@ -62,17 +71,23 @@ Priorities: **P0** do next · **P1** soon · **P2** nice to have · **P3** somed
 Needs Screen Recording permission for the terminal or Claude (System Settings → Privacy & Security →
 Screen & System Audio Recording), or the owner checking by hand. Walk through:
 
-- [ ] Menu bar: combined item on the external display (all stats) and on the built-in display (ring, Memory, Network, "+N")
-- [ ] Deck: glass look in light and dark mode, tile hover and press, unfold/fold, Esc, arrow keys, ⌘1–9
-- [ ] Detail views: hero numbers, Details toggle, chart scrubbing bubble, peak haptic, Live/1H/24H morph
+- [x] Menu bar: separate items on both displays (2026-11-18). Combined item + notch fit still not seen (owner uses separate items now)
+- [ ] Deck: light mode, tile hover and press, unfold/fold animation (dark mode, Esc, arrows, ⌘2 done)
+- [ ] Detail views: Network, Sensors, Agents, Weather; Details toggle, peak haptic, Live/1H/24H morph (CPU, GPU, Battery, scrubbing done)
 - [ ] Vibe ring: colors and bounce (force "mid" by running a CPU-heavy task for 30 s+)
-- [ ] Settings: sidebar, live preview, drag to reorder, alert sentence tokens, number drag, banner preview
+- [ ] Settings: drag to reorder, alert sentence tokens, number drag, banner preview (all panes + preview seen)
 - [ ] Alerts: "Send Test Notification" shows a banner after allowing notifications
 - [ ] Global shortcuts ⌃⌥⌘1–9 from another app
 - [ ] Reduce Motion and Increase Contrast on: everything still readable, springs become fades
 - [ ] VoiceOver: tiles read as sentences, alert number is adjustable
 
 Fix whatever turns up before starting new features.
+
+How to run it (learned 2026-11-18): the owner must keep hands off the mouse and keyboard. Synthetic clicks
+and keys go wherever focus is, the deck closes whenever another app activates (correct behaviour), and a
+full-screen app on a display hides that display's menu bar, so clicks land in the app. Before sending any
+key, confirm the deck window is on screen (layer 101 in `CGWindowListCopyWindowInfo`). Synthetic clicks
+don't open menu submenus.
 
 ### P1
 
@@ -175,6 +190,8 @@ Short record of choices future sessions shouldn't silently undo.
 | Keep awake uses an IOKit assertion, not a `caffeinate` child process | Released automatically if the app dies; visible in `pmset -g assertions` |
 | Keep-awake sessions don't survive a restart; "Start a session when VibeCheck opens" covers that | Avoids a Mac that never sleeps after a forgotten session |
 | Slang only for vibing / mid / cooked; alerts and errors stay plain | Brand voice (see BRAND.md §6) |
+| Settings footers use `settingsFooter()` (caption, leading) | Grouped `Form` footers align trailing by default on macOS |
+| Chart areas add points with `addLine`, never `addLines` | `addLines` starts a new subpath and breaks the closed fill |
 
 ---
 
@@ -298,6 +315,22 @@ reads. Reverted. Measured the committed build at 2 s vs 5 s refresh (launch argu
 | `e267d99` | `swift-tools-version:6.0`. Fixes: page size via `sysconf` instead of the global `vm_kernel_page_size`, `@MainActor` on `Deck.resizeCurve`, an explicit sensor filter closure (the ternary crashed the compiler's diagnostics), and `String(cBuffer:)` replacing deprecated `String(cString:)` on arrays. |
 
 Notes: only four concurrency fixes were needed. Zero warnings; 64 tests pass. Built app: `--dump` readings normal (interface names and IP after the C-string change), `--deck-demo` ran open/unfold/fold/close/Settings, a keep-awake session took its assertion, and the app ran 80 s past an agents rescan with no crash. Swift 6 runtime isolation checks can still fire in paths not exercised (notification permission callback, Bluetooth device fetch); watch for crash reports.
+
+### 2026-11-18: on-screen QA pass (first look at the UI)
+
+| Commit | What |
+|---|---|
+| `f9db3ed` | Detail chart fill closed diagonally (`Path.addLines` drops the baseline move); regression test. |
+| `18b4885` | Deck verdict on its own full-width line (was truncated); "Total" label on the CPU line; leading Settings footers; preview edge fade; no duplicate city subtitle; no "for instantly". |
+
+Notes: screen recording now works. Seen: both menu bars (separate items), deck home, CPU / GPU / Battery
+detail, scrubbing bubble, bell popover, cup menu, keyboard (Esc, arrows, ⌘2), all Settings panes. A debug
+build logged `active=true key=true` on open, so activation is fine; earlier "Chrome is frontmost" readings
+were the owner's clicks. The pass stopped early because the owner was using the Mac (input conflicts, see
+P0). Not seen: Network / Sensors / Agents / Weather detail, light mode, animations, global shortcuts,
+notifications, accessibility modes. After installing, only the Settings fixes were looked at again; the deck
+header fix was seen in the debug build, the chart fix in the GPU chart there. Testing tip: in zsh,
+`set -- $var` doesn't split words; use `${=var}`.
 
 ---
 
