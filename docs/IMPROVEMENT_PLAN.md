@@ -21,7 +21,7 @@ separate items, tight spacing, ring on; Memory, Disk and Clock off; notch cap 0 
 ### Verified vs. not verified
 
 Until the 2026-11-18 QA pass there was no screen recording permission. Now there is: capture single
-VibeCheck windows with `screencapture -l <windowID>` (see the QA pass session notes for the helpers),
+VibeCheck windows with `screencapture -l <windowID>` (helpers in `scripts/qa`, tips in section 6),
 not the whole screen.
 
 | Area | Status |
@@ -107,7 +107,7 @@ hardware access.
 - [ ] VoiceOver: tiles read as sentences ✅ (accessibility tree, 2026-11-18); alert number adjustable not checked; VoiceOver itself not run (system setting)
 
 **Bluetooth off while asleep** (owner will test): turn it on in Settings → General, allow the Bluetooth
-prompt, sleep and wake, then check the log (command in the session history entry).
+prompt, sleep and wake, then check the log (command under "Lessons" in section 6).
 
 - [ ] Permission prompt appears when the toggle is switched on
 - [ ] "Bluetooth off for sleep" and "Bluetooth back on (wake)" in the log; Bluetooth really back on
@@ -304,323 +304,47 @@ swift scripts/render_brand.swift # regenerate icon and brand assets from brandin
 
 ## 6. Session history
 
-### 2026-11-18: from zero to 1.5 (one long session)
-
-| Commit | What |
-|---|---|
-| `baca80f` | First version ("Pulse"): CPU, memory, network, disk, battery, then GPU and sensors (HID temps, SMC fans/power) |
-| `6eae65a` | Renamed to **VibeCheck**; private GitHub repo |
-| `e1cab66` | Batch 1: combined item, alerts, hour/day history, global shortcuts |
-| `ef51b08` | Batch 2: Bluetooth device batteries, app grouping, label styles, clock + world clocks |
-| `795064a` | Network activity indicators, spacing setting, measured item widths |
-| `c7bcb36` | Batch 3: per-interface and per-app network, weather (Open-Meteo), settings backup |
-| `e4c4b07` | Redesign phase 1: deck panel, live tiles, unfold transition, keyboard |
-| `22c8b9c` | Redesign phase 2: three-tier detail views, chart scrubbing, range morph |
-| `cb47716` | Redesign phase 3: vibe score and ring, sentence alerts, sidebar settings |
-| `80f60dd` | Fix: deck opened at the top-right on multi-display setups |
-| `b835bab` | Auto-fit the combined item around the camera notch |
-| `d5cd27f` | Cap stats beside the notch (owner set 2) |
-| `fd57c80` | `--login-item` option; installed to /Applications with launch at login |
-| `73d933f` | App icon, brand system, README refresh |
-
-Bugs found and fixed along the way: deck window collapsing to 10×10 (content-derived window sizing),
-deck placement before the status item exists, deck at the screen corner on multi-display setups (status
-item windows taller than the menu bar), a stale close-fade hiding a reopened deck, `%` in log format
-strings, clipped mark in the lockup.
-
-### 2026-11-18: network status dot
-
-| Commit | What |
-|---|---|
-| `dbda3a7` | Green/red status dot on the network glyph: menu bar (icon + value style and the offline glyph), deck tile and panel header (`NetworkStatusDot` in `MenuBarLabels.swift`). |
-
-Notes: builds and `swift test` passes; installed and the green dot was seen in the menu bar (icon + value style) via a screenshot. Red (offline), deck tile and panel header not yet seen on screen. Green = an interface is up, red = offline. The menu bar's standard (graph) style has no network icon, so no dot there.
-
-### 2026-11-18: keep awake
-
-| Commit | What |
-|---|---|
-| `6b6e8a1` | Keep awake, modeled on classic keep-awake apps: `KeepAwake.swift` (sessions + IOKit assertion), `KeepAwakeViews.swift` (deck cup menu, status strip, Settings pane), cup in the combined and standalone items, notch fit counts the cup, 5 tests. |
-
-Notes: `swift test` passes (48). The built app was run with launch arguments (`-keepAwakeAtLaunch YES`, `-keepAwakeDisplayOn '<false/>'`), which don't touch saved settings; `pmset -g assertions` showed `PreventUserIdleDisplaySleep` / `PreventUserIdleSystemSleep` named "VibeCheck keep awake", gone after quitting. No UI was looked at on screen. Booleans passed as launch arguments must use plist syntax (`'<false/>'`), since the settings read them with `as? Bool`. With separate items, the standalone item now also appears (cup only) when the ring is off and a session runs.
-
-### 2026-11-18: agent usage tracker
-
-| Commit | What |
-|---|---|
-| `6a8eb9d` | Agents module: `AgentUsageMonitor.swift` (incremental reader for `~/.claude/projects` and `~/.codex/sessions`, dedupe, Codex running-total deltas and rate limits, usage tools-style 5-hour block), `AgentUsage.swift` (store, rescans every 60 s off the main thread), `AgentsPanel.swift`, menu bar label, tile, ⌘0 / ⌃⌥⌘0 shortcut, `--dump` line, 6 tests. |
-
-Notes: `swift test` passes (54). Release build: first scan of a week of logs (~1.1 GB of Claude transcripts on the owner's Mac, only files changed in 7 days are read) took ~1 s; rescans ~30 ms since only new bytes are read. Today's Claude total matched an independent Python count. Nothing seen on screen. Agents is on by default, so it shows up for existing installs too (beyond the notch cap it lands in "+N").
-
-### 2026-11-18: keep awake extras
-
-| Commit | What |
-|---|---|
-| `36a9bae` | Stay awake until a time of day (deck "Until" menu with the next whole hours, Settings time picker), ⌃⌥⌘A toggle shortcut, notification when a session ends by itself (`AlertEngine.notify`), triggers: while plugged in / while an external display is connected (`AwakeTriggerAction`), Settings can be opened on a page (`SettingsRouter`), 2 tests. |
-
-Notes: `swift test` passes (56). Both triggers started a session in the built app (verified with `pmset -g assertions`); with no triggers nothing was held. Unplugging, the notification banner, the shortcut and the menus weren't exercised. Testing tip: in zsh, put launch arguments directly on the command line; an unquoted `$args` variable is not split into words.
-
-### 2026-11-18: Shortcuts actions (App Intents)
-
-| Commit | What |
-|---|---|
-| `deaa7cc` | `Intents.swift`: Get Mac Vibe, Get Mac Stat (9 stats), Open VibeCheck Deck, Keep Mac Awake, Let Mac Sleep, plus Spotlight/Siri phrases. `build.sh` compiles with `-emit-const-values-path` and runs `appintentsmetadataprocessor` into `Contents/Resources/Metadata.appintents`. `AppDelegate.openDeck(_:)`. 2 tests. |
-
-Notes: `swift test` passes (58). The metadata lists all 5 actions and 4 phrases, and the signed bundle verifies. After installing, the owner saw the actions in the Shortcuts app. Running them and the Spotlight/Siri phrases are not checked yet.
-
-### 2026-11-18: notification history
-
-| Commit | What |
-|---|---|
-| `b314ba8` | `NotificationLog` (last 20, newest first, seen marker, saved to Application Support); `AlertEngine` records fired alerts and keep-awake endings (`log`, `notify(kind:)`); bell button with red dot and a popover list in the deck header (`NotificationHistoryView.swift`). 4 tests. |
-
-Notes: `swift test` passes (62). The deck UI wasn't seen on screen, and no real notification was triggered (that would have written a test entry into the owner's history). Test notifications from Settings aren't recorded.
-
-### 2026-11-18: performance pass
-
-| Commit | What |
-|---|---|
-| `a93e6b3` | Sensors: dies only and at most every 4 s unless the Sensors panel is open (`sensorDemand`). Processes: 5 s interval on the deck home, dropped when the deck closes, verdict only while the deck shows it, name lookups only for the top apps. Agents scan: `stat` before opening, full walk every 5 min, `autoreleasepool` per file. `--dump` prints sensor counts. 2 tests. |
-
-Notes: VibeCheck's own tick work went from ~27 ms to ~4–6 ms per second (`sample`). Installed and measured with the deck closed: ~3.3% CPU and ~100 MB, down from ~3.9% and 138–155 MB. The first side-by-side test (2.65%) overstated it: the second copy's menu bar item was hidden for lack of room, so it skipped the SwiftUI drawing that is now the biggest cost (and the commit message quotes that 2.65%). Testing tip: compare builds one at a time, not side by side. Deck behaviour after the throttling wasn't looked at on screen.
-
-### 2026-11-18: menu bar rendering investigation (no code change)
-
-Tried replacing the hosted SwiftUI label in the status button with an image rendered by `ImageRenderer`
-only when the pixels change. Installed and measured: 3.5–7% CPU (worse). `sample` still showed
-`_redrawReplicantSnapshot` → `NSHostingView.layout`, so the replicant snapshots go through AppKit's own
-SwiftUI regardless of the button's content. Observation tracking also can't see what `ImageRenderer`
-reads. Reverted. Measured the committed build at 2 s vs 5 s refresh (launch argument, settings untouched):
-3.80% vs 3.75%, so the remaining cost isn't tied to VibeCheck's update rate.
-
-### 2026-11-18: Swift 6 language mode
-
-| Commit | What |
-|---|---|
-| `e267d99` | `swift-tools-version:6.0`. Fixes: page size via `sysconf` instead of the global `vm_kernel_page_size`, `@MainActor` on `Deck.resizeCurve`, an explicit sensor filter closure (the ternary crashed the compiler's diagnostics), and `String(cBuffer:)` replacing deprecated `String(cString:)` on arrays. |
-
-Notes: only four concurrency fixes were needed. Zero warnings; 64 tests pass. Built app: `--dump` readings normal (interface names and IP after the C-string change), `--deck-demo` ran open/unfold/fold/close/Settings, a keep-awake session took its assertion, and the app ran 80 s past an agents rescan with no crash. Swift 6 runtime isolation checks can still fire in paths not exercised (notification permission callback, Bluetooth device fetch); watch for crash reports.
-
-### 2026-11-18: on-screen QA pass (first look at the UI)
-
-| Commit | What |
-|---|---|
-| `f9db3ed` | Detail chart fill closed diagonally (`Path.addLines` drops the baseline move); regression test. |
-| `18b4885` | Deck verdict on its own full-width line (was truncated); "Total" label on the CPU line; leading Settings footers; preview edge fade; no duplicate city subtitle; no "for instantly". |
-
-Notes: screen recording now works. Seen: both menu bars (separate items), deck home, CPU / GPU / Battery
-detail, scrubbing bubble, bell popover, cup menu, keyboard (Esc, arrows, ⌘2), all Settings panes. A debug
-build logged `active=true key=true` on open, so activation is fine; earlier "Chrome is frontmost" readings
-were the owner's clicks. The pass stopped early because the owner was using the Mac (input conflicts, see
-P0). Not seen: Network / Sensors / Agents / Weather detail, light mode, animations, global shortcuts,
-notifications, accessibility modes. After installing, only the Settings fixes were looked at again; the deck
-header fix was seen in the debug build, the chart fix in the GPU chart there. Testing tip: in zsh,
-`set -- $var` doesn't split words; use `${=var}`.
-
-### 2026-11-18: Bluetooth off while asleep (from similar Bluetooth tools)
-
-| Commit | What |
-|---|---|
-| `a1bafd5` | `BluetoothSnooze.swift`: off at `willSleep`, on at `didWake` only if we turned it off, stored marker repaired at launch, nothing at shutdown. Toggle + footer in Settings → General (off by default), `NSBluetoothAlwaysUsageDescription`, permission asked when switched on, `--dump` line, backup key, 3 tests. |
-
-Notes: `swift test` passes (68), zero warnings, installed and running. A first version crashed `--dump` with a
-TCC privacy abort: reading the controller state needs Bluetooth permission (and an Info.plist usage string),
-so every call is now guarded. Not verified: the prompt, the Settings toggle on screen, and a real sleep/wake.
-To check: turn it on, allow Bluetooth, sleep and wake, then
-`log show --last 10m --predicate 'process == "VibeCheck" AND eventMessage CONTAINS "Bluetooth"'`
-should show "Bluetooth off for sleep" and "Bluetooth back on (wake)". Same caveats as similar tools: a
-Bluetooth keyboard or mouse can't wake the Mac, and Apple Watch unlock won't work while asleep.
-
-### 2026-11-18: quit processes, secure input warning (agents in parallel)
-
-| Commit | What |
-|---|---|
-| `99b292e` | `ProcessKiller.swift`: Quit / Force Quit from the CPU and Memory process rows (context menu, inline confirmation); protected: kernel_task, launchd, WindowServer, loginwindow, VibeCheck, other users. 3 tests. |
-| `7a0edf9` | Review fixes: start-time identity so a reused pid is never signalled, confirmations expire after 20 s, cancellable notice, VoiceOver hint on protected rows. |
-| `cd4159a` | `SecureInput.swift`: Settings → Shortcuts warns while secure keyboard entry blocks the shortcuts. 6 tests. |
-
-Notes: worked with two background agents: a read-only reviewer on the quit commit (found the pid-reuse
-gap) and a builder for the secure input warning in separate files, while the quit feature was finished
-here. 77 tests pass, zero warnings, installed. Live probe: with secure input on, the lookup found the key
-in `IOConsoleUsers`, but the pid named the frontmost app (Chrome, later Slack), not the CLI tool that
-turned it on, so the wording is hedged. Nothing new was seen on screen.
-
-### 2026-11-18: limits UI and live Claude limits (agent in parallel)
-
-| Commit | What |
-|---|---|
-| `3b8581d` | `LimitGauge` / `PaceBar` in `AgentsPanel.swift`: "% left", burn per hour, pace knob, reset countdown, orange when ahead of the clock. `AgentLimitsLabel` "Limits left" menu bar style. `RateWindow` pace math. 4 tests. |
-| `91806ca` | `ClaudeLimits.swift`: opt-in live 5-hour and weekly limits from Anthropic using Claude Code's Keychain sign-in; merged into the Claude summary while fresh; Settings → General toggle and status. 6 tests. |
-
-Notes: the owner asked for limits like the "Usage for Claude" app. A background agent built the fetcher
-(not allowed to read the Keychain or call Anthropic; fixture tests only) while the UI was built here.
-Review fixes before committing: no repeat Keychain prompts after a Deny, drop windows with no reset time
-or already reset, keep the opt-in out of backups. The new UI was checked as offscreen renders (no screen
-use; the owner was busy): warning color and column widths were fixed after the first render. 87 tests,
-zero warnings, installed. To use: Settings → Menu Bar → Agents → "Limits left"; Settings → General →
-"Show Claude's real plan limits". Ad hoc signing means each new build may ask for Keychain access again.
-
-### 2026-11-18: GitHub Copilot CLI and OpenCode
-
-| Commit | What |
-|---|---|
-| `0443c87` | `AgentKind` gains `.copilot` and `.opencode`. Copilot: `session.usage_record` events (deduped by id) and monthly quotas from `quotaSnapshots` as named limits. OpenCode: read-only SQLite query of the week's assistant messages. Limits kept per agent. 3 tests. |
-
-Notes: checked which agents on this Mac keep token counts (structure only, no conversation text read):
-Copilot and OpenCode do; Gemini (Antigravity) and Cursor don't. `--dump` on real data lists both new agents
-with 0 tokens this week, which matches their files (Copilot sessions from 3 Nov, OpenCode free-model
-calls). An older test started reading the real home folder once the new defaults existed; it now passes
-empty locations. 90 tests, zero warnings, installed. Nothing seen on screen.
-
-### 2026-11-18: "can't see Claude Code usage" fix
-
-| Commit | What |
-|---|---|
-| `1537aa4` | "Limits left" prefers Claude Code: live limits, else a `ClaudeEstimateLabel` (tokens this 5-hour window + reset, over today). Fixed 104 pt width so the item isn't clipped. Test rewritten for the new rule. |
-
-Notes: the owner had "Limits left" on but live Claude limits off, so the label fell back to Codex's monthly
-limit. With the owner's OK the setting was switched on (`defaults write … claudeLiveLimits -bool true` +
-relaunch); they allowed Keychain access, and the real menu bar item showed Claude's 36% / 66% left after the
-fix. Each new ad hoc build asked for Keychain access again; fixed the same day by a stable local signing
-identity (next entry). The built-in display's menu bar shows fewer VibeCheck items than the external one (notch), so
-accessibility listings of the items vary with the active display.
-
-### 2026-11-18: stable local code signing
-
-| Commit | What |
-|---|---|
-| `f825b4e` | `build.sh` signs with "VibeCheck Local Signing" (override with `VIBECHECK_SIGN_IDENTITY`) when it exists, else ad hoc. |
-
-Notes: the owner compared with "Usage for Claude", which never re-asks: it's App Store signed and uses its
-own claude.ai sign-in in a web view (never reads Claude Code's Keychain item). The owner created a
-self-signed code-signing certificate in Keychain Access and trusted it for code signing. Verified: installed
-a build signed with it, the owner allowed Keychain access, then installed a second build with a different
-CDHash (`3907…` → `fc35…`); the fresh process showed live limits (32% / 65%) right after launch.
-Launch at login still reports enabled. Rejected: reading the token through `/usr/bin/security` (an
-"Always Allow" there would cover every process that runs it).
-
-### 2026-11-18: Keychain prompt fixed for real (Apple Development signing)
-
-| Commit | What |
-|---|---|
-| `c9d3a17` | `build.sh` prefers an "Apple Development: …" identity automatically. |
-
-Notes: the self-signed identity still re-prompted. Reading the Claude Code item's access list (no secret)
-showed why: its partition list held `cdhash:` entries, one per VibeCheck build. The owner created a free
-Apple Development certificate in Xcode; it was invalid until they installed Apple's WWDR G3 intermediate
-(the Keychain only had the G1 one that expired in 2023; codesign failed with "unable to build chain").
-After one more "Always Allow" the partition list gained `teamid:77HKFF78Z8`. Verified: a second build with
-a different CDHash (`44e0…` → `9199…`) showed live limits right after launch, with the owner set to deny
-any prompt. Launch at login still enabled. The "VibeCheck Local Signing" certificate is no longer needed.
-
-### 2026-11-18: port manager, agents extras (agent in parallel)
-
-| Commit | What |
-|---|---|
-| `ebd0ed8` | `PortSampler.swift` + "Listening ports" in the Network view (only while it's open, every 5 s), quit via `ProcessKiller`; Force Quit confirmation shared with the process list. 7 tests. |
-| `1e6d8db` | Agents: "Working now" badge, 7-day chart, "Agent tokens per hour" alert metric, Copilot quota from its newest session. 4 tests. |
-
-Notes: a background agent built the port manager in separate files while the Agents items were done here;
-its `SystemStats` change was reviewed (sampling tied to `networkAppDemand`, list cleared when the view
-closes). 101 tests, zero warnings, installed (Apple Development signature). Nothing seen on screen except
-an offscreen render of the 7-day chart.
-
-### 2026-11-18: per-item menu bar options
-
-| Commit | What |
-|---|---|
-| `591f31d` | `ItemOptions.swift` + Settings → Menu Bar → Items: a slider button per item opens inline options with a live preview. Agents (which agents, % left/used or tokens today/week/window, which limits, reset time), Memory, Network, Disk, Battery, Sensors. Old "Limits left" migrated. 5 tests. |
-
-Notes: owner asked for deep per-item settings ("show only Claude or more, remaining or used, show time").
-Checked offscreen through AppKit, which renders real pickers and toggles (`ImageRenderer` doesn't); a
-`.fixedSize()` on pickers misaligned the right column and was removed. Don't drive the real Settings
-window with synthetic clicks while another app is in front: captures by window ID show it even when
-covered, but clicks land on the window on top (three clicks went to the Claude app this session).
-
-### 2026-11-18: Claude limits via Claude Code, account badges, Now card (agent in parallel)
-
-| Commit | What |
-|---|---|
-| `0e35d58` | `ClaudeLimits.swift` asks the user's `claude` CLI (`--print --input-format stream-json …`, control requests `initialize` + `get_usage`) instead of Keychain + Anthropic API. Keychain code removed. SIGPIPE ignored. |
-| `8368b51` | Account name + plan badges, "Now" card for active sessions, per-day burn for long windows, fix for duplicate Copilot quota rows. 5 tests. |
-
-Notes: the owner asked how another app shows limits without prompts. Its source (GPL, read for ideas only)
-showed it runs Claude Code's own control protocol; tried by hand first (no model request, ~0.9 s), then a
-background agent swapped the client while the badges and Now card were built here. Review fixes: a
-throwing pipe write plus SIGPIPE ignore (an early-exiting CLI would otherwise kill the app). The Keychain
-work earlier today (Apple Development signing) still helps launch-at-login and future permissions, but no
-longer matters for Claude limits. The live fetch still runs only with the setting on.
-
-### 2026-11-18: Settings reorder moves separate items
-
-| Commit | What |
-|---|---|
-| `536771f` | `AppSettings.statusItemGeneration` + `autosaveName(_:generation:)`; `syncItems` rebuilds all separate items (and the ring item) right to left when the generation changed. Footers updated. 2 tests. |
-
-Notes: no `NSStatusItem Preferred Position` keys exist in the app's defaults on macOS 27.2 and nothing was
-found in Control Center's preferences, so positions can't be reset by deleting keys. A throwaway probe app
-showed new names are placed in creation order (each new item to the left) and old names come back where
-they were. Not triggered on the owner's Mac, to keep their current arrangement.
-
-### 2026-11-18: QA pass, round 2
-
-| Commit | What |
-|---|---|
-| `0437a53` | Claude card hides the local estimate when a real session limit exists ("estimate", "resets about" otherwise); vibe ring has an image role for accessibility. |
-
-Seen on screen (owner hands-off): deck home (verdict on its own line), Network with listening ports,
-Sensors, Agents (Now card, "Saroj · Team", "Codex · Free", Copilot's two quotas, real limits with pace
-warnings), CPU with 1H / 24H and the Details toggle, ⌃⌥⌘2 from another app, the Agents options panel in
-the real Settings window (live preview 89% / 58%), the Alerts pane ("below 15% instantly"). The deck's
-accessibility tree reads every control and each tile as a sentence. A test notification was sent and the owner
-saw the banner. Not checked: light mode, Reduce Motion / Increase Contrast /
-VoiceOver (system settings, not ours to change), drag-to-reorder (would change the owner's order).
-Notes for the next pass: drive buttons through accessibility (`AXPress` by label, `AXSelected` on sidebar
-rows) instead of clicks: it needs no focus, and macOS won't let VibeCheck take focus from another app
-(`activate` was refused). A driver that pauses when the cursor moves caught the owner using the Mac twice.
-Not bugs: Weather tile missing (Weather is switched off); "On battery" (the Mac was unplugged); "VibeCheck 2"
-at 50% CPU in the process list (the brief Claude Code limits check, a child process).
-"+N more" under listening ports: fixed in `667cdf6`.
-
-### 2026-11-18: accessory alert, USB devices, ports list, sampling audit (agents in parallel)
-
-| Commit | What |
-|---|---|
-| `6341833` | "Accessory battery" alert (lowest device, named in the text); accessory batteries read only when the Battery module or that alert is on. 6 tests. |
-| `667cdf6` | "USB devices" in the Battery view (while open, every 5 s); "+N more" listening ports expands. 2 tests. |
-
-Notes: one agent built the alert, a cheap read-only agent audited sampling of switched-off modules, the
-USB list and ports change were done here. 122 tests, zero warnings, installed. Not seen on screen.
-
-### 2026-11-18: focus sessions, quick toggles (agent in parallel)
-
-| Commit | What |
-|---|---|
-| `0d3e3ed` | `AwakeSession.focus`, `startFocus(minutes:)`, `.focusDone`; cup menu "Focus for 25/50/90 Minutes"; strip and menu bar timer; "Focus session done" notification. 2 tests. |
-| `e51d9d5` | `QuickActions.swift` + `QuickTogglesView.swift`: Dark / Mic / Trash chips in the deck home (Settings → General to hide). Info.plist gains `NSAppleEventsUsageDescription` (added in review: without it the Automation prompt may never show). Tests for pure parts. |
-
-Notes: the row was rendered offscreen (Dark highlighted, Trash disabled when empty). No toggle was run for
-real; nothing seen in the real deck. 129 tests, zero warnings, installed.
-
-### 2026-11-18: Keep Awake menu bar item
-
-| Commit | What |
-|---|---|
-| `b9b9fb2` | `StatusItemController.Kind.keepAwake`, `KeepAwakeItemLabel`, `KeepAwakeMenu` (native NSMenu), `keepAwakeMenuBarItem` setting; the ring item's cup hides while it's on. 2 tests. |
-
-Notes: switched on for the owner (they asked for it). Seen on the built-in display (left of the notch, where
-macOS puts items that don't fit): outlined cup, then filled blue after a click with the assertion held
-(`pmset -g assertions`). Stopped again with ⌃⌥⌘A after the cursor guard paused the second click. The
-right-click menu wasn't opened on screen.
-
-### 2026-11-18: project agents, code map, QA tools; QA round 3 (partial)
-
-| Commit | What |
-|---|---|
-| `dcb567a` | `.claude/agents/` (builder, reviewer, explorer, qa), `docs/CODEMAP.md`, `scripts/qa` on-screen driver. |
-
-Notes: QA round 3 saw the ring go yellow (mid) and red (cooked) under `yes` load, and the keep-awake strip.
-Stopped on PAUSE (owner moved the cursor). Stale table rows and the old Keychain wording for Claude limits fixed.
+Per-commit detail is in `git log`. Everything up to 2026-11-18 (v1.0 → 1.5, 80 commits) was folded into the
+tables above and the lessons below; add new dated entries under "Recent sessions".
+
+### Lessons and testing tips (still true)
+
+- **Launch arguments override settings without touching them**: `-keepAwakeAtLaunch YES`; booleans read with
+  `as? Bool` need plist syntax (`'<false/>'`). In zsh put them on the command line; unquoted `$args` and
+  `set -- $var` don't split words (use `${=var}`).
+- **Measuring CPU**: compare builds one at a time, never side by side (a hidden second item skips the SwiftUI
+  drawing that dominates the cost). Use `ps` over 40 s and `sample` for where time goes.
+- **On-screen QA**: owner hands-off; drive buttons with `AXPress` / `AXSelected` (no focus needed; VibeCheck
+  can't take focus from another app). Window captures show covered windows, but clicks land on whatever is on
+  top. A cursor-moved guard (`PAUSE`) means the owner is using the Mac: stop. Synthetic clicks don't open submenus.
+- **Offscreen renders**: use AppKit (`NSHostingView.cacheDisplay`) for real controls; `ImageRenderer` skips
+  pickers and toggles.
+- **Forcing vibe states**: 7 of 10 cores busy (`yes > /dev/null`) gives mid after ~45 s, 10 gives cooked. The
+  verdict then names "claude" as loudest when the load is spawned from Claude Code (app grouping, not a bug).
+- **Menu bar**: the notched built-in display shows fewer items than the external one, so accessibility
+  listings vary with the active display. macOS 27 keeps item positions outside the app's defaults (see the
+  autosave-generation decision); a probe app showed new names are placed in creation order.
+- **Signing**: the Keychain "Always Allow" only survives rebuilds with a Team ID (`teamid:` in the partition
+  list). The Apple Development cert needed Apple's WWDR G3 intermediate installed. The old "VibeCheck Local
+  Signing" certificate is no longer needed.
+- **Swift 6**: runtime isolation checks may still fire in paths not yet exercised (notification permission
+  callback, Bluetooth device fetch); watch for crash reports.
+- **Bluetooth sleep**: check with
+  `log show --last 10m --predicate 'process == "VibeCheck" AND eventMessage CONTAINS "Bluetooth"'`
+  (expect "Bluetooth off for sleep" / "Bluetooth back on (wake)"). While asleep a Bluetooth keyboard or mouse
+  can't wake the Mac and Apple Watch unlock won't work.
+- **Agents**: first scan of a week of Claude logs (~1.1 GB) takes ~1 s, rescans ~30 ms. Tests must pass empty
+  locations, or they read the real home folder. Not bugs: "VibeCheck 2" briefly at 50% CPU is the Claude
+  limits check (a child process).
+- **Rejected**: rendering the status label to an image (worse CPU), reading the Claude token through
+  `/usr/bin/security` (an "Always Allow" would cover every process that runs it).
+
+### Recent sessions
+
+#### 2026-11-18: QA round 3 (partial), plan cleanup
+
+Ring seen yellow (mid) and red (cooked), plus the keep-awake strip. Stopped on PAUSE. Fixed stale table
+rows and the old Keychain wording for Claude limits; folded the session history into the lessons above.
 
 ---
 
@@ -631,14 +355,11 @@ At the end of each session:
 1. Tick or remove finished backlog items; add new ones with a priority.
 2. Update the **Verified vs. not verified** table if anything was checked on screen.
 3. Add any decision that a future session might be tempted to undo to the **Decisions log**.
-4. Add a dated entry to **Session history** (template below) and bump the _Last updated_ line.
+4. Add a short dated entry under **Recent sessions** (template below; commits are in `git log`) and bump the
+   _Last updated_ line. When there are more than ~5, fold lasting lessons into the list above and drop the rest.
 
 ```markdown
-### YYYY-MM-DD: short title
+#### YYYY-MM-DD: short title
 
-| Commit | What |
-|---|---|
-| `abc1234` | … |
-
-Notes: what was verified, what wasn't, anything the next session should know.
+What was verified and how, what wasn't, anything the next session should know.
 ```
