@@ -557,10 +557,17 @@ struct FlowLayout: Layout {
 
 private struct ShortcutSettings: View {
     @Environment(AppSettings.self) private var settings
+    @State private var secureInput: SecureInputStatus?
 
     var body: some View {
         @Bindable var settings = settings
         Form {
+            if let secureInput {
+                Section {
+                    Label(secureInput.message, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                }
+            }
             Section {
                 Toggle("Enable keyboard shortcuts", isOn: $settings.hotkeysEnabled)
                 Picker("Modifier keys", selection: $settings.hotkeyModifier) {
@@ -585,6 +592,14 @@ private struct ShortcutSettings: View {
             }
         }
         .formStyle(.grouped)
+        .task {
+            // Only runs while this pane is visible; cancelled when it goes away.
+            while !Task.isCancelled {
+                let status = SecureInput.current()
+                if status != secureInput { secureInput = status }
+                try? await Task.sleep(for: .seconds(2))
+            }
+        }
     }
 }
 
