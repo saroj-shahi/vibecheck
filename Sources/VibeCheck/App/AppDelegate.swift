@@ -17,7 +17,7 @@ final class ModuleStatusItem: NSObject, NSPopoverDelegate {
         self.module = module
         self.stats = stats
         item = NSStatusBar.system.statusItem(withLength: module.labelWidth)
-        item.autosaveName = "pulse.\(module.rawValue)"
+        item.autosaveName = "vibecheck.\(module.rawValue)"
         super.init()
 
         if let button = item.button {
@@ -33,7 +33,7 @@ final class ModuleStatusItem: NSObject, NSPopoverDelegate {
             ])
             button.target = self
             button.action = #selector(toggle(_:))
-            button.setAccessibilityLabel("Pulse \(module.title)")
+            button.setAccessibilityLabel("VibeCheck \(module.title)")
         }
 
         let controller = NSHostingController(rootView: ModulePanel(module: module)
@@ -79,7 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         stats.start(interval: settings.refreshInterval)
         syncItems()
-        NotificationCenter.default.addObserver(forName: .pulseSettingsChanged, object: nil, queue: .main) { [weak self] _ in
+        NotificationCenter.default.addObserver(forName: .vibeCheckSettingsChanged, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
                 self.syncItems()
@@ -112,7 +112,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let controller = NSHostingController(rootView: SettingsView().environment(settings))
             controller.sizingOptions = .preferredContentSize
             let window = NSWindow(contentViewController: controller)
-            window.title = "Pulse Settings"
+            window.title = "VibeCheck Settings"
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             window.center()

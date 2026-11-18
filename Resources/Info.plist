@@ -2,10 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleExecutable</key><string>Pulse</string>
-    <key>CFBundleIdentifier</key><string>local.pulse.monitor</string>
-    <key>CFBundleName</key><string>Pulse</string>
-    <key>CFBundleDisplayName</key><string>Pulse</string>
+    <key>CFBundleExecutable</key><string>VibeCheck</string>
+    <key>CFBundleIdentifier</key><string>local.vibecheck.app</string>
+    <key>CFBundleName</key><string>VibeCheck</string>
+    <key>CFBundleDisplayName</key><string>VibeCheck</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>1.0</string>
     <key>CFBundleVersion</key><string>1</string>
@@ -13,6 +13,6 @@
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
-    <key>NSHumanReadableCopyright</key><string>Pulse system monitor</string>
+    <key>NSHumanReadableCopyright</key><string>VibeCheck: your Mac's vibe, live in the menu bar</string>
 </dict>
 </plist>

@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "Pulse",
+    name: "VibeCheck",
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(
-            name: "Pulse",
-            path: "Sources/Pulse",
+            name: "VibeCheck",
+            path: "Sources/VibeCheck",
             linkerSettings: [
                 .linkedFramework("IOKit"),
                 .linkedFramework("SystemConfiguration"),

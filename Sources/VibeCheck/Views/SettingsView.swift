@@ -27,7 +27,7 @@ struct SettingsView: View {
                 Toggle("Launch at login", isOn: $settings.launchAtLogin)
             }
             Section {
-                Text("Pulse 1.0 · Click any menu bar item for details.")
+                Text("VibeCheck 1.0 · Click any menu bar item to check the vibes.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

@@ -1,7 +1,7 @@
 import AppKit
 
 MainActor.assumeIsolated {
-    // `Pulse --dump` prints one sample of every monitor and exits (handy for debugging).
+    // `VibeCheck --dump` prints one sample of every monitor and exits (handy for debugging).
     if CommandLine.arguments.contains("--dump") {
         let cpu = CPUMonitor()
         _ = cpu.sample(); let net = NetworkMonitor(); _ = net.sample(); let disk = DiskMonitor(); _ = disk.sample()

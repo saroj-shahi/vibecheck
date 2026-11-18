@@ -1,13 +1,13 @@
 #!/bin/bash
-# Builds Pulse.app into ./build. Usage: ./build.sh [--install]  (--install copies it to /Applications)
+# Builds VibeCheck.app into ./build. Usage: ./build.sh [--install]  (--install copies it to /Applications)
 set -euo pipefail
 cd "$(dirname "$0")"
 
 swift build -c release
-APP=build/Pulse.app
+APP=build/VibeCheck.app
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp .build/release/Pulse "$APP/Contents/MacOS/Pulse"
+cp .build/release/VibeCheck "$APP/Contents/MacOS/VibeCheck"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
 if [ ! -f build/AppIcon.icns ]; then
@@ -20,7 +20,7 @@ codesign --force --sign - "$APP"
 echo "Built $APP"
 
 if [ "${1:-}" = "--install" ]; then
-  rm -rf /Applications/Pulse.app
+  rm -rf /Applications/VibeCheck.app
   cp -R "$APP" /Applications/
-  echo "Installed to /Applications/Pulse.app"
+  echo "Installed to /Applications/VibeCheck.app"
 fi

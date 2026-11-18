@@ -1,6 +1,6 @@
-# Pulse
+# VibeCheck
 
-A lightweight macOS menu bar system monitor (macOS 14+), written in Swift with SwiftUI + AppKit.
+A lightweight macOS menu bar system monitor that tells you if your Mac is vibing or cooked (macOS 14+), written in Swift with SwiftUI + AppKit.
 
 Each module gets its own menu bar item; click one for a detailed panel.
 
@@ -19,18 +19,18 @@ Settings (gear icon in any panel, or open the app again): choose menu bar items,
 ## Build & run
 
 ```bash
-./build.sh            # builds build/Pulse.app
-open build/Pulse.app
+./build.sh            # builds build/VibeCheck.app
+open build/VibeCheck.app
 ./build.sh --install  # also copies it to /Applications
 ```
 
-Debug: `swift build && .build/debug/Pulse --dump` prints one sample from every monitor.
+Debug: `swift build && .build/debug/VibeCheck --dump` prints one sample from every monitor.
 
 ## Layout
 
-- `Sources/Pulse/Monitors/` — data collectors (Mach host stats, sysctl, IOKit, IOPowerSources, SMC, HID temperature sensors, `ps`)
-- `Sources/Pulse/App/` — `SystemStats` (timer + histories), settings, status items
-- `Sources/Pulse/Views/` — menu bar labels, panels, charts, settings window
+- `Sources/VibeCheck/Monitors/` — data collectors (Mach host stats, sysctl, IOKit, IOPowerSources, SMC, HID temperature sensors, `ps`)
+- `Sources/VibeCheck/App/` — `SystemStats` (timer + histories), settings, status items
+- `Sources/VibeCheck/Views/` — menu bar labels, panels, charts, settings window
 
 ## Ideas for next steps
 

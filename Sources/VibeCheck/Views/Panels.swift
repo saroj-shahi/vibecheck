@@ -31,7 +31,7 @@ struct Panel<Content: View>: View {
                 Button {
                     NSApp.terminate(nil)
                 } label: { Image(systemName: "power") }
-                    .help("Quit Pulse")
+                    .help("Quit VibeCheck")
             }
             .buttonStyle(.borderless)
         }

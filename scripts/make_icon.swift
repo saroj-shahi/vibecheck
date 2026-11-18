@@ -1,4 +1,4 @@
-// Renders the Pulse app icon (rounded square, gradient, pulse line) into an .iconset folder.
+// Renders the VibeCheck app icon (rounded square, gradient, heartbeat line) into an .iconset folder.
 import AppKit
 
 let out = CommandLine.arguments[1]

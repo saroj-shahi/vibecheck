@@ -92,7 +92,7 @@ enum Palette {
 }
 
 extension Notification.Name {
-    static let pulseSettingsChanged = Notification.Name("PulseSettingsChanged")
+    static let vibeCheckSettingsChanged = Notification.Name("VibeCheckSettingsChanged")
 }
 
 @Observable
@@ -105,7 +105,7 @@ final class AppSettings {
     var refreshInterval: Double {
         didSet {
             defaults.set(refreshInterval, forKey: "refreshInterval")
-            NotificationCenter.default.post(name: .pulseSettingsChanged, object: nil)
+            NotificationCenter.default.post(name: .vibeCheckSettingsChanged, object: nil)
         }
     }
     var launchAtLogin: Bool {
@@ -114,7 +114,7 @@ final class AppSettings {
                 if launchAtLogin { try SMAppService.mainApp.register() }
                 else { try SMAppService.mainApp.unregister() }
             } catch {
-                NSLog("Pulse: launch-at-login change failed: \(error.localizedDescription)")
+                NSLog("VibeCheck: launch-at-login change failed: \(error.localizedDescription)")
             }
         }
     }
@@ -147,6 +147,6 @@ final class AppSettings {
             enabledModules.remove(module)
         }
         defaults.set(enabledModules.map(\.rawValue), forKey: "enabledModules")
-        NotificationCenter.default.post(name: .pulseSettingsChanged, object: nil)
+        NotificationCenter.default.post(name: .vibeCheckSettingsChanged, object: nil)
     }
 }
