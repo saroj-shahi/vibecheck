@@ -207,6 +207,16 @@ private struct MenuBarPreview: View {
 private struct GeneralSettings: View {
     @Environment(AppSettings.self) private var settings
 
+    private var bluetoothFooter: String {
+        let snooze = BluetoothSnooze.shared
+        guard snooze.isAvailable else { return "Not available on this version of macOS." }
+        let about = "Stops a sleeping Mac from grabbing headphones you also use with your phone. Bluetooth comes back on when the Mac wakes, if it was on before. While asleep, a Bluetooth keyboard or mouse can't wake the Mac, and Apple Watch unlock won't work."
+        if settings.bluetoothOffWhileAsleep, snooze.access == .denied {
+            return "VibeCheck isn't allowed to use Bluetooth, so this does nothing. Allow it in System Settings → Privacy & Security → Bluetooth. " + about
+        }
+        return about
+    }
+
     var body: some View {
         @Bindable var settings = settings
         Form {
@@ -218,6 +228,13 @@ private struct GeneralSettings: View {
                     Text("5 seconds").tag(5.0)
                 }
                 Toggle("Launch at login", isOn: $settings.launchAtLogin)
+            }
+            Section {
+                Toggle("Turn Bluetooth off while the Mac sleeps", isOn: $settings.bluetoothOffWhileAsleep)
+                    .disabled(!BluetoothSnooze.shared.isAvailable)
+            } footer: {
+                Text(bluetoothFooter)
+                    .settingsFooter()
             }
             Section {
                 HStack(spacing: 14) {

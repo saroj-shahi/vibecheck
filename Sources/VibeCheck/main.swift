@@ -40,6 +40,7 @@ MainActor.assumeIsolated {
         print("NET  \(n.interface ?? "-") \(n.ipv4 ?? "-") down \(Fmt.rate(n.download)) up \(Fmt.rate(n.upload)) totals \(Fmt.bytes(Double(n.totalDownloaded)))/\(Fmt.bytes(Double(n.totalUploaded)))")
         for i in n.interfaces.prefix(5) { print("     iface \(i.bsdName) \(i.displayName): ↓\(Fmt.rate(i.download)) ↑\(Fmt.rate(i.upload)) total \(Fmt.bytes(Double(i.totalIn)))") }
         print("DISK read \(Fmt.rate(d.readRate)) write \(Fmt.rate(d.writeRate))")
+        print("BT   snooze available \(BluetoothSnooze.shared.isAvailable) access \(BluetoothSnooze.shared.access) controller \(BluetoothSnooze.shared.isPoweredOn.map { $0 ? "on" : "off" } ?? "-")")
         for v in DiskMonitor.volumes() { print("     \(v.name): \(Fmt.bytes(v.available)) free of \(Fmt.bytes(v.total))") }
         print("BATT present \(b.present) \(Fmt.percent(b.percent)) charging \(b.isCharging) AC \(b.onAC) cycles \(b.cycleCount.map(String.init) ?? "-") health \(b.health.map(Fmt.percent) ?? "-") temp \(b.temperature.map { String(format: "%.1f", $0) } ?? "-") W \(b.powerWatts.map { String(format: "%.1f", $0) } ?? "-")")
         let sensors = SensorsMonitor().sample()

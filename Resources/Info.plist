@@ -13,6 +13,7 @@
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
+    <key>NSBluetoothAlwaysUsageDescription</key><string>VibeCheck turns Bluetooth off while your Mac sleeps and back on when it wakes, if you switch that on in Settings.</string>
     <key>NSHumanReadableCopyright</key><string>VibeCheck: your Mac's vibe, live in the menu bar</string>
 </dict>
 </plist>

@@ -266,6 +266,13 @@ final class AppSettings {
     var keepAwakeWithDisplay: Bool {
         didSet { save(keepAwakeWithDisplay, "keepAwakeWithDisplay", structural: false); KeepAwake.shared.check() }
     }
+    /// Turn Bluetooth off while the Mac sleeps, back on at wake (`BluetoothSnooze`).
+    var bluetoothOffWhileAsleep: Bool {
+        didSet {
+            save(bluetoothOffWhileAsleep, "bluetoothOffWhileAsleep", structural: false)
+            if bluetoothOffWhileAsleep { BluetoothSnooze.shared.requestAccess() }
+        }
+    }
     /// Show a cup in the menu bar while a session runs.
     var keepAwakeShowInMenuBar: Bool {
         didSet { save(keepAwakeShowInMenuBar, "keepAwakeShowInMenuBar", structural: true) }
@@ -339,6 +346,7 @@ final class AppSettings {
         keepAwakeHotkey = defaults.object(forKey: "keepAwakeHotkey") as? Bool ?? true
         keepAwakeOnPower = defaults.bool(forKey: "keepAwakeOnPower")
         keepAwakeWithDisplay = defaults.bool(forKey: "keepAwakeWithDisplay")
+        bluetoothOffWhileAsleep = defaults.bool(forKey: "bluetoothOffWhileAsleep")
         alertRules = defaults.data(forKey: "alertRules")
             .flatMap { try? JSONDecoder().decode([AlertRule].self, from: $0) } ?? AlertRule.defaults
     }

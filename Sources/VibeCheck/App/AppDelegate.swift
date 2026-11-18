@@ -178,6 +178,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         configureHotkeys()
         WeatherStore.shared.refresh()
         AgentUsageStore.shared.start()
+        BluetoothSnooze.shared.isEnabled = { [unowned settings] in settings.bluetoothOffWhileAsleep }
+        BluetoothSnooze.shared.start()
 
         NotificationCenter.default.addObserver(forName: .vibeCheckSettingsChanged, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {

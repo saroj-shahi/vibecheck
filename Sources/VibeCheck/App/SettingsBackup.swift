@@ -9,6 +9,7 @@ enum SettingsBackup {
         "worldClocks", "weatherLocation", "temperatureUnit", "chartRange", "groupProcessesByApp",
         "keepAwakeDefaultMinutes", "keepAwakeDisplayOn", "keepAwakeBatteryFloor", "keepAwakeAtLaunch", "keepAwakeShowInMenuBar",
         "keepAwakeUntilMinute", "keepAwakeNotify", "keepAwakeHotkey", "keepAwakeOnPower", "keepAwakeWithDisplay",
+        "bluetoothOffWhileAsleep",
     ]
     static let formatKey = "VibeCheckSettingsVersion"
 
