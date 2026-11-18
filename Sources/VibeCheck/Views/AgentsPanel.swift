@@ -69,17 +69,16 @@ private struct AgentCard: View {
                 Text("This 5-hour window: \(Fmt.tokens(block.tokens.total)) · resets \(block.end.formatted(date: .omitted, time: .shortened))")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            ForEach(summary.limits, id: \.windowMinutes) { limit in
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack {
-                        Text(limit.title).font(.caption)
-                        Spacer()
-                        Text("\(Int(limit.usedPercent.rounded()))% used · resets \(resetText(limit.resetsAt))")
-                            .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+            if !summary.limits.isEmpty {
+                // Ticks on its own so the countdown and pace marker move between scans.
+                TimelineView(.periodic(from: .now, by: 30)) { context in
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(summary.limits.sorted { $0.windowMinutes < $1.windowMinutes }, id: \.windowMinutes) {
+                            LimitGauge(limit: $0, now: context.date)
+                        }
                     }
-                    ProgressView(value: min(max(limit.usedPercent / 100, 0), 1))
-                        .tint(Palette.level(limit.usedPercent / 100))
                 }
+                .padding(.vertical, 2)
             }
             Text(lastActiveText).font(.caption).foregroundStyle(.tertiary)
         }
@@ -93,9 +92,76 @@ private struct AgentCard: View {
         return "Last active \(last.formatted(.relative(presentation: .named)))"
     }
 
-    private func resetText(_ date: Date) -> String {
-        Calendar.current.isDateInToday(date) ? date.formatted(date: .omitted, time: .shortened)
-            : date.formatted(.dateTime.month(.abbreviated).day())
+}
+
+/// One provider limit: how much is left, how fast it's going, and where "now" sits in the window.
+struct LimitGauge: View {
+    let limit: RateWindow
+    let now: Date
+
+    var body: some View {
+        let ahead = limit.isAheadOfPace(now: now)
+        let color = limit.gaugeColor(now: now)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(limit.cardTitle).font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                if let burn = limit.burnPerHour(now: now) {
+                    Text(String(format: "%.1f%%/hr", burn))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(ahead ? AnyShapeStyle(color) : AnyShapeStyle(.secondary))
+                        .help("Average since this window started")
+                }
+            }
+            Text("\(Int(limit.leftPercent.rounded()))% left")
+                .font(.system(size: 20, weight: .semibold, design: .rounded).monospacedDigit())
+                .contentTransition(.numericText())
+            PaceBar(used: limit.usedPercent / 100, elapsed: limit.elapsedFraction(now: now), color: color)
+                .frame(height: 12)
+            Text(resetText)
+                .font(.caption).foregroundStyle(.secondary)
+            if ahead {
+                Text("Going faster than the clock: at this pace it runs out before it resets.")
+                    .font(.caption2).foregroundStyle(color)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(limit.cardTitle): \(Int(limit.leftPercent.rounded())) percent left, resets in \(limit.countdown(now: now))")
+    }
+
+    private var resetText: String {
+        let when = Calendar.current.isDateInToday(limit.resetsAt)
+            ? limit.resetsAt.formatted(date: .omitted, time: .shortened)
+            : limit.resetsAt.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+        return "Resets in \(limit.countdown(now: now)) (\(when))"
+    }
+}
+
+/// Used share as a filled track, with a knob marking how much of the window has passed.
+/// Fill past the knob means the limit is being used faster than time goes by.
+struct PaceBar: View {
+    let used: Double
+    let elapsed: Double
+    let color: Color
+
+    var body: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            ZStack(alignment: .leading) {
+                Capsule().fill(.quaternary).frame(height: 6)
+                Capsule().fill(color).frame(width: max(6, width * min(max(used, 0), 1)), height: 6)
+                Circle()
+                    .fill(.white)
+                    .overlay(Circle().strokeBorder(.black.opacity(0.15), lineWidth: 0.5))
+                    .shadow(color: .black.opacity(0.25), radius: 1.5, y: 0.5)
+                    .frame(width: 12, height: 12)
+                    .offset(x: min(max(width * elapsed - 6, 0), width - 12))
+                    .help("Time passed in this window")
+            }
+            .frame(maxHeight: .infinity)
+        }
+        .animation(Deck.animation, value: used)
     }
 }
 
@@ -115,5 +181,13 @@ struct HourlyBars: View {
             }
         }
         .accessibilityHidden(true)
+    }
+}
+
+extension RateWindow {
+    /// The usage level color, but at least orange while running ahead of the clock.
+    func gaugeColor(now: Date) -> Color {
+        let level = usedPercent / 100
+        return isAheadOfPace(now: now) && level <= 0.65 ? .orange : Palette.level(level)
     }
 }

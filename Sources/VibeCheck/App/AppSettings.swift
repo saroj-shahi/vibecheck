@@ -55,9 +55,10 @@ enum Module: String, CaseIterable, Identifiable {
 
     var labelStyles: [LabelStyle] {
         switch self {
-        case .sensors, .battery, .weather, .agents: [.standard, .valueOnly]
+        case .sensors, .battery, .weather: [.standard, .valueOnly]
+        case .agents: [.standard, .valueOnly, .limits]
         case .clock: [.standard, .iconAndValue]
-        default: LabelStyle.allCases
+        default: [.standard, .iconAndValue, .valueOnly]
         }
     }
 
@@ -111,6 +112,8 @@ extension Notification.Name {
 /// How a single item draws itself in the menu bar.
 enum LabelStyle: String, CaseIterable, Identifiable {
     case standard, iconAndValue, valueOnly
+    /// Agents only: two stacked rows, "% left" and time to reset for the 5-hour and weekly limits.
+    case limits
     var id: String { rawValue }
 
     func title(for module: Module) -> String {
@@ -126,6 +129,7 @@ enum LabelStyle: String, CaseIterable, Identifiable {
             }
         case .iconAndValue: module == .clock ? "Icon + time" : "Icon + value"
         case .valueOnly: "Value only"
+        case .limits: "Limits left"
         }
     }
 }

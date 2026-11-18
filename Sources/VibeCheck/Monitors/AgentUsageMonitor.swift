@@ -48,6 +48,54 @@ struct RateWindow: Equatable {
     }
 }
 
+extension RateWindow {
+    var start: Date { resetsAt.addingTimeInterval(-Double(windowMinutes) * 60) }
+    var leftPercent: Double { min(max(100 - usedPercent, 0), 100) }
+
+    /// "Current session" for the 5-hour window, otherwise the plain title.
+    var cardTitle: String { windowMinutes == 300 ? "Current session" : title }
+
+    /// How far through the window we are, 0–1.
+    func elapsedFraction(now: Date) -> Double {
+        let span = Double(windowMinutes) * 60
+        guard span > 0 else { return 0 }
+        return min(max(now.timeIntervalSince(start) / span, 0), 1)
+    }
+
+    /// Average use since the window started, in percent per hour. Nil in the first few minutes
+    /// (too little time to mean anything) or once the window is over.
+    func burnPerHour(now: Date) -> Double? {
+        let hours = now.timeIntervalSince(start) / 3600
+        guard hours >= 0.1, now < resetsAt else { return nil }
+        return usedPercent / hours
+    }
+
+    /// Using the limit faster than time passes (with a little slack), so it runs out before it resets.
+    func isAheadOfPace(now: Date) -> Bool {
+        usedPercent / 100 > elapsedFraction(now: now) + 0.05
+    }
+
+    /// "2h 42m", "5d 22h", "18m", "now".
+    func countdown(now: Date) -> String {
+        let minutes = Int(max(resetsAt.timeIntervalSince(now), 0) / 60)
+        switch minutes {
+        case 0: return "now"
+        case ..<60: return "\(minutes)m"
+        case ..<1440: return "\(minutes / 60)h \(minutes % 60)m"
+        default: return "\(minutes / 1440)d \((minutes % 1440) / 60)h"
+        }
+    }
+}
+
+extension AgentUsageSample {
+    /// The limits to show in the menu bar: Claude's if it has any, else the first agent's that does.
+    var menuBarLimits: (agent: AgentKind, limits: [RateWindow])? {
+        let withLimits = agents.filter { !$0.limits.isEmpty }
+        guard let pick = withLimits.first(where: { $0.agent == .claude }) ?? withLimits.first else { return nil }
+        return (pick.agent, pick.limits.sorted { $0.windowMinutes < $1.windowMinutes })
+    }
+}
+
 /// The current 5-hour window, estimated from local logs the usual way.
 struct UsageBlock: Equatable {
     var start: Date

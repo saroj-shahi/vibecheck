@@ -56,7 +56,7 @@ struct MenuBarLabel: View {
             switch style {
             case .standard: graph().frame(width: module == .memory ? 7 : 23, height: 15)
             case .iconAndValue: Image(systemName: module.symbol).font(.system(size: 12))
-            case .valueOnly: EmptyView()
+            case .valueOnly, .limits: EmptyView()
             }
             value(text)
         }
@@ -162,9 +162,18 @@ struct MenuBarLabel: View {
         }
     }
 
+    @ViewBuilder
     private var agents: some View {
         let sample = AgentUsageStore.shared.sample
-        return HStack(spacing: gap) {
+        if style == .limits, let pick = sample.menuBarLimits {
+            AgentLimitsLabel(limits: pick.limits, tint: tint(Palette.agents))
+        } else {
+            agentTokens(sample)
+        }
+    }
+
+    private func agentTokens(_ sample: AgentUsageSample) -> some View {
+        HStack(spacing: gap) {
             if style != .valueOnly {
                 Image(systemName: "sparkles").font(.system(size: 12))
                     .foregroundStyle(tint(Palette.agents))
@@ -249,6 +258,38 @@ struct MiniBars: View {
                                  with: .color(systemColor.opacity(color == systemColor ? 0.6 : 1)))
                 }
             }
+        }
+    }
+}
+
+/// Two stacked rows ("49% ↻ 2h 42m" over "68% ↻ 5d 22h"): percent left and time to reset, shortest window first.
+/// Falls back to tokens in `MenuBarLabel` when no agent reports limits.
+struct AgentLimitsLabel: View {
+    let limits: [RateWindow]
+    let tint: Color
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 60)) { context in
+            HStack(spacing: 4) {
+                Image(systemName: "sparkles").font(.system(size: 11)).foregroundStyle(tint)
+                VStack(alignment: .trailing, spacing: -1) {
+                    ForEach(limits.prefix(2), id: \.windowMinutes) { limit in
+                        HStack(spacing: 3) {
+                            Text("\(Int(limit.leftPercent.rounded()))%")
+                                .fixedSize().frame(minWidth: 30, alignment: .trailing)
+                                .foregroundStyle(limit.isAheadOfPace(now: context.date)
+                                                 ? AnyShapeStyle(limit.gaugeColor(now: context.date)) : AnyShapeStyle(.primary))
+                            Image(systemName: "arrow.clockwise").font(.system(size: 7, weight: .bold))
+                            Text(limit.countdown(now: context.date)).fixedSize().frame(minWidth: 40, alignment: .leading)
+                        }
+                    }
+                }
+                .font(.system(size: 9.5, weight: .semibold).monospacedDigit())
+                .lineLimit(1)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(limits.prefix(2).map { "\($0.cardTitle) \(Int($0.leftPercent.rounded())) percent left" }
+                .joined(separator: ", "))
         }
     }
 }
