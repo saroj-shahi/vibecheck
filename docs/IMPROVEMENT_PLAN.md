@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 48 commits · ~7,600 lines of Swift · 87 tests_
+_Last updated: 2026-11-18 · version 1.5 · 51 commits · ~7,900 lines of Swift · 90 tests_
 
 ---
 
@@ -68,6 +68,8 @@ not the whole screen.
 | Limits gauges and the stacked menu bar label | ✅ rendered offscreen (`ImageRenderer`, dark mode) with sample limits; not seen in the real deck |
 | Live Claude limits: parsing, merge, Keychain-deny handling | ✅ unit tests with fixture JSON |
 | Live Claude limits: Keychain prompt, real fetch, Settings status line | ❌ not tried (owner's call; the setting is off) |
+| Copilot CLI and OpenCode parsing, dedupe, SQLite read, scanner pass | ✅ unit tests + `--dump` on real data (both present; 0 tokens this week, which matches the files' dates) |
+| Copilot / OpenCode cards and Copilot quota gauge in the deck | ❌ never seen |
 
 ---
 
@@ -124,9 +126,11 @@ Synthetic clicks don't open menu submenus.
      (`/api/oauth/usage`, `anthropic-beta: oauth-2025-04-20`) is undocumented; if it changes, the status
      line says "Anthropic didn't answer".
    - ~~API-equivalent cost~~: dropped 2026-11-18, the owner chose no costs (it would need a price-list download).
-   - Still open: more agents. This Mac has data for OpenCode (`~/.local/share/opencode`), Gemini CLI
-     (`~/.gemini`), GitHub Copilot (`~/.copilot`) and Cursor (`~/.cursor`); check which of them log tokens.
-     Also "in progress now", a tokens-per-hour alert rule, and a 7-day chart.
+   - ~~More agents~~: GitHub Copilot CLI and OpenCode done 2026-11-18 (`0443c87`). Gemini CLI (only
+     Antigravity settings on this Mac) and Cursor (usage kept on its servers) have no local token counts.
+   - Still open: Copilot's monthly quota only shows if a Copilot session file changed in the last 7 days
+     (older files aren't read); consider always reading the newest session for quotas.
+   - Still open: "in progress now", a tokens-per-hour alert rule, and a 7-day chart.
 4. **Port manager** _(V)_. Listening TCP ports with the owning process (`lsof -nP -iTCP -sTCP:LISTEN`, only
    while the view is open), in the Network detail view; kill through item 1.
 5. **Distribution.** Developer ID signing + notarization (`notarytool`), a DMG, an update check (Sparkle or
@@ -237,6 +241,8 @@ Short record of choices future sessions shouldn't silently undo.
 | Intents run in the app and wait ~2.5 s after a cold launch | CPU and network rates need two samples |
 | Agents module reads local logs only by default; network and credentials only with live Claude limits switched on | Privacy; works offline; no Keychain prompts unless asked for |
 | Agent totals include cache reads (as usage tools usually count them) | Numbers line up with the tool people already compare against; the breakdown is in Details |
+| Copilot input tokens are counted minus cache reads; OpenCode reasoning is counted as output | Copilot uses OpenAI-style counts (input includes cached); OpenCode reports reasoning separately. Keeps totals comparable across agents |
+| OpenCode is read from its SQLite database read-only, only when the file or WAL changed | It has no log files; re-reading a week of rows is cheap and handles token counts filled in late |
 | Agents is module 10; ⌘0 / ⌃⌥⌘0 open it | The number row has no "10"; `Module.shortcutKey` maps 1–9 then 0 |
 | Keep awake uses an IOKit assertion, not a `caffeinate` child process | Released automatically if the app dies; visible in `pmset -g assertions` |
 | Keep-awake sessions don't survive a restart; "Start a session when VibeCheck opens" covers that | Avoids a Mac that never sleeps after a forgotten session |
@@ -434,6 +440,18 @@ or already reset, keep the opt-in out of backups. The new UI was checked as offs
 use; the owner was busy): warning color and column widths were fixed after the first render. 87 tests,
 zero warnings, installed. To use: Settings → Menu Bar → Agents → "Limits left"; Settings → General →
 "Show Claude's real plan limits". Ad hoc signing means each new build may ask for Keychain access again.
+
+### 2026-11-18: GitHub Copilot CLI and OpenCode
+
+| Commit | What |
+|---|---|
+| `0443c87` | `AgentKind` gains `.copilot` and `.opencode`. Copilot: `session.usage_record` events (deduped by id) and monthly quotas from `quotaSnapshots` as named limits. OpenCode: read-only SQLite query of the week's assistant messages. Limits kept per agent. 3 tests. |
+
+Notes: checked which agents on this Mac keep token counts (structure only, no conversation text read):
+Copilot and OpenCode do; Gemini (Antigravity) and Cursor don't. `--dump` on real data lists both new agents
+with 0 tokens this week, which matches their files (Copilot sessions from 3 Nov, OpenCode free-model
+calls). An older test started reading the real home folder once the new defaults existed; it now passes
+empty locations. 90 tests, zero warnings, installed. Nothing seen on screen.
 
 ---
 
