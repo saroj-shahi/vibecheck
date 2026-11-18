@@ -67,11 +67,17 @@ not the whole screen.
 ## 2. Backlog
 
 Priorities: **P0** do next · **P1** soon · **P2** nice to have · **P3** someday / risky.
+Re-prioritized 2026-11-18 after a review of [another app](https://github.com/otherapp/otherapp-utils), a
+large menu bar toolkit with overlapping features. Items marked _(V)_ come from it. It's **GPL-3.0**: take
+ideas, never code.
 
-### P0: On-screen QA pass
+How the order was set: finish verifying what's shipped first, then features that reuse data VibeCheck
+already collects, then new on-theme modules, and last anything that deletes files, needs root or private
+hardware access.
 
-Needs Screen Recording permission for the terminal or Claude (System Settings → Privacy & Security →
-Screen & System Audio Recording), or the owner checking by hand. Walk through:
+### P0: Verify what's shipped
+
+**On-screen QA pass** (remaining). Needs the owner to keep hands off the Mac (see "How to run it" below).
 
 - [x] Menu bar: separate items on both displays (2026-11-18). Combined item + notch fit still not seen (owner uses separate items now)
 - [ ] Deck: light mode, tile hover and press, unfold/fold animation (dark mode, Esc, arrows, ⌘2 done)
@@ -83,52 +89,83 @@ Screen & System Audio Recording), or the owner checking by hand. Walk through:
 - [ ] Reduce Motion and Increase Contrast on: everything still readable, springs become fades
 - [ ] VoiceOver: tiles read as sentences, alert number is adjustable
 
+**Bluetooth off while asleep** (owner will test): turn it on in Settings → General, allow the Bluetooth
+prompt, sleep and wake, then check the log (command in the session history entry).
+
+- [ ] Permission prompt appears when the toggle is switched on
+- [ ] "Bluetooth off for sleep" and "Bluetooth back on (wake)" in the log; Bluetooth really back on
+
 Fix whatever turns up before starting new features.
 
-How to run it (learned 2026-11-18): the owner must keep hands off the mouse and keyboard. Synthetic clicks
-and keys go wherever focus is, the deck closes whenever another app activates (correct behaviour), and a
-full-screen app on a display hides that display's menu bar, so clicks land in the app. Before sending any
-key, confirm the deck window is on screen (layer 101 in `CGWindowListCopyWindowInfo`). Synthetic clicks
-don't open menu submenus.
+How to run the QA pass (learned 2026-11-18): the owner must keep hands off the mouse and keyboard.
+Synthetic clicks and keys go wherever focus is, the deck closes whenever another app activates (correct
+behaviour), and a full-screen app on a display hides that display's menu bar, so clicks land in the app.
+Before sending any key, confirm the deck window is on screen (layer 101 in `CGWindowListCopyWindowInfo`).
+Synthetic clicks don't open menu submenus.
 
-### P1
+### P1: Reuse what VibeCheck already knows
 
-- **Performance: what's left is macOS, not VibeCheck.** Installed app idles at ~3.3–3.8% CPU, ~100 MB.
-  Investigated 2026-11-18: almost all of it is `NSStatusItem _updateReplicants`, AppKit redrawing the
-  status item's copy for each display's menu bar (~30 ms per display per redraw). On this macOS that
-  path runs through AppKit's own `NSHostingView`, even when the button holds a plain image, and the cost
-  is the same at a 5 s refresh as at 2 s, so redraws aren't driven by our ticks. Don't retry: rendering the
-  label to an image (made it worse) or slowing the refresh (no change). Worth checking only if it grows:
-  whether it scales with the number of displays, and on a future macOS.
-- **Distribution.** Developer ID signing + notarization (`notarytool`), a DMG, and an update mechanism
-  (Sparkle or a GitHub Releases check). Today it's ad hoc signed, so other Macs need right-click → Open.
-- **Separate-items reorder.** Moving modules in Settings doesn't move existing separate items (macOS keeps
-  autosaved positions). Either document ⌘-drag (done in the UI) or recreate items with new autosave names.
+1. **Kill process** _(V)_. Quit / Force Quit / kill process tree from the CPU and Memory "Who's
+   responsible" rows (context menu + a confirm for Force Quit). The data is already there. Use
+   `NSRunningApplication.terminate()` / `forceTerminate()` for apps, `kill(2)` for plain processes; never
+   touch PID 1, `WindowServer`, `loginwindow`, or VibeCheck itself.
+2. **Secure input warning** _(V)_. When an app holds Secure Event Input (`IsSecureEventInputEnabled()` +
+   the owning PID from `ioreg -l -w 0 | grep kCGSSessionSecureInputPID`), global shortcuts silently stop
+   working. Show which app it is in Settings → Shortcuts and as a hint when a shortcut fails. Small.
+3. **Agents: plan limits and cost** _(V)_, replacing the old "Agents module, next steps":
+   - Codex already reports rate limits in its logs; show the 5-hour and weekly percentages with reset times.
+   - Claude plan limits only come from Anthropic with the user's login; ask the owner before reading any
+     credential, and keep it opt-in.
+   - API-equivalent cost: another app keeps prices in a JSON file in its repo, fetched at runtime, so prices
+     can change without a release. Do the same (our own file, cached, with a "prices as of" date).
+     Never hard-code prices.
+   - More agents: OpenCode, GitHub Copilot, Gemini CLI. Also "in progress now" (a session written in the
+     last minute), a tokens-per-hour alert rule, and a 7-day chart.
+4. **Port manager** _(V)_. Listening TCP ports with the owning process (`lsof -nP -iTCP -sTCP:LISTEN`, only
+   while the view is open), in the Network detail view; kill through item 1.
+5. **Distribution.** Developer ID signing + notarization (`notarytool`), a DMG, an update check (Sparkle or
+   GitHub Releases), and a Homebrew cask _(V)_. Today it's ad hoc signed, so other Macs need right-click → Open.
+6. **Separate-items reorder.** Moving modules in Settings doesn't move existing separate items (macOS keeps
+   autosaved positions). Either document ⌘-drag (done in the UI) or recreate items with new autosave names.
 
-### P2
+### P2: New, on-theme
 
-- **Liquid Glass `.icon`** made in Icon Composer from `branding/svg/icon.svg` layers (keep the `.icns`
-  for macOS 14–15).
+- **Accessory battery alert** _(V)_: notify once when a Bluetooth device drops to 20% (the batteries are
+  already read). Add it as an alert metric so the threshold is editable.
+- **Connected USB devices** _(V)_: a count and list in the Battery panel's Devices section (IOKit `IOUSBHostDevice`).
+- **Fully unload switched-off modules** _(V)_: check every monitor stops sampling when its module is off,
+  not just hidden. Measure before/after with `ps`.
+- **Timer, stopwatch, focus sessions** _(V)_, tied to keep awake: a focus session keeps the Mac awake until it ends.
+- **Downloads watcher** _(V)_: files arriving in a chosen folder; enables a "while downloads are active"
+  keep-awake trigger.
+- **Quick toggles** _(V)_: a row in the deck: dark mode, mute microphone, empty Trash (with confirm).
+- **Keep awake, other triggers:** a schedule (weekdays 9–5), "while on Wi-Fi X" (SSID needs Location permission).
 - **WidgetKit widgets:** vibe ring, CPU/memory sparkline (needs an app group to share samples).
 - **Network:** public IP (opt-in, privacy note), Wi-Fi details (SSID needs Location permission),
   per-app traffic history.
 - **Battery:** charge history over days, health trend.
 - **Localization:** strings are inline English; move to a String Catalog.
-- **Agents module, next steps:** cost estimates (needs a maintained price table per model; don't guess
-  prices), Claude's real plan limits (only available from Anthropic's API with the user's login; ask first),
-  more agents (Gemini CLI, Cursor), an alert rule on tokens per hour, and a 7-day chart.
-- **Keep awake, still open:** closed-lid mode needs root (`pmset disablesleep`); treat it like fan control
-  (P3, owner sign-off). Other ideas: a schedule trigger (weekdays 9–5), "while on Wi-Fi X" (SSID needs
-  Location permission), and a "while downloads are active" trigger using network rate.
+- **Liquid Glass `.icon`** made in Icon Composer from `branding/svg/icon.svg` layers (keep the `.icns`
+  for macOS 14–15).
 - **Website / landing page** from the brand assets.
 - **GitHub social preview:** upload `branding/png/social-card.png` in repo settings (manual; no API).
 
 ### P3 (risky or large)
 
 - **Fan control.** Needs a privileged helper (`SMAppService.daemon`) writing SMC keys; a bug can affect
-  cooling. Only with explicit owner sign-off and a hard safety floor.
+  cooling. another app ships one (manual RPM and temperature curves), which shows it's workable. Only with
+  explicit owner sign-off and a hard safety floor.
+- **Disk cleaner** _(V)_: start read-only (show reclaimable caches and leftovers in the Disk view); deleting
+  needs a review step and never touches user documents.
+- **Display brightness** _(V)_: per-display sliders; external monitors need DDC over private APIs.
+- **Calendar** _(V)_: month view and upcoming events in the Clock panel; needs calendar permission and
+  widens the app's scope.
+- **Keep awake with the lid closed:** needs root (`pmset disablesleep`); same sign-off as fan control.
 - **iCloud settings sync** (NSUbiquitousKeyValueStore); watch for conflicts with per-Mac settings like
   notch fit.
+
+Not planned: another app's window, Dock, mouse, keyboard, clipboard, file, screenshot, recording, uninstaller,
+lyrics and companion tools, and its notch-style "Dynamic Island" bar. They're outside a system monitor.
 
 ### Tech debt
 
@@ -140,7 +177,8 @@ don't open menu submenus.
   thread, worth a lock if that changes.
 - Private / undocumented APIs (all looked up at runtime with fallbacks):
   `IOHIDEventSystemClient*` (temperatures), `responsibility_get_pid_responsible_for_pid` (app grouping),
-  SMC keys `PSTR`/`PDTR`/`F0Ac`. Re-check after each macOS update.
+  SMC keys `PSTR`/`PDTR`/`F0Ac`, `IOBluetoothPreference{Get,Set}ControllerPowerState` (Bluetooth sleep).
+  Re-check after each macOS update.
 - An old settings domain from the Pulse name, `local.pulse.monitor`, is still on the owner's Mac; safe to
   delete with `defaults delete local.pulse.monitor`.
 
@@ -148,6 +186,11 @@ don't open menu submenus.
 
 ## 3. Known limits (by design or by macOS)
 
+- Idle cost is mostly macOS: the installed app idles at ~3.3–3.8% CPU, ~100 MB, and almost all of it is
+  `NSStatusItem _updateReplicants` (AppKit redrawing each display's copy of the status items, ~30 ms per
+  display per redraw, through AppKit's own `NSHostingView`). Same cost at a 5 s refresh as at 2 s.
+  Don't retry rendering the label to an image (worse) or slowing the refresh (no change). Re-check on a
+  future macOS, and whether it scales with the number of displays.
 - Battery temperature isn't exposed on the owner's Mac (row hides itself).
 - Logitech devices (e.g. MX Master) don't report battery to macOS.
 - Status item windows are taller than the menu bar on some displays; the deck anchors to the button's
@@ -194,6 +237,8 @@ Short record of choices future sessions shouldn't silently undo.
 | Slang only for vibing / mid / cooked; alerts and errors stay plain | Brand voice (see BRAND.md §6) |
 | Bluetooth sleep: never touch Bluetooth at shutdown; only re-enable what VibeCheck turned off | Unlike similar Bluetooth tools: a Mac shouldn't boot with Bluetooth off, and a user's own "off" must stick |
 | Every IOBluetooth power call is guarded by `CBManager.authorization == .allowedAlways` | Without Bluetooth permission macOS aborts the process (TCC); the prompt is shown when the toggle is switched on, never at sleep |
+| another app (GPL-3.0) is a source of ideas only, never code | Copying GPL code would make VibeCheck GPL |
+| Agent prices come from a fetched price file with a date, never hard-coded | Prices change; a stale built-in table would show wrong costs |
 | Settings footers use `settingsFooter()` (caption, leading) | Grouped `Form` footers align trailing by default on macOS |
 | Chart areas add points with `addLine`, never `addLines` | `addLines` starts a new subpath and breaks the closed fill |
 
