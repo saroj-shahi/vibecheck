@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 85 commits · ~10,500 lines of Swift · 138 tests_
+_Last updated: 2026-11-18 · version 1.5 · 86 commits · ~10,600 lines of Swift · 142 tests_
 
 ---
 
@@ -47,6 +47,7 @@ not the whole screen.
 | Keep awake: status strip while a session runs | ✅ seen 2026-11-18 ("Staying awake until you stop it" + Stop) |
 | Keep awake triggers: plugged in and external display start a session | ✅ built app with launch arguments + `pmset -g assertions` (on AC with the MSI display attached) |
 | Keep awake "while files are downloading": a `.crdownload` in a watched folder takes the assertion in ~8 s; renaming it (download done) releases it | ✅ built app with launch arguments + `pmset -g assertions`, scratch folder (2026-11-18) |
+| Keep awake "on a schedule": a window around now takes the assertion; it's released when the window ends | ✅ built app with launch arguments + `pmset -g assertions` (2026-11-18) |
 | Keep awake: trigger ending on unplug / display removal, end notification, ⌃⌥⌘A, "Until" menu | ❌ not exercised (logic covered by unit tests) |
 | App Intents metadata in the bundle (5 actions, 2 enums, 4 phrases) | ✅ `extract.actionsdata` inspected; signature verifies |
 | CPU / memory with the deck closed: ~3.3% / ~100 MB installed (was ~3.9% / 138–155 MB) | ✅ installed app measured 3× 40 s with `ps`; `sample` shows our tick at ~70 ms per 20 s vs ~250 ms SwiftUI layout |
@@ -163,7 +164,9 @@ Synthetic clicks don't open menu submenus.
   access the first time).
 - ~~Quick toggles~~ _(V)_: done 2026-11-18 (`e51d9d5`). Never run for real yet: the first Dark or Trash tap asks for
   Automation permission (System Events / Finder); mic mute untested on hardware.
-- **Keep awake, other triggers:** a schedule (weekdays 9–5), "while on Wi-Fi X" (SSID needs Location permission).
+- **Keep awake, other triggers:** ~~a schedule~~ done 2026-11-18 ("On a schedule": days + hours, default
+  weekdays 9–17, overnight windows belong to the start day; Settings rows not seen on screen). Still open:
+  "while on Wi-Fi X" (SSID needs Location permission).
 - **WidgetKit widgets:** vibe ring, CPU/memory sparkline (needs an app group to share samples).
 - **Network:** public IP (opt-in, privacy note), Wi-Fi details (SSID needs Location permission),
   per-app traffic history.
@@ -315,8 +318,8 @@ tables above and the lessons below; add new dated entries under "Recent sessions
 
 ### Lessons and testing tips (still true)
 
-- **Launch arguments override settings without touching them**: `-keepAwakeAtLaunch YES`; booleans read with
-  `as? Bool` need plist syntax (`'<false/>'`). In zsh put them on the command line; unquoted `$args` and
+- **Launch arguments override settings without touching them**: `-keepAwakeAtLaunch YES`; values read with
+  `as? Bool` / `as? Int` need plist syntax (`'<false/>'`, `'<integer>540</integer>'`), or the default is used. In zsh put them on the command line; unquoted `$args` and
   `set -- $var` don't split words (use `${=var}`).
 - **Measuring CPU**: compare builds one at a time, never side by side (a hidden second item skips the SwiftUI
   drawing that dominates the cost). Use `ps` over 40 s and `sample` for where time goes.
@@ -346,6 +349,13 @@ tables above and the lessons below; add new dated entries under "Recent sessions
   `/usr/bin/security` (an "Always Allow" would cover every process that runs it).
 
 ### Recent sessions
+
+#### 2026-11-18: keep awake on a schedule
+
+`AwakeSchedule` (days as weekday bits, start/end minutes) feeds the existing edge-triggered trigger, so a
+Stop by hand inside the window sticks until the next window. Checked live with a 3-minute window. Settings
+rows (day buttons, hours pickers) not seen on screen. Not sent for review: pure logic on the existing
+trigger path, unit-tested.
 
 #### 2026-11-18: downloads keep-awake trigger
 

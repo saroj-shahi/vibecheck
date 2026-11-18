@@ -139,6 +139,19 @@ struct KeepAwakeSettings: View {
                     Text("While files are downloading")
                     Text("Watches \(settings.downloadsFolderURL.lastPathComponent) for files that are still arriving.")
                 }
+                Toggle("On a schedule", isOn: $settings.keepAwakeOnSchedule)
+                if settings.keepAwakeOnSchedule {
+                    LabeledContent("Days") { ScheduleDaysPicker(days: $settings.keepAwakeScheduleDays) }
+                    LabeledContent("Hours") {
+                        HStack {
+                            DatePicker("From", selection: minuteBinding(\.keepAwakeScheduleStart),
+                                       displayedComponents: .hourAndMinute).labelsHidden()
+                            Text("to")
+                            DatePicker("To", selection: minuteBinding(\.keepAwakeScheduleEnd),
+                                       displayedComponents: .hourAndMinute).labelsHidden()
+                        }
+                    }
+                }
                 if settings.keepAwakeWhileDownloading {
                     LabeledContent("Folder") {
                         HStack {
@@ -177,6 +190,17 @@ struct KeepAwakeSettings: View {
         .formStyle(.grouped)
     }
 
+    /// A stored minute-of-day setting as a Date for a time picker.
+    private func minuteBinding(_ key: ReferenceWritableKeyPath<AppSettings, Int>) -> Binding<Date> {
+        Binding {
+            Calendar.current.date(bySettingHour: settings[keyPath: key] / 60, minute: settings[keyPath: key] % 60,
+                                  second: 0, of: Date()) ?? Date()
+        } set: { date in
+            let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+            settings[keyPath: key] = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+        }
+    }
+
     /// The stored minute-of-day as a Date for the time picker.
     private var untilTime: Binding<Date> {
         Binding {
@@ -202,5 +226,28 @@ struct KeepAwakeSettings: View {
     private func status(_ now: Date) -> String {
         guard let session = awake.session else { return "Your Mac sleeps as usual" }
         return "Staying awake \(session.remaining(now: now))"
+    }
+}
+
+/// Seven day buttons in the user's week order (Monday first where that's the custom), stored as weekday bits.
+private struct ScheduleDaysPicker: View {
+    @Binding var days: Int
+
+    var body: some View {
+        let calendar = Calendar.current
+        let symbols = calendar.veryShortStandaloneWeekdaySymbols
+        let order = (0..<7).map { (calendar.firstWeekday - 1 + $0) % 7 + 1 }
+        HStack(spacing: 4) {
+            ForEach(order, id: \.self) { weekday in
+                let on = days & (1 << weekday) != 0
+                Button(symbols[weekday - 1]) { days ^= 1 << weekday }
+                    .buttonStyle(.bordered)
+                    .tint(on ? .accentColor : nil)
+                    .background(on ? RoundedRectangle(cornerRadius: 6).fill(Color.accentColor.opacity(0.25)) : nil)
+                    .controlSize(.small)
+                    .accessibilityLabel(calendar.standaloneWeekdaySymbols[weekday - 1])
+                    .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
     }
 }

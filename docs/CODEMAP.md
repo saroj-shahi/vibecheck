@@ -13,7 +13,7 @@ are added or split. Decisions and history are in [IMPROVEMENT_PLAN.md](IMPROVEME
 | `SystemStats.swift` | The tick: samples every monitor, histories, demand counters (`processDemand`, `networkAppDemand`, `sensorDemand`), vibe input, listening ports |
 | `Vibe.swift` | Vibe score (vibing / mid / cooked) and the verdict sentence |
 | `Alerts.swift` | `AlertMetric`, `AlertRule` (sentence alerts), `AlertEngine` (evaluate, notify, history log) |
-| `KeepAwake.swift` | Sessions (`AwakeEnd`, focus sessions, triggers: power / display / downloads), IOKit assertion |
+| `KeepAwake.swift` | Sessions (`AwakeEnd`, focus sessions, triggers: power / display / downloads / `AwakeSchedule`), IOKit assertion |
 | `KeepAwakeMenu.swift` | Native right-click menu of the Keep Awake menu bar item |
 | `Deck.swift` | `DeckPanel` (borderless non-activating NSPanel), `DeckController` (open/close, frame, keys, outside clicks) |
 | `AgentUsage.swift` | `AgentUsageStore` (rescans agent logs every 60 s, merges live Claude limits) |

@@ -30,7 +30,7 @@ enum AwakeEndReason: Equatable {
         case .timeUp: "Time's up."
         case .appQuit: "The app it was waiting on quit."
         case .lowBattery: "The battery got low."
-        case .triggerOff: "What started it is gone (unplugged, display disconnected or downloads done)."
+        case .triggerOff: "What started it is gone (unplugged, display disconnected, downloads done or schedule over)."
         case .focusDone: "Focus session done. Take a break."
         }
     }
@@ -117,6 +117,40 @@ enum AwakePreset {
     }
 }
 
+/// A weekly window to stay awake in, like weekdays 9:00–17:00. A window whose end is before its start runs
+/// past midnight and belongs to the day it starts on.
+struct AwakeSchedule: Equatable {
+    /// Calendar weekdays (1 = Sunday … 7 = Saturday) as bits: bit n set means weekday n is on.
+    var days: Int
+    var startMinute: Int   // minutes after midnight
+    var endMinute: Int
+
+    static let weekdays = (2...6).reduce(0) { $0 | 1 << $1 }   // Monday to Friday
+
+    func includes(weekday: Int) -> Bool { days & (1 << weekday) != 0 }
+
+    /// Whether `now` is inside the window. Pure apart from the calendar, for tests.
+    func isActive(at now: Date, calendar: Calendar = .current) -> Bool {
+        guard startMinute != endMinute else { return false }
+        let parts = calendar.dateComponents([.weekday, .hour, .minute], from: now)
+        guard let weekday = parts.weekday else { return false }
+        let minute = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+        if startMinute < endMinute {
+            return includes(weekday: weekday) && minute >= startMinute && minute < endMinute
+        }
+        // Overnight: the evening part belongs to today, the early-morning part to yesterday.
+        let yesterday = weekday == 1 ? 7 : weekday - 1
+        return (includes(weekday: weekday) && minute >= startMinute)
+            || (includes(weekday: yesterday) && minute < endMinute)
+    }
+
+    /// "within your schedule (until 17:00)", in the user's clock style.
+    func description(now: Date = Date(), calendar: Calendar = .current) -> String {
+        let end = AwakePreset.nextOccurrence(ofMinute: endMinute, after: now, calendar: calendar)
+        return "within your schedule (until \(end.formatted(date: .omitted, time: .shortened)))"
+    }
+}
+
 /// What the automatic triggers want right now. Edge-triggered so a manual Stop sticks until the
 /// condition goes away and comes back.
 enum AwakeTriggerAction: Equatable {
@@ -128,11 +162,13 @@ enum AwakeTriggerAction: Equatable {
         return .none
     }
 
-    /// "while plugged in", "while a display is connected", "while files are downloading", or several;
+    /// "while plugged in", "while a display is connected", "while files are downloading", "while within your
+    /// schedule (until …)", or several;
     /// nil when no trigger is on and met.
-    static func description(onPower: Bool, externalDisplay: Bool, downloading: Bool = false) -> String? {
+    static func description(onPower: Bool, externalDisplay: Bool, downloading: Bool = false,
+                            schedule: String? = nil) -> String? {
         let parts = [onPower ? "plugged in" : nil, externalDisplay ? "a display is connected" : nil,
-                     downloading ? "files are downloading" : nil].compactMap { $0 }
+                     downloading ? "files are downloading" : nil, schedule].compactMap { $0 }
         guard let last = parts.last else { return nil }
         let head = parts.dropLast().joined(separator: ", ")
         return "while " + (head.isEmpty ? last : head + " and " + last)
@@ -230,7 +266,9 @@ final class KeepAwake {
         let active = AwakeTriggerAction.description(
             onPower: settings.keepAwakeOnPower && (!battery.present || battery.onAC),
             externalDisplay: settings.keepAwakeWithDisplay && Self.hasExternalDisplay(),
-            downloading: settings.keepAwakeWhileDownloading && DownloadsWatcher.shared.isActive)
+            downloading: settings.keepAwakeWhileDownloading && DownloadsWatcher.shared.isActive,
+            schedule: settings.keepAwakeOnSchedule && settings.keepAwakeSchedule.isActive(at: Date())
+                ? settings.keepAwakeSchedule.description() : nil)
         let action = AwakeTriggerAction.decide(active: active, wasActive: triggerWasActive, session: session)
         triggerWasActive = active != nil
         switch action {

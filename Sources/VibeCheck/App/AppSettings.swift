@@ -280,6 +280,22 @@ final class AppSettings {
             KeepAwake.shared.check()
         }
     }
+    /// Trigger: stay awake inside a weekly window (`keepAwakeSchedule`).
+    var keepAwakeOnSchedule: Bool {
+        didSet { save(keepAwakeOnSchedule, "keepAwakeOnSchedule", structural: false); KeepAwake.shared.check() }
+    }
+    var keepAwakeScheduleDays: Int {
+        didSet { save(keepAwakeScheduleDays, "keepAwakeScheduleDays", structural: false); KeepAwake.shared.check() }
+    }
+    var keepAwakeScheduleStart: Int {
+        didSet { save(keepAwakeScheduleStart, "keepAwakeScheduleStart", structural: false); KeepAwake.shared.check() }
+    }
+    var keepAwakeScheduleEnd: Int {
+        didSet { save(keepAwakeScheduleEnd, "keepAwakeScheduleEnd", structural: false); KeepAwake.shared.check() }
+    }
+    var keepAwakeSchedule: AwakeSchedule {
+        AwakeSchedule(days: keepAwakeScheduleDays, startMinute: keepAwakeScheduleStart, endMinute: keepAwakeScheduleEnd)
+    }
     /// Folder the downloads trigger watches; empty means the user's Downloads folder.
     var keepAwakeDownloadsFolder: String {
         didSet {
@@ -384,6 +400,10 @@ final class AppSettings {
         keepAwakeWithDisplay = defaults.bool(forKey: "keepAwakeWithDisplay")
         keepAwakeWhileDownloading = defaults.bool(forKey: "keepAwakeWhileDownloading")
         keepAwakeDownloadsFolder = defaults.string(forKey: "keepAwakeDownloadsFolder") ?? ""
+        keepAwakeOnSchedule = defaults.bool(forKey: "keepAwakeOnSchedule")
+        keepAwakeScheduleDays = defaults.object(forKey: "keepAwakeScheduleDays") as? Int ?? AwakeSchedule.weekdays
+        keepAwakeScheduleStart = defaults.object(forKey: "keepAwakeScheduleStart") as? Int ?? 9 * 60
+        keepAwakeScheduleEnd = defaults.object(forKey: "keepAwakeScheduleEnd") as? Int ?? 17 * 60
         bluetoothOffWhileAsleep = defaults.bool(forKey: "bluetoothOffWhileAsleep")
         alertRules = defaults.data(forKey: "alertRules")
             .flatMap { try? JSONDecoder().decode([AlertRule].self, from: $0) } ?? AlertRule.defaults
