@@ -13,6 +13,7 @@ struct MenuBarLabel: View {
     static let activeThreshold: Double = 2048
 
     private var style: LabelStyle { settings.labelStyle(module) }
+    private var options: ItemOptions { settings.options(module) }
     private var gap: CGFloat { settings.menuBarSpacing.inner }
     private let valueFont = Font.system(size: 11, weight: .medium).monospacedDigit()
 
@@ -26,11 +27,10 @@ struct MenuBarLabel: View {
             case .gpu: meter(Fmt.percent(stats.gpu.utilization)) {
                 MiniBars(totals: stats.gpuHistory.suffix(8), system: [], color: tint(Palette.gpu))
             }
-            case .memory: meter(Fmt.percent(stats.memory.usage)) { memoryGauge }
+            case .memory: meter(memoryText, width: options.memoryValue == .percent ? 30 : 36) { memoryGauge }
             case .network: network
-            case .disk: rates(top: ("R", stats.disk.readRate, Palette.read),
-                              bottom: ("W", stats.disk.writeRate, Palette.write), highlight: false)
-            case .sensors: iconValue(stats.sensors.hottest.map { String(format: "%.0f°", $0) } ?? "–")
+            case .disk: disk
+            case .sensors: iconValue(stats.sensors.hottest.map { String(format: "%.0f°", temperature($0)) } ?? "–")
             case .battery: battery
             case .clock: clock
             case .weather: weather
@@ -51,14 +51,42 @@ struct MenuBarLabel: View {
 
     /// Graph-style modules: graph + value, icon + value, or value only.
     @ViewBuilder
-    private func meter<Graph: View>(_ text: String, @ViewBuilder graph: () -> Graph) -> some View {
+    private func meter<Graph: View>(_ text: String, width: CGFloat = 30, @ViewBuilder graph: () -> Graph) -> some View {
         HStack(spacing: gap) {
             switch style {
             case .standard: graph().frame(width: module == .memory ? 7 : 23, height: 15)
             case .iconAndValue: Image(systemName: module.symbol).font(.system(size: 12))
             case .valueOnly, .limits: EmptyView()
             }
-            value(text)
+            value(text, width: width)
+        }
+    }
+
+    private var memoryText: String {
+        let m = stats.memory
+        switch options.memoryValue {
+        case .percent: return Fmt.percent(m.usage)
+        case .used: return Fmt.compactBytes(m.used)
+        case .free: return Fmt.compactBytes(max(0, m.total - m.used))
+        }
+    }
+
+    private func temperature(_ celsius: Double) -> Double {
+        options.sensorUnit == .fahrenheit ? celsius * 9 / 5 + 32 : celsius
+    }
+
+    @ViewBuilder
+    private var disk: some View {
+        if options.diskValue == .free {
+            let volume = stats.volumes.first { $0.path == "/" } ?? stats.volumes.first
+            HStack(spacing: gap) {
+                if style != .valueOnly { Image(systemName: "internaldrive").font(.system(size: 12)) }
+                value(volume.map { Fmt.compactBytes($0.available) } ?? "–", width: 36)
+            }
+            .help("Startup disk free space")
+        } else {
+            rates(top: ("R", stats.disk.readRate, Palette.read),
+                  bottom: ("W", stats.disk.writeRate, Palette.write), highlight: false)
         }
     }
 
@@ -80,9 +108,16 @@ struct MenuBarLabel: View {
     private var network: some View {
         let offline = stats.network.interface == nil
         return ZStack {
-            rates(top: ("↑", stats.network.upload, Palette.upload),
-                  bottom: ("↓", stats.network.download, Palette.download), highlight: true)
-                .opacity(offline ? 0 : 1)
+            Group {
+                switch options.networkDirections {
+                case .both:
+                    rates(top: ("↑", stats.network.upload, Palette.upload),
+                          bottom: ("↓", stats.network.download, Palette.download), highlight: true)
+                case .download: singleRate(("↓", stats.network.download, Palette.download))
+                case .upload: singleRate(("↑", stats.network.upload, Palette.upload))
+                }
+            }
+            .opacity(offline ? 0 : 1)
             HStack(spacing: 2) {
                 Image(systemName: "network.slash").font(.system(size: 10, weight: .semibold))
                     .networkStatusDot(online: false, size: 4)
@@ -130,6 +165,23 @@ struct MenuBarLabel: View {
         }
     }
 
+    /// One direction, one line, at the normal value size.
+    private func singleRate(_ line: (label: String, rate: Double, color: Color)) -> some View {
+        let active = line.rate >= Self.activeThreshold
+        return HStack(spacing: gap) {
+            if style == .iconAndValue {
+                Image(systemName: module.symbol).font(.system(size: 11))
+                    .foregroundStyle(active ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
+                    .networkStatusDot(online: stats.network.interface != nil, size: 4)
+            }
+            value(Fmt.compactRate(line.rate), width: 34)
+            if style == .standard {
+                Text(line.label).font(.system(size: 11, weight: active ? .heavy : .semibold))
+                    .foregroundStyle(active ? AnyShapeStyle(tint(line.color)) : AnyShapeStyle(.tertiary))
+            }
+        }
+    }
+
     private func iconValue(_ text: String) -> some View {
         HStack(spacing: gap) {
             if style != .valueOnly {
@@ -145,7 +197,22 @@ struct MenuBarLabel: View {
             if style != .valueOnly {
                 Image(systemName: b.present ? batterySymbol(b) : "powerplug").font(.system(size: 13))
             }
-            value(b.present ? Fmt.percent(b.percent) : "AC")
+            if !b.present {
+                value("AC")
+            } else {
+                let time = b.minutesRemaining.map(Fmt.clockDuration) ?? "–:––"
+                switch options.batteryValue {
+                case .percent: value(Fmt.percent(b.percent))
+                case .time: value(time, width: 34)
+                case .both:
+                    VStack(alignment: .trailing, spacing: -2) {
+                        Text(Fmt.percent(b.percent))
+                        Text(time).foregroundStyle(.secondary)
+                    }
+                    .font(.system(size: 9, weight: .semibold).monospacedDigit())
+                    .frame(width: 28, alignment: .trailing)
+                }
+            }
         }
     }
 
@@ -162,40 +229,45 @@ struct MenuBarLabel: View {
         }
     }
 
-    /// The "Limits left" style keeps one width in every state (loading, estimate, limits): the status
-    /// item's length is only measured when it's created or settings change, so it must not grow later.
+    /// Limits keep one width in every state (loading, estimate, limits): the status item's length is only
+    /// measured when it's created or settings change, so it must not grow later.
     static let limitsWidth: CGFloat = 104
+    static let limitsWidthNoReset: CGFloat = 52
 
     @ViewBuilder
     private var agents: some View {
-        if style == .limits {
-            agentsContent.frame(width: Self.limitsWidth, alignment: .leading)
+        let options = self.options
+        if options.agentValue.isLimits {
+            agentsContent(options)
+                .frame(width: options.agentShowReset ? Self.limitsWidth : Self.limitsWidthNoReset, alignment: .leading)
         } else {
-            agentsContent
+            agentsContent(options)
         }
     }
 
     @ViewBuilder
-    private var agentsContent: some View {
-        let sample = AgentUsageStore.shared.sample
-        switch style == .limits ? sample.menuBarLimits : nil {
-        case .limits(_, let limits):
-            AgentLimitsLabel(limits: limits, tint: tint(Palette.agents))
-        case .claudeEstimate(let block):
-            ClaudeEstimateLabel(block: block, today: sample.agents.first { $0.agent == .claude }?.today.total ?? 0,
-                                tint: tint(Palette.agents))
-        case nil:
-            agentTokens(sample)
+    private func agentsContent(_ options: ItemOptions) -> some View {
+        let showIcon = style != .valueOnly
+        switch AgentUsageStore.shared.sample.menuBarContent(options) {
+        case .limits(let limits, let used):
+            AgentLimitsLabel(limits: limits, tint: tint(Palette.agents), used: used,
+                             showReset: options.agentShowReset, showIcon: showIcon)
+        case .claudeEstimate(let block, let today) where options.agentShowReset:
+            ClaudeEstimateLabel(block: block, today: today, tint: tint(Palette.agents), showIcon: showIcon)
+        case .claudeEstimate(_, let today):
+            agentTokens(today, showIcon: showIcon)
+        case .tokens(let total):
+            agentTokens(total, showIcon: showIcon)
         }
     }
 
-    private func agentTokens(_ sample: AgentUsageSample) -> some View {
+    private func agentTokens(_ total: Int, showIcon: Bool) -> some View {
         HStack(spacing: gap) {
-            if style != .valueOnly {
+            if showIcon {
                 Image(systemName: "sparkles").font(.system(size: 12))
                     .foregroundStyle(tint(Palette.agents))
             }
-            value(sample.scanned ? Fmt.tokens(sample.today.total) : "–", width: 34)
+            value(AgentUsageStore.shared.sample.scanned ? Fmt.tokens(total) : "–", width: 34)
         }
     }
 
@@ -284,20 +356,26 @@ struct MiniBars: View {
 struct AgentLimitsLabel: View {
     let limits: [RateWindow]
     let tint: Color
+    /// Show "% used" instead of "% left".
+    var used = false
+    var showReset = true
+    var showIcon = true
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 60)) { context in
             HStack(spacing: 4) {
-                Image(systemName: "sparkles").font(.system(size: 11)).foregroundStyle(tint)
+                if showIcon { Image(systemName: "sparkles").font(.system(size: 11)).foregroundStyle(tint) }
                 VStack(alignment: .trailing, spacing: -1) {
                     ForEach(limits.prefix(2), id: \.windowMinutes) { limit in
                         HStack(spacing: 3) {
-                            Text("\(Int(limit.leftPercent.rounded()))%")
+                            Text("\(Int((used ? min(max(limit.usedPercent, 0), 100) : limit.leftPercent).rounded()))%")
                                 .frame(width: 30, alignment: .trailing)
                                 .foregroundStyle(limit.isAheadOfPace(now: context.date)
                                                  ? AnyShapeStyle(limit.gaugeColor(now: context.date)) : AnyShapeStyle(.primary))
-                            Image(systemName: "arrow.clockwise").font(.system(size: 7, weight: .bold))
-                            Text(limit.countdown(now: context.date)).frame(width: 44, alignment: .leading)
+                            if showReset {
+                                Image(systemName: "arrow.clockwise").font(.system(size: 7, weight: .bold))
+                                Text(limit.countdown(now: context.date)).frame(width: 44, alignment: .leading)
+                            }
                         }
                     }
                 }
@@ -305,7 +383,9 @@ struct AgentLimitsLabel: View {
                 .lineLimit(1)
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(limits.prefix(2).map { "\($0.cardTitle) \(Int($0.leftPercent.rounded())) percent left" }
+            .accessibilityLabel(limits.prefix(2).map {
+                used ? "\($0.cardTitle) \(Int($0.usedPercent.rounded())) percent used"
+                     : "\($0.cardTitle) \(Int($0.leftPercent.rounded())) percent left" }
                 .joined(separator: ", "))
         }
     }
@@ -317,12 +397,13 @@ struct ClaudeEstimateLabel: View {
     let block: UsageBlock
     let today: Int
     let tint: Color
+    var showIcon = true
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 60)) { context in
             let reset = RateWindow(usedPercent: 0, windowMinutes: 300, resetsAt: block.end).countdown(now: context.date)
             HStack(spacing: 4) {
-                Image(systemName: "sparkles").font(.system(size: 11)).foregroundStyle(tint)
+                if showIcon { Image(systemName: "sparkles").font(.system(size: 11)).foregroundStyle(tint) }
                 VStack(alignment: .trailing, spacing: -1) {
                     HStack(spacing: 3) {
                         Text(Fmt.tokens(block.tokens.total)).frame(width: 30, alignment: .trailing)

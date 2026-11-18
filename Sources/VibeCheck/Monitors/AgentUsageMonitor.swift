@@ -100,29 +100,6 @@ extension RateWindow {
     }
 }
 
-/// What the "Limits left" menu bar style shows.
-enum MenuBarLimits: Equatable {
-    /// Provider-reported limits, shortest window first.
-    case limits(AgentKind, [RateWindow])
-    /// Claude Code without live limits: its local 5-hour window estimate.
-    case claudeEstimate(UsageBlock)
-}
-
-extension AgentUsageSample {
-    /// Claude Code comes first whenever it's in use: its live limits, else its local estimate. Another
-    /// agent's limits are only shown when Claude Code isn't used on this Mac (or has no window right now).
-    var menuBarLimits: MenuBarLimits? {
-        func sorted(_ s: AgentSummary) -> MenuBarLimits {
-            .limits(s.agent, s.limits.sorted { $0.windowMinutes < $1.windowMinutes })
-        }
-        if let claude = agents.first(where: { $0.agent == .claude }) {
-            if !claude.limits.isEmpty { return sorted(claude) }
-            if let block = claude.block { return .claudeEstimate(block) }
-        }
-        return agents.first(where: { !$0.limits.isEmpty }).map(sorted)
-    }
-}
-
 /// The current 5-hour window, estimated from local logs the usual way.
 struct UsageBlock: Equatable {
     var start: Date

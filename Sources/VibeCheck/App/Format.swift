@@ -33,6 +33,20 @@ enum Fmt {
         return String(format: "%.1fG", mb / 1024)
     }
 
+    /// Short sizes for the menu bar: "512M", "12.3G", "1.2T".
+    static func compactBytes(_ value: Double) -> String {
+        let gb = max(0, value) / 1_073_741_824
+        if gb < 1 { return String(format: "%.0fM", gb * 1024) }
+        if gb < 100 { return String(format: "%.1fG", gb) }
+        if gb < 1000 { return String(format: "%.0fG", gb) }
+        return String(format: "%.1fT", gb / 1024)
+    }
+
+    /// "3:25" for minutes left, as the menu bar battery shows it.
+    static func clockDuration(_ minutes: Int) -> String {
+        String(format: "%d:%02d", max(0, minutes) / 60, max(0, minutes) % 60)
+    }
+
     static func percent(_ fraction: Double) -> String {
         String(format: "%.0f%%", max(0, fraction) * 100)
     }

@@ -131,8 +131,20 @@ private struct MenuBarSettings: View {
 private struct ModuleRow: View {
     let module: Module
     @Environment(AppSettings.self) private var settings
+    @State private var expanded = false
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            header
+            if expanded {
+                ItemOptionsView(module: module)
+                    .padding(.leading, 26)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+    }
+
+    private var header: some View {
         HStack {
             Image(systemName: "line.3.horizontal")
                 .foregroundStyle(.tertiary)
@@ -149,6 +161,18 @@ private struct ModuleRow: View {
             .labelsHidden()
             .fixedSize()
             .disabled(!settings.isEnabled(module))
+            if ItemOptions.hasOptions(module) {
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { expanded.toggle() }
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .foregroundStyle(expanded ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
+                }
+                .buttonStyle(.borderless)
+                .help(expanded ? "Hide \(module.title) options" : "\(module.title) options")
+                .accessibilityLabel("\(module.title) options")
+                .disabled(!settings.isEnabled(module))
+            }
         }
         .contextMenu {
             if let index = settings.moduleOrder.firstIndex(of: module) {
@@ -160,6 +184,91 @@ private struct ModuleRow: View {
         }
     }
 }
+
+/// Deep options for one menu bar item, with a live preview of just that item.
+struct ItemOptionsView: View {
+    let module: Module
+    @Environment(AppSettings.self) private var settings
+
+    private var options: ItemOptions { settings.options(module) }
+
+    private func binding<Value>(_ keyPath: WritableKeyPath<ItemOptions, Value>) -> Binding<Value> {
+        Binding(get: { settings.options(module)[keyPath: keyPath] },
+                set: { newValue in settings.updateOptions(module) { $0[keyPath: keyPath] = newValue } })
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text("Preview").font(.caption).foregroundStyle(.secondary)
+                MenuBarLabel(module: module, padded: true)
+                    .padding(.vertical, 2)
+                    .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(.bar))
+                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
+                    .accessibilityLabel("\(module.title) preview")
+            }
+            switch module {
+            case .agents: agents
+            case .memory: picker("Show", binding(\.memoryValue))
+            case .network: picker("Show", binding(\.networkDirections))
+            case .disk: picker("Show", binding(\.diskValue))
+            case .battery: picker("Show", binding(\.batteryValue))
+            case .sensors:
+                Picker("Unit", selection: binding(\.sensorUnit)) {
+                    Text("°C").tag(TemperatureUnit.celsius)
+                    Text("°F").tag(TemperatureUnit.fahrenheit)
+                }
+                .pickerStyle(.segmented)
+            default: EmptyView()
+            }
+        }
+        .controlSize(.small)
+    }
+
+    private func picker<Value: CaseIterable & Identifiable & Hashable>(_ title: String, _ selection: Binding<Value>) -> some View
+    where Value.AllCases: RandomAccessCollection, Value: OptionTitled {
+        Picker(title, selection: selection) {
+            ForEach(Value.allCases) { Text($0.title).tag($0) }
+        }
+    }
+
+    @ViewBuilder
+    private var agents: some View {
+        picker("Show", binding(\.agentValue))
+        if options.agentValue.isLimits {
+            picker("Limits", binding(\.agentWindows))
+            Toggle("Show time until reset", isOn: binding(\.agentShowReset))
+        }
+        Toggle("Count all agents", isOn: Binding(get: { options.agents.isEmpty }, set: { all in
+            settings.updateOptions(module) { $0.agents = all ? [] : [.claude] }
+        }))
+        if !options.agents.isEmpty {
+            HStack(spacing: 12) {
+                ForEach(AgentKind.allCases) { kind in
+                    Toggle(kind.title, isOn: Binding(get: { options.agents.contains(kind) }, set: { on in
+                        settings.updateOptions(module) { if on { $0.agents.insert(kind) } else { $0.agents.remove(kind) } }
+                    }))
+                    .toggleStyle(.checkbox)
+                    // At least one agent stays ticked.
+                    .disabled(options.agents == [kind])
+                }
+            }
+        }
+        if options.agentValue.isLimits, options.includes(.claude), !ClaudeLiveLimits.shared.isOn {
+            Text("Claude Code shows its local 5-hour estimate until \"Show Claude's real plan limits\" is on in General.")
+                .settingsFooter()
+        }
+    }
+}
+
+/// Option enums with a user-facing title.
+protocol OptionTitled { var title: String { get } }
+extension ItemOptions.AgentValue: OptionTitled {}
+extension ItemOptions.AgentWindows: OptionTitled {}
+extension ItemOptions.MemoryValue: OptionTitled {}
+extension ItemOptions.Directions: OptionTitled {}
+extension ItemOptions.DiskValue: OptionTitled {}
+extension ItemOptions.BatteryValue: OptionTitled {}
 
 /// A slice of menu bar drawn with the real labels, so what you see here is what you get.
 private struct MenuBarPreview: View {

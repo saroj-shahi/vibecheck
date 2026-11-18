@@ -56,7 +56,7 @@ enum Module: String, CaseIterable, Identifiable {
     var labelStyles: [LabelStyle] {
         switch self {
         case .sensors, .battery, .weather: [.standard, .valueOnly]
-        case .agents: [.standard, .valueOnly, .limits]
+        case .agents: [.standard, .valueOnly]
         case .clock: [.standard, .iconAndValue]
         default: [.standard, .iconAndValue, .valueOnly]
         }
@@ -194,6 +194,8 @@ final class AppSettings {
         }
     }
     private(set) var labelStyles: [Module: LabelStyle]
+    /// Per-item options beyond the look (which agents, % left or used, memory amount, …).
+    private(set) var itemOptions: [Module: ItemOptions] = [:]
     /// User-chosen order for the combined item, the deck grid and (on creation) separate items.
     private(set) var moduleOrder: [Module]
     var menuBarSpacing: MenuBarSpacing {
@@ -327,6 +329,11 @@ final class AppSettings {
                 result[module] = style
             }
         }
+        let storedOptions = defaults.data(forKey: "itemOptions")
+            .flatMap { try? JSONDecoder().decode([String: ItemOptions].self, from: $0) } ?? [:]
+        itemOptions = storedOptions.reduce(into: [:]) { result, entry in
+            if let module = Module(rawValue: entry.key) { result[module] = entry.value }
+        }
         menuBarSpacing = defaults.string(forKey: "menuBarSpacing").flatMap(MenuBarSpacing.init(rawValue:)) ?? .normal
         autoFitNotch = defaults.object(forKey: "autoFitNotch") as? Bool ?? true
         notchMaxStats = defaults.integer(forKey: "notchMaxStats")
@@ -353,11 +360,38 @@ final class AppSettings {
         bluetoothOffWhileAsleep = defaults.bool(forKey: "bluetoothOffWhileAsleep")
         alertRules = defaults.data(forKey: "alertRules")
             .flatMap { try? JSONDecoder().decode([AlertRule].self, from: $0) } ?? AlertRule.defaults
+        // The old "Limits left" look is now an Agents option.
+        if labelStyles[.agents] == .limits {
+            labelStyles[.agents] = .standard
+            var agents = itemOptions[.agents] ?? ItemOptions()
+            agents.agentValue = .limitsLeft
+            itemOptions[.agents] = agents
+            defaults.set(Dictionary(uniqueKeysWithValues: labelStyles.map { ($0.key.rawValue, $0.value.rawValue) }),
+                         forKey: "labelStyles")
+            saveItemOptions()
+        }
     }
 
     func labelStyle(_ module: Module) -> LabelStyle {
         let style = labelStyles[module] ?? .standard
         return module.labelStyles.contains(style) ? style : .standard
+    }
+
+    func options(_ module: Module) -> ItemOptions { itemOptions[module] ?? ItemOptions() }
+
+    /// Changes one item's options; the item is re-measured (its width can change).
+    func updateOptions(_ module: Module, _ change: (inout ItemOptions) -> Void) {
+        var value = options(module)
+        change(&value)
+        guard value != options(module) else { return }
+        itemOptions[module] = value
+        saveItemOptions()
+        NotificationCenter.default.post(name: .vibeCheckSettingsChanged, object: nil)
+    }
+
+    private func saveItemOptions() {
+        let stored = Dictionary(uniqueKeysWithValues: itemOptions.map { ($0.key.rawValue, $0.value) })
+        defaults.set(try? JSONEncoder().encode(stored), forKey: "itemOptions")
     }
 
     func setLabelStyle(_ style: LabelStyle, for module: Module) {
