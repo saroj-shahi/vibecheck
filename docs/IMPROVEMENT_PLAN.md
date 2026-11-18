@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 14 commits · ~6,200 lines of Swift · 48 tests_
+_Last updated: 2026-11-18 · version 1.5 · 19 commits · ~6,200 lines of Swift · 48 tests_
 
 ---
 
@@ -214,7 +214,7 @@ Notes: builds and `swift test` passes; installed and the green dot was seen in t
 
 | Commit | What |
 |---|---|
-| _(uncommitted)_ | Keep awake, modeled on classic keep-awake apps: `KeepAwake.swift` (sessions + IOKit assertion), `KeepAwakeViews.swift` (deck cup menu, status strip, Settings pane), cup in the combined and standalone items, notch fit counts the cup, 5 tests. |
+| `6b6e8a1` | Keep awake, modeled on classic keep-awake apps: `KeepAwake.swift` (sessions + IOKit assertion), `KeepAwakeViews.swift` (deck cup menu, status strip, Settings pane), cup in the combined and standalone items, notch fit counts the cup, 5 tests. |
 
 Notes: `swift test` passes (48). The built app was run with launch arguments (`-keepAwakeAtLaunch YES`, `-keepAwakeDisplayOn '<false/>'`), which don't touch saved settings; `pmset -g assertions` showed `PreventUserIdleDisplaySleep` / `PreventUserIdleSystemSleep` named "VibeCheck keep awake", gone after quitting. No UI was looked at on screen. Booleans passed as launch arguments must use plist syntax (`'<false/>'`), since the settings read them with `as? Bool`. With separate items, the standalone item now also appears (cup only) when the ring is off and a session runs.
 
