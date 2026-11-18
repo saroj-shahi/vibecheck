@@ -30,7 +30,7 @@ enum AwakeEndReason: Equatable {
         case .timeUp: "Time's up."
         case .appQuit: "The app it was waiting on quit."
         case .lowBattery: "The battery got low."
-        case .triggerOff: "What started it is gone (unplugged or display disconnected)."
+        case .triggerOff: "What started it is gone (unplugged, display disconnected or downloads done)."
         case .focusDone: "Focus session done. Take a break."
         }
     }
@@ -128,10 +128,14 @@ enum AwakeTriggerAction: Equatable {
         return .none
     }
 
-    /// "while plugged in", "while a display is connected", or both; nil when no trigger is on and met.
-    static func description(onPower: Bool, externalDisplay: Bool) -> String? {
-        let parts = [onPower ? "plugged in" : nil, externalDisplay ? "a display is connected" : nil].compactMap { $0 }
-        return parts.isEmpty ? nil : "while " + parts.joined(separator: " and ")
+    /// "while plugged in", "while a display is connected", "while files are downloading", or several;
+    /// nil when no trigger is on and met.
+    static func description(onPower: Bool, externalDisplay: Bool, downloading: Bool = false) -> String? {
+        let parts = [onPower ? "plugged in" : nil, externalDisplay ? "a display is connected" : nil,
+                     downloading ? "files are downloading" : nil].compactMap { $0 }
+        guard let last = parts.last else { return nil }
+        let head = parts.dropLast().joined(separator: ", ")
+        return "while " + (head.isEmpty ? last : head + " and " + last)
     }
 }
 
@@ -220,9 +224,13 @@ final class KeepAwake {
 
     private func evaluateTriggers() {
         let battery = batteryProvider()
+        if settings.keepAwakeWhileDownloading {
+            DownloadsWatcher.shared.refreshIfDue(folder: settings.downloadsFolderURL)
+        }
         let active = AwakeTriggerAction.description(
             onPower: settings.keepAwakeOnPower && (!battery.present || battery.onAC),
-            externalDisplay: settings.keepAwakeWithDisplay && Self.hasExternalDisplay())
+            externalDisplay: settings.keepAwakeWithDisplay && Self.hasExternalDisplay(),
+            downloading: settings.keepAwakeWhileDownloading && DownloadsWatcher.shared.isActive)
         let action = AwakeTriggerAction.decide(active: active, wasActive: triggerWasActive, session: session)
         triggerWasActive = active != nil
         switch action {

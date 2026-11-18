@@ -272,6 +272,26 @@ final class AppSettings {
     var keepAwakeWithDisplay: Bool {
         didSet { save(keepAwakeWithDisplay, "keepAwakeWithDisplay", structural: false); KeepAwake.shared.check() }
     }
+    /// Trigger: stay awake while files are arriving in `downloadsFolderURL` (`DownloadsWatcher`).
+    var keepAwakeWhileDownloading: Bool {
+        didSet {
+            save(keepAwakeWhileDownloading, "keepAwakeWhileDownloading", structural: false)
+            DownloadsWatcher.shared.reset()
+            KeepAwake.shared.check()
+        }
+    }
+    /// Folder the downloads trigger watches; empty means the user's Downloads folder.
+    var keepAwakeDownloadsFolder: String {
+        didSet {
+            save(keepAwakeDownloadsFolder, "keepAwakeDownloadsFolder", structural: false)
+            DownloadsWatcher.shared.reset()
+            KeepAwake.shared.check()
+        }
+    }
+    var downloadsFolderURL: URL {
+        keepAwakeDownloadsFolder.isEmpty ? DownloadsWatcher.defaultFolder
+            : URL(fileURLWithPath: keepAwakeDownloadsFolder, isDirectory: true)
+    }
     /// Turn Bluetooth off while the Mac sleeps, back on at wake (`BluetoothSnooze`).
     var bluetoothOffWhileAsleep: Bool {
         didSet {
@@ -362,6 +382,8 @@ final class AppSettings {
         keepAwakeHotkey = defaults.object(forKey: "keepAwakeHotkey") as? Bool ?? true
         keepAwakeOnPower = defaults.bool(forKey: "keepAwakeOnPower")
         keepAwakeWithDisplay = defaults.bool(forKey: "keepAwakeWithDisplay")
+        keepAwakeWhileDownloading = defaults.bool(forKey: "keepAwakeWhileDownloading")
+        keepAwakeDownloadsFolder = defaults.string(forKey: "keepAwakeDownloadsFolder") ?? ""
         bluetoothOffWhileAsleep = defaults.bool(forKey: "bluetoothOffWhileAsleep")
         alertRules = defaults.data(forKey: "alertRules")
             .flatMap { try? JSONDecoder().decode([AlertRule].self, from: $0) } ?? AlertRule.defaults

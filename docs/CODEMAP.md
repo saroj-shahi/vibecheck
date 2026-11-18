@@ -13,7 +13,7 @@ are added or split. Decisions and history are in [IMPROVEMENT_PLAN.md](IMPROVEME
 | `SystemStats.swift` | The tick: samples every monitor, histories, demand counters (`processDemand`, `networkAppDemand`, `sensorDemand`), vibe input, listening ports |
 | `Vibe.swift` | Vibe score (vibing / mid / cooked) and the verdict sentence |
 | `Alerts.swift` | `AlertMetric`, `AlertRule` (sentence alerts), `AlertEngine` (evaluate, notify, history log) |
-| `KeepAwake.swift` | Sessions (`AwakeEnd`, focus sessions, triggers: power / display), IOKit assertion |
+| `KeepAwake.swift` | Sessions (`AwakeEnd`, focus sessions, triggers: power / display / downloads), IOKit assertion |
 | `KeepAwakeMenu.swift` | Native right-click menu of the Keep Awake menu bar item |
 | `Deck.swift` | `DeckPanel` (borderless non-activating NSPanel), `DeckController` (open/close, frame, keys, outside clicks) |
 | `AgentUsage.swift` | `AgentUsageStore` (rescans agent logs every 60 s, merges live Claude limits) |
@@ -21,6 +21,7 @@ are added or split. Decisions and history are in [IMPROVEMENT_PLAN.md](IMPROVEME
 | `ProcessKiller.swift` | Quit / Force Quit (optionally with subprocesses) with protected processes and pid start-time identity |
 | `QuickActions.swift` | Quick toggles: dark mode (System Events), mic mute (CoreAudio), empty Trash (Finder) |
 | `SecureInput.swift` | Which app holds Secure Event Input (shortcuts paused) |
+| `DownloadsWatcher.swift` | Whether files are arriving in the watched folder (keep-awake "while downloading" trigger) |
 | `BluetoothSnooze.swift` | Bluetooth off while asleep (private IOBluetooth, CoreBluetooth permission) |
 | `Weather.swift` | Open-Meteo forecast + city search, `TemperatureUnit` |
 | `Clock.swift`, `NotchFit.swift`, `Hotkeys.swift`, `HistoryStore.swift`, `NotificationLog.swift`, `SettingsBackup.swift`, `Intents.swift`, `Format.swift` | Clock formats/world clocks, notch fitting maths, global shortcuts, 1H/24H history file, notification history, settings export/import (key list!), Shortcuts actions, formatters (`Fmt`) |

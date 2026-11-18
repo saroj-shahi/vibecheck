@@ -135,6 +135,23 @@ struct KeepAwakeSettings: View {
             Section("Automatically keep awake") {
                 Toggle("While plugged in", isOn: $settings.keepAwakeOnPower)
                 Toggle("While an external display is connected", isOn: $settings.keepAwakeWithDisplay)
+                Toggle(isOn: $settings.keepAwakeWhileDownloading) {
+                    Text("While files are downloading")
+                    Text("Watches \(settings.downloadsFolderURL.lastPathComponent) for files that are still arriving.")
+                }
+                if settings.keepAwakeWhileDownloading {
+                    LabeledContent("Folder") {
+                        HStack {
+                            Text(settings.downloadsFolderURL.path(percentEncoded: false)
+                                    .replacingOccurrences(of: NSHomeDirectory(), with: "~"))
+                                .lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
+                            Button("Choose…") { chooseDownloadsFolder() }
+                            if !settings.keepAwakeDownloadsFolder.isEmpty {
+                                Button("Reset") { settings.keepAwakeDownloadsFolder = "" }
+                            }
+                        }
+                    }
+                }
             }
             Section {
                 Toggle("Keep the display on", isOn: $settings.keepAwakeDisplayOn)
@@ -169,6 +186,17 @@ struct KeepAwakeSettings: View {
             let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
             settings.keepAwakeUntilMinute = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
         }
+    }
+
+    private func chooseDownloadsFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = settings.downloadsFolderURL
+        panel.prompt = "Watch"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        settings.keepAwakeDownloadsFolder = url == DownloadsWatcher.defaultFolder ? "" : url.path(percentEncoded: false)
     }
 
     private func status(_ now: Date) -> String {

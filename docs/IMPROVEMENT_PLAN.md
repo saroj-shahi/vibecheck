@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 84 commits · ~10,350 lines of Swift · 134 tests_
+_Last updated: 2026-11-18 · version 1.5 · 85 commits · ~10,500 lines of Swift · 138 tests_
 
 ---
 
@@ -46,6 +46,7 @@ not the whole screen.
 | Keep awake: deck cup menu, menu bar cup, Settings pane | ✅ seen ("Until" submenu not opened: synthetic clicks don't open submenus) |
 | Keep awake: status strip while a session runs | ✅ seen 2026-11-18 ("Staying awake until you stop it" + Stop) |
 | Keep awake triggers: plugged in and external display start a session | ✅ built app with launch arguments + `pmset -g assertions` (on AC with the MSI display attached) |
+| Keep awake "while files are downloading": a `.crdownload` in a watched folder takes the assertion in ~8 s; renaming it (download done) releases it | ✅ built app with launch arguments + `pmset -g assertions`, scratch folder (2026-11-18) |
 | Keep awake: trigger ending on unplug / display removal, end notification, ⌃⌥⌘A, "Until" menu | ❌ not exercised (logic covered by unit tests) |
 | App Intents metadata in the bundle (5 actions, 2 enums, 4 phrases) | ✅ `extract.actionsdata` inspected; signature verifies |
 | CPU / memory with the deck closed: ~3.3% / ~100 MB installed (was ~3.9% / 138–155 MB) | ✅ installed app measured 3× 40 s with `ps`; `sample` shows our tick at ~70 ms per 20 s vs ~250 ms SwiftUI layout |
@@ -156,8 +157,10 @@ Synthetic clicks don't open menu submenus.
   score, alerts, keep awake and Shortcuts. Owner decided (2026-11-18): alerts and the vibe stay independent of
   which modules are shown, so these keep sampling. Done.
 - ~~Focus sessions~~ _(V)_: done 2026-11-18 (`0d3e3ed`), in the cup menu. Stopwatch / free timer not built.
-- **Downloads watcher** _(V)_: files arriving in a chosen folder; enables a "while downloads are active"
-  keep-awake trigger.
+- ~~Downloads watcher~~ _(V)_: done 2026-11-18, as the "While files are downloading" keep-awake trigger
+  (Settings → Keep Awake; watches ~/Downloads or a chosen folder). Seen working with the built app (see
+  table). Not yet tried with a real browser download or on the real ~/Downloads (macOS asks for folder
+  access the first time).
 - ~~Quick toggles~~ _(V)_: done 2026-11-18 (`e51d9d5`). Never run for real yet: the first Dark or Trash tap asks for
   Automation permission (System Events / Finder); mic mute untested on hardware.
 - **Keep awake, other triggers:** a schedule (weekdays 9–5), "while on Wi-Fi X" (SSID needs Location permission).
@@ -343,6 +346,15 @@ tables above and the lessons below; add new dated entries under "Recent sessions
   `/usr/bin/security` (an "Always Allow" would cover every process that runs it).
 
 ### Recent sessions
+
+#### 2026-11-18: downloads keep-awake trigger
+
+`DownloadsWatcher` scans the folder's top level off the main thread at most every 5 s: active while a
+browser in-progress file (`.crdownload`, `.download`, `.part`…) changed in the last 2 min, or any file in
+the last 10 s. From review: a scan that was running when the setting/folder changed is ignored
+(generation counter), and a scan stuck over 30 s (stalled network volume) counts as inactive. A project
+hook blocks Bash commands that look destructive (deletes, even inside quoted text); split test steps,
+avoid deletes, and finish a fake download by renaming it.
 
 #### 2026-11-18: secure input hint in the deck
 
