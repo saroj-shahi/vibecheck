@@ -46,4 +46,10 @@ struct SecureInputTests {
         #expect(!SecureInputStatus(appName: nil).message.contains("points to"))
         #expect(SecureInputStatus(appName: nil).message.hasPrefix("Shortcuts are paused while secure keyboard entry is on."))
     }
+
+    @Test func shortMessageForTheDeck() {
+        #expect(SecureInputStatus(appName: "Terminal").shortMessage
+                == "Shortcuts paused: secure keyboard entry is on (macOS points to Terminal)")
+        #expect(SecureInputStatus(appName: nil).shortMessage == "Shortcuts paused: secure keyboard entry is on")
+    }
 }

@@ -59,7 +59,11 @@ struct DeckRoot: View {
 struct DeckHome: View {
     @Environment(DeckModel.self) private var model
     @Environment(SystemStats.self) private var stats
+    @Environment(AppSettings.self) private var settings
     @AppStorage("showQuickToggles") private var showQuickToggles = true
+    /// Set while secure keyboard entry blocks the global shortcuts. A blocked press never reaches
+    /// VibeCheck, so the deck says so whenever it's open instead.
+    @State private var secureInput: SecureInputStatus?
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: Deck.columns)
 
@@ -68,6 +72,10 @@ struct DeckHome: View {
             header
             if let session = KeepAwake.shared.session {
                 AwakeStatusStrip(session: session)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+            if let secureInput {
+                SecureInputStrip(status: secureInput)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
             if showQuickToggles {
@@ -89,6 +97,15 @@ struct DeckHome: View {
         }
         .padding(16)
         .animation(Deck.animation, value: KeepAwake.shared.isActive)
+        .animation(Deck.animation, value: secureInput)
+        .task(id: settings.hotkeysEnabled) {
+            // Only while the deck home is on screen; cancelled when it goes away.
+            while !Task.isCancelled {
+                let status = settings.hotkeysEnabled ? SecureInput.current() : nil
+                if status != secureInput { secureInput = status }
+                try? await Task.sleep(for: .seconds(2))
+            }
+        }
     }
 
     private var header: some View {
@@ -119,6 +136,37 @@ struct DeckHome: View {
 }
 
 /// 26-pt circular icon button with a hover fill, used in deck headers.
+/// "Shortcuts paused" line in the deck; clicking it opens Settings → Shortcuts, which explains more.
+private struct SecureInputStrip: View {
+    let status: SecureInputStatus
+
+    var body: some View {
+        Button {
+            (NSApp.delegate as? AppDelegate)?.showSettings(.shortcuts)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.orange)
+                Text(status.shortMessage)
+                    .font(.system(size: 12))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .multilineTextAlignment(.leading)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.orange.opacity(0.12)))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(status.message)
+        .accessibilityLabel(status.message)
+        .accessibilityHint("Opens Shortcuts settings")
+    }
+}
+
 struct DeckIconButton: View {
     let symbol: String
     let help: String

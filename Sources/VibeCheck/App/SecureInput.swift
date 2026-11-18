@@ -12,6 +12,12 @@ struct SecureInputStatus: Equatable, Sendable {
     /// Name of the app holding secure input, when it could be determined.
     var appName: String?
 
+    /// One line for the deck; the full `message` goes in its tooltip.
+    var shortMessage: String {
+        appName.map { "Shortcuts paused: secure keyboard entry is on (macOS points to \($0))" }
+            ?? "Shortcuts paused: secure keyboard entry is on"
+    }
+
     /// Plain-language warning for Settings.
     var message: String {
         // macOS records the app that was frontmost when secure input started, which isn't always the one

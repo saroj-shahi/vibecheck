@@ -38,7 +38,7 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `PortSampler` (`lso
 |---|---|
 | `MenuBarLabels.swift` | Every menu bar label (fixed widths!), `AgentLimitsLabel`, `ClaudeEstimateLabel` |
 | `CombinedViews.swift` | Combined item, `AwakeCup`, `KeepAwakeItemLabel` |
-| `DeckView.swift` | Deck home (header, keep-awake strip, quick toggles, tiles), tiles' spoken labels |
+| `DeckView.swift` | Deck home (header, keep-awake strip, secure input strip, quick toggles, tiles), tiles' spoken labels |
 | `Panels.swift` | Detail panels per module, `ProcessList`, `ListeningPortsSection`, `USBDevicesSection` |
 | `AgentsPanel.swift` | Agents detail: Now card, charts, agent cards, `LimitGauge`, `PaceBar`, `DailyBars` |
 | `MetricChart.swift` | Detail charts (resampling, `SeriesShape`, scrubbing) |

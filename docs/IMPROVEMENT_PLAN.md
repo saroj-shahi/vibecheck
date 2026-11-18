@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 83 commits · ~10,300 lines of Swift · 133 tests_
+_Last updated: 2026-11-18 · version 1.5 · 84 commits · ~10,350 lines of Swift · 134 tests_
 
 ---
 
@@ -64,7 +64,7 @@ not the whole screen.
 | Quit / Force Quit: protection rules, start-time identity check, quitting a real child process | ✅ unit tests |
 | Quit / Force Quit: right-click menu, inline confirmation, notice in the deck | ❌ never seen |
 | Secure input: detection and app lookup with secure input really on | ✅ probe test (`EnableSecureEventInput`) |
-| Secure input: warning in Settings → Shortcuts | ❌ never seen |
+| Secure input: warning in Settings → Shortcuts, "Shortcuts paused" line in the deck | ❌ never seen |
 | Limits gauges in the deck | ✅ rendered offscreen with sample limits; not seen in the real deck |
 | Live Claude limits: parsing, merge | ✅ unit tests with fixture JSON |
 | Copilot CLI and OpenCode parsing, dedupe, SQLite read, scanner pass | ✅ unit tests + `--dump` on real data (both present; 0 tokens this week, which matches the files' dates) |
@@ -125,8 +125,10 @@ Synthetic clicks don't open menu submenus.
 1. ~~Kill process~~ _(V)_: done 2026-11-18 (`99b292e`, `7a0edf9`). ~~Kill the process tree~~ done 2026-11-18:
    "Quit / Force Quit X and Subprocesses" for plain processes with children (tested with a throwaway shell).
    Still open: seeing the menus and confirmation on screen.
-2. ~~Secure input warning~~ _(V)_: done 2026-11-18 (`cd4159a`). Still open: a hint in the deck when a global
-   shortcut is pressed but blocked, and seeing the Settings warning on screen.
+2. ~~Secure input warning~~ _(V)_: done 2026-11-18 (`cd4159a`). ~~Deck hint~~ done 2026-11-18: a blocked
+   shortcut press never reaches the app, so the deck shows a "Shortcuts paused" line whenever it's open
+   while secure input is on (click opens Settings → Shortcuts). Neither the deck line nor the Settings
+   warning has been seen on screen.
 3. **Agents: plan limits and cost** _(V)_:
    - ~~Limits UI~~ done 2026-11-18 (`3b8581d`): "% left" gauges with pace knob, burn per hour, reset countdown,
      "Limits left" stacked menu bar style.
@@ -341,6 +343,13 @@ tables above and the lessons below; add new dated entries under "Recent sessions
   `/usr/bin/security` (an "Always Allow" would cover every process that runs it).
 
 ### Recent sessions
+
+#### 2026-11-18: secure input hint in the deck
+
+Carbon hot keys get no event at all while secure input is on, so "hint when a shortcut is pressed but
+blocked" became a deck line shown while it's on (polled every 2 s, only while the deck home is visible and
+shortcuts are enabled). `keyboard.badge.exclamationmark` doesn't exist on this macOS; check SF Symbols with
+`NSImage(systemSymbolName:)` before using one. Not seen on screen.
 
 #### 2026-11-18: kill the process tree
 
