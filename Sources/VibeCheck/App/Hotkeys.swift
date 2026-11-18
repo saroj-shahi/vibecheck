@@ -13,7 +13,7 @@ final class HotkeyManager {
     private var handlerInstalled = false
     private static let signature: OSType = 0x5649_4245 // "VIBE"
     private static let keyCodes = [kVK_ANSI_1, kVK_ANSI_2, kVK_ANSI_3, kVK_ANSI_4, kVK_ANSI_5,
-                                   kVK_ANSI_6, kVK_ANSI_7, kVK_ANSI_8, kVK_ANSI_9]
+                                   kVK_ANSI_6, kVK_ANSI_7, kVK_ANSI_8, kVK_ANSI_9, kVK_ANSI_0]
 
     func register(modifier: HotkeyModifier) {
         unregisterAll()
@@ -30,7 +30,7 @@ final class HotkeyManager {
             let status = RegisterEventHotKey(UInt32(Self.keyCodes[index]), UInt32(flags), id,
                                              GetApplicationEventTarget(), 0, &ref)
             if status == noErr, let ref { refs.append(ref) }
-            else { NSLog("VibeCheck: shortcut \(modifier.symbols)\(index + 1) unavailable (\(status))") }
+            else { NSLog("VibeCheck: shortcut \(modifier.symbols)\(Module.allCases[index].shortcutKey ?? "?") unavailable (\(status))") }
         }
     }
 

@@ -266,6 +266,12 @@ struct TileContent {
             let v = String(format: "%.0f°", forecast.temperature)
             return TileContent(value: v, detail: WeatherCode.describe(forecast.code),
                                spoken: "\(v), \(WeatherCode.describe(forecast.code))")
+        case .agents:
+            let sample = AgentUsageStore.shared.sample
+            guard sample.scanned else { return TileContent(value: "—", detail: "Reading logs…", spoken: "loading") }
+            guard !sample.agents.isEmpty else { return TileContent(value: "—", detail: "No agent logs", spoken: "no agent logs found") }
+            let v = Fmt.tokens(sample.today.total)
+            return TileContent(value: v, spark: sample.hourly, spoken: "\(v) tokens today")
         }
     }
 }

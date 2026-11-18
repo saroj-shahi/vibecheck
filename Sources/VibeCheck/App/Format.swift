@@ -13,6 +13,16 @@ enum Fmt {
 
     static func rate(_ value: Double) -> String { bytes(value) + "/s" }
 
+    /// Token counts: "840", "12K", "1.2M", "412M", "1.3B".
+    static func tokens(_ value: Int) -> String {
+        let v = Double(max(0, value))
+        for (limit, suffix) in [(1e9, "B"), (1e6, "M"), (1e3, "K")] where v >= limit {
+            let scaled = v / limit
+            return scaled < 10 ? String(format: "%.1f%@", scaled, suffix) : String(format: "%.0f%@", scaled, suffix)
+        }
+        return String(Int(v))
+    }
+
     /// Short form for the menu bar, e.g. "1.2M", "340K", "0K".
     static func compactRate(_ value: Double) -> String {
         let kb = max(0, value) / 1024

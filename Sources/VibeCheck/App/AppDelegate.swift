@@ -165,6 +165,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         HotkeyManager.shared.onTrigger = { [weak self] module in self?.openFromShortcut(module) }
         configureHotkeys()
         WeatherStore.shared.refresh()
+        AgentUsageStore.shared.start()
 
         NotificationCenter.default.addObserver(forName: .vibeCheckSettingsChanged, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {

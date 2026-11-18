@@ -34,6 +34,7 @@ struct MenuBarLabel: View {
             case .battery: battery
             case .clock: clock
             case .weather: weather
+            case .agents: agents
             }
         }
         .frame(height: 22)
@@ -158,6 +159,17 @@ struct MenuBarLabel: View {
                     .frame(width: 18)
             }
             value(forecast.map { String(format: "%.0f°", $0.temperature) } ?? "–", width: 27)
+        }
+    }
+
+    private var agents: some View {
+        let sample = AgentUsageStore.shared.sample
+        return HStack(spacing: gap) {
+            if style != .valueOnly {
+                Image(systemName: "sparkles").font(.system(size: 12))
+                    .foregroundStyle(tint(Palette.agents))
+            }
+            value(sample.scanned ? Fmt.tokens(sample.today.total) : "–", width: 34)
         }
     }
 

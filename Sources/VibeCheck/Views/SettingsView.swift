@@ -214,7 +214,7 @@ private struct GeneralSettings: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("VibeCheck").font(.system(size: 17, weight: .bold, design: .rounded))
                         Text("Is your Mac vibing or cooked?").font(.callout).foregroundStyle(.secondary)
-                        Text("Version 1.5 · Click the menu bar item to check the vibes. ⌃⌥⌘1–9 open a module from anywhere.")
+                        Text("Version 1.5 · Click the menu bar item to check the vibes. ⌃⌥⌘1–9 and 0 open a module from anywhere.")
                             .font(.caption).foregroundStyle(.tertiary)
                     }
                 }
@@ -542,7 +542,7 @@ private struct ShortcutSettings: View {
                     HStack {
                         Label(module.title, systemImage: module.symbol)
                         Spacer()
-                        Text("\(settings.hotkeyModifier.symbols)\(index + 1)")
+                        Text(module.shortcutKey.map { "\(settings.hotkeyModifier.symbols)\($0)" } ?? "—")
                             .font(.body.monospaced())
                             .foregroundStyle(settings.isEnabled(module) ? .primary : .tertiary)
                     }

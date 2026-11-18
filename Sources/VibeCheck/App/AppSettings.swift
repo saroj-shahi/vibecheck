@@ -4,7 +4,7 @@ import ServiceManagement
 import SwiftUI
 
 enum Module: String, CaseIterable, Identifiable {
-    case cpu, gpu, memory, network, disk, sensors, battery, clock, weather
+    case cpu, gpu, memory, network, disk, sensors, battery, clock, weather, agents
 
     var id: String { rawValue }
 
@@ -19,6 +19,7 @@ enum Module: String, CaseIterable, Identifiable {
         case .battery: "Battery"
         case .clock: "Clock"
         case .weather: "Weather"
+        case .agents: "Agents"
         }
     }
 
@@ -33,6 +34,7 @@ enum Module: String, CaseIterable, Identifiable {
         case .battery: "battery.75percent"
         case .clock: "clock"
         case .weather: "cloud.sun"
+        case .agents: "sparkles"
         }
     }
 
@@ -47,18 +49,27 @@ enum Module: String, CaseIterable, Identifiable {
         case .battery: .green
         case .clock: .indigo
         case .weather: .cyan
+        case .agents: Palette.agents
         }
     }
 
     var labelStyles: [LabelStyle] {
         switch self {
-        case .sensors, .battery, .weather: [.standard, .valueOnly]
+        case .sensors, .battery, .weather, .agents: [.standard, .valueOnly]
         case .clock: [.standard, .iconAndValue]
         default: LabelStyle.allCases
         }
     }
 
     var enabledByDefault: Bool { ![.battery, .clock, .weather].contains(self) }
+
+    /// Number key for ⌘N in the deck and the global shortcuts: 1–9, then 0 for the tenth module.
+    var shortcutKey: String? {
+        guard let index = Module.allCases.firstIndex(of: self), index < 10 else { return nil }
+        return index == 9 ? "0" : String(index + 1)
+    }
+
+    static func forShortcutKey(_ key: String) -> Module? { allCases.first { $0.shortcutKey == key } }
 }
 
 enum Palette {
@@ -74,6 +85,7 @@ enum Palette {
     static let upload = Color(red: 1.0, green: 0.4, blue: 0.62)
     static let read = Color(red: 0.35, green: 0.75, blue: 0.4)
     static let write = Color(red: 1.0, green: 0.7, blue: 0.2)
+    static let agents = Color(red: 0.85, green: 0.5, blue: 0.95)
 
     static func pressure(_ p: MemoryPressure) -> Color {
         switch p {
@@ -109,7 +121,7 @@ enum LabelStyle: String, CaseIterable, Identifiable {
             case .memory: "Gauge + value"
             case .network: "Rates + arrows"
             case .disk: "Rates + R/W"
-            case .sensors, .battery, .weather: "Icon + value"
+            case .sensors, .battery, .weather, .agents: "Icon + value"
             case .clock: "Time only"
             }
         case .iconAndValue: module == .clock ? "Icon + time" : "Icon + value"
@@ -360,5 +372,6 @@ final class AppSettings {
         defaults.set(enabledModules.map(\.rawValue), forKey: "enabledModules")
         NotificationCenter.default.post(name: .vibeCheckSettingsChanged, object: nil)
         if module == .weather { WeatherStore.shared.refresh() }
+        if module == .agents { AgentUsageStore.shared.refresh() }
     }
 }

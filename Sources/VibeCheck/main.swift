@@ -68,6 +68,17 @@ MainActor.assumeIsolated {
             extra.signal()
         }
         extra.wait()
+        let scanner = AgentUsageScanner()
+        let started = Date()
+        let usage = scanner.scan()
+        let first = Date().timeIntervalSince(started)
+        let again = Date()
+        _ = scanner.scan()
+        print("AGNT today \(Fmt.tokens(usage.today.total)) (in \(Fmt.tokens(usage.today.input)) out \(Fmt.tokens(usage.today.output)) cw \(Fmt.tokens(usage.today.cacheWrite)) cr \(Fmt.tokens(usage.today.cacheRead))) week \(Fmt.tokens(usage.week.total)) scan \(String(format: "%.2f", first))s, rescan \(String(format: "%.3f", Date().timeIntervalSince(again)))s")
+        for a in usage.agents {
+            print("     \(a.agent.title): today \(Fmt.tokens(a.today.total)) week \(Fmt.tokens(a.week.total)) window \(a.block.map { "\(Fmt.tokens($0.tokens.total)) until \($0.end.formatted(date: .omitted, time: .shortened))" } ?? "-") limits \(a.limits.map { "\($0.title) \($0.usedPercent)%" }) models \(a.modelsToday.prefix(3).map(\.name))")
+        }
+        print("     projects " + usage.projectsToday.prefix(4).map { "\($0.name) \(Fmt.tokens($0.tokens))" }.joined(separator: " | "))
         print("UP   \(Fmt.uptime(SysctlReader.uptime()))")
         exit(0)
     }

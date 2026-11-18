@@ -43,6 +43,7 @@ VibeCheck sums up your Mac in one glance and explains it in one click.
 | Sensors | hottest temperature | SoC, SSD and battery temperatures, fan speed, system and adapter power, every sensor |
 | Battery | icon + % | state, time remaining, power draw, health, cycles, Bluetooth device batteries |
 | Weather | condition + temperature | now, next 12 hours, 7 days ([Open-Meteo](https://open-meteo.com/); city search, no location access) |
+| Agents | ✨ + tokens today | Claude Code and Codex tokens today, last 24 h by hour, current 5-hour window (Claude, estimated), Codex usage limits, busiest projects, per-model split (read from local logs only) |
 | Clock | time | date, month calendar, world clocks with day/night and offset |
 
 ## Settings
@@ -60,7 +61,7 @@ Open from the gear in the deck, `⌘,`, or by opening the app again.
   Click a word to change it, drag the number sideways to adjust it, preview the banner.
 - **Clock:** locale-aware formats, seconds, world clocks.
 - **Weather:** city search, °C / °F.
-- **Shortcuts:** `⌃⌥⌘1`…`⌃⌥⌘9` open each module from any app.
+- **Shortcuts:** `⌃⌥⌘1`…`⌃⌥⌘9` and `⌃⌥⌘0` open each module from any app.
 - **Backup:** export, import or reset settings.
 
 ## Install

@@ -333,8 +333,8 @@ final class DeckController: NSObject {
             switch event.characters {
             case ",": close(); (NSApp.delegate as? AppDelegate)?.showSettings(); return true
             case "w": close(); return true
-            case let key? where Int(key).map({ (1...Module.allCases.count).contains($0) }) == true:
-                let module = Module.allCases[Int(key)! - 1]
+            case let key? where Module.forShortcutKey(key) != nil:
+                let module = Module.forShortcutKey(key)!
                 if settings.isEnabled(module) { model.go(.module(module)) } else { NSSound.beep() }
                 return true
             default: return false

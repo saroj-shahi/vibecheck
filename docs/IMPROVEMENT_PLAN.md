@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 19 commits · ~6,200 lines of Swift · 48 tests_
+_Last updated: 2026-11-18 · version 1.5 · 19 commits · ~6,800 lines of Swift · 54 tests_
 
 ---
 
@@ -38,6 +38,8 @@ What *was* verified: unit tests, real data via `--dump`, real window frames via 
 | Launch at login across a real restart | ⚠️ registered, not rebooted |
 | Keep awake: power assertion held (display / system type) and released | ✅ `pmset -g assertions` against the built app + a unit test reading `IOPMCopyAssertionsByProcess` |
 | Keep awake: deck cup menu, status strip, menu bar cup, Settings pane | ❌ never seen |
+| Agents: Claude Code / Codex token totals from real logs | ✅ `--dump` (today's Claude total matched an independent Python count) + unit tests |
+| Agents: menu bar item, tile, detail panel | ❌ never seen |
 
 ---
 
@@ -87,6 +89,9 @@ Fix whatever turns up before starting new features.
   per-app traffic history.
 - **Battery:** charge history over days, health trend.
 - **Localization:** strings are inline English; move to a String Catalog.
+- **Agents module, next steps:** cost estimates (needs a maintained price table per model; don't guess
+  prices), Claude's real plan limits (only available from Anthropic's API with the user's login; ask first),
+  more agents (Gemini CLI, Cursor), an alert rule on tokens per hour, and a 7-day chart.
 - **Keep awake, more keep-awake options:** "until a time of day" picker, a global shortcut to
   toggle, a notification when a session ends by itself, triggers (on power adapter, external display, an
   app launching, a schedule). Closed-lid mode would need root (`pmset disablesleep`); treat it like fan
@@ -148,6 +153,9 @@ Short record of choices future sessions shouldn't silently undo.
 | Combined item is the default for new installs; existing choices kept | Fits notched MacBooks; never override a user's choice |
 | Notch fit fills from the user's module order, optional cap | Owner wanted exactly Memory + Network beside the notch |
 | Brand assets generated from SVG by `scripts/render_brand.swift` | One source of truth; `NSImage` renders SVG natively, no extra tools |
+| Agents module reads local logs only, no network, no credentials | Privacy; works offline; no keychain prompts |
+| Agent totals include cache reads (as usage tools usually count them) | Numbers line up with the tool people already compare against; the breakdown is in Details |
+| Agents is module 10; ⌘0 / ⌃⌥⌘0 open it | The number row has no "10"; `Module.shortcutKey` maps 1–9 then 0 |
 | Keep awake uses an IOKit assertion, not a `caffeinate` child process | Released automatically if the app dies; visible in `pmset -g assertions` |
 | Keep-awake sessions don't survive a restart; "Start a session when VibeCheck opens" covers that | Avoids a Mac that never sleeps after a forgotten session |
 | Slang only for vibing / mid / cooked; alerts and errors stay plain | Brand voice (see BRAND.md §6) |
@@ -217,6 +225,14 @@ Notes: builds and `swift test` passes; installed and the green dot was seen in t
 | `6b6e8a1` | Keep awake, modeled on classic keep-awake apps: `KeepAwake.swift` (sessions + IOKit assertion), `KeepAwakeViews.swift` (deck cup menu, status strip, Settings pane), cup in the combined and standalone items, notch fit counts the cup, 5 tests. |
 
 Notes: `swift test` passes (48). The built app was run with launch arguments (`-keepAwakeAtLaunch YES`, `-keepAwakeDisplayOn '<false/>'`), which don't touch saved settings; `pmset -g assertions` showed `PreventUserIdleDisplaySleep` / `PreventUserIdleSystemSleep` named "VibeCheck keep awake", gone after quitting. No UI was looked at on screen. Booleans passed as launch arguments must use plist syntax (`'<false/>'`), since the settings read them with `as? Bool`. With separate items, the standalone item now also appears (cup only) when the ring is off and a session runs.
+
+### 2026-11-18: agent usage tracker
+
+| Commit | What |
+|---|---|
+| _(uncommitted)_ | Agents module: `AgentUsageMonitor.swift` (incremental reader for `~/.claude/projects` and `~/.codex/sessions`, dedupe, Codex running-total deltas and rate limits, usage tools-style 5-hour block), `AgentUsage.swift` (store, rescans every 60 s off the main thread), `AgentsPanel.swift`, menu bar label, tile, ⌘0 / ⌃⌥⌘0 shortcut, `--dump` line, 6 tests. |
+
+Notes: `swift test` passes (54). Release build: first scan of a week of logs (~1.1 GB of Claude transcripts on the owner's Mac, only files changed in 7 days are read) took ~1 s; rescans ~30 ms since only new bytes are read. Today's Claude total matched an independent Python count. Nothing seen on screen. Agents is on by default, so it shows up for existing installs too (beyond the notch cap it lands in "+N").
 
 ---
 
