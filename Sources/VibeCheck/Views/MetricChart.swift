@@ -110,7 +110,8 @@ struct SeriesShape: Shape {
             }
             if filled {
                 path.move(to: CGPoint(x: points[0].x, y: base))
-                path.addLines(points)
+                // Not `addLines`: it starts a new subpath, dropping the move to the baseline.
+                points.forEach { path.addLine(to: $0) }
                 path.addLine(to: CGPoint(x: points[points.count - 1].x, y: base))
                 path.closeSubpath()
             } else {

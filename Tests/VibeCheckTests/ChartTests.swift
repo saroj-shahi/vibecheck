@@ -73,3 +73,16 @@ struct DetailLayoutTests {
         #expect(expanded > collapsed + 60)
     }
 }
+
+struct SeriesShapeTests {
+    /// The area under a flat line must reach the baseline at both ends, not close diagonally.
+    @Test func filledAreaReachesTheBaselineAtBothEnds() {
+        let rect = CGRect(x: 0, y: 0, width: 330, height: 64)
+        let shape = SeriesShape(samples: AnimatableVector(values: Array(repeating: 0.9, count: 120)),
+                                valid: Array(repeating: true, count: 120), filled: true)
+        let path = shape.path(in: rect)
+        #expect(path.contains(CGPoint(x: 10, y: 60)))
+        #expect(path.contains(CGPoint(x: 320, y: 60)))
+        #expect(!path.contains(CGPoint(x: 10, y: 2)))
+    }
+}
