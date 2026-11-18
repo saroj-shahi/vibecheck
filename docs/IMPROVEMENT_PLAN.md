@@ -3,7 +3,7 @@
 A living log for future work sessions. **Read this first**, then add to it at the end of each session
 (see [How to update this file](#how-to-update-this-file)).
 
-_Last updated: 2026-11-18 · version 1.5 · 73 commits · ~9,700 lines of Swift · 122 tests_
+_Last updated: 2026-11-18 · version 1.5 · 77 commits · ~10,100 lines of Swift · 129 tests_
 
 ---
 
@@ -154,10 +154,11 @@ Synthetic clicks don't open menu submenus.
   one (accessory batteries via `system_profiler`) is now gated (`6341833`). The rest are cheap and feed the vibe
   score, alerts, keep awake and Shortcuts. Owner decided (2026-11-18): alerts and the vibe stay independent of
   which modules are shown, so these keep sampling. Done.
-- **Timer, stopwatch, focus sessions** _(V)_, tied to keep awake: a focus session keeps the Mac awake until it ends.
+- ~~Focus sessions~~ _(V)_: done 2026-11-18 (`0d3e3ed`), in the cup menu. Stopwatch / free timer not built.
 - **Downloads watcher** _(V)_: files arriving in a chosen folder; enables a "while downloads are active"
   keep-awake trigger.
-- **Quick toggles** _(V)_: a row in the deck: dark mode, mute microphone, empty Trash (with confirm).
+- ~~Quick toggles~~ _(V)_: done 2026-11-18 (`e51d9d5`). Never run for real yet: the first Dark or Trash tap asks for
+  Automation permission (System Events / Finder); mic mute untested on hardware.
 - **Keep awake, other triggers:** a schedule (weekdays 9–5), "while on Wi-Fi X" (SSID needs Location permission).
 - **WidgetKit widgets:** vibe ring, CPU/memory sparkline (needs an app group to share samples).
 - **Network:** public IP (opt-in, privacy note), Wi-Fi details (SSID needs Location permission),
@@ -269,6 +270,8 @@ Short record of choices future sessions shouldn't silently undo.
 | Account name and plan: Claude from `~/.claude.json` (`oauthAccount.displayName`, `organizationType`), Codex from `plan_type` in its logs; never `~/.codex/auth.json` | Only non-secret fields; credential files stay unread |
 | `SIGPIPE` is ignored app-wide | Child processes (`ps`, `lsof`, `nettop`, `claude`) can exit before we write to them |
 | Alerts and the vibe score don't depend on which modules are shown (owner, 2026-11-18) | A CPU alert should fire even with the CPU item hidden; so CPU, memory, disk, sensors and battery are always sampled. Only samples nothing else needs (accessory batteries) are gated |
+| Quick toggles act through System Events / Finder / CoreAudio only; Trash is emptied by Finder, never by deleting files | The user's own undo and Finder's rules apply; Automation permission is asked on first use (`NSAppleEventsUsageDescription`) |
+| A finished focus session always notifies | It's the point of a focus timer; other keep-awake endings follow the notify setting |
 | Separate items' autosave names carry a generation (`vibecheck.cpu.g3`) bumped on each Settings reorder; generation 0 keeps the original names | macOS 27 remembers item positions by autosave name outside the app's defaults; new names are placed in creation order, each to the left (probe app). Don't revert to fixed names |
 | Limit lists key on `RateWindow.key` (length + name) | Copilot's two monthly quotas share a length; keying on length drew one twice |
 | Agents module: no network of its own; live Claude limits run the local `claude` CLI | Keeps "local logs only" true for VibeCheck itself |
@@ -589,6 +592,16 @@ at 50% CPU in the process list (the brief Claude Code limits check, a child proc
 
 Notes: one agent built the alert, a cheap read-only agent audited sampling of switched-off modules, the
 USB list and ports change were done here. 122 tests, zero warnings, installed. Not seen on screen.
+
+### 2026-11-18: focus sessions, quick toggles (agent in parallel)
+
+| Commit | What |
+|---|---|
+| `0d3e3ed` | `AwakeSession.focus`, `startFocus(minutes:)`, `.focusDone`; cup menu "Focus for 25/50/90 Minutes"; strip and menu bar timer; "Focus session done" notification. 2 tests. |
+| `e51d9d5` | `QuickActions.swift` + `QuickTogglesView.swift`: Dark / Mic / Trash chips in the deck home (Settings → General to hide). Info.plist gains `NSAppleEventsUsageDescription` (added in review: without it the Automation prompt may never show). Tests for pure parts. |
+
+Notes: the row was rendered offscreen (Dark highlighted, Trash disabled when empty). No toggle was run for
+real; nothing seen in the real deck. 129 tests, zero warnings, installed.
 
 ---
 
