@@ -123,8 +123,7 @@ Synthetic clicks don't open menu submenus.
      real yet**: the owner has to switch it on and allow the Keychain prompt. The endpoint
      (`/api/oauth/usage`, `anthropic-beta: oauth-2025-04-20`) is undocumented; if it changes, the status
      line says "Anthropic didn't answer".
-   - Still open: API-equivalent cost (needs the owner's OK to download a price list, e.g. LiteLLM's public
-     `model_prices_and_context_window.json`, which usage tools uses; asked 2026-11-18, not answered yet).
+   - ~~API-equivalent cost~~: dropped 2026-11-18, the owner chose no costs (it would need a price-list download).
    - Still open: more agents. This Mac has data for OpenCode (`~/.local/share/opencode`), Gemini CLI
      (`~/.gemini`), GitHub Copilot (`~/.copilot`) and Cursor (`~/.cursor`); check which of them log tokens.
      Also "in progress now", a tokens-per-hour alert rule, and a 7-day chart.
@@ -250,7 +249,7 @@ Short record of choices future sessions shouldn't silently undo.
 | Live Claude limits are opt-in, off by default, and not in settings backup | It reads another app's credential; that choice is made on each Mac, never restored silently |
 | After a Keychain "Deny", stop asking until the setting is switched again | Otherwise macOS would show the prompt every 15 minutes |
 | Agents module network use: only api.anthropic.com, only with live Claude limits on | Keeps "local logs only" true by default |
-| Agent prices come from a fetched price file with a date, never hard-coded | Prices change; a stale built-in table would show wrong costs |
+| No cost estimates in the Agents module (owner, 2026-11-18) | It would need downloading a price list; never hard-code prices either |
 | Settings footers use `settingsFooter()` (caption, leading) | Grouped `Form` footers align trailing by default on macOS |
 | Chart areas add points with `addLine`, never `addLines` | `addLines` starts a new subpath and breaks the closed fill |
 
