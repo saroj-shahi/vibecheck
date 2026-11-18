@@ -1,0 +1,41 @@
+import Foundation
+
+enum Fmt {
+    private static let units = ["B", "KB", "MB", "GB", "TB"]
+
+    static func bytes(_ value: Double) -> String {
+        var v = max(0, value)
+        var i = 0
+        while v >= 1024, i < units.count - 1 { v /= 1024; i += 1 }
+        let decimals = (i == 0 || v >= 100) ? 0 : 1
+        return String(format: "%.\(decimals)f %@", v, units[i])
+    }
+
+    static func rate(_ value: Double) -> String { bytes(value) + "/s" }
+
+    /// Short form for the menu bar, e.g. "1.2M", "340K", "0K".
+    static func compactRate(_ value: Double) -> String {
+        let kb = max(0, value) / 1024
+        if kb < 1000 { return String(format: "%.0fK", kb) }
+        let mb = kb / 1024
+        if mb < 100 { return String(format: "%.1fM", mb) }
+        if mb < 1000 { return String(format: "%.0fM", mb) }
+        return String(format: "%.1fG", mb / 1024)
+    }
+
+    static func percent(_ fraction: Double) -> String {
+        String(format: "%.0f%%", max(0, fraction) * 100)
+    }
+
+    static func minutes(_ minutes: Int) -> String {
+        String(format: "%d:%02d", minutes / 60, minutes % 60)
+    }
+
+    static func uptime(_ seconds: TimeInterval) -> String {
+        let total = Int(seconds)
+        let days = total / 86_400, hours = (total % 86_400) / 3600, mins = (total % 3600) / 60
+        if days > 0 { return "\(days)d \(hours)h" }
+        if hours > 0 { return "\(hours)h \(mins)m" }
+        return "\(mins)m"
+    }
+}
