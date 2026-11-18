@@ -37,6 +37,63 @@ struct UsageEntry: Equatable {
     var model: String
     var project: String
     var tokens: TokenCounts
+    /// The session it belongs to (the log file for file-based agents); empty when unknown.
+    var session: String = ""
+}
+
+/// A session that wrote usage in the last two minutes.
+struct ActiveSession: Equatable, Identifiable {
+    var agent: AgentKind
+    var session: String
+    var project: String
+    var model: String
+    var started: Date
+    var lastActive: Date
+    var tokens: TokenCounts
+    var id: String { session }
+}
+
+/// Who an agent is signed in as, from the agent's own local files.
+struct AgentAccount: Equatable {
+    var name: String?
+    var plan: String?
+}
+
+enum AgentNames {
+    /// "claude-opus-5-5" → "Opus 5.5", "claude-sonnet-4-5-20250929" → "Sonnet 4.5"; other models unchanged.
+    static func model(_ id: String) -> String {
+        guard id.hasPrefix("claude-") else { return id }
+        var parts = id.dropFirst("claude-".count).split(separator: "-").map(String.init)
+        if let last = parts.last, last.count == 8, Int(last) != nil { parts.removeLast() } // date suffix
+        guard let family = parts.first else { return id }
+        let version = parts.dropFirst().filter { Int($0) != nil }.joined(separator: ".")
+        return family.prefix(1).uppercased() + family.dropFirst() + (version.isEmpty ? "" : " " + version)
+    }
+
+    /// Plan labels from Claude Code's `organizationType` or Codex's `plan_type`.
+    static func plan(_ raw: String?) -> String? {
+        guard var value = raw?.lowercased(), !value.isEmpty else { return nil }
+        if value.hasPrefix("claude_") { value.removeFirst("claude_".count) }
+        switch value {
+        case "free": return "Free"
+        case "pro": return "Pro"
+        case "max", "max_5x", "max_20x": return "Max"
+        case "plus": return "Plus"
+        case "team": return "Team"
+        case "business": return "Business"
+        case "enterprise": return "Enterprise"
+        case "edu": return "Edu"
+        default: return value.prefix(1).uppercased() + value.dropFirst()
+        }
+    }
+
+    /// Claude Code's `~/.claude.json`: the signed-in name and plan (organizationType). Nothing else is read.
+    static func claudeAccount(_ data: Data) -> AgentAccount? {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let account = object["oauthAccount"] as? [String: Any] else { return nil }
+        let name = (account["displayName"] as? String) ?? (account["fullName"] as? String)
+        return AgentAccount(name: name?.isEmpty == false ? name : nil, plan: plan(account["organizationType"] as? String))
+    }
 }
 
 /// A provider-reported usage limit (Codex writes these into its logs).
@@ -63,6 +120,8 @@ struct RateWindow: Equatable {
 
 extension RateWindow {
     var start: Date { resetsAt.addingTimeInterval(-Double(windowMinutes) * 60) }
+    /// Unique within one agent's limits (two monthly quotas share a length, so the name is part of it).
+    var key: String { "\(windowMinutes):\(title)" }
     var leftPercent: Double { min(max(100 - usedPercent, 0), 100) }
 
     /// "Current session" for the 5-hour window, otherwise the plain title.
@@ -86,6 +145,12 @@ extension RateWindow {
     /// Using the limit faster than time passes (with a little slack), so it runs out before it resets.
     func isAheadOfPace(now: Date) -> Bool {
         usedPercent / 100 > elapsedFraction(now: now) + 0.05
+    }
+
+    /// Burn rate as shown: per hour for windows up to a week, per day for longer ones ("0.3%/day").
+    func burnText(now: Date) -> String? {
+        guard let perHour = burnPerHour(now: now) else { return nil }
+        return windowMinutes > 10080 ? String(format: "%.1f%%/day", perHour * 24) : String(format: "%.1f%%/hr", perHour)
     }
 
     /// "2h 42m", "5d 22h", "18m", "now".
@@ -115,6 +180,7 @@ struct AgentSummary: Equatable, Identifiable {
     var limits: [RateWindow] = []
     var lastActive: Date?
     var modelsToday: [(name: String, tokens: Int)] = []
+    var account = AgentAccount()
     var id: AgentKind { agent }
 
     /// Wrote usage in the last two minutes: a session is most likely running right now.
@@ -124,7 +190,7 @@ struct AgentSummary: Equatable, Identifiable {
 
     static func == (a: AgentSummary, b: AgentSummary) -> Bool {
         a.agent == b.agent && a.today == b.today && a.week == b.week && a.block == b.block && a.limits == b.limits
-            && a.lastActive == b.lastActive && a.modelsToday.map(\.name) == b.modelsToday.map(\.name)
+            && a.lastActive == b.lastActive && a.account == b.account && a.modelsToday.map(\.name) == b.modelsToday.map(\.name)
             && a.modelsToday.map(\.tokens) == b.modelsToday.map(\.tokens)
     }
 }
@@ -140,12 +206,14 @@ struct AgentUsageSample: Equatable {
     var daily: [Double] = Array(repeating: 0, count: 7)
     /// Tokens in the last 60 minutes (the tokens-per-hour alert).
     var lastHour = 0
+    /// Sessions that wrote usage in the last two minutes, most recent first.
+    var activeSessions: [ActiveSession] = []
     var projectsToday: [(name: String, tokens: Int)] = []
     var scanned = false
 
     static func == (a: AgentUsageSample, b: AgentUsageSample) -> Bool {
         a.agents == b.agents && a.today == b.today && a.week == b.week && a.hourly == b.hourly && a.scanned == b.scanned
-            && a.daily == b.daily && a.lastHour == b.lastHour
+            && a.daily == b.daily && a.lastHour == b.lastHour && a.activeSessions == b.activeSessions
             && a.projectsToday.map(\.name) == b.projectsToday.map(\.name)
             && a.projectsToday.map(\.tokens) == b.projectsToday.map(\.tokens)
     }
@@ -198,6 +266,8 @@ enum AgentLogParser {
         var model = "unknown"
         var project = "Unknown"
         var lastTotal: TokenCounts?
+        /// `plan_type` from the latest rate limits ("free", "plus", …).
+        var plan: String?
     }
 
     /// One Codex session line → usage since the previous token count, and any rate limits it reports.
@@ -230,6 +300,7 @@ enum AgentLogParser {
             }
             var limits: [RateWindow]?
             if let rate = payload["rate_limits"] as? [String: Any] {
+                if let plan = rate["plan_type"] as? String { state.plan = plan }
                 limits = ["primary", "secondary"].compactMap { key -> RateWindow? in
                     guard let window = rate[key] as? [String: Any],
                           let used = (window["used_percent"] as? NSNumber)?.doubleValue else { return nil }
@@ -324,7 +395,8 @@ enum AgentLogParser {
     }
 
     static func summarize(_ entries: [UsageEntry], limits: [AgentKind: [RateWindow]], present: Set<AgentKind>,
-                          now: Date, calendar: Calendar = .current) -> AgentUsageSample {
+                          now: Date, calendar: Calendar = .current,
+                          accounts: [AgentKind: AgentAccount] = [:]) -> AgentUsageSample {
         let today = calendar.startOfDay(for: now)
         let weekStart = calendar.date(byAdding: .day, value: -6, to: today) ?? today
         let hourStart = calendar.dateInterval(of: .hour, for: now)?.start ?? now
@@ -362,9 +434,30 @@ enum AgentLogParser {
             summary.lastActive = mine.map(\.time).max()
             if agent == .claude { summary.block = currentBlock(mine.filter { $0.time > now.addingTimeInterval(-24 * 3600) }, now: now, calendar: calendar) }
             summary.limits = (limits[agent] ?? []).filter { $0.resetsAt > now }
+            summary.account = accounts[agent] ?? AgentAccount()
             sample.agents.append(summary)
         }
+        sample.activeSessions = activeSessions(entries, now: now)
         return sample
+    }
+
+    /// Sessions whose last usage is under two minutes old, with their totals since they started.
+    static func activeSessions(_ entries: [UsageEntry], now: Date) -> [ActiveSession] {
+        var sessions: [String: ActiveSession] = [:]
+        for entry in entries where !entry.session.isEmpty && entry.time <= now {
+            if var s = sessions[entry.session] {
+                s.tokens += entry.tokens
+                s.started = min(s.started, entry.time)
+                if entry.time >= s.lastActive { s.lastActive = entry.time; s.model = entry.model; s.project = entry.project }
+                sessions[entry.session] = s
+            } else {
+                sessions[entry.session] = ActiveSession(agent: entry.agent, session: entry.session, project: entry.project,
+                                                        model: entry.model, started: entry.time, lastActive: entry.time,
+                                                        tokens: entry.tokens)
+            }
+        }
+        return sessions.values.filter { now.timeIntervalSince($0.lastActive) < 120 }
+            .sorted { $0.lastActive > $1.lastActive }
     }
 }
 
@@ -383,6 +476,11 @@ final class AgentUsageScanner: @unchecked Sendable {
     private let codexRoots: [URL]
     private let copilotRoots: [URL]
     private let opencodeDB: URL
+    private let claudeConfig: URL
+    /// Names and plans, refreshed on each full walk.
+    private var accounts: [AgentKind: AgentAccount] = [:]
+    /// Codex's plan from its newest rate limits.
+    private var codexPlan: String?
     /// Modification stamp of the OpenCode database (and its WAL) at the last read; nil = never read.
     private var opencodeStamp: String?
     private var files: [String: FileState] = [:]
@@ -398,7 +496,8 @@ final class AgentUsageScanner: @unchecked Sendable {
     /// How often the folder tree is walked to find new log files; in between, only known files are checked.
     var walkInterval: TimeInterval = 300
 
-    init(claudeRoots: [URL]? = nil, codexRoots: [URL]? = nil, copilotRoots: [URL]? = nil, opencodeDB: URL? = nil) {
+    init(claudeRoots: [URL]? = nil, codexRoots: [URL]? = nil, copilotRoots: [URL]? = nil, opencodeDB: URL? = nil,
+         claudeConfig: URL? = nil) {
         let home = FileManager.default.homeDirectoryForCurrentUser
         let env = ProcessInfo.processInfo.environment
         var claude = [home.appending(path: ".claude/projects"), home.appending(path: ".config/claude/projects")]
@@ -410,6 +509,8 @@ final class AgentUsageScanner: @unchecked Sendable {
             ?? [URL(fileURLWithPath: env["COPILOT_HOME"] ?? home.appending(path: ".copilot").path).appending(path: "session-state")]
         let dataHome = env["XDG_DATA_HOME"].map { URL(fileURLWithPath: $0) } ?? home.appending(path: ".local/share")
         self.opencodeDB = opencodeDB ?? dataHome.appending(path: "opencode/opencode.db")
+        self.claudeConfig = claudeConfig
+            ?? (env["CLAUDE_CONFIG_DIR"].map { URL(fileURLWithPath: $0) } ?? home).appending(path: ".claude.json")
     }
 
     /// `fullWalk` forces looking for new files now (e.g. when the Agents panel opens).
@@ -420,6 +521,7 @@ final class AgentUsageScanner: @unchecked Sendable {
             present = []
             known = []
             if FileManager.default.fileExists(atPath: opencodeDB.path) { present.insert(.opencode) }
+            accounts[.claude] = (try? Data(contentsOf: claudeConfig)).flatMap(AgentNames.claudeAccount)
             for (agent, roots) in [(AgentKind.claude, claudeRoots), (.codex, codexRoots), (.copilot, copilotRoots)] {
                 for root in Set(roots.map(\.standardizedFileURL)) {
                     guard FileManager.default.fileExists(atPath: root.path) else { continue }
@@ -446,8 +548,10 @@ final class AgentUsageScanner: @unchecked Sendable {
         entries = keptEntries
         entryKeys = keptKeys
         seen = Set(keptKeys.filter { !$0.isEmpty })
+        var accounts = self.accounts
+        if let codexPlan { accounts[.codex] = AgentAccount(plan: AgentNames.plan(codexPlan)) }
         return AgentLogParser.summarize(entries, limits: limits.mapValues(\.windows), present: present,
-                                        now: now, calendar: calendar)
+                                        now: now, calendar: calendar, accounts: accounts)
     }
 
     private static func modified(_ url: URL) -> Date {
@@ -494,19 +598,24 @@ final class AgentUsageScanner: @unchecked Sendable {
             switch agent {
             case .claude:
                 guard line.range(of: Self.usageMarker) != nil,
-                      let (key, entry) = AgentLogParser.claude(Data(line)), seen.insert(key).inserted else { continue }
+                      let (key, parsed) = AgentLogParser.claude(Data(line)), seen.insert(key).inserted else { continue }
+                var entry = parsed
+                entry.session = url.path
                 entries.append(entry)
                 entryKeys.append(key)
             case .codex:
                 guard line.range(of: Self.tokenMarker) != nil || Self.contextMarkers.contains(where: { line.range(of: $0) != nil })
                 else { continue }
                 let result = AgentLogParser.codex(Data(line), state: &state.codex)
-                if let entry = result.entry { entries.append(entry); entryKeys.append("") }
-                if let windows = result.limits, let time = result.time { keepLimits(windows, at: time, for: .codex) }
+                if var entry = result.entry { entry.session = url.path; entries.append(entry); entryKeys.append("") }
+                if let windows = result.limits, let time = result.time, keepLimits(windows, at: time, for: .codex) {
+                    codexPlan = state.codex.plan ?? codexPlan
+                }
             case .copilot:
                 guard Self.copilotMarkers.contains(where: { line.range(of: $0) != nil }) else { continue }
                 let result = AgentLogParser.copilot(Data(line), state: &state.copilot)
-                if let entry = result.entry {
+                if var entry = result.entry {
+                    entry.session = url.path
                     let key = result.key.map { "copilot:" + $0 } ?? ""
                     if key.isEmpty || seen.insert(key).inserted { entries.append(entry); entryKeys.append(key) }
                 }
@@ -518,8 +627,12 @@ final class AgentUsageScanner: @unchecked Sendable {
         files[url.path] = state
     }
 
-    private func keepLimits(_ windows: [RateWindow], at time: Date, for agent: AgentKind) {
-        if time >= (limits[agent]?.time ?? .distantPast) { limits[agent] = (time, windows) }
+    /// Keeps `windows` if they're the newest seen for `agent`; returns whether they were.
+    @discardableResult
+    private func keepLimits(_ windows: [RateWindow], at time: Date, for agent: AgentKind) -> Bool {
+        guard time >= (limits[agent]?.time ?? .distantPast) else { return false }
+        limits[agent] = (time, windows)
+        return true
     }
 
     /// OpenCode keeps messages in SQLite. When the database (or its WAL) changed, re-read the week's

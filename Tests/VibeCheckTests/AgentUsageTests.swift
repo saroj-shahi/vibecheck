@@ -79,7 +79,8 @@ struct AgentUsageTests {
         try (line + "\n" + line + "\n").write(to: file, atomically: true, encoding: .utf8)
 
         let scanner = AgentUsageScanner(claudeRoots: [root.appending(path: "claude")], codexRoots: [root.appending(path: "codex")],
-                                        copilotRoots: [], opencodeDB: root.appending(path: "none.db"))
+                                        copilotRoots: [], opencodeDB: root.appending(path: "none.db"),
+                                        claudeConfig: URL(fileURLWithPath: "/nonexistent/.claude.json"))
         let first = scanner.scan(now: now)
         #expect(first.today.total == 4)
         #expect(first.agents.map(\.agent) == [.claude, .codex])
@@ -104,7 +105,8 @@ struct AgentUsageTests {
         try line("a1").write(to: first, atomically: true, encoding: .utf8)
 
         let scanner = AgentUsageScanner(claudeRoots: [root.appending(path: "claude")], codexRoots: [],
-                                        copilotRoots: [], opencodeDB: root.appending(path: "none.db"))
+                                        copilotRoots: [], opencodeDB: root.appending(path: "none.db"),
+                                        claudeConfig: URL(fileURLWithPath: "/nonexistent/.claude.json"))
         #expect(scanner.scan(now: now).today.total == 1)
 
         let handle = try FileHandle(forWritingTo: first)

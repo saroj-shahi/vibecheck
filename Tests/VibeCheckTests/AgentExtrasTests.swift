@@ -57,7 +57,8 @@ struct AgentExtrasTests {
         try (lines.joined(separator: "\n") + "\n").write(to: file, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.modificationDate: now.addingTimeInterval(-10 * 86400)], ofItemAtPath: file.path)
 
-        let scanner = AgentUsageScanner(claudeRoots: [], codexRoots: [], copilotRoots: [dir], opencodeDB: dir.appending(path: "none.db"))
+        let scanner = AgentUsageScanner(claudeRoots: [], codexRoots: [], copilotRoots: [dir], opencodeDB: dir.appending(path: "none.db"),
+                                        claudeConfig: URL(fileURLWithPath: "/nonexistent/.claude.json"))
         let copilot = try #require(scanner.scan(now: now, fullWalk: true).agents.first { $0.agent == .copilot })
         #expect(copilot.week.total == 0)
         #expect(copilot.limits.map(\.title) == ["Chat requests"])

@@ -60,7 +60,8 @@ struct MoreAgentsTests {
         sqlite3_close(db)
 
         let scanner = AgentUsageScanner(claudeRoots: [dir.appending(path: "none")], codexRoots: [dir.appending(path: "none")],
-                                        copilotRoots: [dir.appending(path: "copilot")], opencodeDB: dbURL)
+                                        copilotRoots: [dir.appending(path: "copilot")], opencodeDB: dbURL,
+                                        claudeConfig: URL(fileURLWithPath: "/nonexistent/.claude.json"))
         let sample = scanner.scan(now: now, fullWalk: true)
         #expect(Set(sample.agents.map(\.agent)) == [.copilot, .opencode])
         #expect(sample.agents.first { $0.agent == .copilot }?.today.total == 18085 + 441 + 10 + 2304)

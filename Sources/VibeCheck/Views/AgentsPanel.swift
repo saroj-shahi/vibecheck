@@ -15,6 +15,9 @@ struct AgentsPanel: View {
                     .font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
+                if !sample.activeSessions.isEmpty {
+                    NowSection(sessions: sample.activeSessions)
+                }
                 VStack(alignment: .leading, spacing: 6) {
                     SectionTitle(text: "Last 24 hours")
                     HourlyBars(values: sample.hourly, color: Palette.agents)
@@ -69,8 +72,14 @@ private struct AgentCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(summary.agent.title).font(.system(size: 13, weight: .semibold))
+                    .layoutPriority(1)
+                if let name = summary.account.name {
+                    Text("· \(name)").font(.system(size: 13)).foregroundStyle(.secondary)
+                        .lineLimit(1).truncationMode(.tail)
+                }
+                if let plan = summary.account.plan { PlanBadge(plan: plan) }
                 TimelineView(.periodic(from: .now, by: 30)) { context in
                     if summary.isWorking(now: context.date) { WorkingBadge() }
                 }
@@ -85,7 +94,7 @@ private struct AgentCard: View {
                 // Ticks on its own so the countdown and pace marker move between scans.
                 TimelineView(.periodic(from: .now, by: 30)) { context in
                     VStack(alignment: .leading, spacing: 10) {
-                        ForEach(summary.limits.sorted { $0.windowMinutes < $1.windowMinutes }, id: \.windowMinutes) {
+                        ForEach(summary.limits.sorted { $0.windowMinutes < $1.windowMinutes }, id: \.key) {
                             LimitGauge(limit: $0, now: context.date)
                         }
                     }
@@ -118,8 +127,8 @@ struct LimitGauge: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(limit.cardTitle).font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                if let burn = limit.burnPerHour(now: now) {
-                    Text(String(format: "%.1f%%/hr", burn))
+                if let burn = limit.burnText(now: now) {
+                    Text(burn)
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(ahead ? AnyShapeStyle(color) : AnyShapeStyle(.secondary))
                         .help("Average since this window started")
@@ -248,5 +257,60 @@ struct DailyBars: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Tokens per day, last 7 days")
+    }
+}
+
+/// Small capsule with the agent's plan ("Team", "Free", …).
+private struct PlanBadge: View {
+    let plan: String
+
+    var body: some View {
+        Text(plan)
+            .font(.system(size: 10, weight: .semibold))
+            .padding(.horizontal, 6).padding(.vertical, 1)
+            .foregroundStyle(Palette.agents)
+            .background(Capsule().fill(Palette.agents.opacity(0.16)))
+            .fixedSize()
+            .accessibilityLabel("\(plan) plan")
+    }
+}
+
+/// Sessions running right now: project, model, tokens written, and how long it has been going.
+private struct NowSection: View {
+    let sessions: [ActiveSession]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 5) {
+                Circle().fill(.green).frame(width: 6, height: 6)
+                SectionTitle(text: "Now")
+            }
+            ForEach(sessions.prefix(3)) { session in
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(session.project).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                            Spacer()
+                            Text(elapsed(since: session.started, now: context.date))
+                                .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                                .foregroundStyle(Palette.agents)
+                        }
+                        Text("\(session.agent.title) · \(AgentNames.model(session.model)) · \(Fmt.tokens(session.tokens.output)) written")
+                            .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(session.project), \(session.agent.title), running for \(elapsed(since: session.started, now: context.date))")
+                }
+            }
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.quaternary.opacity(0.55)))
+    }
+
+    /// "3:57", "1:02:15".
+    private func elapsed(since start: Date, now: Date) -> String {
+        let seconds = max(0, Int(now.timeIntervalSince(start)))
+        let h = seconds / 3600, m = (seconds % 3600) / 60, s = seconds % 60
+        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
     }
 }

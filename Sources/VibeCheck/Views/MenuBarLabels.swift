@@ -366,7 +366,7 @@ struct AgentLimitsLabel: View {
             HStack(spacing: 4) {
                 if showIcon { Image(systemName: "sparkles").font(.system(size: 11)).foregroundStyle(tint) }
                 VStack(alignment: .trailing, spacing: -1) {
-                    ForEach(limits.prefix(2), id: \.windowMinutes) { limit in
+                    ForEach(limits.prefix(2), id: \.key) { limit in
                         HStack(spacing: 3) {
                             Text("\(Int((used ? min(max(limit.usedPercent, 0), 100) : limit.leftPercent).rounded()))%")
                                 .frame(width: 30, alignment: .trailing)
