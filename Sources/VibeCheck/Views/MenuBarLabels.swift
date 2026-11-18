@@ -1,13 +1,19 @@
 import SwiftUI
 
 /// The compact view drawn inside each status bar item, in the style chosen in Settings.
+/// Every number has a fixed width so the item's measured size never changes as values change.
 struct MenuBarLabel: View {
     let module: Module
+    /// Outer padding is skipped inside the combined item, which manages its own gaps.
+    var padded = true
     @Environment(SystemStats.self) private var stats
     @Environment(AppSettings.self) private var settings
 
+    /// Below this many bytes per second a direction counts as idle.
+    static let activeThreshold: Double = 2048
+
     private var style: LabelStyle { settings.labelStyle(module) }
-    private var colorful: Bool { settings.colorfulMenuBar }
+    private var gap: CGFloat { settings.menuBarSpacing.inner }
     private let valueFont = Font.system(size: 11, weight: .medium).monospacedDigit()
 
     var body: some View {
@@ -21,28 +27,36 @@ struct MenuBarLabel: View {
                 MiniBars(totals: stats.gpuHistory.suffix(8), system: [], color: tint(Palette.gpu))
             }
             case .memory: meter(Fmt.percent(stats.memory.usage)) { memoryGauge }
-            case .network: rates(top: ("↑", stats.network.upload), bottom: ("↓", stats.network.download))
-            case .disk: rates(top: ("R", stats.disk.readRate), bottom: ("W", stats.disk.writeRate))
+            case .network: network
+            case .disk: rates(top: ("R", stats.disk.readRate, Palette.read),
+                              bottom: ("W", stats.disk.writeRate, Palette.write), highlight: false)
             case .sensors: iconValue(stats.sensors.hottest.map { String(format: "%.0f°", $0) } ?? "–")
             case .battery: battery
             case .clock: clock
             }
         }
-        .frame(width: settings.labelWidth(module), height: 22)
+        .frame(height: 22)
+        .padding(.horizontal, padded ? settings.menuBarSpacing.padding : 0)
     }
 
-    private func tint(_ color: Color) -> Color { colorful ? color : .primary }
+    private func tint(_ color: Color) -> Color { settings.colorfulMenuBar ? color : .primary }
+
+    private func value(_ text: String, width: CGFloat = 30) -> some View {
+        Text(text).font(valueFont)
+            .lineLimit(1).minimumScaleFactor(0.75)
+            .frame(width: width, alignment: .trailing)
+    }
 
     /// Graph-style modules: graph + value, icon + value, or value only.
     @ViewBuilder
-    private func meter<Graph: View>(_ value: String, @ViewBuilder graph: () -> Graph) -> some View {
-        HStack(spacing: 4) {
+    private func meter<Graph: View>(_ text: String, @ViewBuilder graph: () -> Graph) -> some View {
+        HStack(spacing: gap) {
             switch style {
             case .standard: graph().frame(width: module == .memory ? 7 : 23, height: 15)
             case .iconAndValue: Image(systemName: module.symbol).font(.system(size: 12))
             case .valueOnly: EmptyView()
             }
-            Text(value).font(valueFont).frame(minWidth: 30, alignment: .trailing)
+            value(text)
         }
     }
 
@@ -59,52 +73,87 @@ struct MenuBarLabel: View {
         }
     }
 
-    private func rates(top: (String, Double), bottom: (String, Double)) -> some View {
-        HStack(spacing: 3) {
+    // MARK: Network: activity arrows light up while data moves; offline swaps in a clear indicator.
+
+    private var network: some View {
+        let offline = stats.network.interface == nil
+        return ZStack {
+            rates(top: ("↑", stats.network.upload, Palette.upload),
+                  bottom: ("↓", stats.network.download, Palette.download), highlight: true)
+                .opacity(offline ? 0 : 1)
+            HStack(spacing: 2) {
+                Image(systemName: "network.slash").font(.system(size: 10, weight: .semibold))
+                Text("Offline").font(.system(size: 9, weight: .semibold))
+            }
+            .foregroundStyle(.secondary)
+            .opacity(offline ? 1 : 0)
+        }
+        .help(offline ? "Offline" : "Network")
+    }
+
+    /// Two stacked rate lines. With `highlight`, each direction's arrow (or text) is colored while active
+    /// and dimmed while idle.
+    private func rates(top: (String, Double, Color), bottom: (String, Double, Color), highlight: Bool) -> some View {
+        let anyActive = top.1 >= Self.activeThreshold || bottom.1 >= Self.activeThreshold
+        return HStack(spacing: gap) {
             if style == .iconAndValue {
-                Image(systemName: module.symbol).font(.system(size: 11))
+                Image(systemName: module.symbol)
+                    .font(.system(size: 11))
+                    .foregroundStyle(highlight && !anyActive ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.primary))
             }
             VStack(alignment: .trailing, spacing: -2) {
-                rateLine(top)
-                rateLine(bottom)
+                rateLine(top, highlight: highlight)
+                rateLine(bottom, highlight: highlight)
             }
             .font(.system(size: 9, weight: .semibold).monospacedDigit())
         }
     }
 
-    private func rateLine(_ pair: (String, Double)) -> some View {
-        HStack(spacing: 2) {
-            Text(Fmt.compactRate(pair.1)).frame(maxWidth: .infinity, alignment: .trailing)
-            if style == .standard { Text(pair.0).frame(width: 9) }
+    private func rateLine(_ line: (label: String, rate: Double, color: Color), highlight: Bool) -> some View {
+        let active = line.rate >= Self.activeThreshold
+        return HStack(spacing: 1) {
+            Text(Fmt.compactRate(line.rate))
+                .lineLimit(1).minimumScaleFactor(0.75)
+                .frame(width: 28, alignment: .trailing)
+                .foregroundStyle(highlight && style == .valueOnly && !active ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+            if style == .standard {
+                Text(line.label)
+                    .frame(width: 9)
+                    .foregroundStyle(!highlight ? AnyShapeStyle(.primary)
+                                     : active ? AnyShapeStyle(tint(line.color)) : AnyShapeStyle(.tertiary))
+                    .fontWeight(highlight && active ? .heavy : .semibold)
+            }
         }
     }
 
-    private func iconValue(_ value: String) -> some View {
-        HStack(spacing: 2) {
+    private func iconValue(_ text: String) -> some View {
+        HStack(spacing: gap) {
             if style != .valueOnly {
                 Image(systemName: "thermometer.medium").font(.system(size: 12))
             }
-            Text(value).font(valueFont).frame(minWidth: 28, alignment: .trailing)
+            value(text, width: 27)
         }
     }
 
     private var battery: some View {
         let b = stats.battery
-        return HStack(spacing: 3) {
+        return HStack(spacing: gap) {
             if style != .valueOnly {
                 Image(systemName: b.present ? batterySymbol(b) : "powerplug").font(.system(size: 13))
             }
-            Text(b.present ? Fmt.percent(b.percent) : "AC").font(valueFont)
+            value(b.present ? Fmt.percent(b.percent) : "AC")
         }
     }
 
     private var clock: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: gap) {
             if style == .iconAndValue {
                 Image(systemName: "clock").font(.system(size: 12))
             }
             Text(ClockTicker.shared.now, format: settings.clockFormatStyle)
                 .font(.system(size: 13, weight: .medium).monospacedDigit())
+                .lineLimit(1)
+                .frame(width: settings.clockTextWidth, alignment: .center)
         }
     }
 }

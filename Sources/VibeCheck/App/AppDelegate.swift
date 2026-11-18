@@ -22,14 +22,14 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         case combined
     }
 
-    static let combinedSpacing: CGFloat = 4
-
     let kind: Kind
     private let item: NSStatusItem
     private let popover = NSPopover()
     private unowned let stats: SystemStats
     private unowned let settings: AppSettings
     private unowned let selection: CombinedSelection
+    /// The label with its environment, kept so the item can measure it after settings change.
+    private var labelView = AnyView(EmptyView())
 
     init(kind: Kind, stats: SystemStats, settings: AppSettings, selection: CombinedSelection) {
         self.kind = kind
@@ -51,11 +51,11 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             label = AnyView(CombinedLabel())
             content = AnyView(CombinedPanel())
         }
+        labelView = AnyView(label.environment(stats).environment(settings).environment(selection))
         refreshLength()
 
         if let button = item.button {
-            let host = PassthroughHostingView(rootView: label
-                .environment(stats).environment(settings).environment(selection))
+            let host = PassthroughHostingView(rootView: labelView)
             host.sizingOptions = []
             host.translatesAutoresizingMaskIntoConstraints = false
             button.addSubview(host)
@@ -84,15 +84,10 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         return "VibeCheck"
     }
 
+    /// Sizes the item to its label's natural width. Values use fixed-width slots, so this stays stable.
     func refreshLength() {
-        switch kind {
-        case .single(let module):
-            item.length = settings.labelWidth(module)
-        case .combined:
-            let modules = settings.orderedModules
-            item.length = modules.map(settings.labelWidth).reduce(0, +)
-                + Self.combinedSpacing * CGFloat(max(modules.count - 1, 0)) + 6
-        }
+        let width = NSHostingView(rootView: labelView).fittingSize.width
+        item.length = max(ceil(width), 8)
     }
 
     private var wantsProcesses: Bool {

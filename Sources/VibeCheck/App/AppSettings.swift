@@ -47,23 +47,6 @@ enum Module: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Width of the menu bar item for a style, in points (the clock is measured separately).
-    func labelWidth(_ style: LabelStyle) -> CGFloat {
-        switch (self, style) {
-        case (.cpu, .standard), (.gpu, .standard): 60
-        case (.memory, .standard): 50
-        case (.cpu, _), (.gpu, _), (.memory, _): style == .iconAndValue ? 52 : 34
-        case (.network, .standard), (.disk, .standard): 64
-        case (.network, .iconAndValue), (.disk, .iconAndValue): 64
-        case (.network, _), (.disk, _): 46
-        case (.sensors, .valueOnly): 32
-        case (.sensors, _): 50
-        case (.battery, .valueOnly): 38
-        case (.battery, _): 54
-        case (.clock, _): 80
-        }
-    }
-
     var labelStyles: [LabelStyle] {
         switch self {
         case .sensors, .battery: [.standard, .valueOnly]
@@ -132,6 +115,19 @@ enum LabelStyle: String, CaseIterable, Identifiable {
     }
 }
 
+/// How tightly menu bar content is packed.
+enum MenuBarSpacing: String, CaseIterable, Identifiable {
+    case normal, compact, tight
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+    /// Gap between an item's icon/graph and its value.
+    var inner: CGFloat { switch self { case .normal: 4; case .compact: 2; case .tight: 1 } }
+    /// Empty space on each side of an item.
+    var padding: CGFloat { switch self { case .normal: 4; case .compact: 2; case .tight: 0 } }
+    /// Gap between modules inside the combined item.
+    var between: CGFloat { switch self { case .normal: 8; case .compact: 4; case .tight: 2 } }
+}
+
 enum MenuBarStyle: String, CaseIterable, Identifiable {
     case separate, combined
     var id: String { rawValue }
@@ -179,6 +175,9 @@ final class AppSettings {
         }
     }
     private(set) var labelStyles: [Module: LabelStyle]
+    var menuBarSpacing: MenuBarSpacing {
+        didSet { save(menuBarSpacing.rawValue, "menuBarSpacing", structural: true) }
+    }
     var colorfulMenuBar: Bool {
         didSet { save(colorfulMenuBar, "colorfulMenuBar", structural: false) }
     }
@@ -235,6 +234,7 @@ final class AppSettings {
                 result[module] = style
             }
         }
+        menuBarSpacing = defaults.string(forKey: "menuBarSpacing").flatMap(MenuBarSpacing.init(rawValue:)) ?? .normal
         colorfulMenuBar = defaults.object(forKey: "colorfulMenuBar") as? Bool ?? true
         clockFormat = defaults.string(forKey: "clockFormat").flatMap(ClockFormat.init(rawValue:)) ?? .dayTime
         clockShowSeconds = defaults.bool(forKey: "clockShowSeconds")
@@ -258,15 +258,12 @@ final class AppSettings {
 
     var clockFormatStyle: ClockFormatStyle { ClockFormatStyle(format: clockFormat, seconds: clockShowSeconds) }
 
-    /// Menu bar width for a module in its current style. The clock is measured from a worst-case date string.
-    func labelWidth(_ module: Module) -> CGFloat {
-        let style = labelStyle(module)
-        guard module == .clock else { return module.labelWidth(style) }
+    /// Width that fits the clock's widest possible text in the current format, so it never jiggles.
+    var clockTextWidth: CGFloat {
         let widest = DateComponents(calendar: .current, year: 2026, month: 9, day: 30, hour: 22, minute: 58, second: 58).date ?? Date()
         let text = clockFormat.formatter(seconds: clockShowSeconds).string(from: widest)
         let font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .medium)
-        let width = (text as NSString).size(withAttributes: [.font: font]).width
-        return ceil(width) + (style == .iconAndValue ? 22 : 6)
+        return ceil((text as NSString).size(withAttributes: [.font: font]).width) + 2
     }
 
     /// Modules that are switched on, in menu bar order.

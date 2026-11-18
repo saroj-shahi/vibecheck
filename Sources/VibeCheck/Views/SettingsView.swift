@@ -51,6 +51,14 @@ private struct GeneralSettings: View {
                     }
                 }
                 Toggle("Colorful menu bar graphs", isOn: $settings.colorfulMenuBar)
+                Picker("Spacing", selection: $settings.menuBarSpacing) {
+                    ForEach(MenuBarSpacing.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                Text(settings.menuBarStyle == .combined
+                     ? "Spacing tightens the gaps inside each stat and between stats in the combined item."
+                     : "Spacing tightens the padding inside each item. macOS controls the gap between separate items; use one combined item for the tightest layout.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Section("General") {
                 Picker("Update every", selection: $settings.refreshInterval) {

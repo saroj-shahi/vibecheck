@@ -9,7 +9,7 @@ Each module gets its own menu bar item; click one for a detailed panel.
 | CPU     | mini history bars + %        | user/system/idle, history graph, per-core bars, P/E cores, load average, thermal state, top apps or processes |
 | GPU     | mini history bars + %        | utilization graph, renderer / tiler split, GPU memory in use, model and core count (each GPU on Intel Macs) |
 | Memory  | pressure-colored gauge + %   | composition bar (app/wired/compressed/cached), history, pressure, swap, top apps (helpers grouped, with icons) or processes |
-| Network | ↑/↓ rates                    | mirrored up/down graph, interface, local IP, totals since boot |
+| Network | ↑/↓ rates; arrows light up while data moves, "Offline" when disconnected | mirrored up/down graph, interface, local IP, totals since boot |
 | Disk    | read/write rates             | I/O graph, every local volume with capacity bars |
 | Sensors | hottest temperature         | SoC/CPU, SSD and battery temperatures with history, fan speed and range, system and adapter power, full list of every sensor |
 | Battery | icon + % (off by default)    | state, time remaining, power draw, health, cycle count, Bluetooth device batteries (AirPods, Apple keyboards/mice/trackpads) |
@@ -20,7 +20,7 @@ saved to `~/Library/Application Support/VibeCheck/history.json`, and survive res
 
 Settings (gear icon in any panel, or open the app again):
 
-- **General:** separate items or **one combined item** (icon tabs switch modules), which items to show and how each one looks (graph + value, icon + value, value only), colorful or single-color graphs, update interval, launch at login.
+- **General:** separate items or **one combined item** (icon tabs switch modules), which items to show and how each one looks (graph + value, icon + value, value only), colorful or single-color graphs, spacing (normal / compact / tight), update interval, launch at login.
 - **Clock:** menu bar format (locale-aware), seconds, world clocks with city search.
 - **Alerts:** notifications such as "CPU above 90% for 1 min", "temperature above 95 °C", "battery below 15%", "startup disk below 10% free". Each fires once, then re-arms after the value recovers (5 min cooldown).
 - **Shortcuts:** `⌃⌥⌘1`…`⌃⌥⌘8` open CPU, GPU, Memory, Network, Disk, Sensors, Battery, Clock from any app (modifier keys configurable).

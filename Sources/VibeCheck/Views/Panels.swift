@@ -300,6 +300,7 @@ struct NetworkPanel: View {
             MetricChart(lines: [.init(key: .upload, color: Palette.upload), .init(key: .download, color: Palette.download)],
                         mirrored: true, height: 80, format: Fmt.rate)
             VStack(spacing: 4) {
+                StatRow(label: "Status", value: statusText(n), color: statusColor(n))
                 StatRow(label: "Interface", value: n.interface ?? "—")
                 StatRow(label: "Local IP", value: n.ipv4 ?? "—")
                 StatRow(label: "Downloaded since boot", value: Fmt.bytes(Double(n.totalDownloaded)))
@@ -308,9 +309,28 @@ struct NetworkPanel: View {
         }
     }
 
+    private func statusText(_ n: NetworkSample) -> String {
+        guard n.interface != nil else { return "Offline" }
+        let up = n.upload >= MenuBarLabel.activeThreshold, down = n.download >= MenuBarLabel.activeThreshold
+        switch (up, down) {
+        case (true, true): return "Connected · sending & receiving"
+        case (true, false): return "Connected · sending"
+        case (false, true): return "Connected · receiving"
+        case (false, false): return "Connected · idle"
+        }
+    }
+
+    private func statusColor(_ n: NetworkSample) -> Color {
+        guard n.interface != nil else { return .red }
+        let active = max(n.upload, n.download) >= MenuBarLabel.activeThreshold
+        return active ? .green : .gray
+    }
+
     private func bigRate(_ title: String, _ value: Double, _ color: Color, _ symbol: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Label(title, systemImage: symbol).font(.caption).foregroundStyle(color)
+        let active = value >= MenuBarLabel.activeThreshold
+        return VStack(alignment: .leading, spacing: 2) {
+            Label(title, systemImage: symbol).font(.caption)
+                .foregroundStyle(active ? AnyShapeStyle(color) : AnyShapeStyle(.secondary))
             Text(Fmt.rate(value)).font(.title3.weight(.medium).monospacedDigit())
         }
         .frame(maxWidth: .infinity, alignment: .leading)
