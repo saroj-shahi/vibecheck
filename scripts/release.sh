@@ -199,13 +199,15 @@ fi
 rm -f "$OUT/notary.json"
 (cd "$OUT" && shasum -a 256 "$(basename "$DMG")" > "$(basename "$DMG").sha256")
 
+# Same file under a fixed name: the README's download button links to releases/latest/download/VibeCheck.dmg.
+cp -f "$DMG" "$OUT/VibeCheck.dmg"
+
 step "Done: $DMG"
 cat "$DMG.sha256"
-if [ "$DRY_RUN" = 0 ]; then
-  cat <<EOF
+cat <<EOF
 
-To publish (the app's update check reads the latest GitHub release; the tag must be v$VERSION):
+To publish (the app's update check and the README's download button read the latest GitHub release;
+the tag must be v$VERSION and the release must carry VibeCheck.dmg):
   git tag v$VERSION && git push origin v$VERSION
-  gh release create v$VERSION "$DMG" --title "VibeCheck $VERSION" --notes "…"
+  gh release create v$VERSION "$OUT/VibeCheck.dmg" "$DMG" --title "VibeCheck $VERSION" --notes "…"
 EOF
-fi
