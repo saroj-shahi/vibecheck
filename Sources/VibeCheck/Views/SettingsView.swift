@@ -169,7 +169,10 @@ struct SettingsView: View {
             }
         } icon: {
             if section == .about {
-                Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 20, height: 20)
+                // The app icon carries Apple's ~10% transparent margin; enlarge it so its plate matches the tiles.
+                Image(nsImage: NSApp.applicationIconImage).resizable()
+                    .frame(width: 20 * 1.24, height: 20 * 1.24)
+                    .frame(width: 20, height: 20)
             } else {
                 SettingsIcon(symbol: section.symbol, color: section.color, size: 20)
             }
@@ -199,16 +202,23 @@ struct SettingsIcon: View {
     var size: CGFloat = 20
 
     var body: some View {
-        RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+        shape
             .fill(color.gradient)
             .overlay(
+                // Scaled to fit one fixed box rather than set by font size: wide or badged symbols (battery,
+                // the Time Machine drive, bell.badge) otherwise overflow the tile, and List sidebars enlarge
+                // label icons on top of that.
                 Image(systemName: symbol)
-                    .font(.system(size: size * 0.55, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .resizable()
                     .symbolRenderingMode(.monochrome)
+                    .fontWeight(.semibold)
+                    .scaledToFit()
+                    .foregroundStyle(.white)
+                    .frame(width: size * 0.62, height: size * 0.62)
             )
-            .overlay(RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
-                .strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
+            .overlay(shape.strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
+            .clipShape(shape)
             .frame(width: size, height: size)
             .accessibilityHidden(true)
     }
