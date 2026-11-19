@@ -32,75 +32,42 @@ before anything new is added; can it be a ⌘K command instead of a button?
 Development identity. Owner's setup: separate items, tight spacing, ring on; Memory, Disk and Clock off;
 notch cap 0.
 
-**Biggest open gaps:** on-screen checks of light mode, animations, Reduce Motion and VoiceOver (P0);
-nobody else can install it (distribution, now P3 by the owner's choice); the ring symbol, wobble and badge were seen on 2026-11-19, but most of the P2 batch, animations and the Settings drags haven't been (P0).
+**Biggest open gaps:** on-screen checks (§2 items 1–12): animations, light mode, the Settings drags, most of
+the 2026-11-19 batch, and the owner-only accessibility and Bluetooth checks. Nobody outside the team can
+install it yet (public distribution is P3 by the owner's choice).
 
 ---
 
-## 2. Roadmap
+## 2. Remaining
 
-### P0: verify what's shipped
+One list, highest priority first. **QA** = the QA agent can do it while the owner keeps hands off the Mac
+(see "On-screen QA" in §7); **Owner** = only the owner can. Fix whatever turns up before starting new features.
 
-On-screen QA needs the owner to keep hands off the Mac (see "On-screen QA" in §7).
-
-| Feature / check | Status | Notes |
-|---|---|---|
-| Deck: light mode, tile hover and press, unfold / fold animation | 🟡 | Dark mode, Esc, arrows, ⌘1/⌘2/⌘6/⌘0 done; tile hover outline seen 2026-11-19. Left: press, unfold / fold (needs a human or a screen recording), light mode needs a relaunch with `-AppleInterfaceStyle Light` |
-| Vibe ring bounce | ⬜ | Colors seen (yellow mid, red cooked); burst captures too coarse to catch it (2026-11-19), needs a human |
-| Agent watch: session ends after 3 quiet minutes; "is done" notification | ⬜ | Trigger start seen with `pmset` |
-| Settings: drag to reorder, number drag, banner preview | ⬜ | Reorder skipped so far: it would change the owner's order |
-| Reduce Motion and Increase Contrast: readable, springs become fades | ⬜ | |
-| Real VoiceOver over deck, menu bar items, palette; alert number adjustable | 🟡 | Tiles read as sentences in the accessibility tree |
-| Bluetooth off while asleep: permission prompt, really off in sleep and back on after wake | ⬜ | Owner will test: switch it on in Settings → General, sleep, wake, check the log (§7) |
-| Agent logos in the menu bar and deck; Agents settings rows and Claude account picker (switch to a second account, live limits follow) | 🟡 | Logos seen in the menu bar item and deck (2026-11-19); settings rows only in the accessibility tree; picker shows one account. Left: rows seen rendered, switching to a second account (owner) |
-| Quit / Force Quit menus and confirmation, mic-muted and shortcuts-paused chips, notification red dot | 🟡 | Red dot seen and labelled "1 new notification" (2026-11-19); palette lists Quit / Force Quit for the loudest group. Left: the confirmation dialog (needs a throwaway target process that is the loudest), both chips |
-| P2 batch (2026-11-19): ring drop and ⌥-click, notch auto-collapse, palette process commands, toggle shake, update hint, Advanced sections, vibe strip, battery history, call guard, Wi-Fi trigger, network extras, recovery check, culprit drain | 🟡 | Palette process commands seen; call guard / Wi-Fi trigger / public IP rows present in the accessibility tree. "Advanced" disclosures didn't open with AXPress (try a real click before calling it a bug). Rest not seen; see §3 |
-| Ring wobble (2026-11-19): bumps actually move in the menu bar (captures showed a frozen frame); deck header ring | 🟡 | Menu bar motion seen 2026-11-19 (captures 0.13–0.5 s apart differ, the 3-bump ring rotates); deck header bump counts right. Left: deck header motion |
-| Widgets: small "Vibe" render; light / tinted modes; update after a vibe change; dim after quitting | 🟡 | Medium "CPU and Memory" seen on the desktop by the owner (dark wallpaper, live data, vibing) |
-| Ring-only style and the cup inside the ring (2026-11-19): legible at 16 pt, item width steady, deck opens | 🟡 | Ring-only seen 2026-11-19: legible, steady across 91→92%, deck opens, "CPU 91%" badge beside it. Left: the cup inside the ring (owner keeps keep-awake as its own item) |
-
-Fix whatever turns up before starting new features.
-
-### P1: soon
-
-Nothing left: the ring-first menu bar and the cup in the ring shipped 2026-11-19 (§3); distribution moved to P3.
-
-### P2: nice to have
-
-**Menu bar and deck**
-
-All shipped 2026-11-19 (§3).
-
-
-**Features that reuse what VibeCheck knows**
-
-All shipped (§3).
-
-**Polish and presence**
-
-All shipped 2026-11-19 (§3); the website and the GitHub social preview moved to P3. Small leftovers: App Shortcut phrases still in code (an `AppShortcuts.xcstrings` needs `build.sh` support and a check with a built app); no translations yet.
-
-### P3: someday / risky
-
-| Feature | Notes |
-|---|---|
-| **Distribution** 🟡: built 2026-11-19. Sharing with colleagues works now (`scripts/release.sh --share`, owner's choice 2026-11-19: no paid program for now); installed on a colleague's Mac via the Terminal step (2026-11-19). For a public release, left: a paid Apple Developer Program membership and a "Developer ID Application" certificate, a `notarytool` keychain profile, then the first real `scripts/release.sh` run; on the notarized build check the Wi-Fi trigger (Location), Bluetooth snooze, dark mode / empty Trash (Apple Events) and the widget; publish `v<version>` on GitHub (repo must be public, or the update check gets a 404 and stays quiet); check Gatekeeper on a second Mac. Homebrew cask last (owner, 2026-11-19) | `scripts/release.sh` (sign, notarize, staple, DMG), `build.sh` (hardened runtime for Developer ID), `App/UpdateChecker.swift`. The Apple Development cert (Team ID `77HKFF78Z8`) expires Nov 2027; the Developer ID cert must be the same team (app group) |
-| Website / landing page from the brand assets (good to have, last; owner skipped it 2026-11-19) | |
-| GitHub social preview: upload `branding/png/social-card.png` | Blocked (checked 2026-11-19): GitHub only shows Settings → Social preview on public repos. Upload it when the repo goes public |
+| # | Item | Who | Pri | What's left / notes |
+|---|---|---|---|---|
+| 1 | Deck: light mode, tile press, unfold / fold animation | QA | P0 | Hover outline seen 2026-11-19. Light mode needs a relaunch with `-AppleInterfaceStyle Light`; animations need a screen recording or a human |
+| 2 | Ring motion: bounce; wobble on the deck header ring | QA / Owner | P0 | Menu bar wobble seen 2026-11-19; burst captures too coarse for the bounce |
+| 3 | Cup inside the ring (ring-only style) | QA | P0 | Ring-only style itself seen 2026-11-19; owner keeps keep-awake as its own item, so switch temporarily and restore |
+| 4 | Settings: drag to reorder, number drag, banner preview, "Advanced" sections | QA | P0 | Save and restore `local.vibecheck.app` before reordering. "Advanced" didn't open with AXPress; try a real click before calling it a bug |
+| 5 | Quit / Force Quit confirmation dialog; mic-muted and shortcuts-paused chips | QA | P0 | Needs a throwaway process that is the loudest (never confirm on a real app). Red dot and palette commands seen |
+| 6 | 2026-11-19 batch not yet seen: ring drop and ⌥-click, notch auto-collapse, toggle shake, update hint, vibe strip, battery history, recovery check, culprit drain, network extras | QA | P0 | Palette process commands seen; call guard / Wi-Fi trigger / public IP rows only in the accessibility tree. Details in §3 |
+| 7 | Agent watch: session ends after 3 quiet minutes; "is done" notification | QA | P0 | Trigger start seen with `pmset` |
+| 8 | Widgets: small "Vibe", light / tinted modes, update after a vibe change, dim after quitting | QA / Owner | P0 | Medium "CPU and Memory" seen by the owner |
+| 9 | Reduce Motion and Increase Contrast: readable, springs become fades | Owner | P0 | System settings; QA doesn't toggle them |
+| 10 | Real VoiceOver over the deck, menu bar items, palette; alert number adjustable | Owner | P0 | Tiles read as sentences in the accessibility tree |
+| 11 | Bluetooth off while asleep: permission prompt, really off in sleep, back on after wake | Owner | P0 | Switch it on in Settings → General, sleep, wake, check the log (§7) |
+| 12 | Agents settings rows seen rendered; switching to a second Claude account (live limits follow) | Owner | P0 | Logos seen 2026-11-19; picker shows one account |
+| 13 | App Shortcut phrases out of code into `AppShortcuts.xcstrings` | Dev | P2 | Needs `build.sh` support and a check with a built app |
+| 14 | Translations | Dev | P2 | None yet |
+| 15 | Private-API recheck after each macOS update: `IOHIDEventSystemClient*`, `responsibility_get_pid_responsible_for_pid`, SMC `PSTR`/`PDTR`/`F0Ac`, `IOBluetoothPreference{Get,Set}ControllerPowerState` | Dev | Tech debt | Last checked 2026-11-19 on macOS 27.2.1 (26B131), M5: all working (`--dump` + a `dlsym` probe) |
+| 16 | Public distribution: paid Apple Developer Program, "Developer ID Application" cert (same team `77HKFF78Z8`, app group), `notarytool` profile, first real `scripts/release.sh`; on the notarized build check Wi-Fi trigger, Bluetooth snooze, Apple Events and the widget; publish `v<version>` (repo must be public); Gatekeeper on a second Mac; Homebrew cask last | Owner | P3 | Sharing with colleagues already works (`scripts/release.sh --share`). Apple Development cert expires Nov 2027 |
+| 17 | Website / landing page from the brand assets | Dev | P3 | Owner skipped it 2026-11-19 |
+| 18 | GitHub social preview: upload `branding/png/social-card.png` | Owner | P3 | Only possible once the repo is public |
 
 **Not planned:** another app's window, Dock, mouse, keyboard, clipboard, file, screenshot, recording,
-uninstaller, lyrics and companion tools, its "Dynamic Island" bar, and API cost estimates (needs a price
-list; owner said no). Also dropped by the owner (2026-11-19): fan control, disk cleaner, calendar in the Clock panel, keep awake
-with the lid closed, a sandboxed App Store edition, display brightness, iCloud settings sync, and the dark mode quick toggle (removed from the deck and ⌘K).
-
-### Tech debt
-
-- Private / undocumented APIs, all looked up at runtime with fallbacks: `IOHIDEventSystemClient*`
-  (temperatures), `responsibility_get_pid_responsible_for_pid` (app grouping), SMC keys `PSTR`/`PDTR`/`F0Ac`,
-  `IOBluetoothPreference{Get,Set}ControllerPowerState`. Re-check after each macOS update.
-  **Last checked 2026-11-19 on macOS 27.2.1 (26B131), M5:** all resolve and return real values (`--dump`: 45 HID
-  sensors, `PSTR` 16 W, `PDTR` 0 W on battery, `F0Ac` 0 rpm idle with range 2317–6550, Bluetooth symbols
-  found; a probe mapped Chrome helpers to Google Chrome).
+uninstaller, lyrics and companion tools, its "Dynamic Island" bar, and API cost estimates. Also dropped by the
+owner (2026-11-19): fan control, disk cleaner, calendar in the Clock panel, keep awake with the lid closed, a
+sandboxed App Store edition, display brightness, iCloud settings sync, and the dark mode quick toggle.
 
 ---
 
@@ -229,7 +196,7 @@ command.
 deck, the drawn ⌘K field, the culprit outline. Holding it back: too many jobs at once (Empty Trash, Clock
 and Weather fail the menu bar test), separate items a notched MacBook will evict, idle cost that scales with
 item count, hidden gestures, unverified accessibility, no distribution. The §2 items marked P1/P2 under
-"Menu bar and deck", call guard and vibe replay come from it. Full text: [the appendix](#appendix-vibecheck-the-ada-teardown-and-roadmap).
+"Menu bar and deck", call guard and vibe replay come from it. Full text: in git history (removed from this file 2026-11-19).
 
 **Menu bar**
 - Monochrome by default; color only when the vibe isn't vibing. Width is earned the same way: the ring
@@ -493,234 +460,15 @@ release and QA runs `--deck-demo` on that build. Settings call sites renamed (e.
 `settings.menuBar.style`, `keepAwakeDisplayOn` → `keepAwake.displayOn`); the stored keys did not change. Only
 the private-API watch list is left under Tech debt.
 
-#### 2026-11-19: Mood Dial icon
-
-Replaced the app icon with the "Mood Dial" direction (five concepts rendered as AI images first; the owner picked
-this one). A hand-built SVG version shipped first (91e8b1f); the owner then asked for the render itself, so the
-icon is now the render, cut out and masked (see BRAND.md §3). Seen: rendered PNGs, corner crops, and the
-`NSWorkspace` icon of the built app. Not seen: Dock, Finder, tinted / clear modes. Later the same day the flat
-mark (and so the lockups) was redrawn to match: ring, notched knob pointing at the gap, check in the gap. The
-in-app recovery animation still draws the old pulse-to-check stroke (`PulseCheckShape`); decide whether it
-should become the notch turning and the check popping in.
-
-#### 2026-11-19: P2 batch
-
-Shipped every P2 item that can be done in code, built in parallel by six builders with their own scratch
-paths (`swift build --scratch-path .build/w-<name>`) and file lists; integrated build has no new warnings,
-206 tests pass, reviewer pass fixed three issues (stores saved on quit, notch check ignores parked items,
-process commands kept out of palette recents). Nothing was seen on screen: the whole batch needs a P0 look.
-Left in §2: WidgetKit (needs an Xcode extension target), `.icon` (Icon Composer), localization, website,
-social preview (manual).
-Later the same day: agent switches now filter the deck too (installed), Focus filter, String Catalog;
-website skipped by the owner. Then P1: ring-only style for new installs and the cup in the ring;
-distribution and the website moved to P3 (good to have, last) at the owner's request. Then the Settings crash
-fix, the rest of the String Catalog and the Liquid Glass icon; social preview moved to P3. Lesson: a view used
-in both the menu bar item and Settings' preview must read item-only environment objects as optionals.
-
-#### 2026-11-19: agent logos, Claude accounts
-
-✨ replaced by agent logos; "Count all agents" replaced by per-agent switches on the Agents page. The Claude
-account picker swaps the scanner (`AgentUsageStore.claudeProfileChanged`, a generation counter drops a scan
-already running) and resets live limits. Only one Claude profile exists on the owner's Mac, so switching was
-tested with fixtures only. Offscreen renders of Forms need `SystemStats` in the environment.
-
-#### 2026-11-19: Settings regroup
-
-Sidebar now mirrors launcher apps's settings: app pages, then "Monitors" (one page each), then "Extras" (Clock,
-Weather). `SettingsSection` has `.module(Module)`; open pages with `SettingsRouter.shared.open(_:)` (clears
-the search). Offscreen renders can't draw the glass sidebar, so the sidebar still needs an on-screen look.
-
-#### 2026-11-18: one roadmap
-
-Merged `IMPROVEMENT_PLAN.md` and `DESIGN_DIRECTION.md` into this file, ordered by feature priority. CLAUDE.md,
-README and CODEMAP point here.
-
-#### 2026-11-18: cleanup
-
-Removed the unused QA helpers `crop`, `grid` and `pos`. `qa item` matches the item description by prefix. A
-scan of types, statics and member names found no other dead Swift code. The owner deleted the old
-`local.pulse.monitor` settings (an empty plist file is left in `~/Library/Preferences`).
-
-#### 2026-11-18: agent watch, ring badge, verdict tooltip
-
-Built from the ADA review; installed and relaunched. Reviewer fixes: the ring re-measures only on a badge
-shape change; a run cut by midnight is dropped without notifying. A run's length counts from the first write
-VibeCheck saw.
-
-
----
-
-## Appendix: VibeCheck, the ADA teardown and roadmap
-
-The full Apple Design Award style review from 2026-11-18, kept as written. Its work items live in §2 (and
-§3 once done); paths are relative to `Sources/VibeCheck/`. Where this appendix and §2 differ, §2 is current.
-
-### 1. 🔍 The brutal (but fair) teardown
-
-**What's award-grade already**
-- **Verdict first.** "Vibing / mid / cooked" plus one sentence naming the culprit is a real idea. Most
-  monitors hand you a wall of gauges; this one hands you an answer. The culprit outline on the tile
-  ("the verdict says why, the grid says where") is the best detail in the app.
-- **The deck architecture is right.** One borderless non-activating `NSPanel` instead of `NSPopover`,
-  matched-geometry unfolds, 104 pt whole-pixel tiles, glass used once, a drawn ⌘K field so the panel never
-  steals focus. That's Apple-level thinking.
-- **Honest engineering.** IOKit assertions instead of a `caffeinate` child, pid start-time checks before
-  killing, two-sample hysteresis on the ring, App Intents shipped, and a verified/not-verified table.
-
-**What would get it cut in the first round**
-1. **It doesn't know what it is.** It's a system monitor, a keep-awake app, a focus timer, a
-   quick-toggle strip (Dark mode, Mic, *Empty Trash*), a process killer, a port manager, a USB lister, a
-   Bluetooth sleep tool, an AI token tracker, a clock and a weather app. Each one is fine. Together they
-   tell a judge "feature list," not "point of view." **Empty Trash in a system monitor** is the clearest
-   case: it fails the "does this need to be in the menu bar?" test outright.
-2. **Clock and Weather fail the menu bar test.** macOS already owns the clock at the right edge, and
-   Weather has a widget plus Notification Center. They cost tiles, Settings panes and network code and add
-   nothing to the verdict. Demote them.
-3. **The owner's own setup breaks the notch.** Separate items for CPU, GPU, Network, Sensors, Battery and
-   Agents, plus ring and cup, is about 8 items. On a 14" MacBook that's a guaranteed eviction behind the
-   notch, and the app only addresses it when the user picks "combined." The default should be smart
-   enough that nobody has to know the notch exists.
-4. **Idle cost is too high for a "glance" app.** ~3.3% CPU and ~100 MB with the deck closed. The docs
-   correctly blame `NSStatusItem _updateReplicants` redrawing every item's `NSHostingView` on every display,
-   so the real lever is **fewer, calmer items**, not a faster renderer. Six live-updating items × two
-   displays is the cost.
-5. **Hidden gestures.** Press-and-hold on the cup for a four-sector dial, right-click vs click on the cup
-   item, ⌥-click: powerful, but undiscoverable. ADA judges try things once.
-6. **Polish is unproven on screen.** Light mode hover/press, the unfold animation, ring bounce, Reduce
-   Motion, Increase Contrast and real VoiceOver have never been seen. Accessibility is a judging
-   criterion, not a nice-to-have.
-7. **Nobody else can install it.** No Developer ID, no notarization, no DMG, no updates. And the honest
-   blocker: ADA entries come from the App Store, and VibeCheck's private APIs (`IOHIDEventSystemClient`,
-   SMC keys, private IOBluetooth) plus shelling out to `ps` / `lsof` / `nettop` are incompatible with the
-   sandbox. "Award-grade" is the bar to hold; the trophy itself would need a sandboxed edition.
-
----
-
-### 2. ⚠️ The notch and menu bar strategy
-
-**The icon: one ring that earns its width.**
-- **Default to a single item: the vibe ring.** ~18 pt, monochrome template look, no text while vibing.
-  When the vibe goes mid or cooked, the item grows to **ring + culprit + number** ("◔ CPU 96%"), and shrinks
-  back when it recovers. Width is earned by bad news, same rule the deck uses for color.
-  - Code: `StatusItemController` in `App/AppDelegate.swift` already sets `item.length = max(ceil(width), 8)`
-    (line 142). The "Limits left" clipping bug came from length being measured only at creation, so this
-    must set `length` explicitly on each vibe change (which already passes the two-sample hysteresis, so
-    it can't flicker).
-- **Fold the cup into the ring.** While keep-awake runs, the ring gets a small cup badge in its gap (the
-  gap the brand reserves for the check). One item instead of two. The standalone cup stays an option.
-- **Auto-collapse when evicted.** Separate-items users keep their layout until macOS actually hides an
-  item. Detect it (status item window frame off-screen or overlapping `NSScreen.auxiliaryTopLeftArea` /
-  `auxiliaryTopRightArea` on the notched display), then fall back to the combined item with a one-time
-  notice: "Some stats didn't fit beside the notch, so VibeCheck combined them." `App/NotchFit.swift` has
-  the maths; this adds detection.
-- **Calm redraws.** Items that show a number redraw at the refresh rate; the ring only redraws on a state
-  change. Making the ring the default is also the cheapest fix for the idle-cost problem in §1.4.
-
-**Interactions on the icon**
-| Gesture | Does |
-|---|---|
-| Click | Open the deck (unchanged) |
-| ⌥-click | Toggle keep awake with the default length (matches the cup's click) |
-| Right-click | Compact menu: verdict sentence, keep-awake options, Settings, Quit |
-| Hover | Tooltip with the verdict sentence ("Kinda mid: memory is getting tight.") via `button.toolTip`, the cheapest win on this list (none today) |
-| **Drop a file or folder** | "Keep awake until this finishes": watches that path for growth/renames, reusing the downloads-watcher trigger in `App/DownloadsWatcher.swift` |
-| **Drop an app** | "Keep awake while *App* runs", reusing the existing app trigger in `App/KeepAwake.swift` |
-
-Drag-and-drop needs `registerForDraggedTypes` on the status button (none today). It makes keep-awake a
-one-gesture feature instead of a menu dive, which is exactly the "zero friction" bar.
-
----
-
-### 3. 🌟 "App of the Year" feature injections
-
-**A. Agent watch: "keep awake while my agent works."** *(reuses `AgentUsage.isWorking`, KeepAwake triggers)*
-VibeCheck already knows when Claude Code / Codex / Copilot / OpenCode is "working now" from local logs. Add a
-keep-awake trigger "While an AI agent is working" (edge-triggered like the others, manual Stop still wins),
-plus an opt-in "Agent finished" notification when work stops after a long run. Close the lid on a
-20-minute agent run and come back to a finished job instead of a sleeping Mac. No other monitor can do this
-because no other monitor reads agent logs. It's the feature that gives the Agents module a reason to live
-in a system monitor.
-
-**B. Call guard: protect the meeting.** *(new, public APIs)*
-Detect a call: camera in use (`kCMIODevicePropertyDeviceIsRunningSomewhere`) or mic in use
-(`kAudioDevicePropertyDeviceIsRunningSomewhere`). While on a call: hold non-critical alerts until it ends,
-keep the display awake, and if the vibe goes mid, say so *before* the call stutters, with one action:
-"Your call may stutter: Xcode is at 140% CPU. Quit Xcode?" (same Quit rules, pid start-time check, second
-confirmation). Add a **Focus filter** (`SetFocusFilterIntent`) so users choose per Focus whether alerts
-are held. This turns VibeCheck from "tells you it's cooked" into "keeps it from getting cooked when it
-matters."
-
-**C. Vibe replay: the Mac's memory.** *(reuses `HistoryStore`, `Vibe`, `AlertEngine` history)*
-Record each mid/cooked episode with its culprit and duration. The ring's detail (click the ring in the
-deck header) shows a 24 h strip colored by vibe and a line like "Chrome Helper cooked your Mac 4 times this
-week, 52 min total." Repeat offenders get a one-tap action (Quit, or an alert rule pre-filled for that app).
-It answers the question users actually have: not "what is the CPU now," but "why was my Mac slow this
-afternoon?"
-
-Not proposed on purpose: more modules. Every injection above reuses data VibeCheck already collects.
-
----
-
-### 4. ✨ The ADA-level interface and polish
-
-**Layout: subtract before adding**
-- **Home grid caps at six tiles.** Default modules: CPU, Memory, Network, Sensors, Battery, Agents. GPU and
-  Disk on by choice; Clock and Weather off by default and reachable only through ⌘K and Settings.
-- **Never reorder tiles by severity.** Spatial consistency beats drama; the culprit outline already points.
-- **Quick toggles: Dark and Mic only.** Empty Trash moves to ⌘K (still behind Finder, per the decisions log).
-- **Discoverable gestures.** The cup's tooltip says "Click for options · hold to pick a length". First time
-  the deck opens after an update, one dismissible line under the search field shows the new gesture, never
-  again.
-- **Settings stays behind ⌘,** (already right). Audit the 8 panes against "would a user change this in the
-  first week?" and move the rest under an "Advanced" disclosure.
-
-**Visuals**
-- Keep what's there: `NSGlassEffectView` on 26+, `NSVisualEffectView` `.popover` / `.behindWindow` with the
-  0.5 pt hairline on 14–15, quiet `.quaternary` tiles. Don't add a second glass layer anywhere.
-- **Make the ring a custom SF Symbol** (exported from the SF Symbols app with a variable-value layer) for
-  the menu bar. It matches the menu bar's weight and size automatically, renders as a template, scales with
-  Dynamic Type-like settings, and gets `symbolEffect` transitions for free instead of hand-built shapes in
-  an `NSHostingView`, which also lightens the replicant redraw cost.
-- Type stays as specified: SF Pro Text 15 pt semibold verdict, SF Pro Rounded 17 pt monospaced-digit
-  heroes, 10 pt minimum.
-
-**Micro-interactions**
-1. **The recovery check.** When the vibe goes from cooked or mid back to vibing, the ring refills and the
-   brand's pulse-to-check stroke draws through the gap once (trim 0 → 1, spring 0.5 / 0.75) then fades,
-   in the menu bar and in the deck header. It's the logo becoming the verdict. Reduce Motion: a 150 ms
-   crossfade. Once per recovery, never on launch.
-2. **Quitting the culprit.** After a Quit from the culprit tile, the hero number rolls down with
-   `numericText`, the red outline drains around the tile (stroke trim reversing over 400 ms), and the ring
-   in the header refills. The user sees cause and effect in one beat.
-3. **Drop target.** While a file or app is dragged over the menu bar, the ring dilates 10% and the cup
-   fades into its gap; release snaps it with spring 0.2 / 0.7.
-
-**On haptics, an honest correction to the brief:** `NSHapticFeedbackManager` only fires while a finger is
-on a Force Touch trackpad. Use it for direct manipulation (the hold dial's sector detents, already done;
-chart scrub peaks), never for background events like a task finishing.
-
-**Accessibility (P0, not polish):** run real VoiceOver over the deck, menu bar items and palette; Reduce
-Motion and Increase Contrast passes; the menu bar item's accessibility label should read the verdict
-sentence, not "CPU 96".
-
----
-
-### 5. 🏆 The winning pitch
-
-VibeCheck is the first Mac monitor that answers a question instead of showing a dashboard: one ring tells
-you if your Mac is vibing or cooked, and one click names the culprit and fixes it. It takes one slot beside
-the notch, protects your calls and your AI agents' runs without being asked, and feels like Apple built it
-for people who never want to think about a process viewer again.
-
 ---
 
 ## How to update this file
 
 At the end of each session, and **whenever a feature is done**:
 
-1. Move the feature's row from §2 to the top of §3 *Shipped*, with the date and how it was checked
-   (unit tests, `--dump`, `pmset`, seen on screen…). Partly done: mark it 🟡 in §2 and say what's left.
-2. New ideas go into §2 with a priority; drop anything the owner rejects into "Not planned".
+1. Remove the item from §2 and add it to the top of §3 *Shipped*, with the date and how it was checked
+   (unit tests, `--dump`, `pmset`, seen on screen…). Partly done: update its "What's left" in §2.
+2. New ideas go into §2's list with a priority; drop anything the owner rejects into "Not planned".
 3. Update §4 if anything was checked on screen; never mark something seen that wasn't.
 4. Add any decision a future session might be tempted to undo to §6.
 5. Add a short dated note to §8 and bump the _Last updated_ line. Keep about five notes; fold lasting lessons
