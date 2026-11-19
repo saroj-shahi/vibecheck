@@ -5,7 +5,7 @@ working, the design rules and the decisions behind them. **Read sections 1 and 2
 only for the area you're touching. Code locations are in [CODEMAP.md](CODEMAP.md); brand, voice and motion
 in [BRAND.md](../branding/BRAND.md) (it wins over this file on those).
 
-_Last updated: 2026-11-18 · version 1.5 · ~11,100 lines of Swift · 164 tests_
+_Last updated: 2026-11-19 · version 1.5 · ~11,200 lines of Swift · 170 tests_
 
 **Keeping it current (every session):** when a feature is done, move its row from §2 to §3 *Shipped* with
 the date and how it was checked, update §4 if anything was seen on screen, add any decision to §6, and add a
@@ -139,6 +139,7 @@ actions, keep awake, notification history) are in `git log` and the README.
 
 | Date | Feature | How it was checked |
 |---|---|---|
+| 2026-11-19 | **Settings reorganized** like System Settings: searchable sidebar in groups (app pages · Monitors · Extras) with colored icon tiles; one page per module (on/off, menu bar look and options, that module's alerts, shortcut); About page; Claude live limits moved to Agents | Unit tests; detail pages rendered offscreen and looked at; sidebar and search not yet seen on screen |
 | 2026-11-19 | Agents detail: shorter and limits-first (agent cards on top, compact one-line gauges, 24 h and 7-day charts side by side, top 3 projects) | Tests; seen on screen (deck 928 pt tall, was over 1032 and clipped). `qa`: restored `pos`, which the input guard needs |
 | 2026-11-18 | Cleanup: unused QA helpers removed, `qa item` matches by prefix | Tests; `qa item` against the installed app |
 | 2026-11-18 | **Agent watch:** keep awake while an AI agent is working (log write in the last 3 min); opt-in "<Agent> is done" after runs of 10+ min | `pmset -g assertions` with the trigger on / off; unit tests |
@@ -184,7 +185,8 @@ whole screen.
 | Global shortcuts ⌃⌥⌘1–9 from another app | ✅ ⌃⌥⌘2 opened GPU; others not tried |
 | Notifications appearing | ✅ test banner seen by the owner; permission prompt not seen |
 | Notch auto-fit on the built-in display | ⚠️ maths verified with real widths, not seen |
-| Settings: all 8 panes, live preview | ✅ seen |
+| Settings: all 8 panes, live preview | ✅ seen (before the 2026-11-19 sidebar regroup) |
+| Settings: grouped sidebar, search, per-module pages | ⚠️ detail pages rendered offscreen; sidebar not seen |
 | Settings: drag to reorder, number drag, token menus, banner preview | ❌ not touched |
 | Launch at login across a real restart | ⚠️ registered, not rebooted |
 | Keep awake: assertion held (display / system type) and released | ✅ `pmset -g assertions` + a unit test reading `IOPMCopyAssertionsByProcess` |
@@ -348,6 +350,7 @@ Choices future sessions shouldn't silently undo.
 | Limit lists key on `RateWindow.key` (length + name) | Copilot's two monthly quotas share a length; keying on length drew one twice |
 | Agents module: no network of its own; live Claude limits run the local `claude` CLI | Keeps "local logs only" true for VibeCheck itself |
 | No cost estimates in the Agents module (owner, 2026-11-18) | It would need downloading a price list; never hard-code prices either |
+| Settings: one sidebar page per module; the Menu Bar page keeps only order, on/off and display, and › opens the module page. Monitors list in fixed order, not the menu bar order | Options live in one place; a sidebar that reshuffles on reorder is hard to scan |
 | Settings footers use `settingsFooter()` (caption, leading) | Grouped `Form` footers align trailing by default on macOS |
 | Chart areas add points with `addLine`, never `addLines` | `addLines` starts a new subpath and breaks the closed fill |
 | Agent watch counts an agent as working for 3 min after its last write (not the 2 min "working now" rule) | Long tool calls (tests, builds) write nothing for minutes; a shorter gap would end the session and notify mid-run |
@@ -439,6 +442,12 @@ scripts/qa/build.sh && .build/qa/qa help   # on-screen QA tools
 
 Newest first; keep about five. Older notes are folded into §3, §6 and §7 (and `git log`).
 
+#### 2026-11-19: Settings regroup
+
+Sidebar now mirrors launcher apps's settings: app pages, then "Monitors" (one page each), then "Extras" (Clock,
+Weather). `SettingsSection` has `.module(Module)`; open pages with `SettingsRouter.shared.open(_:)` (clears
+the search). Offscreen renders can't draw the glass sidebar, so the sidebar still needs an on-screen look.
+
 #### 2026-11-18: one roadmap
 
 Merged `IMPROVEMENT_PLAN.md` and `DESIGN_DIRECTION.md` into this file, ordered by feature priority. CLAUDE.md,
@@ -459,11 +468,6 @@ VibeCheck saw.
 #### 2026-11-18: ADA-style design review
 
 Review only. Main points are in §5; the resulting work is in §2.
-
-#### 2026-11-18: QA of the new deck
-
-Installed build checked on screen by the QA agent (round-two rows in §4). Fix from it: ⌘↩ on a row whose only
-action is Run beeps instead of showing a one-item card.
 
 ---
 

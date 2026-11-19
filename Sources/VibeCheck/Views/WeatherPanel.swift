@@ -21,7 +21,7 @@ struct WeatherPanel: View {
             } else {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Pick a city to see the weather.").font(.callout)
-                    Button("Choose City…") { (NSApp.delegate as? AppDelegate)?.showSettings() }
+                    Button("Choose City…") { (NSApp.delegate as? AppDelegate)?.showSettings(.module(.weather)) }
                 }
             }
         }

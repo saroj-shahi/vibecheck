@@ -46,7 +46,9 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `PortSampler` (`lso
 | `Panels.swift` | `Panel`, `PanelHeader` (pinned by `DeckRoot` in the deck), detail panels per module, `ProcessList`, `ListeningPortsSection`, `USBDevicesSection` |
 | `AgentsPanel.swift` | Agents detail: Now card, charts, agent cards, `LimitGauge`, `PaceBar`, `DailyBars` |
 | `MetricChart.swift` | Detail charts (resampling, `SeriesShape`, scrubbing) |
-| `SettingsView.swift` | Settings window: every pane, `ItemOptionsView`, `.settingsFooter()` |
+| `SettingsView.swift` | Settings window: `SettingsSection` (sidebar groups, icons, search keywords), `SettingsRouter.open`, sidebar, Menu Bar / General / Backup / About / Shortcuts pages, `.settingsFooter()` |
+| `SettingsModules.swift` | One Settings page per module (`ModuleSettings`): on/off, menu bar options, the module's alerts, shortcut; Claude limits, Clock and Weather sections |
+| `SettingsAlerts.swift` | Alerts page, `AlertRuleRow` (sentence alerts), token menus, `NumberToken`, `FlowLayout` |
 | `KeepAwakeViews.swift` | Deck cup (click → `KeepAwakeMenu`, hold → `AwakeDial`), Keep Awake settings pane |
 | `QuickTogglesView.swift`, `NotificationHistoryView.swift`, `VibeRing.swift`, `ClockPanel.swift`, `WeatherPanel.swift`, `Charts.swift` | as named |
 

@@ -28,7 +28,7 @@ enum DeckCommands {
         for module in model.modules {
             list.append(DeckCommand(id: "module.\(module.rawValue)", title: "Open \(module.title)", symbol: module.symbol,
                                     shortcut: module.shortcutKey.map { "⌘\($0)" }, keywords: "show view details",
-                                    settingsSection: .menuBar) {
+                                    settingsSection: .module(module)) {
                 model.closePalette()
                 model.go(.module(module))
             })
@@ -65,7 +65,7 @@ enum DeckCommands {
         })
 
         for section in SettingsSection.allCases {
-            list.append(DeckCommand(id: "settings.\(section.rawValue)", title: "\(section.title) settings",
+            list.append(DeckCommand(id: "settings.\(section.id)", title: "\(section.title) settings",
                                     symbol: section.symbol, keywords: "preferences settings options") {
                 close()
                 (NSApp.delegate as? AppDelegate)?.showSettings(section)

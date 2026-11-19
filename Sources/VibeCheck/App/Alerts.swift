@@ -34,6 +34,27 @@ enum AlertMetric: String, Codable, CaseIterable, Identifiable {
         default: 1...100
         }
     }
+
+    /// The module whose Settings page lists alerts on this metric.
+    var module: Module {
+        switch self {
+        case .cpu: .cpu
+        case .gpu: .gpu
+        case .memory: .memory
+        case .temperature: .sensors
+        case .batteryLevel, .accessoryBattery: .battery
+        case .diskFree: .disk
+        case .agentTokens: .agents
+        }
+    }
+
+    /// Levels that run out are watched from below ("battery below 15%"); load is watched from above.
+    var defaultComparison: AlertComparison {
+        [.batteryLevel, .diskFree, .accessoryBattery].contains(self) ? .below : .above
+    }
+
+    /// Metrics that can be alerted on for a module, in menu order.
+    static func metrics(for module: Module) -> [AlertMetric] { allCases.filter { $0.module == module } }
 }
 
 enum AlertComparison: String, Codable, CaseIterable, Identifiable {
@@ -51,6 +72,18 @@ struct AlertRule: Codable, Identifiable, Equatable {
 
     static let durations: [(TimeInterval, String)] =
         [(0, "instantly"), (10, "10 sec"), (30, "30 sec"), (60, "1 min"), (300, "5 min"), (900, "15 min")]
+
+    /// A new alert for `metric`: the default rule's numbers when there is one, otherwise a sensible start.
+    static func starter(for metric: AlertMetric) -> AlertRule {
+        if let rule = defaults.first(where: { $0.metric == metric }) { return AlertRule(metric: metric, comparison: rule.comparison, threshold: rule.threshold, duration: rule.duration) }
+        let threshold: Double = switch metric {
+        case .agentTokens: 50
+        case .accessoryBattery: 20
+        default: 80
+        }
+        return AlertRule(metric: metric, comparison: metric.defaultComparison, threshold: threshold,
+                         duration: metric.defaultComparison == .below ? 0 : 60)
+    }
 
     static func durationLabel(_ seconds: TimeInterval) -> String {
         durations.first { $0.0 == seconds }?.1 ?? "\(Int(seconds)) sec"

@@ -1,35 +1,99 @@
 import AppKit
 import SwiftUI
 
-enum SettingsSection: String, CaseIterable, Identifiable {
-    case menuBar, general, keepAwake, alerts, clock, weather, shortcuts, backup
-    var id: String { rawValue }
+/// A page of the Settings window. App-wide pages first, then one page per module.
+enum SettingsSection: Hashable, Identifiable {
+    case general, menuBar, keepAwake, alerts, shortcuts, backup, about
+    case module(Module)
+
+    /// The sidebar, top to bottom: app pages, then monitors, then extras (like 
+    /// System Settings: general things first, then one row per thing you can configure).
+    static let groups: [SettingsGroup] = [
+        SettingsGroup(title: nil, sections: [.general, .menuBar, .keepAwake, .alerts, .shortcuts, .backup, .about]),
+        SettingsGroup(title: "Monitors", sections: Module.allCases.filter { !$0.isExtra }.map { .module($0) }),
+        SettingsGroup(title: "Extras", sections: Module.allCases.filter(\.isExtra).map { .module($0) }),
+    ]
+
+    static var allCases: [SettingsSection] { groups.flatMap(\.sections) }
+
+    var id: String {
+        switch self {
+        case .general: "general"
+        case .menuBar: "menuBar"
+        case .keepAwake: "keepAwake"
+        case .alerts: "alerts"
+        case .shortcuts: "shortcuts"
+        case .backup: "backup"
+        case .about: "about"
+        case .module(let module): "module.\(module.rawValue)"
+        }
+    }
 
     var title: String {
         switch self {
-        case .menuBar: "Menu Bar"
         case .general: "General"
+        case .menuBar: "Menu Bar"
         case .keepAwake: "Keep Awake"
         case .alerts: "Alerts"
-        case .clock: "Clock"
-        case .weather: "Weather"
         case .shortcuts: "Shortcuts"
         case .backup: "Backup"
+        case .about: "About"
+        case .module(let module): module.title
         }
     }
 
     var symbol: String {
         switch self {
+        case .general: "gearshape.fill"
         case .menuBar: "menubar.rectangle"
-        case .general: "gearshape"
-        case .keepAwake: "cup.and.saucer"
-        case .alerts: "bell.badge"
-        case .clock: "clock"
-        case .weather: "cloud.sun"
-        case .shortcuts: "keyboard"
-        case .backup: "externaldrive.badge.timemachine"
+        case .keepAwake: "cup.and.saucer.fill"
+        case .alerts: "bell.badge.fill"
+        case .shortcuts: "command"
+        case .backup: "externaldrive.fill.badge.timemachine"
+        case .about: "info"
+        case .module(let module): module.symbol
         }
     }
+
+    /// Tile color behind the sidebar symbol (System Settings style: white glyph on a colored square).
+    var color: Color {
+        switch self {
+        case .general: .gray
+        case .menuBar: .blue
+        case .keepAwake: .brown
+        case .alerts: .red
+        case .shortcuts: .indigo
+        case .backup: .teal
+        case .about: .gray
+        case .module(let module): module.accent
+        }
+    }
+
+    /// Extra words the sidebar search matches, so "notch" finds Menu Bar and "caffeinate" finds Keep Awake.
+    var keywords: String {
+        switch self {
+        case .general: "update interval refresh launch login startup quick toggles dark mode mute trash bluetooth sleep"
+        case .menuBar: "style combined separate items spacing ring notch colorful order reorder preview"
+        case .keepAwake: "caffeinate sleep display focus timer schedule power downloads agents"
+        case .alerts: "notifications warnings thresholds"
+        case .shortcuts: "hotkeys keyboard global modifier secure input"
+        case .backup: "export import reset defaults restore"
+        case .about: "version"
+        case .module(let module): "\(module.settingsKeywords) \(module.settingsSummary) menu bar alerts shortcut"
+        }
+    }
+
+    func matches(_ query: String) -> Bool {
+        let words = query.split(separator: " ")
+        let haystack = "\(title) \(keywords)"
+        return words.allSatisfy { haystack.localizedCaseInsensitiveContains($0) }
+    }
+}
+
+struct SettingsGroup: Identifiable {
+    let title: String?
+    let sections: [SettingsSection]
+    var id: String { title ?? "app" }
 }
 
 /// Which Settings page is showing; shared so other parts of the app can open a specific page.
@@ -38,37 +102,115 @@ enum SettingsSection: String, CaseIterable, Identifiable {
 final class SettingsRouter {
     static let shared = SettingsRouter()
     var section: SettingsSection? = .menuBar
+    /// Sidebar search text; cleared by `open` so the page you jump to is visible in the list.
+    var query = ""
+
+    func open(_ section: SettingsSection) {
+        query = ""
+        self.section = section
+    }
 }
 
-/// Sidebar settings window.
+/// Sidebar settings window: grouped, searchable list on the left, one page per row on the right.
 struct SettingsView: View {
     let onTestNotification: () -> Void
+    @Environment(AppSettings.self) private var settings
 
     var body: some View {
         @Bindable var router = SettingsRouter.shared
-        let section = router.section
+        let section = router.section ?? .menuBar
         NavigationSplitView {
-            List(SettingsSection.allCases, selection: $router.section) { item in
-                Label(item.title, systemImage: item.symbol).tag(item)
-            }
-            .navigationSplitViewColumnWidth(min: 170, ideal: 180, max: 210)
-        } detail: {
-            Group {
-                switch section ?? .menuBar {
-                case .menuBar: MenuBarSettings()
-                case .general: GeneralSettings()
-                case .keepAwake: KeepAwakeSettings()
-                case .alerts: AlertSettings(onTestNotification: onTestNotification)
-                case .clock: ClockSettings()
-                case .weather: WeatherSettings()
-                case .shortcuts: ShortcutSettings()
-                case .backup: BackupSettings()
+            List(selection: $router.section) {
+                ForEach(groups) { group in
+                    Section {
+                        ForEach(group.sections) { row($0) }
+                    } header: {
+                        if let title = group.title { Text(title) }
+                    }
                 }
             }
-            .navigationTitle((section ?? .menuBar).title)
+            .searchable(text: $router.query, placement: .sidebar, prompt: "Search settings")
+            .overlay {
+                if groups.isEmpty {
+                    ContentUnavailableView.search(text: router.query)
+                }
+            }
+            .navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 250)
+        } detail: {
+            page(section)
+                .id(section) // fresh scroll position and @State per page
+                .navigationTitle(section.title)
+        }
+        // Search can hide the selected row, and List then clears the selection; keep the page instead.
+        .onChange(of: router.section) { old, new in
+            if new == nil, let old { router.section = old }
         }
         .toolbar(removing: .sidebarToggle)
-        .frame(minWidth: 700, minHeight: 520)
+        .frame(minWidth: 720, minHeight: 540)
+    }
+
+    private var groups: [SettingsGroup] {
+        let trimmed = SettingsRouter.shared.query.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return SettingsSection.groups }
+        return SettingsSection.groups.compactMap { group in
+            let hits = group.sections.filter { $0.matches(trimmed) }
+            return hits.isEmpty ? nil : SettingsGroup(title: group.title, sections: hits)
+        }
+    }
+
+    private func row(_ section: SettingsSection) -> some View {
+        Label {
+            HStack {
+                Text(section.title)
+                Spacer(minLength: 4)
+                if case .module(let module) = section, !settings.isEnabled(module) {
+                    Text("Off").font(.caption).foregroundStyle(.tertiary)
+                }
+            }
+        } icon: {
+            if section == .about {
+                Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 20, height: 20)
+            } else {
+                SettingsIcon(symbol: section.symbol, color: section.color, size: 20)
+            }
+        }
+        .tag(section)
+    }
+
+    @ViewBuilder
+    private func page(_ section: SettingsSection) -> some View {
+        switch section {
+        case .general: GeneralSettings()
+        case .menuBar: MenuBarSettings()
+        case .keepAwake: KeepAwakeSettings()
+        case .alerts: AlertSettings(onTestNotification: onTestNotification)
+        case .shortcuts: ShortcutSettings()
+        case .backup: BackupSettings()
+        case .about: AboutSettings()
+        case .module(let module): ModuleSettings(module: module)
+        }
+    }
+}
+
+/// White SF Symbol on a colored rounded square, the System Settings sidebar look.
+struct SettingsIcon: View {
+    let symbol: String
+    let color: Color
+    var size: CGFloat = 20
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+            .fill(color.gradient)
+            .overlay(
+                Image(systemName: symbol)
+                    .font(.system(size: size * 0.55, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .symbolRenderingMode(.monochrome)
+            )
+            .overlay(RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+                .strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
     }
 }
 
@@ -99,18 +241,28 @@ private struct MenuBarSettings: View {
                 }
                 .pickerStyle(.segmented)
                 Toggle("Show vibe ring", isOn: $settings.showVibeRing)
+                Toggle("Colorful graphs", isOn: $settings.colorfulMenuBar)
+            }
+
+            Section {
                 Toggle(isOn: $settings.autoFitNotch) {
                     Text("Fit around the camera notch")
                     Text("On a display with a notch, the combined item shows as many stats as fit beside it (in the order below) plus a +N badge. Everything stays in the deck.")
                 }
-                .disabled(settings.menuBarStyle != .combined)
                 Picker("Stats beside the notch", selection: $settings.notchMaxStats) {
                     Text("As many as fit").tag(0)
                     ForEach(1...4, id: \.self) { Text("At most \($0)").tag($0) }
                 }
-                .disabled(settings.menuBarStyle != .combined || !settings.autoFitNotch)
-                Toggle("Colorful graphs", isOn: $settings.colorfulMenuBar)
+                .disabled(!settings.autoFitNotch)
+            } header: {
+                Text("Camera notch")
+            } footer: {
+                if settings.menuBarStyle != .combined {
+                    Text("Only for \"One combined item\". With separate items, macOS hides whatever doesn't fit beside the notch.")
+                        .settingsFooter()
+                }
             }
+            .disabled(settings.menuBarStyle != .combined)
 
             Section {
                 ForEach(settings.moduleOrder) { module in
@@ -120,7 +272,7 @@ private struct MenuBarSettings: View {
             } header: {
                 Text("Items")
             } footer: {
-                Text("Drag to reorder, or right-click a row for Move Up / Move Down. The menu bar items, the combined item and the deck follow this order.")
+                Text("Drag to reorder, or right-click a row for Move Up / Move Down. The menu bar items, the combined item and the deck follow this order. Click › for an item's options and alerts.")
                     .settingsFooter()
             }
         }
@@ -131,26 +283,18 @@ private struct MenuBarSettings: View {
 private struct ModuleRow: View {
     let module: Module
     @Environment(AppSettings.self) private var settings
-    @State private var expanded = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            header
-            if expanded {
-                ItemOptionsView(module: module)
-                    .padding(.leading, 26)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-        }
-    }
-
-    private var header: some View {
         HStack {
             Image(systemName: "line.3.horizontal")
                 .foregroundStyle(.tertiary)
                 .accessibilityHidden(true)
             Toggle(isOn: Binding(get: { settings.isEnabled(module) }, set: { settings.setEnabled(module, $0) })) {
-                Label(module.title, systemImage: module.symbol)
+                Label {
+                    Text(module.title)
+                } icon: {
+                    SettingsIcon(symbol: module.symbol, color: module.accent, size: 18)
+                }
             }
             .disabled(settings.isEnabled(module) && settings.enabledModules.count == 1)
             Spacer()
@@ -161,18 +305,14 @@ private struct ModuleRow: View {
             .labelsHidden()
             .fixedSize()
             .disabled(!settings.isEnabled(module))
-            if ItemOptions.hasOptions(module) {
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { expanded.toggle() }
-                } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .foregroundStyle(expanded ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
-                }
-                .buttonStyle(.borderless)
-                .help(expanded ? "Hide \(module.title) options" : "\(module.title) options")
-                .accessibilityLabel("\(module.title) options")
-                .disabled(!settings.isEnabled(module))
+            Button {
+                SettingsRouter.shared.open(.module(module))
+            } label: {
+                Image(systemName: "chevron.right").foregroundStyle(.secondary)
             }
+            .buttonStyle(.borderless)
+            .help("\(module.title) settings")
+            .accessibilityLabel("\(module.title) settings")
         }
         .contextMenu {
             if let index = settings.moduleOrder.firstIndex(of: module) {
@@ -181,94 +321,11 @@ private struct ModuleRow: View {
                 Button("Move Down") { settings.moveModules(from: [index], to: min(settings.moduleOrder.count, index + 2)) }
                     .disabled(index == settings.moduleOrder.count - 1)
             }
+            Divider()
+            Button("\(module.title) Settings…") { SettingsRouter.shared.open(.module(module)) }
         }
     }
 }
-
-/// Deep options for one menu bar item, with a live preview of just that item.
-struct ItemOptionsView: View {
-    let module: Module
-    @Environment(AppSettings.self) private var settings
-
-    private var options: ItemOptions { settings.options(module) }
-
-    private func binding<Value>(_ keyPath: WritableKeyPath<ItemOptions, Value>) -> Binding<Value> {
-        Binding(get: { settings.options(module)[keyPath: keyPath] },
-                set: { newValue in settings.updateOptions(module) { $0[keyPath: keyPath] = newValue } })
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Text("Preview").font(.caption).foregroundStyle(.secondary)
-                MenuBarLabel(module: module, padded: true)
-                    .padding(.vertical, 2)
-                    .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(.bar))
-                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
-                    .accessibilityLabel("\(module.title) preview")
-            }
-            switch module {
-            case .agents: agents
-            case .memory: picker("Show", binding(\.memoryValue))
-            case .network: picker("Show", binding(\.networkDirections))
-            case .disk: picker("Show", binding(\.diskValue))
-            case .battery: picker("Show", binding(\.batteryValue))
-            case .sensors:
-                Picker("Unit", selection: binding(\.sensorUnit)) {
-                    Text("°C").tag(TemperatureUnit.celsius)
-                    Text("°F").tag(TemperatureUnit.fahrenheit)
-                }
-                .pickerStyle(.segmented)
-            default: EmptyView()
-            }
-        }
-        .controlSize(.small)
-    }
-
-    private func picker<Value: CaseIterable & Identifiable & Hashable>(_ title: String, _ selection: Binding<Value>) -> some View
-    where Value.AllCases: RandomAccessCollection, Value: OptionTitled {
-        Picker(title, selection: selection) {
-            ForEach(Value.allCases) { Text($0.title).tag($0) }
-        }
-    }
-
-    @ViewBuilder
-    private var agents: some View {
-        picker("Show", binding(\.agentValue))
-        if options.agentValue.isLimits {
-            picker("Limits", binding(\.agentWindows))
-            Toggle("Show time until reset", isOn: binding(\.agentShowReset))
-        }
-        Toggle("Count all agents", isOn: Binding(get: { options.agents.isEmpty }, set: { all in
-            settings.updateOptions(module) { $0.agents = all ? [] : [.claude] }
-        }))
-        if !options.agents.isEmpty {
-            HStack(spacing: 12) {
-                ForEach(AgentKind.allCases) { kind in
-                    Toggle(kind.title, isOn: Binding(get: { options.agents.contains(kind) }, set: { on in
-                        settings.updateOptions(module) { if on { $0.agents.insert(kind) } else { $0.agents.remove(kind) } }
-                    }))
-                    .toggleStyle(.checkbox)
-                    // At least one agent stays ticked.
-                    .disabled(options.agents == [kind])
-                }
-            }
-        }
-        if options.agentValue.isLimits, options.includes(.claude), !ClaudeLiveLimits.shared.isOn {
-            Text("Claude Code shows its local 5-hour estimate until \"Show Claude's real plan limits\" is on in General.")
-                .settingsFooter()
-        }
-    }
-}
-
-/// Option enums with a user-facing title.
-protocol OptionTitled { var title: String { get } }
-extension ItemOptions.AgentValue: OptionTitled {}
-extension ItemOptions.AgentWindows: OptionTitled {}
-extension ItemOptions.MemoryValue: OptionTitled {}
-extension ItemOptions.Directions: OptionTitled {}
-extension ItemOptions.DiskValue: OptionTitled {}
-extension ItemOptions.BatteryValue: OptionTitled {}
 
 /// A slice of menu bar drawn with the real labels, so what you see here is what you get.
 private struct MenuBarPreview: View {
@@ -311,7 +368,7 @@ private struct MenuBarPreview: View {
     }
 }
 
-// MARK: - General & Backup
+// MARK: - General, Backup, About
 
 private struct GeneralSettings: View {
     @Environment(AppSettings.self) private var settings
@@ -329,19 +386,20 @@ private struct GeneralSettings: View {
 
     var body: some View {
         @Bindable var settings = settings
-        @Bindable var claudeLimits = ClaudeLiveLimits.shared
         Form {
-            Section {
+            Section("Startup") {
+                Toggle("Launch at login", isOn: $settings.launchAtLogin)
                 Picker("Update every", selection: $settings.refreshInterval) {
                     Text("1 second").tag(1.0)
                     Text("2 seconds").tag(2.0)
                     Text("3 seconds").tag(3.0)
                     Text("5 seconds").tag(5.0)
                 }
-                Toggle("Launch at login", isOn: $settings.launchAtLogin)
             }
             Section {
                 Toggle("Show quick toggles in the deck", isOn: $showQuickToggles)
+            } header: {
+                Text("Deck")
             } footer: {
                 Text("A row for dark mode, microphone mute and Empty Trash. Dark mode and Empty Trash ask macOS for Automation access the first time.")
                     .settingsFooter()
@@ -349,37 +407,11 @@ private struct GeneralSettings: View {
             Section {
                 Toggle("Turn Bluetooth off while the Mac sleeps", isOn: $settings.bluetoothOffWhileAsleep)
                     .disabled(!BluetoothSnooze.shared.isAvailable)
+            } header: {
+                Text("Sleep")
             } footer: {
                 Text(bluetoothFooter)
                     .settingsFooter()
-            }
-            Section {
-                Toggle("Show Claude's real plan limits", isOn: $claudeLimits.isOn)
-                if claudeLimits.isOn {
-                    TimelineView(.periodic(from: .now, by: 30)) { context in
-                        Text(claudeLimits.statusText(now: context.date))
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            } footer: {
-                Text("Asks your Claude Code for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access; Claude Code signs in itself.")
-                    .settingsFooter()
-            }
-            Section {
-                HStack(spacing: 14) {
-                    Image(nsImage: NSApp.applicationIconImage)
-                        .resizable()
-                        .frame(width: 56, height: 56)
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("VibeCheck").font(.system(size: 17, weight: .bold, design: .rounded))
-                        Text("Is your Mac vibing or cooked?").font(.callout).foregroundStyle(.secondary)
-                        Text("Version 1.5 · Click the menu bar item to check the vibes. ⌃⌥⌘1–9 and 0 open a module from anywhere.")
-                            .font(.caption).foregroundStyle(.tertiary)
-                    }
-                }
-                .padding(.vertical, 4)
             }
         }
         .formStyle(.grouped)
@@ -407,283 +439,40 @@ private struct BackupSettings: View {
     }
 }
 
-// MARK: - Alerts
-
-private struct AlertSettings: View {
-    let onTestNotification: () -> Void
+private struct AboutSettings: View {
     @Environment(AppSettings.self) private var settings
 
+    private var version: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.5"
+    }
+
     var body: some View {
-        @Bindable var settings = settings
         Form {
             Section {
-                if settings.alertRules.isEmpty {
-                    Text("No alerts yet.").foregroundStyle(.secondary)
+                VStack(spacing: 8) {
+                    Image(nsImage: NSApp.applicationIconImage)
+                        .resizable()
+                        .frame(width: 96, height: 96)
+                        .accessibilityHidden(true)
+                    Text("VibeCheck").font(.system(size: 22, weight: .bold, design: .rounded))
+                    Text("Is your Mac vibing or cooked?").foregroundStyle(.secondary)
+                    Text("Version \(version)").font(.caption).foregroundStyle(.tertiary)
                 }
-                ForEach($settings.alertRules) { $rule in
-                    AlertRuleRow(rule: $rule) {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            settings.alertRules.removeAll { $0.id == rule.id }
-                        }
-                    }
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                }
-            } header: {
-                HStack {
-                    Text("Alerts")
-                    Spacer()
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            settings.alertRules.insert(AlertRule(metric: .cpu, comparison: .above, threshold: 80, duration: 60), at: 0)
-                        }
-                    } label: { Label("Add Alert", systemImage: "plus") }
-                        .buttonStyle(.borderless)
-                }
-            } footer: {
-                Text("Click a highlighted word to change it; drag a number sideways to adjust it (hold ⌥ for fine steps). Each alert fires once, then waits until things recover and at least 5 minutes pass.")
-                    .settingsFooter()
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
             }
-            Section {
-                HStack {
-                    Button("Restore Default Alerts") {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { settings.alertRules = AlertRule.defaults }
-                    }
-                    Spacer()
-                    Button("Send Test Notification", action: onTestNotification)
-                }
+            Section("Getting around") {
+                LabeledContent("Check the vibes", value: "Click the menu bar item")
+                LabeledContent("Open a module from anywhere", value: "\(settings.hotkeyModifier.symbols)1–9, 0")
+                LabeledContent("Find anything in the deck", value: "⌘K")
+                LabeledContent("Open Settings from the deck", value: "⌘,")
             }
         }
         .formStyle(.grouped)
     }
 }
 
-/// "Tell me when [CPU usage] is [above] [90%] for [1 min]."
-private struct AlertRuleRow: View {
-    @Binding var rule: AlertRule
-    let onDelete: () -> Void
-    @State private var showPreview = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 8) {
-                Toggle("Enabled", isOn: $rule.enabled)
-                    .labelsHidden().toggleStyle(.switch).controlSize(.mini)
-                    .padding(.top, 2)
-                FlowLayout(spacing: 5, lineSpacing: 6) {
-                    Text("Tell me when")
-                    TokenMenu(title: rule.metric.title) {
-                        ForEach(AlertMetric.allCases) { metric in
-                            Button(metric.title) { select(metric) }
-                        }
-                    }
-                    Text("is")
-                    TokenMenu(title: rule.comparison.rawValue) {
-                        ForEach(AlertComparison.allCases) { comparison in
-                            Button(comparison.rawValue) { rule.comparison = comparison }
-                        }
-                    }
-                    NumberToken(value: $rule.threshold, unit: rule.metric.unit, range: rule.metric.range)
-                    if rule.duration > 0 { Text("for") } // "below 15% instantly", not "for instantly"
-                    TokenMenu(title: AlertRule.durationLabel(rule.duration)) {
-                        ForEach(AlertRule.durations, id: \.0) { seconds, label in
-                            Button(label) { rule.duration = seconds }
-                        }
-                    }
-                }
-                .opacity(rule.enabled ? 1 : 0.45)
-                .disabled(!rule.enabled)
-                Spacer(minLength: 0)
-                Button { preview() } label: { Image(systemName: "eye") }
-                    .buttonStyle(.borderless)
-                    .help("Preview the notification")
-                Button(role: .destructive, action: onDelete) { Image(systemName: "trash") }
-                    .buttonStyle(.borderless)
-                    .help("Delete alert")
-            }
-            if showPreview {
-                NotificationPreview(title: "VibeCheck · \(rule.metric.title)", message: rule.describe(current: exampleValue))
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
-        .padding(.vertical, 2)
-    }
-
-    private var exampleValue: Double {
-        let r = rule.metric.range
-        return min(max(rule.threshold + (rule.comparison == .above ? 6 : -6), r.lowerBound), r.upperBound)
-    }
-
-    private func select(_ metric: AlertMetric) {
-        rule.metric = metric
-        rule.comparison = (metric == .batteryLevel || metric == .diskFree || metric == .accessoryBattery) ? .below : .above
-        rule.threshold = min(max(rule.threshold, metric.range.lowerBound), metric.range.upperBound)
-    }
-
-    private func preview() {
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { showPreview = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.4) {
-            withAnimation(.easeOut(duration: 0.25)) { showPreview = false }
-        }
-    }
-}
-
-/// A highlighted word that opens a menu.
-private struct TokenMenu<Content: View>: View {
-    let title: String
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        Menu { content } label: {
-            Text(title).fontWeight(.medium)
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .padding(.horizontal, 7)
-        .padding(.vertical, 1)
-        .background(Capsule().fill(Color.accentColor.opacity(0.14)))
-        .foregroundStyle(Color.accentColor)
-    }
-}
-
-/// Converts a horizontal drag into a value change: 1 unit per 4 pt, or per 12 pt with ⌥ held.
-enum AlertScrub {
-    static func value(start: Double, dx: CGFloat, fine: Bool, range: ClosedRange<Double>) -> Double {
-        let perPoint = fine ? 1.0 / 12 : 1.0 / 4
-        return min(max((start + Double(dx) * perPoint).rounded(), range.lowerBound), range.upperBound)
-    }
-}
-
-/// A number you can drag sideways to adjust (with a trackpad tick every 5) or click to type.
-private struct NumberToken: View {
-    @Binding var value: Double
-    let unit: String
-    let range: ClosedRange<Double>
-    @State private var editing = false
-    @State private var dragStart: Double?
-    @State private var lastTick: Int?
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        Group {
-            if editing {
-                TextField("Value", value: Binding(get: { value }, set: { value = min(max($0, range.lowerBound), range.upperBound) }),
-                          format: .number)
-                    .labelsHidden()
-                    .frame(width: 48)
-                    .focused($focused)
-                    .onSubmit { editing = false }
-                    .onChange(of: focused) { _, isFocused in if !isFocused { editing = false } }
-                    .onAppear { focused = true }
-            } else {
-                Text("\(Int(value))\(unit)")
-                    .fontWeight(.semibold)
-                    .monospacedDigit()
-                    .contentTransition(.numericText(value: value))
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 1)
-                    .background(Capsule().fill(Color.accentColor.opacity(dragStart == nil ? 0.14 : 0.26)))
-                    .foregroundStyle(Color.accentColor)
-                    .onHover { inside in inside ? NSCursor.resizeLeftRight.push() : NSCursor.pop() }
-                    .gesture(DragGesture(minimumDistance: 2)
-                        .onChanged { drag in
-                            if dragStart == nil { dragStart = value }
-                            let fine = NSEvent.modifierFlags.contains(.option)
-                            let next = AlertScrub.value(start: dragStart ?? value, dx: drag.translation.width, fine: fine, range: range)
-                            if next != value {
-                                withAnimation(.snappy(duration: 0.12)) { value = next }
-                                let tick = Int(next) / 5
-                                if tick != lastTick {
-                                    NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
-                                    lastTick = tick
-                                }
-                            }
-                        }
-                        .onEnded { _ in dragStart = nil; lastTick = nil })
-                    .onTapGesture { editing = true }
-                    .help("Drag sideways to adjust (⌥ for fine steps), or click to type")
-            }
-        }
-        .accessibilityElement()
-        .accessibilityLabel("Threshold")
-        .accessibilityValue("\(Int(value)) \(unit)")
-        .accessibilityAdjustableAction { direction in
-            let step = direction == .increment ? 1.0 : -1.0
-            value = min(max(value + step, range.lowerBound), range.upperBound)
-        }
-    }
-}
-
-/// A miniature of the banner the alert will post.
-private struct NotificationPreview: View {
-    let title: String
-    let message: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(nsImage: NSApp.applicationIconImage)
-                .resizable()
-                .frame(width: 28, height: 28)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 12, weight: .semibold))
-                Text(message).font(.system(size: 12)).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(10)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.regularMaterial))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
-        .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Notification preview: \(title). \(message)")
-    }
-}
-
-/// Wraps its children onto new lines when they don't fit, like words in a sentence.
-struct FlowLayout: Layout {
-    var spacing: CGFloat = 6
-    var lineSpacing: CGFloat = 6
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let rows = arrange(subviews, width: proposal.width ?? .infinity)
-        let width = rows.map(\.width).max() ?? 0
-        let height = rows.map(\.height).reduce(0, +) + lineSpacing * CGFloat(max(rows.count - 1, 0))
-        return CGSize(width: proposal.width.map { min($0, width) } ?? width, height: height)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var y = bounds.minY
-        for row in arrange(subviews, width: bounds.width) {
-            var x = bounds.minX
-            for index in row.indices {
-                let size = subviews[index].sizeThatFits(.unspecified)
-                subviews[index].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2), proposal: .unspecified)
-                x += size.width + spacing
-            }
-            y += row.height + lineSpacing
-        }
-    }
-
-    private struct Row { var indices: [Int] = []; var width: CGFloat = 0; var height: CGFloat = 0 }
-
-    private func arrange(_ subviews: Subviews, width: CGFloat) -> [Row] {
-        var rows: [Row] = [Row()]
-        for index in subviews.indices {
-            let size = subviews[index].sizeThatFits(.unspecified)
-            let extra = rows[rows.count - 1].indices.isEmpty ? size.width : size.width + spacing
-            if rows[rows.count - 1].width + extra > width, !rows[rows.count - 1].indices.isEmpty {
-                rows.append(Row())
-            }
-            var row = rows[rows.count - 1]
-            row.width += row.indices.isEmpty ? size.width : size.width + spacing
-            row.height = max(row.height, size.height)
-            row.indices.append(index)
-            rows[rows.count - 1] = row
-        }
-        return rows
-    }
-}
+// MARK: - Shortcuts
 
 private struct ShortcutSettings: View {
     @Environment(AppSettings.self) private var settings
@@ -729,152 +518,6 @@ private struct ShortcutSettings: View {
                 if status != secureInput { secureInput = status }
                 try? await Task.sleep(for: .seconds(2))
             }
-        }
-    }
-}
-
-private struct ClockSettings: View {
-    @Environment(AppSettings.self) private var settings
-    @State private var search = ""
-
-    var body: some View {
-        @Bindable var settings = settings
-        Form {
-            Section("Menu bar clock") {
-                Toggle("Show clock in menu bar", isOn: Binding(
-                    get: { settings.isEnabled(.clock) },
-                    set: { settings.setEnabled(.clock, $0) }
-                ))
-                Picker("Format", selection: $settings.clockFormat) {
-                    ForEach(ClockFormat.allCases) { format in
-                        Text(format.formatter(seconds: settings.clockShowSeconds).string(from: Date())).tag(format)
-                    }
-                }
-                Toggle("Show seconds", isOn: $settings.clockShowSeconds)
-            }
-
-            Section("World clocks") {
-                if settings.worldClocks.isEmpty {
-                    Text("No world clocks yet.").foregroundStyle(.secondary)
-                }
-                ForEach($settings.worldClocks) { $clock in
-                    HStack {
-                        TextField("Name", text: $clock.name).labelsHidden().frame(maxWidth: 160)
-                        Text(clock.timeZoneID).font(.caption).foregroundStyle(.secondary)
-                        Spacer()
-                        Text(Date().formatted(Date.FormatStyle(date: .omitted, time: .shortened, timeZone: clock.timeZone)))
-                            .monospacedDigit().foregroundStyle(.secondary)
-                        Button(role: .destructive) {
-                            settings.worldClocks.removeAll { $0.id == clock.id }
-                        } label: { Image(systemName: "trash") }
-                            .buttonStyle(.borderless)
-                    }
-                }
-            }
-
-            Section("Add a world clock") {
-                TextField("Search cities or time zones", text: $search)
-                ForEach(matches, id: \.self) { identifier in
-                    HStack {
-                        Text(WorldClock.cityName(identifier))
-                        Text(identifier).font(.caption).foregroundStyle(.secondary)
-                        Spacer()
-                        Button("Add") {
-                            settings.worldClocks.append(WorldClock(name: WorldClock.cityName(identifier), timeZoneID: identifier))
-                            search = ""
-                        }
-                        .disabled(settings.worldClocks.contains { $0.timeZoneID == identifier })
-                    }
-                }
-            }
-        }
-        .formStyle(.grouped)
-    }
-
-    private var matches: [String] {
-        let query = search.trimmingCharacters(in: .whitespaces)
-        guard !query.isEmpty else { return [] }
-        let normalized = query.replacingOccurrences(of: " ", with: "_")
-        return Array((TimeZone.knownTimeZoneIdentifiers + ["UTC"])
-            .filter { $0.localizedCaseInsensitiveContains(normalized) || $0.localizedCaseInsensitiveContains(query) }
-            .prefix(8))
-    }
-}
-
-private struct WeatherSettings: View {
-    @Environment(AppSettings.self) private var settings
-    @State private var search = ""
-    @State private var results: [WeatherLocation] = []
-    @State private var searching = false
-    @State private var searchError: String?
-
-    var body: some View {
-        @Bindable var settings = settings
-        Form {
-            Section {
-                Toggle("Show weather in menu bar", isOn: Binding(
-                    get: { settings.isEnabled(.weather) },
-                    set: { settings.setEnabled(.weather, $0) }
-                ))
-                Picker("Units", selection: $settings.temperatureUnit) {
-                    ForEach(TemperatureUnit.allCases) { Text($0.title).tag($0) }
-                }
-                LabeledContent("City") {
-                    if let location = settings.weatherLocation {
-                        VStack(alignment: .trailing) {
-                            Text(location.name)
-                            if location.subtitle != location.name {
-                                Text(location.subtitle).font(.caption).foregroundStyle(.secondary)
-                            }
-                        }
-                    } else {
-                        Text("Not set").foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            Section {
-                TextField("Search for a city", text: $search)
-                if searching { ProgressView().controlSize(.small) }
-                if let searchError { Text(searchError).font(.caption).foregroundStyle(.secondary) }
-                ForEach(results) { place in
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(place.name)
-                            Text(place.subtitle).font(.caption).foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Button("Use") {
-                            settings.weatherLocation = place
-                            search = ""
-                            results = []
-                        }
-                    }
-                }
-            } header: {
-                Text("Change city")
-            } footer: {
-                Text("Weather comes from Open-Meteo.com (free, no account). Only the chosen city's coordinates are sent; VibeCheck never asks for your location.")
-                    .settingsFooter()
-            }
-        }
-        .formStyle(.grouped)
-        .task(id: search) { await runSearch() }
-    }
-
-    /// Debounced: waits until typing pauses before asking the geocoder.
-    private func runSearch() async {
-        let query = search.trimmingCharacters(in: .whitespaces)
-        guard query.count >= 2 else { results = []; searchError = nil; return }
-        try? await Task.sleep(for: .milliseconds(450))
-        guard !Task.isCancelled else { return }
-        searching = true
-        defer { searching = false }
-        do {
-            results = try await OpenMeteo.search(query)
-            searchError = results.isEmpty ? "No matches." : nil
-        } catch {
-            if !Task.isCancelled { searchError = "Search failed. Check your connection." }
         }
     }
 }

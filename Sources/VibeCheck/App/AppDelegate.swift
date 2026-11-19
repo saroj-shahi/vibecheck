@@ -416,7 +416,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func showSettings(_ section: SettingsSection? = nil) {
-        if let section { SettingsRouter.shared.section = section }
+        if let section { SettingsRouter.shared.open(section) }
         deck.close()
         if settingsWindow == nil {
             let view = SettingsView(onTestNotification: { [weak self] in self?.alerts.sendTest() })
