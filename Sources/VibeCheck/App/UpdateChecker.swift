@@ -4,12 +4,19 @@ import Observation
 /// What the latest GitHub release says.
 struct ReleaseInfo: Equatable, Sendable {
     var version: String
+    /// The release notes page; the only link the app opens.
     var pageURL: URL
-    var downloadURL: URL?
+    /// The app archive the release ships (`VibeCheck.zip`, or a `.dmg` on older releases). The app never
+    /// downloads it: updates go through Terminal (see `UpdateChecker.updateCommands`).
+    var assetURL: URL?
     var notes: String?
+}
 
-    /// Where the Download button goes: the DMG when the release has one, else the release page.
-    var target: URL { downloadURL ?? pageURL }
+/// One way to update from Terminal, shown with a Copy button.
+struct UpdateCommand: Identifiable, Equatable, Sendable {
+    var id: String { command }
+    var label: String
+    var command: String
 }
 
 enum UpdateState: Equatable {
@@ -110,6 +117,18 @@ final class UpdateChecker {
         }
     }
 
+    // MARK: Updating
+
+    /// VibeCheck isn't notarized, so it updates the way it was installed: from Terminal.
+    nonisolated static let brewCommand = "brew upgrade --cask vibecheck"
+    nonisolated static let curlCommand =
+        "curl -fsSL https://raw.githubusercontent.com/saroj-shahi/vibecheck/main/scripts/install.sh | bash"
+
+    nonisolated static var updateCommands: [UpdateCommand] {
+        [UpdateCommand(label: String(localized: "Installed with Homebrew"), command: brewCommand),
+         UpdateCommand(label: String(localized: "Installed with the install script"), command: curlCommand)]
+    }
+
     // MARK: Pure helpers
 
     nonisolated static func request(repository: String, version: String) -> URLRequest? {
@@ -140,10 +159,13 @@ final class UpdateChecker {
         var tag = release.tag_name.trimmingCharacters(in: .whitespaces)
         if tag.hasPrefix("v") || tag.hasPrefix("V") { tag.removeFirst() }
         guard !tag.isEmpty else { return nil }
-        let dmg = release.assets?.first { $0.name.lowercased().hasSuffix(".dmg") }
-            .flatMap { trustedURL($0.browser_download_url) }
+        // Prefer the zip (current releases); fall back to a DMG so older releases still read.
+        func asset(_ suffix: String) -> URL? {
+            release.assets?.first { $0.name.lowercased().hasSuffix(suffix) }.flatMap { trustedURL($0.browser_download_url) }
+        }
         let notes = release.body?.trimmingCharacters(in: .whitespacesAndNewlines)
-        return ReleaseInfo(version: tag, pageURL: page, downloadURL: dmg, notes: (notes?.isEmpty ?? true) ? nil : notes)
+        return ReleaseInfo(version: tag, pageURL: page, assetURL: asset(".zip") ?? asset(".dmg"),
+                           notes: (notes?.isEmpty ?? true) ? nil : notes)
     }
 
     /// Links from the response are opened by the app, so only https on GitHub's own hosts are kept.

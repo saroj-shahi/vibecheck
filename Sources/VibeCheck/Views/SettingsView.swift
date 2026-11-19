@@ -446,6 +446,20 @@ private struct BackupSettings: View {
 private struct AboutSettings: View {
     @Environment(AppSettings.self) private var settings
     private var updates = UpdateChecker.shared
+    /// The command whose Copy button was just pressed, so it can say "Copied" for a moment.
+    @State private var copied: String?
+
+    private static let licenseURL = URL(string: "https://github.com/saroj-shahi/vibecheck/blob/main/LICENSE")!
+
+    private func copy(_ command: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(command, forType: .string)
+        copied = command
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2))
+            if copied == command { copied = nil }
+        }
+    }
 
     private var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.5"
@@ -465,7 +479,19 @@ private struct AboutSettings: View {
             HStack {
                 Text("VibeCheck \(release.version) is out")
                 Spacer()
-                Button("Download") { NSWorkspace.shared.open(release.target) }
+                Button("Release Notes") { NSWorkspace.shared.open(release.pageURL) }
+            }
+            Text("Update from Terminal with the command that matches how you installed VibeCheck:")
+                .font(.callout).foregroundStyle(.secondary)
+            ForEach(UpdateChecker.updateCommands) { item in
+                LabeledContent {
+                    Button(copied == item.command ? "Copied" : "Copy") { copy(item.command) }
+                        .frame(minWidth: 64)
+                        .accessibilityLabel(Text("Copy \(item.label) command"))
+                } label: {
+                    Text(item.label)
+                    Text(item.command).font(.system(.caption, design: .monospaced)).textSelection(.enabled)
+                }
             }
         case .failed(let reason):
             Label(reason, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary)
@@ -484,6 +510,8 @@ private struct AboutSettings: View {
                     Text("VibeCheck").font(.system(size: 22, weight: .bold, design: .rounded))
                     Text("Is your Mac vibing or cooked?").foregroundStyle(.secondary)
                     Text("Version \(version)").font(.caption).foregroundStyle(.tertiary)
+                    Link("Free software under GPL-3.0, no warranty", destination: Self.licenseURL).font(.caption)
+                    Text(verbatim: "© 2026 Saroj Shahi").font(.caption).foregroundStyle(.tertiary)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)

@@ -1,0 +1,15 @@
+VibeCheck
+Copyright (C) 2026 Saroj Shahi
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General
+Public License as published by the Free Software Foundation, either version 3 of the License, or (at your
+option) any later version. It is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the LICENSE file.
+
+Third-party material
+--------------------
+- Claude, OpenAI and GitHub Copilot logo paths (Sources/VibeCheck/Views/AgentLogo.swift): Simple Icons
+  (https://simpleicons.org), CC0 1.0. The marks themselves remain trademarks of their owners (see TRADEMARKS.md).
+- opencode mark: from opencode.ai, used only to identify that tool.
+- Weather data: Open-Meteo (https://open-meteo.com), CC BY 4.0. Free for non-commercial use.
+- Public IP lookup (opt-in): ipify (https://www.ipify.org).

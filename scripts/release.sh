@@ -1,7 +1,12 @@
 #!/bin/bash
-# Builds a VibeCheck release anyone can install: Developer ID signed, notarized and stapled, in a DMG.
+# Builds a VibeCheck release.
 #
-#   scripts/release.sh            full release: build, notarize the app, DMG, notarize the DMG, staple, check
+#   scripts/release.sh --zip      public GitHub release (the default way to ship): signed with the Apple Development
+#                                 identity, hardened runtime, not notarized; build/release/VibeCheck.zip and its
+#                                 .sha256, no DMG. People install from Terminal (scripts/install.sh or the Homebrew
+#                                 cask in packaging/homebrew), and curl downloads aren't quarantined, so Gatekeeper
+#                                 doesn't block it. Prints the cask lines and the tag / gh release commands.
+#   scripts/release.sh            Developer ID release: build, notarize the app, DMG, notarize the DMG, staple, check
 #   scripts/release.sh --share    DMG for colleagues, no Developer ID needed: signed with the Apple Development
 #                                 identity (widgets work), not notarized, with a "How to open" note inside.
 #                                 Each person runs `xattr -dr com.apple.quarantine` on the app once (Open Anyway
@@ -15,15 +20,18 @@
 #   Override with VIBECHECK_SIGN_IDENTITY (the full "Developer ID Application: …" name) and
 #   VIBECHECK_NOTARY_PROFILE (the keychain profile name, default vibecheck-notary).
 #
-# Output: build/release/VibeCheck-<version>.dmg and its .sha256. Publishing is left to you (see the end).
+# Output: build/release/VibeCheck-<version>.dmg and its .sha256 (--zip: VibeCheck.zip and its .sha256).
+# Publishing is left to you (see the end).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 DRY_RUN=0
+ZIP=0
 case "${1:-}" in
   "") ;;
   --share|--dry-run) DRY_RUN=1 ;;
-  *) echo "usage: scripts/release.sh [--share]" >&2; exit 2 ;;
+  --zip) DRY_RUN=1; ZIP=1 ;;
+  *) echo "usage: scripts/release.sh [--zip | --share]" >&2; exit 2 ;;
 esac
 PROFILE="${VIBECHECK_NOTARY_PROFILE:-vibecheck-notary}"
 APP=build/VibeCheck.app
@@ -50,8 +58,13 @@ if [ "$DRY_RUN" = 0 ]; then
   export VIBECHECK_SIGN_IDENTITY="$IDENTITY"
 else
   export VIBECHECK_HARDENED=1
-  echo "Share build: no Developer ID, not notarized. On other Macs, macOS blocks it until the person clears the quarantine"
-  echo "flag with one Terminal command (the DMG includes a note saying how)."
+  if [ "$ZIP" = 1 ]; then
+    echo "Zip build: Apple Development identity, not notarized. Installs from Terminal (curl or Homebrew), which"
+    echo "doesn't quarantine the download."
+  else
+    echo "Share build: no Developer ID, not notarized. On other Macs, macOS blocks it until the person clears the quarantine"
+    echo "flag with one Terminal command (the DMG includes a note saying how)."
+  fi
 fi
 
 notarize() { # $1: file to submit (zip or dmg)
@@ -74,6 +87,33 @@ step "Checking the signature"
 codesign --verify --deep --strict --verbose=2 "$APP"
 [[ "$(codesign -dv "$APP" 2>&1)" == *"(runtime)"* ]] || die "hardened runtime is off"
 [ -d "$APP/Contents/PlugIns/VibeCheckWidget.appex" ] || echo "warning: no widget extension in this build" >&2
+
+if [ "$ZIP" = 1 ]; then
+  step "Making the zip"
+  ZIPFILE="$OUT/VibeCheck.zip"
+  ditto -c -k --keepParent "$APP" "$ZIPFILE"
+  (cd "$OUT" && shasum -a 256 VibeCheck.zip > VibeCheck.zip.sha256)
+  SHA=$(cut -d' ' -f1 "$ZIPFILE.sha256")
+  # The zip must unpack to an app whose signature still holds.
+  CHECK=$(mktemp -d)
+  ditto -x -k "$ZIPFILE" "$CHECK"
+  codesign --verify --deep --strict "$CHECK/VibeCheck.app" || die "the app inside the zip fails codesign --verify"
+  rm -rf "$CHECK"
+  step "Done: $ZIPFILE"
+  cat "$ZIPFILE.sha256"
+  cat <<EOF
+
+Homebrew cask (saroj-shahi/homebrew-tap, Casks/vibecheck.rb):
+  version "$VERSION"
+  sha256 "$SHA"
+
+To publish (scripts/install.sh, the cask and the app's update check read the GitHub release; the tag must be
+v$VERSION and the release must carry VibeCheck.zip and VibeCheck.zip.sha256):
+  git tag v$VERSION && git push origin v$VERSION
+  gh release create v$VERSION $ZIPFILE $ZIPFILE.sha256 --title "VibeCheck $VERSION" --notes "…"
+EOF
+  exit 0
+fi
 
 if [ "$DRY_RUN" = 0 ]; then
   step "Notarizing the app"

@@ -1919,6 +1919,7 @@
       }
     },
     "Click to see what's new.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1995,6 +1996,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cooked"
+          }
+        }
+      }
+    },
+    "Copied": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied"
+          }
+        }
+      }
+    },
+    "Copy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        }
+      }
+    },
+    "Copy %@ command": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy %@ command"
           }
         }
       }
@@ -2234,6 +2265,7 @@
       }
     },
     "Download": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2804,6 +2836,16 @@
         }
       }
     },
+    "Free software under GPL-3.0, no warranty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free software under GPL-3.0, no warranty"
+          }
+        }
+      }
+    },
     "Free space on the startup disk, and read and write speed.": {
       "localizations": {
         "en": {
@@ -3230,6 +3272,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Input"
+          }
+        }
+      }
+    },
+    "Installed with Homebrew": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed with Homebrew"
+          }
+        }
+      }
+    },
+    "Installed with the install script": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed with the install script"
           }
         }
       }
@@ -5149,6 +5211,16 @@
         }
       }
     },
+    "Release Notes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release Notes"
+          }
+        }
+      }
+    },
     "Remove %@": {
       "localizations": {
         "en": {
@@ -6530,6 +6602,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Update every"
+          }
+        }
+      }
+    },
+    "Update from Terminal with the command that matches how you installed VibeCheck:": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update from Terminal with the command that matches how you installed VibeCheck:"
+          }
+        }
+      }
+    },
+    "Update in Terminal: %@. Settings › About has the other way. Click for what's new.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update in Terminal: %@. Settings › About has the other way. Click for what's new."
           }
         }
       }

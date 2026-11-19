@@ -8,11 +8,11 @@
 <p align="center"><img src="docs/screenshots/hero.png" alt="Your Mac's mood, in one little ring. Is your Mac vibing or cooked? One glance tells you. Shown beside the VibeCheck deck with live tiles for memory, network, CPU, GPU, sensors, battery, weather and AI agents." width="100%"></p>
 
 <p align="center">
-  <a href="https://github.com/saroj-shahi/vibecheck/releases/latest/download/VibeCheck.dmg">
-    <img src="https://img.shields.io/badge/Download_for_macOS-VibeCheck.dmg-3DE0B5?style=for-the-badge&logo=apple&logoColor=F5F7FF&labelColor=141833" alt="Download VibeCheck for macOS (latest release)" height="44">
+  <a href="#install">
+    <img src="https://img.shields.io/badge/Install-brew_install_--cask_saroj--shahi%2Ftap%2Fvibecheck-3DE0B5?style=for-the-badge&logo=homebrew&logoColor=F5F7FF&labelColor=141833" alt="Install VibeCheck with Homebrew" height="44">
   </a>
   <br>
-  <sub>Always the latest release · macOS 14 Sonoma or later ·
+  <sub>Free and open source (GPL-3.0) · macOS 14 Sonoma or later ·
   <a href="https://github.com/saroj-shahi/vibecheck/releases/latest">release notes</a></sub>
 </p>
 
@@ -64,24 +64,36 @@ with a button to quit the app that's causing it.
     [Shortcuts, Spotlight and Siri](#shortcuts-spotlight-and-siri) · [Settings](#settings) ·
     [Keyboard shortcuts](#keyboard-shortcuts) · [Updates](#updates)
 - [Privacy](#privacy)
-- [Develop](#develop) · [Brand](#brand) · [Roadmap](#roadmap)
+- [Develop](#develop) · [Brand](#brand) · [License](#license) · [Roadmap](#roadmap)
 
 ## Install
 
-1. **Download** [`VibeCheck.dmg`](https://github.com/saroj-shahi/vibecheck/releases/latest/download/VibeCheck.dmg)
-   (the button above always gets the latest release).
-2. **Open the DMG** and drag **VibeCheck** onto **Applications**.
-3. **First launch only:** this build isn't notarized by Apple yet, so macOS blocks it until you clear the
-   download flag. Run this once in Terminal (the DMG shows the same line):
+VibeCheck installs from the Terminal. It's free and not notarized by Apple, and a Terminal download doesn't get
+the "downloaded from the internet" flag, so macOS opens it without any extra steps.
 
-   ```bash
-   xattr -dr com.apple.quarantine /Applications/VibeCheck.app
-   ```
+**With Homebrew** (recommended):
 
-4. **Open VibeCheck** from Applications. There's no Dock icon: look for the ring in your menu bar.
-5. Optional: turn on **Launch at login** in Settings → General.
+```bash
+brew install --cask saroj-shahi/tap/vibecheck
+```
 
-To uninstall, quit VibeCheck and move it to the Trash.
+**Without Homebrew:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/saroj-shahi/vibecheck/main/scripts/install.sh | bash
+```
+
+The script downloads the latest `VibeCheck.zip` from this repository's releases, checks its SHA-256 checksum,
+and puts VibeCheck in Applications. It's short, so you can [read it first](scripts/install.sh).
+
+Then look for the ring in your menu bar (there's no Dock icon). Optional: turn on **Launch at login** in
+Settings → General.
+
+**Update:** run `brew upgrade --cask vibecheck`, or run the curl line again. VibeCheck tells you when a new
+version is out.
+
+**Uninstall:** run `brew uninstall --cask vibecheck` (add `--zap` to remove settings too), or
+`curl -fsSL https://raw.githubusercontent.com/saroj-shahi/vibecheck/main/scripts/install.sh | bash -s -- --uninstall`.
 
 ## Getting started
 
@@ -274,13 +286,14 @@ deck says so.
 ### Updates
 
 VibeCheck checks this repository's latest release at most once a day and sends one notification per new
-version. Check now from Settings → About or ⌘K → "Check for Updates", or turn the check off there.
+version, with the command to update (`brew upgrade --cask vibecheck` or the install line). Check now from
+Settings → About or ⌘K → "Check for Updates", or turn the check off there.
 
 ## Privacy
 
 Everything is read on your Mac. VibeCheck has no account, no analytics and no server. The only network
 calls are the weather (Open-Meteo, for the city you pick), the update check (GitHub), and the public IP
-(api.ipify.org) only if you turn it on.
+(api.ipify.org) only if you turn it on. Details are in [PRIVACY.md](PRIVACY.md).
 
 ## Develop
 
@@ -292,10 +305,13 @@ build/VibeCheck.app/Contents/MacOS/VibeCheck --deck-demo   # open the deck and l
 /Applications/VibeCheck.app/Contents/MacOS/VibeCheck --login-item on   # launch at login (or off / status)
 ```
 
-**Making a release:** `scripts/release.sh --share` builds `build/release/VibeCheck-<version>.dmg` with the
-branded install window (signed, not notarized); `scripts/release.sh` makes the notarized one once a
-Developer ID is set up (see the top of the script). Publish it with the steps the script prints: the release
-must carry a `VibeCheck.dmg` asset, which is what the download button links to.
+**Making a release:** bump the version in `Resources/Info.plist`, then run `scripts/release.sh --zip`. It builds
+`build/release/VibeCheck.zip` and its `.sha256`, and prints the tag, `gh release create` and Homebrew cask
+lines. Tags are `v<version>`, and every release must carry `VibeCheck.zip` and `VibeCheck.zip.sha256`: the
+install script, the cask and the in-app update check all read those. The DMG modes (`--share`, and plain
+`scripts/release.sh` for a notarized build with a Developer ID) are kept for later.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) to send a change.
 
 | Folder | What's inside |
 |---|---|
@@ -303,7 +319,7 @@ must carry a `VibeCheck.dmg` asset, which is what the download button links to.
 | `Sources/VibeCheck/App/` | `SystemStats`, settings, the deck controller, vibe score, alerts, history, weather, hotkeys |
 | `Sources/VibeCheck/Views/` | Menu bar labels, deck, detail panels, charts, settings window |
 | `branding/` | Brand guide, SVG sources, rendered PNGs and the DMG art |
-| `scripts/` | `release.sh` (DMG), `render_brand.swift` (icon and brand assets), `render_dmg.swift` (install window art), `render_hero.swift` (the README hero), `render_ring_symbol.swift` (the ring's custom SF Symbols) |
+| `scripts/` | `release.sh` (zip / DMG), `install.sh` (Terminal install and update), `render_brand.swift` (icon and brand assets), `render_dmg.swift` (install window art), `render_hero.swift` (the README hero), `render_ring_symbol.swift` (the ring's custom SF Symbols) |
 
 See [`docs/CODEMAP.md`](docs/CODEMAP.md) for which file does what.
 
@@ -328,6 +344,23 @@ The full guide (logo usage, clear space, color roles, type, voice, motion) is in
 ```bash
 swift scripts/render_brand.swift   # rewrites branding/png/* and Resources/AppIcon.icns
 ```
+
+## License
+
+VibeCheck is free software: you can redistribute it and/or modify it under the terms of the
+[GNU General Public License v3.0](LICENSE) or (at your option) any later version. If you share a modified
+version, you must share its source under the same license.
+
+**No warranty.** VibeCheck is provided "as is", without warranty of any kind, and the author isn't liable for
+any damage from using it (GPL-3.0 sections 15 and 16). It reads some undocumented macOS interfaces (SMC
+sensors, HID temperature sensors, Bluetooth power), and can turn Bluetooth off, keep your Mac awake, empty the
+Trash or quit apps when you ask it to. Use those features at your own risk.
+
+The VibeCheck name, icon and artwork aren't covered by the code license; forks must use their own. See
+[TRADEMARKS.md](TRADEMARKS.md). Third-party credits are in [NOTICE](NOTICE). VibeCheck isn't affiliated with
+Apple, Anthropic, OpenAI, GitHub or opencode.
+
+Copyright © 2026 Saroj Shahi.
 
 ## Roadmap
 

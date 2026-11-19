@@ -21,18 +21,48 @@ import Testing
     @Test func parsesWithDMG() throws {
         let release = try #require(UpdateChecker.parse(Data(Self.json.utf8)))
         #expect(release.version == "1.6.0")
-        #expect(release.downloadURL?.absoluteString == "https://github.com/o/r/releases/download/v1.6.0/VibeCheck.dmg")
+        #expect(release.assetURL?.absoluteString == "https://github.com/o/r/releases/download/v1.6.0/VibeCheck.dmg")
         #expect(release.notes == "Notes")
-        #expect(release.target == release.downloadURL)
     }
 
-    @Test func parsesWithoutDMG() throws {
+    @Test func parsesWithZip() throws {
+        let text = """
+        {"tag_name":"v1.7.0","html_url":"https://github.com/o/r/releases/tag/v1.7.0","assets":[
+         {"name":"VibeCheck.zip.sha256","browser_download_url":"https://github.com/o/r/releases/download/v1.7.0/VibeCheck.zip.sha256"},
+         {"name":"VibeCheck.zip","browser_download_url":"https://github.com/o/r/releases/download/v1.7.0/VibeCheck.zip"}]}
+        """
+        let release = try #require(UpdateChecker.parse(Data(text.utf8)))
+        #expect(release.version == "1.7.0")
+        #expect(release.assetURL?.absoluteString == "https://github.com/o/r/releases/download/v1.7.0/VibeCheck.zip")
+        #expect(release.pageURL.absoluteString == "https://github.com/o/r/releases/tag/v1.7.0")
+    }
+
+    @Test func prefersZipOverDMG() throws {
+        let text = """
+        {"tag_name":"v1.7.0","html_url":"https://github.com/o/r/releases/tag/v1.7.0","assets":[
+         {"name":"VibeCheck.dmg","browser_download_url":"https://github.com/o/r/releases/download/v1.7.0/VibeCheck.dmg"},
+         {"name":"VibeCheck.zip","browser_download_url":"https://github.com/o/r/releases/download/v1.7.0/VibeCheck.zip"}]}
+        """
+        let release = try #require(UpdateChecker.parse(Data(text.utf8)))
+        #expect(release.assetURL?.lastPathComponent == "VibeCheck.zip")
+        // An untrusted zip is dropped, and the trusted DMG is used instead.
+        let badZip = text.replacingOccurrences(of: "https://github.com/o/r/releases/download/v1.7.0/VibeCheck.zip",
+                                               with: "https://evil.example/VibeCheck.zip")
+        #expect(UpdateChecker.parse(Data(badZip.utf8))?.assetURL?.lastPathComponent == "VibeCheck.dmg")
+    }
+
+    @Test func updateCommandsAreTerminalOnly() {
+        let commands = UpdateChecker.updateCommands.map(\.command)
+        #expect(commands == ["brew upgrade --cask vibecheck",
+                             "curl -fsSL https://raw.githubusercontent.com/saroj-shahi/vibecheck/main/scripts/install.sh | bash"])
+    }
+
+    @Test func parsesWithoutAsset() throws {
         let text = #"{"tag_name":"1.7","html_url":"https://github.com/o/r/releases/tag/1.7","assets":[]}"#
         let release = try #require(UpdateChecker.parse(Data(text.utf8)))
         #expect(release.version == "1.7")
-        #expect(release.downloadURL == nil)
+        #expect(release.assetURL == nil)
         #expect(release.notes == nil)
-        #expect(release.target == release.pageURL)
     }
 
     @Test func rejectsPrereleaseAndGarbage() {
@@ -80,7 +110,7 @@ import Testing
         let badAsset = """
         {"tag_name":"v2","html_url":"https://github.com/o/r","assets":[{"name":"a.dmg","browser_download_url":"https://evil.example/a.dmg"}]}
         """
-        #expect(UpdateChecker.parse(Data(badAsset.utf8))?.downloadURL == nil)
+        #expect(UpdateChecker.parse(Data(badAsset.utf8))?.assetURL == nil)
     }
 
     @MainActor @Test func failedCheckDoesNotStartTheWait() async throws {

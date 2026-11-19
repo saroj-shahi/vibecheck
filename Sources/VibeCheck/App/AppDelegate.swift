@@ -249,7 +249,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alerts.log = NotificationLog.shared
         UpdateChecker.shared.onNewVersion = { [weak self] release in
             self?.alerts.notify(title: String(localized: "VibeCheck \(release.version) is out"),
-                                body: String(localized: "Click to see what's new."), kind: .alert, url: release.pageURL)
+                                body: String(localized: "Update in Terminal: \(UpdateChecker.brewCommand). Settings › About has the other way. Click for what's new."),
+                                kind: .alert, url: release.pageURL)
         }
         UpdateChecker.shared.start()
         stats.onTick = { [weak self] in

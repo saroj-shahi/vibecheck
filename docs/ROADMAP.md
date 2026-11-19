@@ -68,7 +68,7 @@ One list, highest priority first. **QA** = the QA agent can do it while the owne
 | 20 | App Shortcut phrases out of code into `AppShortcuts.xcstrings` | Dev | P2 | Needs `build.sh` support and a check with a built app |
 | 21 | Translations | Dev | P2 | None yet |
 | 22 | Private-API recheck after each macOS update: `IOHIDEventSystemClient*`, `responsibility_get_pid_responsible_for_pid`, SMC `PSTR`/`PDTR`/`F0Ac`, `IOBluetoothPreference{Get,Set}ControllerPowerState` | Dev | Tech debt | Last checked 2026-11-19 on macOS 27.2.1 (26B131), M5: all working (`--dump` + a `dlsym` probe) |
-| 23 | Public distribution: paid Apple Developer Program, "Developer ID Application" cert (same team `77HKFF78Z8`, app group), `notarytool` profile, first real `scripts/release.sh`; on the notarized build check Wi-Fi trigger, Bluetooth snooze, Apple Events and the widget; publish `v<version>` (repo must be public); Gatekeeper on a second Mac; Homebrew cask last | Owner | P3 | Sharing with colleagues already works (`scripts/release.sh --share`). Apple Development cert expires Nov 2027 |
+| 23 | Public open-source release (GPL-3.0, Terminal install): run `gitleaks` over history; decide on the commit email; make the repo public (protect `main`, private vulnerability reporting, secret scanning, immutable releases); create `saroj-shahi/homebrew-tap` from `packaging/homebrew/`; first `scripts/release.sh --zip` and `gh release create v<version>` with `VibeCheck.zip` + `.sha256`; on a second Mac check the curl install, brew install / upgrade / zap, the widget and the update check | Owner | P0 | Legal files, README install section, update command in the app, zip release and `install.sh` done or in progress (2026-11-19). Notarization (paid Developer ID) stays optional later. Apple Development cert expires Nov 2027 |
 | 24 | Website / landing page from the brand assets | Dev | P3 | Owner skipped it 2026-11-19 |
 | 25 | GitHub social preview: upload `branding/png/social-card.png` | Owner | P3 | Only possible once the repo is public |
 
@@ -284,7 +284,9 @@ Choices future sessions shouldn't silently undo.
 | Mouse, keyboard and clipboard back on the roadmap (2026-11-19, owner): clipboard history in ⌘K and pinned snippets (P1); find my cursor and keyboard cleaning mode (P2). History is off by default and never records concealed / transient items or anything copied during Secure Input | Owner asked for them. Kept to ⌘K commands and the fewest permissions, per the product rules; no input monitoring |
 | Deck 390 pt (was 360), notifications popover 346 pt, ⌘↩ actions card 270 pt, alerts widened to 288 pt with an empty accessory view (2026-11-19) | Owner asked for wider pop-ups (~20% was too much; settled ~8% over the old sizes). 390 keeps tiles whole-pixel (114 pt) |
 | Share with colleagues through an un-notarized `--share` DMG signed with Apple Development, not a paid Developer ID | The owner wants to share, not sell; each person runs one `xattr -dr com.apple.quarantine` command (a colleague found Open Anyway didn't work on their Mac, 2026-11-19; Terminal did). Building from source would need Xcode and repo access and loses the widget (team-signed app group) |
-| Updates via the GitHub Releases API (`releases/latest`, tag `v<version>`, first `.dmg` asset), not Sparkle; the app opens the download, it doesn't replace itself | No framework to embed with SwiftPM, no EdDSA keys; enough for a small app. Revisit Sparkle if silent in-place updates are wanted |
+| Updates via the GitHub Releases API (`releases/latest`, tag `v<version>`), not Sparkle; the app shows the update command (`brew upgrade --cask vibecheck` or the install line), it doesn't replace itself (2026-11-19: was "opens the DMG") | No framework to embed with SwiftPM, no EdDSA keys; enough for a small app. Revisit Sparkle if silent in-place updates are wanted |
+| Open source under GPL-3.0-or-later, with DCO sign-off and no CLA; name, icon and artwork kept out of the license (`TRADEMARKS.md`) (2026-11-19, owner) | GPL lets anyone use and fork but blocks closed-source clones; the trademark notice makes forks rename. Without a CLA the license can't be changed later for others' contributions |
+| Public installs are Terminal-only: Homebrew tap (`saroj-shahi/tap`, `postflight` clears quarantine) and `scripts/install.sh` via curl, both fetching a `VibeCheck.zip` release asset; no DMG download (2026-11-19, owner) | Free path without the $99 Developer ID: curl downloads aren't quarantined, so the un-notarized app opens with no Gatekeeper block and no `xattr` step. The official homebrew/cask won't take apps that fail Gatekeeper, hence a tap |
 | Hardened runtime only for Developer ID builds (or `VIBECHECK_HARDENED=1`), not the owner's daily Apple Development builds | Notarization needs it; keeps local builds as they were |
 | The flat brand mark is the Mood Dial (ring, notched knob, check in the gap), not the old pulse-to-check | The owner asked for the mark to follow the app icon so the lockup, README and icon tell one story |
 | Widgets without an Xcode project: SwiftPM builds the extension executable (linked with `-e _NSExtensionMain`), `build.sh` wraps and signs the `.appex` | Keeps the "no Xcode project" decision; without that entry point the extension traps on load |
@@ -431,6 +433,13 @@ scripts/qa/build.sh && .build/qa/qa help   # on-screen QA tools
 ---
 
 ## 8. Session notes
+
+#### 2026-11-19: Open-source release prep
+
+GPL-3.0 `LICENSE`, `TRADEMARKS.md`, `NOTICE`, `PRIVACY.md`, `SECURITY.md`, `CONTRIBUTING.md` (DCO) and issue
+templates added; README install is now brew / curl only, with License and no-warranty sections. The zip release,
+`install.sh`, the cask and the in-app update command were worked on in separate sessions. Still to do is §2 row 23
+(the owner's steps: make the repo public, create the tap, first release).
 
 Newest first; keep about five. Older notes are folded into §3, §6 and §7 (and `git log`).
 

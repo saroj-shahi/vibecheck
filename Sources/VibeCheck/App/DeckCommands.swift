@@ -95,7 +95,7 @@ enum DeckCommands {
             })
         }
         list.append(DeckCommand(id: "update.check", title: String(localized: "Check for Updates"), symbol: "arrow.down.circle",
-                                keywords: "update upgrade version new release download", settingsSection: .about) {
+                                keywords: "update upgrade version new release brew terminal", settingsSection: .about) {
             close()
             (NSApp.delegate as? AppDelegate)?.showSettings(.about)
             Task { await UpdateChecker.shared.check() }
