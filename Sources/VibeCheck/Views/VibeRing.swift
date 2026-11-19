@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Health ring: full when vibing, two-thirds when mid, one-third when cooked. In the menu bar it stays
@@ -55,7 +56,10 @@ struct VibeRing: View {
     /// changes swap it with a symbol replace instead of animating a trimmed stroke.
     @ViewBuilder
     private func shape(color: Color) -> some View {
-        if RingSymbol.isAvailable {
+        if RingWobble.isWobbling(vibe), !reduceMotion {
+            // Bad news moves: a few bumps roll around the ring while mid or cooked.
+            WobbleRing(vibe: vibe, color: color, lineWidth: lineWidth)
+        } else if RingSymbol.isAvailable {
             Image(RingSymbol.name(vibe))
                 .symbolRenderingMode(.palette)
                 .foregroundStyle(color, .primary.opacity(0.22))
@@ -71,6 +75,185 @@ struct VibeRing: View {
             }
             .padding(lineWidth / 2)
         }
+    }
+}
+
+/// The "Mood" wobble (chosen on the design canvas): still while vibing, three slow bumps rolling round the
+/// ring when mid, four fast ones when cooked. Offsets are fractions of the ring's centre-line radius.
+enum RingWobble {
+    nonisolated static func isWobbling(_ vibe: Vibe) -> Bool { vibe != .vibing }
+
+    /// Seconds until the pattern repeats (the bumps travel 2π in phase); 0 while still.
+    nonisolated static func period(_ vibe: Vibe) -> Double {
+        let speed = nodes(vibe).speed
+        return speed > 0 ? 2 * Double.pi / speed : 0
+    }
+
+
+    /// Bumps around the ring, their size (fraction of the radius) and how fast they travel (radians / s).
+    nonisolated static func nodes(_ vibe: Vibe) -> (count: Double, size: Double, speed: Double) {
+        switch vibe {
+        case .vibing: (0, 0, 0)
+        case .mid: (3, 0.105, 2.6)
+        case .cooked: (4, 0.145, 6.5)
+        }
+    }
+
+    /// Radius offset at `theta` (clockwise from 12 o'clock) at time `t` seconds.
+    nonisolated static func offset(theta: Double, t: Double, vibe: Vibe) -> Double {
+        let n = nodes(vibe)
+        return n.size * sin(n.count * theta - n.speed * t)
+    }
+
+    /// The ring from 12 o'clock clockwise over `fraction` of the turn, as a polyline on the wobbling radius.
+    nonisolated static func path(center: CGPoint, radius: CGFloat, fraction: Double, t: Double, vibe: Vibe) -> Path {
+        let end = 2 * Double.pi * min(max(fraction, 0), 1)
+        let steps = max(12, Int((96 * fraction).rounded(.up)))
+        var path = Path()
+        for i in 0...steps {
+            let theta = end * Double(i) / Double(steps)
+            let r = Double(radius) * (1 + offset(theta: theta, t: t, vibe: vibe))
+            let point = CGPoint(x: center.x + r * sin(theta), y: center.y - r * cos(theta))
+            if i == 0 { path.move(to: point) } else { path.addLine(to: point) }
+        }
+        if fraction >= 1 { path.closeSubpath() }
+        return path
+    }
+}
+
+/// The wobbling ring (mid / cooked). One period of shapes is built once; a light timer (20 fps) then swaps
+/// the shape layers' paths. Only this view's own layers change, never SwiftUI's layout (a SwiftUI
+/// TimelineView at 30 fps cost about 27% CPU in the menu bar), and a repeating Core Animation keyframe
+/// animation didn't play in the status bar. Same size and stroke as the static ring; the bumps may poke a
+/// fraction of a point past its frame. The timer runs only while the view is in a window.
+private struct WobbleRing: NSViewRepresentable {
+    let vibe: Vibe
+    let color: Color
+    let lineWidth: CGFloat
+
+    func makeNSView(context: Context) -> WobbleRingView { WobbleRingView() }
+
+    func updateNSView(_ view: WobbleRingView, context: Context) {
+        view.configure(vibe: vibe, color: NSColor(color), lineWidth: lineWidth)
+    }
+
+    static func dismantleNSView(_ view: WobbleRingView, coordinator: ()) { view.stop() }
+}
+
+final class WobbleRingView: NSView {
+    static let framesPerSecond = 20.0
+    private let track = CAShapeLayer()
+    private let arc = CAShapeLayer()
+    private var vibe: Vibe?
+    private var color = NSColor.systemYellow
+    private var lineWidth: CGFloat = 2.25
+    private var builtFor: (Vibe, CGSize, CGFloat)?
+    private var frames: [(track: CGPath, arc: CGPath)] = []
+    private var frameIndex = 0
+    private var timer: Timer?
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        // Layer-hosting (layer set before wantsLayer): AppKit leaves this layer tree to us.
+        layer = CALayer()
+        wantsLayer = true
+        for shape in [track, arc] {
+            shape.fillColor = nil
+            shape.lineCap = .round
+            shape.lineJoin = .round
+            shape.actions = ["path": NSNull(), "bounds": NSNull(), "position": NSNull()]
+            layer?.addSublayer(shape)
+        }
+        setAccessibilityElement(false)
+    }
+
+    required init?(coder: NSCoder) { fatalError("not used") }
+
+    func configure(vibe: Vibe, color: NSColor, lineWidth: CGFloat) {
+        self.vibe = vibe
+        self.color = color
+        self.lineWidth = lineWidth
+        applyColors()
+        rebuildIfNeeded()
+    }
+
+    override func layout() {
+        super.layout()
+        rebuildIfNeeded()
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if window == nil { stop() } else { startIfNeeded() }
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        applyColors()
+    }
+
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    private func startIfNeeded() {
+        guard timer == nil, window != nil, frames.count > 1 else { return }
+        let timer = Timer(timeInterval: 1 / Self.framesPerSecond, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.advance() }
+        }
+        timer.tolerance = 0.01
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
+    }
+
+    private func advance() {
+        guard !frames.isEmpty else { return }
+        frameIndex = (frameIndex + 1) % frames.count
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        track.path = frames[frameIndex].track
+        arc.path = frames[frameIndex].arc
+        CATransaction.commit()
+    }
+
+    private func applyColors() {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            track.strokeColor = NSColor.labelColor.withAlphaComponent(0.22).cgColor
+            arc.strokeColor = color.cgColor
+        }
+    }
+
+    /// Rebuilds one period of frames only when the state, size or stroke changes, never per tick.
+    private func rebuildIfNeeded() {
+        guard let vibe, bounds.width > 0, bounds.height > 0 else { return }
+        if let built = builtFor, built.0 == vibe, built.1 == bounds.size, built.2 == lineWidth { return }
+        builtFor = (vibe, bounds.size, lineWidth)
+
+        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+        let radius = (min(bounds.width, bounds.height) - lineWidth) / 2
+        // RingWobble draws y-down (12 o'clock at the top); the layer is y-up, so flip.
+        var flip = CGAffineTransform(translationX: 0, y: bounds.height).scaledBy(x: 1, y: -1)
+        let period = RingWobble.period(vibe)
+        let count = max(1, Int((period * Self.framesPerSecond).rounded()))
+        frames = (0..<count).compactMap { i in
+            let t = period * Double(i) / Double(count)
+            guard let track = RingWobble.path(center: center, radius: radius, fraction: 1, t: t, vibe: vibe).cgPath.copy(using: &flip),
+                  let arc = RingWobble.path(center: center, radius: radius, fraction: vibe.ringFill, t: t, vibe: vibe).cgPath.copy(using: &flip)
+            else { return nil }
+            return (track, arc)
+        }
+        frameIndex = 0
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        for shape in [track, arc] {
+            shape.frame = bounds
+            shape.lineWidth = lineWidth
+        }
+        track.path = frames.first?.track
+        arc.path = frames.first?.arc
+        CATransaction.commit()
+        startIfNeeded()
     }
 }
 
