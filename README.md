@@ -5,9 +5,7 @@
   </picture>
 </p>
 
-<h3 align="center">Your Mac's mood, in one little ring.</h3>
-
-<p align="center"><b>Is your Mac vibing or cooked?</b> VibeCheck tells you before you have to ask.</p>
+<p align="center"><img src="docs/screenshots/hero.png" alt="Your Mac's mood, in one little ring. Is your Mac vibing or cooked? One glance tells you. Shown beside the VibeCheck deck with live tiles for memory, network, CPU, GPU, sensors, battery, weather and AI agents." width="100%"></p>
 
 <p align="center">
   <a href="https://github.com/saroj-shahi/vibecheck/releases/latest/download/VibeCheck.dmg">
@@ -18,11 +16,6 @@
   <a href="https://github.com/saroj-shahi/vibecheck/releases/latest">release notes</a></sub>
 </p>
 
-<p align="center">
-  <img src="docs/screenshots/deck.png" alt="The VibeCheck deck: 'Your Mac is vibing' with live tiles for memory, network, CPU, GPU, sensors, battery, weather and AI agents" width="300">
-  &nbsp;
-  <img src="docs/screenshots/cpu.png" alt="CPU detail: 16% now, a 24-hour chart and the apps responsible" width="300">
-</p>
 ---
 
 ## Meet VibeCheck
@@ -310,7 +303,7 @@ must carry a `VibeCheck.dmg` asset, which is what the download button links to.
 | `Sources/VibeCheck/App/` | `SystemStats`, settings, the deck controller, vibe score, alerts, history, weather, hotkeys |
 | `Sources/VibeCheck/Views/` | Menu bar labels, deck, detail panels, charts, settings window |
 | `branding/` | Brand guide, SVG sources, rendered PNGs and the DMG art |
-| `scripts/` | `release.sh` (DMG), `render_brand.swift` (icon and brand assets), `render_dmg.swift` (install window art) |
+| `scripts/` | `release.sh` (DMG), `render_brand.swift` (icon and brand assets), `render_dmg.swift` (install window art), `render_hero.swift` (the README hero) |
 
 See [`docs/CODEMAP.md`](docs/CODEMAP.md) for which file does what.
 
