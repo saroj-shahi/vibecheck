@@ -83,7 +83,11 @@ Open from the gear in the deck, `⌘,`, or by opening the app again.
 /Applications/VibeCheck.app/Contents/MacOS/VibeCheck --login-item on   # launch at login (or off / status)
 ```
 
-The app is signed locally (ad hoc). On another Mac, right-click it and choose **Open** the first time.
+**Share it with colleagues:** `scripts/release.sh --share` makes `build/release/VibeCheck-<version>.dmg` (a branded install window that walks through both steps), signed
+with the Apple Development identity but not notarized. The DMG includes a "How to open" note: drag the app to
+Applications, then run `xattr -dr com.apple.quarantine /Applications/VibeCheck.app` once in Terminal ("Open
+Anyway" in Privacy & Security is unreliable for un-notarized apps on recent macOS). A public, notarized release needs a Developer ID:
+see the top of `scripts/release.sh`.
 
 ## Develop
 

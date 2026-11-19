@@ -2,8 +2,11 @@
 # Builds a VibeCheck release anyone can install: Developer ID signed, notarized and stapled, in a DMG.
 #
 #   scripts/release.sh            full release: build, notarize the app, DMG, notarize the DMG, staple, check
-#   scripts/release.sh --dry-run  same steps without a Developer ID or notarization (signs with whatever
-#                                 build.sh picks, hardened runtime on), to test the pipeline and the DMG
+#   scripts/release.sh --share    DMG for colleagues, no Developer ID needed: signed with the Apple Development
+#                                 identity (widgets work), not notarized, with a "How to open" note inside.
+#                                 Each person runs `xattr -dr com.apple.quarantine` on the app once (Open Anyway
+#                                 is unreliable for un-notarized apps on recent macOS).
+#   scripts/release.sh --dry-run  same as --share; kept as an alias
 #
 # One-time setup (needs a paid Apple Developer Program membership):
 #   1. Xcode → Settings → Accounts → Manage Certificates → + → "Developer ID Application".
@@ -19,8 +22,8 @@ cd "$(dirname "$0")/.."
 DRY_RUN=0
 case "${1:-}" in
   "") ;;
-  --dry-run) DRY_RUN=1 ;;
-  *) echo "usage: scripts/release.sh [--dry-run]" >&2; exit 2 ;;
+  --share|--dry-run) DRY_RUN=1 ;;
+  *) echo "usage: scripts/release.sh [--share]" >&2; exit 2 ;;
 esac
 PROFILE="${VIBECHECK_NOTARY_PROFILE:-vibecheck-notary}"
 APP=build/VibeCheck.app
@@ -39,7 +42,7 @@ GROUP_TEAM=$(/usr/libexec/PlistBuddy -c "Print :com.apple.security.application-g
 if [ "$DRY_RUN" = 0 ]; then
   IDENTITY="${VIBECHECK_SIGN_IDENTITY:-$(security find-identity -v -p codesigning \
     | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p' | head -1)}"
-  [ -n "$IDENTITY" ] || die "no \"Developer ID Application\" certificate in the keychain (see the setup notes at the top of this script), or run with --dry-run"
+  [ -n "$IDENTITY" ] || die "no \"Developer ID Application\" certificate in the keychain (see the setup notes at the top of this script), or run with --share to make a DMG for colleagues"
   CERT_TEAM=$(printf '%s' "$IDENTITY" | sed -n 's/.*(\([A-Z0-9]*\))$/\1/p')
   [ "$CERT_TEAM" = "$GROUP_TEAM" ] || die "certificate team ($CERT_TEAM) doesn't match the app group team ($GROUP_TEAM) in Resources/*.entitlements"
   xcrun notarytool history --keychain-profile "$PROFILE" >/dev/null 2>&1 \
@@ -47,7 +50,8 @@ if [ "$DRY_RUN" = 0 ]; then
   export VIBECHECK_SIGN_IDENTITY="$IDENTITY"
 else
   export VIBECHECK_HARDENED=1
-  echo "Dry run: no Developer ID, no notarization. The DMG works on this Mac only; Gatekeeper will reject it elsewhere."
+  echo "Share build: no Developer ID, not notarized. On other Macs, macOS blocks it until the person clears the quarantine"
+  echo "flag with one Terminal command (the DMG includes a note saying how)."
 fi
 
 notarize() { # $1: file to submit (zip or dmg)
@@ -84,7 +88,105 @@ STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 ditto "$APP" "$STAGE/VibeCheck.app"
 ln -s /Applications "$STAGE/Applications"
-hdiutil create -volname "VibeCheck $VERSION" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG" >/dev/null
+if [ "$DRY_RUN" = 1 ]; then
+  cat > "$STAGE/How to open.txt" <<NOTE
+VibeCheck $VERSION: how to install and open it
+
+1. Drag VibeCheck into the Applications folder (in this window).
+2. Open Terminal (Applications → Utilities → Terminal), paste this line and press Return:
+
+     xattr -dr com.apple.quarantine /Applications/VibeCheck.app
+
+3. Open VibeCheck from Applications. It lives in the menu bar (top right of the screen).
+
+Why step 2: VibeCheck is shared directly, not through the App Store, and isn't notarized by Apple,
+so macOS blocks it until you clear the "downloaded from the internet" flag. You only do this once
+per version. (System Settings → Privacy & Security → "Open Anyway" may also work, but on recent
+macOS versions it often doesn't for apps like this.)
+
+Updating: quit VibeCheck, drag the new version into Applications, replace the old one, and run
+step 2 again. Your settings are kept. Needs macOS 14 or later.
+NOTE
+fi
+# The install window: branded background (scripts/render_dmg.swift), the app icon on the volume, and the icons
+# placed on the art by Finder. Positions match the layout constants in render_dmg.swift.
+ART=share; [ "$DRY_RUN" = 0 ] && ART=release
+mkdir "$STAGE/.background"
+tiffutil -cathidpicheck "branding/dmg/$ART.png" "branding/dmg/$ART@2x.png" -out "$STAGE/.background/background.tiff" 2>/dev/null
+VOLNAME="VibeCheck $VERSION"
+MOUNT="/Volumes/$VOLNAME"
+[ -d "$MOUNT" ] && hdiutil detach -quiet "$MOUNT" -force || true
+RW="$OUT/VibeCheck-rw.dmg"
+hdiutil create -quiet -volname "$VOLNAME" -srcfolder "$STAGE" -fs HFS+ -format UDRW -ov "$RW"
+hdiutil attach -quiet -readwrite -noverify -noautoopen -mountpoint "$MOUNT" "$RW"
+NOTE_POSITION=""
+[ "$DRY_RUN" = 1 ] && NOTE_POSITION='set position of item "How to open.txt" to {572, 390}'
+# Finder needs Automation permission for Terminal (asked once). Without it the DMG still works, just plain.
+if ! osascript >/dev/null <<APPLESCRIPT
+tell application "Finder"
+  tell disk "$VOLNAME"
+    open
+    set current view of container window to icon view
+    set toolbar visible of container window to false
+    set statusbar visible of container window to false
+    set bounds of container window to {160, 120, 846, 652}
+    set opts to icon view options of container window
+    set arrangement of opts to not arranged
+    set icon size of opts to 100
+    set text size of opts to 13
+    set background picture of opts to file ".background:background.tiff"
+    set position of item "VibeCheck.app" to {180, 222}
+    set position of item "Applications" to {500, 222}
+    $NOTE_POSITION
+    update without registering applications
+    -- Leave the window open: about 5 s after it closes, Finder (macOS 26+) rewrites .DS_Store with its
+    -- default view settings. The disk is detached with the window still open instead.
+  end tell
+end tell
+APPLESCRIPT
+then
+  echo "warning: Finder couldn't lay out the DMG window (allow Terminal to control Finder in System Settings → Privacy & Security → Automation); the DMG is plain" >&2
+fi
+# Wait until Finder has written the layout (background picture + icon size) to .DS_Store, or the finished DMG
+# opens as a plain window.
+dsstore_ok() { # $1: volume root
+  python3 -I - "$1/.DS_Store" <<'PY'
+import plistlib, struct, sys
+try:
+    data = open(sys.argv[1], "rb").read()
+except OSError:
+    sys.exit(1)
+i = data.find(b"icvpblob")
+if i < 0:
+    sys.exit(1)
+size = struct.unpack(">I", data[i + 8:i + 12])[0]
+view = plistlib.loads(data[i + 12:i + 12 + size])
+print(f"backgroundType={view.get('backgroundType')} iconSize={view.get('iconSize')}", file=sys.stderr)
+sys.exit(0 if view.get("backgroundType") == 2 and view.get("iconSize") == 100 else 1)
+PY
+}
+# Finder may write more than once, so the layout must still be there a few seconds after it first shows up.
+STABLE=0
+for _ in $(seq 1 30); do
+  if dsstore_ok "$MOUNT" 2>/dev/null; then STABLE=$((STABLE + 1)); else STABLE=0; fi
+  [ "$STABLE" -ge 4 ] && break
+  sleep 1
+done
+[ "$STABLE" -ge 4 ] || { echo "warning: Finder didn't save the window layout:" >&2; dsstore_ok "$MOUNT" || true; }
+# The disk's own icon goes on last: Finder's "update" deletes .VolumeIcon.icns and clears the custom-icon flag
+# (and hdiutil -srcfolder leaves the file out).
+cp Resources/AppIcon.icns "$MOUNT/.VolumeIcon.icns"
+SetFile -a C "$MOUNT" 2>/dev/null || echo "warning: couldn't set the volume icon (SetFile)" >&2
+sync
+hdiutil detach -quiet "$MOUNT" || { sleep 2; hdiutil detach -quiet -force "$MOUNT"; }
+hdiutil convert -quiet "$RW" -format UDZO -imagekey zlib-level=9 -ov -o "$DMG"
+rm -f "$RW"
+# Check the finished DMG itself, mounted out of Finder's sight.
+CHECK=$(mktemp -d)
+hdiutil attach -quiet -readonly -nobrowse -noautoopen -mountpoint "$CHECK" "$DMG"
+if dsstore_ok "$CHECK" 2>/dev/null; then echo "Install window: background and layout saved in the DMG"
+else echo "warning: the DMG's install window will look plain:" >&2; dsstore_ok "$CHECK" || true; fi
+hdiutil detach -quiet "$CHECK"; rmdir "$CHECK"
 if [ "$DRY_RUN" = 0 ]; then
   codesign --force --timestamp --sign "$IDENTITY" "$DMG"
   step "Notarizing the DMG"
