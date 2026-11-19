@@ -11,12 +11,8 @@ struct AwakeMenuButton: View {
 
     var body: some View {
         let help = awake.isActive ? String(localized: "Keeping your Mac awake") : String(localized: "Keep your Mac awake")
-        Image(systemName: awake.isActive ? "cup.and.saucer.fill" : "cup.and.saucer")
-            .font(.system(size: 12, weight: .medium))
-            .frame(width: 26, height: 26)
-            .background(Circle().fill(.quaternary.opacity(hovering || pressed ? 1 : 0)))
+        AwakeCupFace(active: awake.isActive, hovering: hovering, pressed: pressed)
             .contentShape(Circle())
-            .foregroundStyle(awake.isActive ? Color.accentColor : .secondary)
             .gesture(DragGesture(minimumDistance: 0)
                 .onChanged { value in
                     if !pressed {
@@ -55,6 +51,62 @@ struct AwakeMenuButton: View {
 
     private static func showMenu() {
         KeepAwakeMenu().build().popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
+    }
+}
+
+/// The cup's look: a 32 pt round button with a resting fill so it reads as clickable. While keeping awake it
+/// turns mint, the cup steams (a light band rises through the steam, 1.6 s loop) and it bounces once on start.
+/// Reduce Motion keeps the mint and the steam but drops the loop and the bounce.
+struct AwakeCupFace: View {
+    let active: Bool
+    let hovering: Bool
+    let pressed: Bool
+    static let size: CGFloat = 32
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var rising = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(active ? AnyShapeStyle(Color.mint) : AnyShapeStyle(.quaternary.opacity(hovering || pressed ? 1 : 0.55)))
+                .shadow(color: .mint.opacity(active ? 0.55 : 0), radius: active ? 6 : 0)
+            if active {
+                cup("cup.and.heat.waves.fill")
+                    .foregroundStyle(.black.opacity(0.78))
+                    .overlay { if !reduceMotion { steam } }
+                    .transition(.scale(scale: 0.6).combined(with: .opacity))
+            } else {
+                cup("cup.and.saucer")
+                    .foregroundStyle(hovering ? .primary : .secondary)
+                    .transition(.opacity)
+            }
+        }
+        .frame(width: Self.size, height: Self.size)
+        .scaleEffect(pressed ? 0.94 : 1)
+        .animation(reduceMotion ? .easeOut(duration: 0.15) : .spring(response: 0.32, dampingFraction: 0.6), value: active)
+        .animation(.spring(response: 0.2, dampingFraction: 0.7), value: pressed)
+        .onChange(of: active, initial: true) { _, isActive in
+            rising = false
+            guard isActive, !reduceMotion else { return }
+            withAnimation(.linear(duration: 1.6).repeatForever(autoreverses: false)) { rising = true }
+        }
+    }
+
+    private func cup(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 14, weight: .semibold))
+            .symbolEffect(.bounce, value: active)
+    }
+
+    /// A white band sweeping up through the steam, masked to the symbol so only the waves light up.
+    private var steam: some View {
+        GeometryReader { geo in
+            LinearGradient(colors: [.clear, .white.opacity(0.95), .clear], startPoint: .bottom, endPoint: .top)
+                .frame(height: geo.size.height * 0.5)
+                .offset(y: rising ? -geo.size.height * 0.5 : geo.size.height * 0.6)
+        }
+        .mask(cup("cup.and.heat.waves.fill"))
+        .allowsHitTesting(false)
     }
 }
 

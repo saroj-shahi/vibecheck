@@ -87,6 +87,7 @@ actions, keep awake, notification history) are in `git log` and the README.
 
 | Date | Feature | How it was checked |
 |---|---|---|
+| 2026-11-19 | **Keep awake button redesign**: 32 pt with a resting fill (was 26 pt, invisible until hover); on = mint circle, glow, steaming `cup.and.heat.waves.fill` with a rising light band, one bounce on start; bell matched to 32 pt. Menu bar cup (standalone item, combined item, beside the ring) matches: 18 pt mint disc with a dark steaming cup, or a cut-out disc when colorful is off; static; off and on states the same width | Offscreen render of rest / hover / on; resting state captured in the live deck; on state approved by the owner on screen; menu bar cup approved by the owner after a relaunch |
 | 2026-11-19 | **Private APIs re-checked on macOS 27.2.1**; `--dump` APPS line names apps like the deck does (it showed helper names when the parent had no traffic) | `--dump` + a `dlsym` probe on live Chrome helpers |
 | 2026-11-19 | **Wider pop-ups**: deck 360→390 pt (tiles 114 pt), notifications 320→346, ⌘↩ actions card 250→270, settings alerts widened to 288 | Tests; installed and approved on screen by the owner |
 | 2026-11-19 | **P0 QA pass, verified**: ring symbol in all three states at 16 pt with the replace transition and the deck header ring; ring badge ("CPU 91%") and verdict tooltip | Seen on the installed app with `scripts/qa` captures under a `yes` load; owner defaults diffed identical afterwards |
@@ -277,6 +278,7 @@ Choices future sessions shouldn't silently undo.
 
 | Decision | Why |
 |---|---|
+| Keep awake on state loops (steam shimmer) though motion otherwise never decorates (2026-11-19) | Owner found the old filled-cup state "not fun"; the loop only runs while the deck is open and stops with Reduce Motion |
 | Mouse, keyboard and clipboard back on the roadmap (2026-11-19, owner): clipboard history in ⌘K and pinned snippets (P1); find my cursor and keyboard cleaning mode (P2). History is off by default and never records concealed / transient items or anything copied during Secure Input | Owner asked for them. Kept to ⌘K commands and the fewest permissions, per the product rules; no input monitoring |
 | Deck 390 pt (was 360), notifications popover 346 pt, ⌘↩ actions card 270 pt, alerts widened to 288 pt with an empty accessory view (2026-11-19) | Owner asked for wider pop-ups (~20% was too much; settled ~8% over the old sizes). 390 keeps tiles whole-pixel (114 pt) |
 | Share with colleagues through an un-notarized `--share` DMG signed with Apple Development, not a paid Developer ID | The owner wants to share, not sell; each person runs one `xattr -dr com.apple.quarantine` command (a colleague found Open Anyway didn't work on their Mac, 2026-11-19; Terminal did). Building from source would need Xcode and repo access and loses the widget (team-signed app group) |

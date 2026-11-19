@@ -178,7 +178,7 @@ final class StatusItemController: NSObject {
                 }
                 let chip = NSHostingView(rootView: HiddenCountChip(count: 8)).fittingSize.width
                 let ring: CGFloat = settings.menuBar.ringVisible ? 16 : 0
-                let cup = AwakeCup.isShown(settings) ? NSHostingView(rootView: AwakeCup()).fittingSize.width + spacing.between : 0
+                let cup = AwakeCup.isShown(settings) ? NSHostingView(rootView: AwakeCup().environment(settings)).fittingSize.width + spacing.between : 0
                 let fitted = NotchFit.visibleCount(itemWidths: widths, fixed: ring + cup + spacing.padding * 2,
                                                    gap: spacing.between, chipWidth: chip, available: available)
                 limit = NotchFit.capped(fitted: fitted, total: widths.count, cap: settings.menuBar.notchMaxStats)

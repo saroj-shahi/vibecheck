@@ -11,12 +11,12 @@ struct NotificationBellButton: View {
         let help: LocalizedStringKey = unseen > 0 ? (unseen == 1 ? "\(unseen) new notification" : "\(unseen) new notifications") : "Recent notifications"
         Button { showing.toggle() } label: {
             Image(systemName: "bell")
-                .font(.system(size: 12, weight: .medium))
-                .frame(width: 26, height: 26)
-                .background(Circle().fill(.quaternary.opacity(hovering || showing ? 1 : 0)))
+                .font(.system(size: 14, weight: .medium))
+                .frame(width: AwakeCupFace.size, height: AwakeCupFace.size)
+                .background(Circle().fill(.quaternary.opacity(hovering || showing ? 1 : 0.55)))
                 .overlay(alignment: .topTrailing) {
                     if unseen > 0 {
-                        Circle().fill(.red).frame(width: 7, height: 7).offset(x: -5, y: 5)
+                        Circle().fill(.red).frame(width: 8, height: 8).offset(x: -6, y: 6)
                     }
                 }
                 .contentShape(Circle())

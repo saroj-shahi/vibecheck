@@ -165,6 +165,7 @@ Motion explains what changed; it never decorates.
 | Press | 97% scale, spring 0.2 / 0.7 |
 | Tile hover | Fill 55% → 90%, a chevron fades in at the top right (150 ms ease-out) |
 | Palette selection | 14% accent fill moves to the row, ↩ replaces its shortcut (120 ms ease-out) |
+| Keep awake on | Deck cup turns mint with a soft glow and bounces once; a light band rises through the steam (1.6 s loop) while the deck is open. It's the one looping motion: it says "still running". The menu bar cup shows the same mint disc and steaming cup, static |
 | Reduce Motion | Every spring becomes a 150 ms crossfade |
 
 ## 8. Asset checklist

@@ -38,8 +38,12 @@ struct HiddenCountChip: View {
     }
 }
 
-/// Small cup shown in the menu bar while a keep-awake session runs.
+/// Small cup shown in the menu bar while a keep-awake session runs: the deck cup's on state in miniature, a
+/// mint disc with a dark steaming cup (menu bar text color with the cup cut out when colorful is off). Static:
+/// looping in the menu bar costs CPU all day.
 struct AwakeCup: View {
+    @Environment(AppSettings.self) private var settings
+    static let size: CGFloat = 18
     /// A session runs and the cup is wanted in the ring (not while the standalone item shows the state).
     @MainActor static func wanted(_ settings: AppSettings) -> Bool {
         settings.keepAwake.showInMenuBar && KeepAwake.shared.isActive && !settings.keepAwake.menuBarItem
@@ -66,10 +70,18 @@ struct AwakeCup: View {
                 .accessibilityLabel("Focus session, \(session.remaining(now: context.date))")
             }
         } else {
-            Image(systemName: "cup.and.saucer.fill")
-                .font(.system(size: 11, weight: .medium))
-                .frame(height: 22)
-                .help("Keeping your Mac awake")
+            let colorful = settings.menuBar.colorful
+            ZStack {
+                Circle().fill(colorful ? AnyShapeStyle(Color.mint) : AnyShapeStyle(.primary))
+                Image(systemName: "cup.and.heat.waves.fill")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.black.opacity(colorful ? 0.8 : 1))
+                    .blendMode(colorful ? .normal : .destinationOut)
+            }
+            .compositingGroup()
+            .frame(width: Self.size, height: Self.size)
+            .frame(height: 22)
+            .help("Keeping your Mac awake")
                 .accessibilityLabel("Keeping your Mac awake")
         }
     }
@@ -82,11 +94,11 @@ struct KeepAwakeItemLabel: View {
     var body: some View {
         Group {
             if KeepAwake.shared.isActive {
-                AwakeCup().foregroundStyle(settings.menuBar.colorful ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.primary))
+                AwakeCup()
             } else {
                 Image(systemName: "cup.and.saucer")
                     .font(.system(size: 11, weight: .medium))
-                    .frame(height: 22)
+                    .frame(width: AwakeCup.size, height: 22)
                     .help("Keep awake: click to start, right-click for options")
                     .accessibilityLabel("Keep awake, off")
             }
