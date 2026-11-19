@@ -181,15 +181,21 @@ final class AppSettings {
     static let shared = AppSettings()
     private let defaults: UserDefaults
 
+    var menuBar: MenuBarGroup
+    var clock: ClockGroup
+    var weather: WeatherGroup
+    var keepAwake: KeepAwakeGroup
+    /// Keep Awake's call guard: held with the keep-awake switches but it lives at the top level.
+    var callGuardEnabled: Bool {
+        didSet { save(callGuardEnabled, "callGuardEnabled", structural: false); KeepAwake.shared.check() }
+    }
+
     private(set) var enabledModules: Set<Module>
     var refreshInterval: Double {
         didSet {
             defaults.set(refreshInterval, forKey: "refreshInterval")
             NotificationCenter.default.post(name: .vibeCheckSettingsChanged, object: nil)
         }
-    }
-    var menuBarStyle: MenuBarStyle {
-        didSet { save(menuBarStyle.rawValue, "menuBarStyle", structural: true) }
     }
     var hotkeysEnabled: Bool {
         didSet { save(hotkeysEnabled, "hotkeysEnabled", structural: true) }
@@ -211,177 +217,6 @@ final class AppSettings {
     private(set) var itemOptions: [Module: ItemOptions] = [:]
     /// User-chosen order for the combined item, the deck grid and (on creation) separate items.
     private(set) var moduleOrder: [Module]
-    var menuBarSpacing: MenuBarSpacing {
-        didSet { save(menuBarSpacing.rawValue, "menuBarSpacing", structural: true) }
-    }
-    var autoFitNotch: Bool {
-        didSet { save(autoFitNotch, "autoFitNotch", structural: true) }
-    }
-    /// At most this many stats beside the notch (0 = as many as fit).
-    var notchMaxStats: Int {
-        didSet { save(notchMaxStats, "notchMaxStats", structural: true) }
-    }
-    /// Notch auto-collapse state (per Mac, not part of backups): the one-time notice was shown; VibeCheck
-    /// switched to the combined item by itself; the owner switched back to separate items, so don't again.
-    var notchNoticeShown: Bool {
-        didSet { save(notchNoticeShown, "notchNoticeShown", structural: false) }
-    }
-    var notchAutoCollapsed: Bool {
-        didSet { save(notchAutoCollapsed, "notchAutoCollapsed", structural: false) }
-    }
-    var notchCollapseOptOut: Bool {
-        didSet { save(notchCollapseOptOut, "notchCollapseOptOut", structural: false) }
-    }
-    /// The ring is drawn when it's on, and always in the ring-only style.
-    var ringVisible: Bool { showVibeRing || menuBarStyle == .ring }
-    var showVibeRing: Bool {
-        didSet { save(showVibeRing, "showVibeRing", structural: true) }
-    }
-    var colorfulMenuBar: Bool {
-        didSet { save(colorfulMenuBar, "colorfulMenuBar", structural: false) }
-    }
-    var clockFormat: ClockFormat {
-        didSet { save(clockFormat.rawValue, "clockFormat", structural: true) }
-    }
-    var clockShowSeconds: Bool {
-        didSet { save(clockShowSeconds, "clockShowSeconds", structural: true) }
-    }
-    var worldClocks: [WorldClock] {
-        didSet {
-            if let data = try? JSONEncoder().encode(worldClocks) { defaults.set(data, forKey: "worldClocks") }
-        }
-    }
-    var weatherLocation: WeatherLocation? {
-        didSet {
-            defaults.set(weatherLocation.flatMap { try? JSONEncoder().encode($0) }, forKey: "weatherLocation")
-            WeatherStore.shared.refresh()
-        }
-    }
-    var temperatureUnit: TemperatureUnit {
-        didSet {
-            defaults.set(temperatureUnit.rawValue, forKey: "temperatureUnit")
-            WeatherStore.shared.refresh()
-        }
-    }
-
-    /// Keep awake: length of a quick-start session in minutes (0 = indefinitely).
-    var keepAwakeDefaultMinutes: Int {
-        didSet { save(keepAwakeDefaultMinutes, "keepAwakeDefaultMinutes", structural: false) }
-    }
-    /// Keep the display on too; off lets the screen sleep while the Mac stays awake.
-    var keepAwakeDisplayOn: Bool {
-        didSet { save(keepAwakeDisplayOn, "keepAwakeDisplayOn", structural: false); KeepAwake.shared.check() }
-    }
-    /// End a session when on battery below this percent (0 = never).
-    var keepAwakeBatteryFloor: Int {
-        didSet { save(keepAwakeBatteryFloor, "keepAwakeBatteryFloor", structural: false); KeepAwake.shared.check() }
-    }
-    var keepAwakeAtLaunch: Bool {
-        didSet { save(keepAwakeAtLaunch, "keepAwakeAtLaunch", structural: false) }
-    }
-    /// Time of day for "until" sessions started from Settings, in minutes after midnight.
-    var keepAwakeUntilMinute: Int {
-        didSet { save(keepAwakeUntilMinute, "keepAwakeUntilMinute", structural: false) }
-    }
-    /// Notify when a session ends by itself.
-    var keepAwakeNotify: Bool {
-        didSet { save(keepAwakeNotify, "keepAwakeNotify", structural: false) }
-    }
-    /// Global shortcut (modifier + A) that starts or stops a session.
-    var keepAwakeHotkey: Bool {
-        didSet { save(keepAwakeHotkey, "keepAwakeHotkey", structural: true) }
-    }
-    /// Triggers: stay awake automatically while plugged in / while an external display is connected.
-    var keepAwakeOnPower: Bool {
-        didSet { save(keepAwakeOnPower, "keepAwakeOnPower", structural: false); KeepAwake.shared.check() }
-    }
-    var keepAwakeWithDisplay: Bool {
-        didSet { save(keepAwakeWithDisplay, "keepAwakeWithDisplay", structural: false); KeepAwake.shared.check() }
-    }
-    /// Trigger: stay awake while files are arriving in `downloadsFolderURL` (`DownloadsWatcher`).
-    var keepAwakeWhileDownloading: Bool {
-        didSet {
-            save(keepAwakeWhileDownloading, "keepAwakeWhileDownloading", structural: false)
-            DownloadsWatcher.shared.reset()
-            KeepAwake.shared.check()
-        }
-    }
-    /// Trigger: stay awake inside a weekly window (`keepAwakeSchedule`).
-    var keepAwakeOnSchedule: Bool {
-        didSet { save(keepAwakeOnSchedule, "keepAwakeOnSchedule", structural: false); KeepAwake.shared.check() }
-    }
-    /// Trigger: stay awake while an AI agent writes to its logs (`AgentWatch`).
-    var keepAwakeWhileAgentWorks: Bool {
-        didSet {
-            save(keepAwakeWhileAgentWorks, "keepAwakeWhileAgentWorks", structural: false)
-            AgentUsageStore.shared.refresh()
-            KeepAwake.shared.check()
-        }
-    }
-    /// Call guard: while the camera or mic is in use, hold non-critical alerts, keep the display awake and
-    /// warn about one heavy app.
-    var callGuardEnabled: Bool {
-        didSet { save(callGuardEnabled, "callGuardEnabled", structural: false); KeepAwake.shared.check() }
-    }
-    /// Trigger: stay awake while connected to the Wi-Fi network named in `keepAwakeWiFiName`.
-    /// Asks for Location permission when switched on (macOS hides network names without it).
-    var keepAwakeWhileOnWiFi: Bool {
-        didSet {
-            save(keepAwakeWhileOnWiFi, "keepAwakeWhileOnWiFi", structural: false)
-            if keepAwakeWhileOnWiFi { WiFiTrigger.shared.requestAccess() }
-            KeepAwake.shared.check()
-        }
-    }
-    var keepAwakeWiFiName: String {
-        didSet { save(keepAwakeWiFiName, "keepAwakeWiFiName", structural: false); KeepAwake.shared.check() }
-    }
-    /// Notify when an agent finishes a run of 10 minutes or more.
-    var notifyAgentFinished: Bool {
-        didSet { save(notifyAgentFinished, "notifyAgentFinished", structural: false); AgentUsageStore.shared.refresh() }
-    }
-    var keepAwakeScheduleDays: Int {
-        didSet { save(keepAwakeScheduleDays, "keepAwakeScheduleDays", structural: false); KeepAwake.shared.check() }
-    }
-    var keepAwakeScheduleStart: Int {
-        didSet { save(keepAwakeScheduleStart, "keepAwakeScheduleStart", structural: false); KeepAwake.shared.check() }
-    }
-    var keepAwakeScheduleEnd: Int {
-        didSet { save(keepAwakeScheduleEnd, "keepAwakeScheduleEnd", structural: false); KeepAwake.shared.check() }
-    }
-    var keepAwakeSchedule: AwakeSchedule {
-        AwakeSchedule(days: keepAwakeScheduleDays, startMinute: keepAwakeScheduleStart, endMinute: keepAwakeScheduleEnd)
-    }
-    /// Folder the downloads trigger watches; empty means the user's Downloads folder.
-    var keepAwakeDownloadsFolder: String {
-        didSet {
-            save(keepAwakeDownloadsFolder, "keepAwakeDownloadsFolder", structural: false)
-            DownloadsWatcher.shared.reset()
-            KeepAwake.shared.check()
-        }
-    }
-    var downloadsFolderURL: URL {
-        keepAwakeDownloadsFolder.isEmpty ? DownloadsWatcher.defaultFolder
-            : URL(fileURLWithPath: keepAwakeDownloadsFolder, isDirectory: true)
-    }
-    /// Turn Bluetooth off while the Mac sleeps, back on at wake (`BluetoothSnooze`).
-    var bluetoothOffWhileAsleep: Bool {
-        didSet {
-            save(bluetoothOffWhileAsleep, "bluetoothOffWhileAsleep", structural: false)
-            if bluetoothOffWhileAsleep { BluetoothSnooze.shared.requestAccess() }
-        }
-    }
-    /// Show a cup in the menu bar while a session runs.
-    var keepAwakeShowInMenuBar: Bool {
-        didSet { save(keepAwakeShowInMenuBar, "keepAwakeShowInMenuBar", structural: true) }
-    }
-    /// A standalone Keep Awake item in the menu bar (always visible). Click toggles, right-click shows a menu.
-    var keepAwakeMenuBarItem: Bool {
-        didSet { save(keepAwakeMenuBarItem, "keepAwakeMenuBarItem", structural: true) }
-    }
-
-    /// While the clock panel is open its seconds tick even if the menu bar shows minutes only.
-    @ObservationIgnored var isClockPanelOpen = false
-
     var launchAtLogin: Bool {
         didSet {
             do {
@@ -415,10 +250,11 @@ final class AppSettings {
         let interval = defaults.double(forKey: "refreshInterval")
         refreshInterval = interval > 0 ? interval : 2
         launchAtLogin = SMAppService.mainApp.status == .enabled
-        // New installs start with just the vibe ring (the deck has everything else); an existing install
-        // (it had saved its modules) without a stored choice keeps the combined item.
-        menuBarStyle = defaults.string(forKey: "menuBarStyle").flatMap(MenuBarStyle.init(rawValue:))
-            ?? (stored == nil ? .ring : .combined)
+        menuBar = MenuBarGroup(defaults: defaults, isNewInstall: stored == nil)
+        clock = ClockGroup(defaults: defaults)
+        weather = WeatherGroup(defaults: defaults)
+        keepAwake = KeepAwakeGroup(defaults: defaults)
+        callGuardEnabled = defaults.object(forKey: "callGuardEnabled") as? Bool ?? true
         hotkeysEnabled = defaults.object(forKey: "hotkeysEnabled") as? Bool ?? true
         showPublicIP = defaults.object(forKey: "showPublicIP") as? Bool ?? false
         hotkeyModifier = defaults.string(forKey: "hotkeyModifier").flatMap(HotkeyModifier.init(rawValue:))
@@ -436,45 +272,6 @@ final class AppSettings {
         itemOptions = storedOptions.reduce(into: [:]) { result, entry in
             if let module = Module(rawValue: entry.key) { result[module] = entry.value }
         }
-        menuBarSpacing = defaults.string(forKey: "menuBarSpacing").flatMap(MenuBarSpacing.init(rawValue:)) ?? .normal
-        autoFitNotch = defaults.object(forKey: "autoFitNotch") as? Bool ?? true
-        notchMaxStats = defaults.integer(forKey: "notchMaxStats")
-        notchNoticeShown = defaults.bool(forKey: "notchNoticeShown")
-        notchAutoCollapsed = defaults.bool(forKey: "notchAutoCollapsed")
-        notchCollapseOptOut = defaults.bool(forKey: "notchCollapseOptOut")
-        showVibeRing = defaults.object(forKey: "showVibeRing") as? Bool ?? true
-        colorfulMenuBar = defaults.object(forKey: "colorfulMenuBar") as? Bool ?? true
-        clockFormat = defaults.string(forKey: "clockFormat").flatMap(ClockFormat.init(rawValue:)) ?? .dayTime
-        clockShowSeconds = defaults.bool(forKey: "clockShowSeconds")
-        worldClocks = defaults.data(forKey: "worldClocks")
-            .flatMap { try? JSONDecoder().decode([WorldClock].self, from: $0) } ?? WorldClock.defaults
-        weatherLocation = defaults.data(forKey: "weatherLocation")
-            .flatMap { try? JSONDecoder().decode(WeatherLocation.self, from: $0) }
-        temperatureUnit = defaults.string(forKey: "temperatureUnit").flatMap(TemperatureUnit.init(rawValue:))
-            ?? (Locale.current.measurementSystem == .us ? .fahrenheit : .celsius)
-        keepAwakeDefaultMinutes = defaults.object(forKey: "keepAwakeDefaultMinutes") as? Int ?? 0
-        keepAwakeDisplayOn = defaults.object(forKey: "keepAwakeDisplayOn") as? Bool ?? true
-        keepAwakeBatteryFloor = defaults.object(forKey: "keepAwakeBatteryFloor") as? Int ?? 10
-        keepAwakeAtLaunch = defaults.bool(forKey: "keepAwakeAtLaunch")
-        keepAwakeShowInMenuBar = defaults.object(forKey: "keepAwakeShowInMenuBar") as? Bool ?? true
-        keepAwakeMenuBarItem = defaults.bool(forKey: "keepAwakeMenuBarItem")
-        keepAwakeUntilMinute = defaults.object(forKey: "keepAwakeUntilMinute") as? Int ?? 18 * 60
-        keepAwakeNotify = defaults.object(forKey: "keepAwakeNotify") as? Bool ?? true
-        keepAwakeHotkey = defaults.object(forKey: "keepAwakeHotkey") as? Bool ?? true
-        keepAwakeOnPower = defaults.bool(forKey: "keepAwakeOnPower")
-        keepAwakeWithDisplay = defaults.bool(forKey: "keepAwakeWithDisplay")
-        keepAwakeWhileDownloading = defaults.bool(forKey: "keepAwakeWhileDownloading")
-        keepAwakeDownloadsFolder = defaults.string(forKey: "keepAwakeDownloadsFolder") ?? ""
-        keepAwakeOnSchedule = defaults.bool(forKey: "keepAwakeOnSchedule")
-        keepAwakeWhileAgentWorks = defaults.bool(forKey: "keepAwakeWhileAgentWorks")
-        notifyAgentFinished = defaults.bool(forKey: "notifyAgentFinished")
-        callGuardEnabled = defaults.object(forKey: "callGuardEnabled") as? Bool ?? true
-        keepAwakeWhileOnWiFi = defaults.bool(forKey: "keepAwakeWhileOnWiFi")
-        keepAwakeWiFiName = defaults.string(forKey: "keepAwakeWiFiName") ?? ""
-        keepAwakeScheduleDays = defaults.object(forKey: "keepAwakeScheduleDays") as? Int ?? AwakeSchedule.weekdays
-        keepAwakeScheduleStart = defaults.object(forKey: "keepAwakeScheduleStart") as? Int ?? 9 * 60
-        keepAwakeScheduleEnd = defaults.object(forKey: "keepAwakeScheduleEnd") as? Int ?? 17 * 60
-        bluetoothOffWhileAsleep = defaults.bool(forKey: "bluetoothOffWhileAsleep")
         alertRules = defaults.data(forKey: "alertRules")
             .flatMap { try? JSONDecoder().decode([AlertRule].self, from: $0) } ?? AlertRule.defaults
         // The old "Limits left" look is now an Agents option.
@@ -518,16 +315,6 @@ final class AppSettings {
         NotificationCenter.default.post(name: .vibeCheckSettingsChanged, object: nil)
     }
 
-    var clockFormatStyle: ClockFormatStyle { ClockFormatStyle(format: clockFormat, seconds: clockShowSeconds) }
-
-    /// Width that fits the clock's widest possible text in the current format, so it never jiggles.
-    var clockTextWidth: CGFloat {
-        let widest = DateComponents(calendar: .current, year: 2026, month: 9, day: 30, hour: 22, minute: 58, second: 58).date ?? Date()
-        let text = clockFormat.formatter(seconds: clockShowSeconds).string(from: widest)
-        let font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .medium)
-        return ceil((text as NSString).size(withAttributes: [.font: font]).width) + 2
-    }
-
     /// Modules that are switched on, in the user's order.
     var orderedModules: [Module] { moduleOrder.filter(enabledModules.contains) }
 
@@ -567,7 +354,7 @@ final class AppSettings {
     func isEnabled(_ module: Module) -> Bool { enabledModules.contains(module) }
     /// Whether the module's number is in the menu bar (its own item or the combined one). "Just the vibe ring"
     /// draws no module numbers, so the ring badge must name the culprit there.
-    func showsInMenuBar(_ module: Module) -> Bool { menuBarStyle != .ring && isEnabled(module) }
+    func showsInMenuBar(_ module: Module) -> Bool { menuBar.style != .ring && isEnabled(module) }
 
     func setEnabled(_ module: Module, _ enabled: Bool) {
         if enabled { enabledModules.insert(module) } else {

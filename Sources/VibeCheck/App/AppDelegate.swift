@@ -137,7 +137,7 @@ final class StatusItemController: NSObject {
 
     func updateBadgeWidth() {
         guard kind == .vibe else { return }
-        let badge = VibeItemLabel.shownBadge(stats.vibe, ringShown: settings.ringVisible, isShown: settings.showsInMenuBar)
+        let badge = VibeItemLabel.shownBadge(stats.vibe, ringShown: settings.menuBar.ringVisible, isShown: settings.showsInMenuBar)
         let shape = Self.badgeShape(badge)
         guard shape != measuredBadge else { return }
         measuredBadge = shape
@@ -167,21 +167,21 @@ final class StatusItemController: NSObject {
     func refitAroundNotch() {
         guard kind == .combined else { return }
         var limit: Int?
-        if settings.autoFitNotch, let button = item.button, let window = button.window, let screen = window.screen {
+        if settings.menuBar.autoFitNotch, let button = item.button, let window = button.window, let screen = window.screen {
             let rect = window.convertToScreen(button.convert(button.bounds, to: nil))
             if let available = NotchFit.availableWidth(itemRect: rect, notchRight: screen.auxiliaryTopRightArea,
                                                        notchLeft: screen.auxiliaryTopLeftArea) {
-                let spacing = settings.menuBarSpacing
+                let spacing = settings.menuBar.spacing
                 let widths = settings.orderedModules.map { module in
                     NSHostingView(rootView: MenuBarLabel(module: module, padded: false)
                         .environment(stats).environment(settings)).fittingSize.width
                 }
                 let chip = NSHostingView(rootView: HiddenCountChip(count: 8)).fittingSize.width
-                let ring: CGFloat = settings.ringVisible ? 16 : 0
+                let ring: CGFloat = settings.menuBar.ringVisible ? 16 : 0
                 let cup = AwakeCup.isShown(settings) ? NSHostingView(rootView: AwakeCup()).fittingSize.width + spacing.between : 0
                 let fitted = NotchFit.visibleCount(itemWidths: widths, fixed: ring + cup + spacing.padding * 2,
                                                    gap: spacing.between, chipWidth: chip, available: available)
-                limit = NotchFit.capped(fitted: fitted, total: widths.count, cap: settings.notchMaxStats)
+                limit = NotchFit.capped(fitted: fitted, total: widths.count, cap: settings.menuBar.notchMaxStats)
             }
         }
         guard limit != fit.visibleCount else { return }
@@ -230,13 +230,13 @@ final class StatusItemController: NSObject {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let stats = SystemStats()
     let launchedAt = Date()
-    private let settings = AppSettings.shared
+    let settings = AppSettings.shared
     private let alerts = AlertEngine()
-    private lazy var deck = DeckController(stats: stats, settings: settings)
-    private var items: [Module: StatusItemController] = [:]
-    private var combinedItem: StatusItemController?
+    lazy var deck = DeckController(stats: stats, settings: settings)
+    private(set) var items: [Module: StatusItemController] = [:]
+    private(set) var combinedItem: StatusItemController?
     /// The standalone ring shown with separate items.
-    private var vibeItem: StatusItemController?
+    private(set) var vibeItem: StatusItemController?
     private var settingsWindow: NSWindow?
     /// The standalone Keep Awake item, when it's switched on in Settings.
     private var keepAwakeItem: StatusItemController?
@@ -266,7 +266,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.alerts.notify(title: String(localized: "Focus session done"), body: String(localized: "Take a break. Your Mac can sleep again."), kind: .keepAwake)
                 return
             }
-            guard reason.notifies, self.settings.keepAwakeNotify else { return }
+            guard reason.notifies, self.settings.keepAwake.notify else { return }
             self.alerts.notify(title: String(localized: "Keep awake ended"), body: String(localized: "\(reason.message) Your Mac can sleep again."), kind: .keepAwake)
         }
         NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
@@ -274,7 +274,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             MainActor.assumeIsolated { KeepAwake.shared.check() }
         }
         HotkeyManager.shared.onKeepAwake = { KeepAwake.shared.toggle() }
-        if settings.keepAwakeAtLaunch { KeepAwake.shared.start(minutes: settings.keepAwakeDefaultMinutes) }
+        if settings.keepAwake.atLaunch { KeepAwake.shared.start(minutes: settings.keepAwake.defaultMinutes) }
         KeepAwake.shared.check() // triggers (plugged in, external display) apply right away
         stats.start(interval: settings.refreshInterval)
         itemGeneration = settings.statusItemGeneration
@@ -283,7 +283,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         configureHotkeys()
         WeatherStore.shared.refresh()
         AgentUsageStore.shared.start()
-        BluetoothSnooze.shared.isEnabled = { [unowned settings] in settings.bluetoothOffWhileAsleep }
+        BluetoothSnooze.shared.isEnabled = { [unowned settings] in settings.keepAwake.bluetoothOffWhileAsleep }
         BluetoothSnooze.shared.start()
 
         NotificationCenter.default.addObserver(forName: .vibeCheckSettingsChanged, object: nil, queue: .main) { [weak self] _ in
@@ -327,7 +327,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// length counts from the first write VibeCheck saw (launch, or the first scan that picked it up).
     private func watchAgents() {
         let finished = agentWatch.update(AgentUsageStore.shared.sample.agents, now: Date())
-        guard settings.notifyAgentFinished else { return }
+        guard settings.keepAwake.notifyAgentFinished else { return }
         for run in finished {
             let message = AgentWatch.message(run)
             alerts.notify(title: message.title, body: message.body, kind: .agent)
@@ -367,8 +367,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Separate items: when macOS hides one behind the notch for a few seconds, switch to the combined item
     /// (which fits itself around the notch) and say so once. Turning separate items back on is respected.
     private func checkNotchHiding() {
-        guard NotchHideWatch.mayCollapse(separate: settings.menuBarStyle == .separate, autoFit: settings.autoFitNotch,
-                                         optedOut: settings.notchCollapseOptOut) else {
+        guard NotchHideWatch.mayCollapse(separate: settings.menuBar.style == .separate, autoFit: settings.menuBar.autoFitNotch,
+                                         optedOut: settings.menuBar.notchCollapseOptOut) else {
             notchWatch.hiddenSince = nil
             return
         }
@@ -376,25 +376,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let hidden = separate.contains { $0.isHiddenByNotch }
         guard notchWatch.update(hidden: hidden, now: Date()) else { return }
         notchWatch.hiddenSince = nil
-        settings.notchAutoCollapsed = true
-        settings.menuBarStyle = .combined
-        if !settings.notchNoticeShown {
-            settings.notchNoticeShown = true
+        settings.menuBar.notchAutoCollapsed = true
+        settings.menuBar.style = .combined
+        if !settings.menuBar.notchNoticeShown {
+            settings.menuBar.notchNoticeShown = true
             alerts.notify(title: NotchHideWatch.noticeTitle, body: NotchHideWatch.noticeBody, kind: .alert)
         }
     }
 
     /// The owner switched back to separate items after an automatic collapse: don't collapse again.
     private func noteExplicitStyleChoice() {
-        guard settings.notchAutoCollapsed, settings.menuBarStyle == .separate else { return }
-        settings.notchAutoCollapsed = false
-        settings.notchCollapseOptOut = true
+        guard settings.menuBar.notchAutoCollapsed, settings.menuBar.style == .separate else { return }
+        settings.menuBar.notchAutoCollapsed = false
+        settings.menuBar.notchCollapseOptOut = true
     }
 
     private func syncItems() {
         deck.close()
         defer { syncKeepAwakeItem() }
-        if settings.menuBarStyle == .ring {
+        if settings.menuBar.style == .ring {
             items.values.forEach { $0.remove() }
             items.removeAll()
             combinedItem?.remove()
@@ -402,7 +402,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             syncVibeItem()
             return
         }
-        if settings.menuBarStyle == .combined {
+        if settings.menuBar.style == .combined {
             items.values.forEach { $0.remove() }
             items.removeAll()
             vibeItem?.remove()
@@ -442,7 +442,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// The Keep Awake item, in either menu bar style. Created last so it sits left of VibeCheck's other items.
     /// Rebuilt with the others on a reorder (`syncItems` removes it first).
     private func syncKeepAwakeItem() {
-        if settings.keepAwakeMenuBarItem {
+        if settings.keepAwake.menuBarItem {
             if keepAwakeItem == nil || keepAwakeItemGeneration != settings.statusItemGeneration {
                 keepAwakeItem?.remove()
                 keepAwakeItemGeneration = settings.statusItemGeneration
@@ -474,8 +474,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Separate items: the standalone item holds the ring and/or the keep-awake cup. Created after the
     /// modules so it sits to their left.
     private func syncVibeItem() {
-        guard settings.menuBarStyle != .combined else { return }
-        let needed = settings.ringVisible || AwakeCup.isShown(settings)
+        guard settings.menuBar.style != .combined else { return }
+        let needed = settings.menuBar.ringVisible || AwakeCup.isShown(settings)
         if needed, vibeItem == nil {
             vibeItem = makeItem(.vibe)
         } else if !needed {
@@ -487,7 +487,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func configureHotkeys() {
         if settings.hotkeysEnabled {
-            HotkeyManager.shared.register(modifier: settings.hotkeyModifier, keepAwake: settings.keepAwakeHotkey)
+            HotkeyManager.shared.register(modifier: settings.hotkeyModifier, keepAwake: settings.keepAwake.hotkey)
         } else {
             HotkeyManager.shared.unregisterAll()
         }
@@ -528,54 +528,5 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         NSApp.activate()
         settingsWindow?.makeKeyAndOrderFront(nil)
-    }
-
-    /// `--deck-demo`: opens the deck, unfolds CPU, folds back, and logs the window frame at each step.
-    private func runDeckDemo() {
-        func log(_ step: String) {
-            let window = NSApp.windows.first { $0 is DeckPanel }
-            NSLog("%@", "VibeCheck deck-demo \(step): visible=\(window?.isVisible ?? false) frame=\(NSStringFromRect(window?.frame ?? .zero)) route=\(deck.route)")
-        }
-        let steps: [(Double, String, () -> Void)] = [
-            (1.0, "launch", {
-                for item in [self.combinedItem, self.vibeItem].compactMap({ $0 }) + Array(self.items.values) {
-                    guard let button = item.button, let window = button.window else { continue }
-                    let inScreen = window.convertToScreen(button.convert(button.bounds, to: nil))
-                    NSLog("%@", "VibeCheck deck-demo item \(item.kind) shown=\(item.fit.visibleCount.map(String.init) ?? "all"): window=\(NSStringFromRect(window.frame)) buttonOnScreen=\(NSStringFromRect(inScreen)) screen=\(NSStringFromRect(window.screen?.frame ?? .zero)) visible=\(NSStringFromRect(window.screen?.visibleFrame ?? .zero))")
-                }
-                // What the combined item would show beside the notch, using the real label widths.
-                let spacing = self.settings.menuBarSpacing
-                let widths = self.settings.orderedModules.map { module in
-                    NSHostingView(rootView: MenuBarLabel(module: module, padded: false)
-                        .environment(self.stats).environment(self.settings)).fittingSize.width
-                }
-                let chip = NSHostingView(rootView: HiddenCountChip(count: 8)).fittingSize.width
-                for room in [189.0, 300.0] {
-                    let fitted = NotchFit.visibleCount(itemWidths: widths, fixed: 16 + spacing.padding * 2, gap: spacing.between,
-                                                       chipWidth: chip, available: room)
-                    let count = NotchFit.capped(fitted: fitted, total: widths.count, cap: self.settings.notchMaxStats)
-                    let names = count.map { self.settings.orderedModules.prefix($0).map(\.title).joined(separator: ", ") } ?? "all"
-                    NSLog("%@", "VibeCheck deck-demo notch-fit room=\(Int(room)): \(names) + \(count.map { "+\(self.settings.orderedModules.count - $0)" } ?? "none")")
-                }
-                for screen in NSScreen.screens {
-                    NSLog("%@", "VibeCheck deck-demo screen: frame=\(NSStringFromRect(screen.frame)) visible=\(NSStringFromRect(screen.visibleFrame))")
-                }
-                guard let button = (self.combinedItem ?? self.items[.network] ?? self.items.values.first)?.button else { return }
-                self.deck.ignoresOutsideClicks = true
-                self.deck.open(from: button, route: .home)
-            }),
-            (1.6, "home", { self.deck.model.go(.module(.cpu)) }),
-            (2.4, "cpu", { self.deck.model.go(.home) }),
-            (3.2, "home-again", { self.deck.close() }),
-            (3.8, "closed", { self.deck.ignoresOutsideClicks = false; self.showSettings() }),
-            (4.8, "settings", {
-                let window = NSApp.windows.first { $0.title == String(localized: "VibeCheck Settings") }
-                NSLog("%@", "VibeCheck deck-demo settings-window: visible=\(window?.isVisible ?? false) frame=\(NSStringFromRect(window?.frame ?? .zero)) vibe=\(self.stats.vibe.vibe.title) verdict=\(self.stats.vibe.verdict)")
-                window?.close()
-            }),
-        ]
-        for (time, name, action) in steps {
-            DispatchQueue.main.asyncAfter(deadline: .now() + time) { log(name); action() }
-        }
     }
 }

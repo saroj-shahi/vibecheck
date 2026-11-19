@@ -14,7 +14,7 @@ struct MenuBarLabel: View {
 
     private var style: LabelStyle { settings.labelStyle(module) }
     private var options: ItemOptions { settings.options(module) }
-    private var gap: CGFloat { settings.menuBarSpacing.inner }
+    private var gap: CGFloat { settings.menuBar.spacing.inner }
     private let valueFont = Font.system(size: 11, weight: .medium).monospacedDigit()
 
     var body: some View {
@@ -38,10 +38,10 @@ struct MenuBarLabel: View {
             }
         }
         .frame(height: 22)
-        .padding(.horizontal, padded ? settings.menuBarSpacing.padding : 0)
+        .padding(.horizontal, padded ? settings.menuBar.spacing.padding : 0)
     }
 
-    private func tint(_ color: Color) -> Color { settings.colorfulMenuBar ? color : .primary }
+    private func tint(_ color: Color) -> Color { settings.menuBar.colorful ? color : .primary }
 
     private func value(_ text: String, width: CGFloat = 30) -> some View {
         Text(text).font(valueFont)
@@ -221,7 +221,7 @@ struct MenuBarLabel: View {
         return HStack(spacing: gap) {
             if style != .valueOnly {
                 Image(systemName: forecast.map { WeatherCode.symbol($0.code, isDay: $0.isDay) } ?? "cloud.sun")
-                    .symbolRenderingMode(settings.colorfulMenuBar ? .multicolor : .monochrome)
+                    .symbolRenderingMode(settings.menuBar.colorful ? .multicolor : .monochrome)
                     .font(.system(size: 12))
                     .frame(width: 18)
             }
@@ -277,10 +277,10 @@ struct MenuBarLabel: View {
             if style == .iconAndValue {
                 Image(systemName: "clock").font(.system(size: 12))
             }
-            Text(ClockTicker.shared.now, format: settings.clockFormatStyle)
+            Text(ClockTicker.shared.now, format: settings.clock.formatStyle)
                 .font(.system(size: 13, weight: .medium).monospacedDigit())
                 .lineLimit(1)
-                .frame(width: settings.clockTextWidth, alignment: .center)
+                .frame(width: settings.clock.textWidth, alignment: .center)
         }
     }
 }

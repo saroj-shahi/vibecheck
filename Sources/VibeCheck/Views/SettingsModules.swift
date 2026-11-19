@@ -348,19 +348,19 @@ private struct ClockSections: View {
     var body: some View {
         @Bindable var settings = settings
         Section("Format") {
-            Picker("Format", selection: $settings.clockFormat) {
+            Picker("Format", selection: $settings.clock.format) {
                 ForEach(ClockFormat.allCases) { format in
-                    Text(format.formatter(seconds: settings.clockShowSeconds).string(from: Date())).tag(format)
+                    Text(format.formatter(seconds: settings.clock.showSeconds).string(from: Date())).tag(format)
                 }
             }
-            Toggle("Show seconds", isOn: $settings.clockShowSeconds)
+            Toggle("Show seconds", isOn: $settings.clock.showSeconds)
         }
 
         Section("World clocks") {
-            if settings.worldClocks.isEmpty {
+            if settings.clock.worldClocks.isEmpty {
                 Text("No world clocks yet.").foregroundStyle(.secondary)
             }
-            ForEach($settings.worldClocks) { $clock in
+            ForEach($settings.clock.worldClocks) { $clock in
                 HStack {
                     TextField("Name", text: $clock.name).labelsHidden().frame(maxWidth: 160)
                     Text(clock.timeZoneID).font(.caption).foregroundStyle(.secondary)
@@ -368,7 +368,7 @@ private struct ClockSections: View {
                     Text(Date().formatted(Date.FormatStyle(date: .omitted, time: .shortened, timeZone: clock.timeZone)))
                         .monospacedDigit().foregroundStyle(.secondary)
                     Button(role: .destructive) {
-                        settings.worldClocks.removeAll { $0.id == clock.id }
+                        settings.clock.worldClocks.removeAll { $0.id == clock.id }
                     } label: { Image(systemName: "trash") }
                         .buttonStyle(.borderless)
                         .help("Remove \(clock.name)")
@@ -381,10 +381,10 @@ private struct ClockSections: View {
                     Text(identifier).font(.caption).foregroundStyle(.secondary)
                     Spacer()
                     Button("Add") {
-                        settings.worldClocks.append(WorldClock(name: WorldClock.cityName(identifier), timeZoneID: identifier))
+                        settings.clock.worldClocks.append(WorldClock(name: WorldClock.cityName(identifier), timeZoneID: identifier))
                         search = ""
                     }
-                    .disabled(settings.worldClocks.contains { $0.timeZoneID == identifier })
+                    .disabled(settings.clock.worldClocks.contains { $0.timeZoneID == identifier })
                 }
             }
         }
@@ -412,11 +412,11 @@ private struct WeatherSections: View {
     var body: some View {
         @Bindable var settings = settings
         Section("Forecast") {
-            Picker("Units", selection: $settings.temperatureUnit) {
+            Picker("Units", selection: $settings.weather.unit) {
                 ForEach(TemperatureUnit.allCases) { Text($0.title).tag($0) }
             }
             LabeledContent("City") {
-                if let location = settings.weatherLocation {
+                if let location = settings.weather.location {
                     VStack(alignment: .trailing) {
                         Text(location.name)
                         if location.subtitle != location.name {
@@ -442,7 +442,7 @@ private struct WeatherSections: View {
                     }
                     Spacer()
                     Button("Use") {
-                        settings.weatherLocation = place
+                        settings.weather.location = place
                         search = ""
                         results = []
                     }

@@ -16,9 +16,9 @@ struct KeepAwakeItemTests {
 
     @Test func standaloneItemHidesTheExtraCup() {
         let settings = AppSettings.shared
-        let saved = settings.keepAwakeMenuBarItem
-        defer { settings.keepAwakeMenuBarItem = saved }
-        settings.keepAwakeMenuBarItem = true
+        let saved = settings.keepAwake.menuBarItem
+        defer { settings.keepAwake.menuBarItem = saved }
+        settings.keepAwake.menuBarItem = true
         #expect(!AwakeCup.isShown(settings))     // never two cups, running or not
     }
 }

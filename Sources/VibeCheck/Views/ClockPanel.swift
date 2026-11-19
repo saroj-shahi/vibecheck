@@ -11,17 +11,17 @@ struct ClockPanel: View {
 
             MonthCalendar(today: now)
 
-            if !settings.worldClocks.isEmpty {
+            if !settings.clock.worldClocks.isEmpty {
                 VStack(spacing: 8) {
                     SectionTitle(text: "World clocks").frame(maxWidth: .infinity, alignment: .leading)
-                    ForEach(settings.worldClocks) { clock in
+                    ForEach(settings.clock.worldClocks) { clock in
                         WorldClockRow(clock: clock, now: now)
                     }
                 }
             }
         }
-        .onAppear { settings.isClockPanelOpen = true }
-        .onDisappear { settings.isClockPanelOpen = false }
+        .onAppear { settings.clock.isPanelOpen = true }
+        .onDisappear { settings.clock.isPanelOpen = false }
     }
 }
 

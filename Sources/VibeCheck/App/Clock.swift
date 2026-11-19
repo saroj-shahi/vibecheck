@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import os
 import Observation
 
 /// Menu bar clock formats. Templates adapt to the user's locale (12/24-hour, day/month order).
@@ -36,15 +37,18 @@ struct ClockFormatStyle: FormatStyle {
     }
 
     private static func cache(_ format: ClockFormat, _ seconds: Bool) -> DateFormatter {
-        // DateFormatter is expensive to create; reuse one per format.
+        // DateFormatter is expensive to create; reuse one per format. The lock makes the cache safe when
+        // SwiftUI formats off the main thread (formatting itself is thread-safe on macOS 10.9+).
         let key = "\(format.rawValue)-\(seconds)"
-        if let cached = formatters[key] { return cached }
-        let made = format.formatter(seconds: seconds)
-        formatters[key] = made
-        return made
+        return formatters.withLock { cache in
+            if let cached = cache[key] { return cached }
+            let made = format.formatter(seconds: seconds)
+            cache[key] = made
+            return made
+        }
     }
 
-    nonisolated(unsafe) private static var formatters: [String: DateFormatter] = [:]
+    private static let formatters = OSAllocatedUnfairLock<[String: DateFormatter]>(uncheckedState: [:])
 }
 
 struct WorldClock: Codable, Identifiable, Equatable {
@@ -111,7 +115,7 @@ final class ClockTicker {
     private func tick() {
         let date = Date()
         let minuteChanged = Calendar.current.component(.minute, from: date) != Calendar.current.component(.minute, from: now)
-        if AppSettings.shared.clockShowSeconds || minuteChanged || AppSettings.shared.isClockPanelOpen {
+        if AppSettings.shared.clock.showSeconds || minuteChanged || AppSettings.shared.clock.isPanelOpen {
             now = date
         }
     }

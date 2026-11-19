@@ -74,8 +74,8 @@ struct VibeItemLabel: View {
     }
 
     var body: some View {
-        HStack(spacing: settings.menuBarSpacing.between) {
-            if settings.ringVisible {
+        HStack(spacing: settings.menuBar.spacing.between) {
+            if settings.menuBar.ringVisible {
                 HStack(spacing: 4) {
                     VibeRing(vibe: stats.vibe.vibe, awake: AwakeCup.inRing(settings))
                         .scaleEffect(drop?.isTargeted == true ? RingDropState.scale : 1)
@@ -88,6 +88,6 @@ struct VibeItemLabel: View {
             }
             if AwakeCup.isShown(settings) { AwakeCup() }
         }
-            .padding(.horizontal, max(settings.menuBarSpacing.padding, 2))
+            .padding(.horizontal, max(settings.menuBar.spacing.padding, 2))
     }
 }

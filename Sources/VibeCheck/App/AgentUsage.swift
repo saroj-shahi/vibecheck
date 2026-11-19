@@ -70,7 +70,7 @@ final class AgentUsageStore {
     }
 
     static func isNeeded(_ settings: AppSettings) -> Bool {
-        settings.isEnabled(.agents) || settings.keepAwakeWhileAgentWorks || settings.notifyAgentFinished
+        settings.isEnabled(.agents) || settings.keepAwake.whileAgentWorks || settings.keepAwake.notifyAgentFinished
     }
 
     /// Publishes the last scan with fresh live Claude limits merged in (only assigns when it changed).

@@ -128,7 +128,7 @@ struct KeepAwakeSettings: View {
                     if awake.isActive {
                         Button("Stop") { awake.stop() }
                     } else {
-                        Button("Start") { awake.start(minutes: settings.keepAwakeDefaultMinutes) }
+                        Button("Start") { awake.start(minutes: settings.keepAwake.defaultMinutes) }
                     }
                 } label: {
                     TimelineView(.periodic(from: .now, by: 15)) { context in Text(status(context.date)) }
@@ -136,7 +136,7 @@ struct KeepAwakeSettings: View {
                         Text("Last session ended: \(reason.message)").font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                Picker("Start sessions for", selection: $settings.keepAwakeDefaultMinutes) {
+                Picker("Start sessions for", selection: $settings.keepAwake.defaultMinutes) {
                     ForEach(AwakePreset.minutes, id: \.self) { Text(AwakePreset.title($0)).tag($0) }
                 }
                 LabeledContent("Or stay awake until") {
@@ -144,7 +144,7 @@ struct KeepAwakeSettings: View {
                         DatePicker("Time", selection: untilTime, displayedComponents: .hourAndMinute)
                             .labelsHidden()
                         Button("Start") {
-                            awake.start(.at(AwakePreset.nextOccurrence(ofMinute: settings.keepAwakeUntilMinute)))
+                            awake.start(.at(AwakePreset.nextOccurrence(ofMinute: settings.keepAwake.untilMinute)))
                         }
                     }
                 }
@@ -153,71 +153,71 @@ struct KeepAwakeSettings: View {
                     .settingsFooter()
             }
             Section("Automatically keep awake") {
-                Toggle("While plugged in", isOn: $settings.keepAwakeOnPower)
-                Toggle("While an external display is connected", isOn: $settings.keepAwakeWithDisplay)
-                Toggle(isOn: $settings.keepAwakeWhileDownloading) {
+                Toggle("While plugged in", isOn: $settings.keepAwake.onPower)
+                Toggle("While an external display is connected", isOn: $settings.keepAwake.withDisplay)
+                Toggle(isOn: $settings.keepAwake.whileDownloading) {
                     Text("While files are downloading")
-                    Text("Watches \(settings.downloadsFolderURL.lastPathComponent) for files that are still arriving.")
+                    Text("Watches \(settings.keepAwake.downloadsFolderURL.lastPathComponent) for files that are still arriving.")
                 }
-                Toggle(isOn: $settings.keepAwakeWhileAgentWorks) {
+                Toggle(isOn: $settings.keepAwake.whileAgentWorks) {
                     Text("While an AI agent is working")
                     Text("Claude Code, Codex, Copilot CLI or OpenCode wrote to its logs in the last 3 minutes.")
                 }
-                Toggle("Notify me when an agent finishes a run of 10 minutes or more", isOn: $settings.notifyAgentFinished)
+                Toggle("Notify me when an agent finishes a run of 10 minutes or more", isOn: $settings.keepAwake.notifyAgentFinished)
                 Toggle(isOn: $settings.callGuardEnabled) {
                     Text("While you're on a call")
                     Text("Camera or microphone in use: keeps the display awake, holds alerts until the call ends (overheating and low battery still come through) and warns once if one app is hogging the CPU.")
                 }
-                Toggle(isOn: $settings.keepAwakeWhileOnWiFi) {
+                Toggle(isOn: $settings.keepAwake.whileOnWiFi) {
                     Text("While on a Wi-Fi network")
                     Text("Needs Location access, which macOS requires to read the network name. Your location isn't used.")
                 }
-                if settings.keepAwakeWhileOnWiFi {
+                if settings.keepAwake.whileOnWiFi {
                     WiFiNameRow(settings: settings)
                 }
-                Toggle("On a schedule", isOn: $settings.keepAwakeOnSchedule)
-                if settings.keepAwakeOnSchedule {
-                    LabeledContent("Days") { ScheduleDaysPicker(days: $settings.keepAwakeScheduleDays) }
+                Toggle("On a schedule", isOn: $settings.keepAwake.onSchedule)
+                if settings.keepAwake.onSchedule {
+                    LabeledContent("Days") { ScheduleDaysPicker(days: $settings.keepAwake.scheduleDays) }
                     LabeledContent("Hours") {
                         HStack {
-                            DatePicker("From", selection: minuteBinding(\.keepAwakeScheduleStart),
+                            DatePicker("From", selection: minuteBinding(\.keepAwake.scheduleStart),
                                        displayedComponents: .hourAndMinute).labelsHidden()
                             Text("to")
-                            DatePicker("To", selection: minuteBinding(\.keepAwakeScheduleEnd),
+                            DatePicker("To", selection: minuteBinding(\.keepAwake.scheduleEnd),
                                        displayedComponents: .hourAndMinute).labelsHidden()
                         }
                     }
                 }
-                if settings.keepAwakeWhileDownloading {
+                if settings.keepAwake.whileDownloading {
                     LabeledContent("Folder") {
                         HStack {
-                            Text(settings.downloadsFolderURL.path(percentEncoded: false)
+                            Text(settings.keepAwake.downloadsFolderURL.path(percentEncoded: false)
                                     .replacingOccurrences(of: NSHomeDirectory(), with: "~"))
                                 .lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
                             Button("Choose…") { chooseDownloadsFolder() }
-                            if !settings.keepAwakeDownloadsFolder.isEmpty {
-                                Button("Reset") { settings.keepAwakeDownloadsFolder = "" }
+                            if !settings.keepAwake.downloadsFolder.isEmpty {
+                                Button("Reset") { settings.keepAwake.downloadsFolder = "" }
                             }
                         }
                     }
                 }
             }
             Section {
-                Toggle("Keep the display on", isOn: $settings.keepAwakeDisplayOn)
-                Picker("On battery, stop below", selection: $settings.keepAwakeBatteryFloor) {
+                Toggle("Keep the display on", isOn: $settings.keepAwake.displayOn)
+                Picker("On battery, stop below", selection: $settings.keepAwake.batteryFloor) {
                     Text("Never").tag(0)
                     ForEach([10, 20, 30, 50], id: \.self) { Text("\($0)%").tag($0) }
                 }
-                Toggle("Start a session when VibeCheck opens", isOn: $settings.keepAwakeAtLaunch)
-                Toggle("Notify me when a session ends by itself", isOn: $settings.keepAwakeNotify)
-                Toggle("\(settings.hotkeyModifier.symbols)A starts or stops a session", isOn: $settings.keepAwakeHotkey)
+                Toggle("Start a session when VibeCheck opens", isOn: $settings.keepAwake.atLaunch)
+                Toggle("Notify me when a session ends by itself", isOn: $settings.keepAwake.notify)
+                Toggle("\(settings.hotkeyModifier.symbols)A starts or stops a session", isOn: $settings.keepAwake.hotkey)
                     .disabled(!settings.hotkeysEnabled)
-                Toggle(isOn: $settings.keepAwakeMenuBarItem) {
+                Toggle(isOn: $settings.keepAwake.menuBarItem) {
                     Text("Show keep awake as its own item")
                     Text("Off: a small cup appears in the vibe ring while a session runs. On: a separate item, always shown. Click it to start or stop, using the length in “Start sessions for” above. Right-click (or ⌥-click) for every option.")
                 }
-                Toggle("Show a cup in the ring while awake", isOn: $settings.keepAwakeShowInMenuBar)
-                    .disabled(settings.keepAwakeMenuBarItem)
+                Toggle("Show a cup in the ring while awake", isOn: $settings.keepAwake.showInMenuBar)
+                    .disabled(settings.keepAwake.menuBarItem)
             } footer: {
                 Text("With the display allowed to sleep, the screen turns off but downloads, builds and music keep going. Closing the lid still puts the Mac to sleep.")
                     .settingsFooter()
@@ -240,11 +240,11 @@ struct KeepAwakeSettings: View {
     /// The stored minute-of-day as a Date for the time picker.
     private var untilTime: Binding<Date> {
         Binding {
-            Calendar.current.date(bySettingHour: settings.keepAwakeUntilMinute / 60, minute: settings.keepAwakeUntilMinute % 60,
+            Calendar.current.date(bySettingHour: settings.keepAwake.untilMinute / 60, minute: settings.keepAwake.untilMinute % 60,
                                   second: 0, of: Date()) ?? Date()
         } set: { date in
             let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-            settings.keepAwakeUntilMinute = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+            settings.keepAwake.untilMinute = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
         }
     }
 
@@ -253,10 +253,10 @@ struct KeepAwakeSettings: View {
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
-        panel.directoryURL = settings.downloadsFolderURL
+        panel.directoryURL = settings.keepAwake.downloadsFolderURL
         panel.prompt = String(localized: "Watch")
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        settings.keepAwakeDownloadsFolder = url == DownloadsWatcher.defaultFolder ? "" : url.path(percentEncoded: false)
+        settings.keepAwake.downloadsFolder = url == DownloadsWatcher.defaultFolder ? "" : url.path(percentEncoded: false)
     }
 
     private func status(_ now: Date) -> String {
@@ -295,9 +295,9 @@ private struct WiFiNameRow: View {
     var body: some View {
         LabeledContent("Network") {
             HStack {
-                TextField("Network name", text: $settings.keepAwakeWiFiName).labelsHidden().frame(maxWidth: 180)
+                TextField("Network name", text: $settings.keepAwake.wifiName).labelsHidden().frame(maxWidth: 180)
                 Button("Use current") {
-                    if let name = WiFiTrigger.shared.ssid { settings.keepAwakeWiFiName = name }
+                    if let name = WiFiTrigger.shared.ssid { settings.keepAwake.wifiName = name }
                 }
                 .disabled(WiFiTrigger.shared.ssid == nil)
             }

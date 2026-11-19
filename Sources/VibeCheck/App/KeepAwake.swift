@@ -233,7 +233,7 @@ final class KeepAwake {
 
     /// Starts a session with the quick-start length from Settings, or stops the running one.
     func toggle() {
-        if isActive { stop() } else { start(minutes: settings.keepAwakeDefaultMinutes) }
+        if isActive { stop() } else { start(minutes: settings.keepAwake.defaultMinutes) }
     }
 
     func stop(reason: AwakeEndReason? = nil) {
@@ -260,7 +260,7 @@ final class KeepAwake {
         if case .whileChanging(let path, _) = session.end { PathActivity.shared.refreshIfDue(path: path, now: now) }
         let running = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier))
         if let reason = AwakeSession.endReason(session, now: now, battery: batteryProvider(),
-                                               batteryFloor: settings.keepAwakeBatteryFloor,
+                                               batteryFloor: settings.keepAwake.batteryFloor,
                                                isRunning: running.contains,
                                                lastChange: { PathActivity.shared.lastChange($0) }) {
             stop(reason: reason)
@@ -273,16 +273,16 @@ final class KeepAwake {
 
     private func evaluateTriggers() {
         let battery = batteryProvider()
-        if settings.keepAwakeWhileDownloading {
-            DownloadsWatcher.shared.refreshIfDue(folder: settings.downloadsFolderURL)
+        if settings.keepAwake.whileDownloading {
+            DownloadsWatcher.shared.refreshIfDue(folder: settings.keepAwake.downloadsFolderURL)
         }
         let active = AwakeTriggerAction.description(
-            onPower: settings.keepAwakeOnPower && (!battery.present || battery.onAC),
-            externalDisplay: settings.keepAwakeWithDisplay && Self.hasExternalDisplay(),
-            downloading: settings.keepAwakeWhileDownloading && DownloadsWatcher.shared.isActive,
-            schedule: settings.keepAwakeOnSchedule && settings.keepAwakeSchedule.isActive(at: Date())
-                ? settings.keepAwakeSchedule.description() : nil,
-            agentWorking: settings.keepAwakeWhileAgentWorks
+            onPower: settings.keepAwake.onPower && (!battery.present || battery.onAC),
+            externalDisplay: settings.keepAwake.withDisplay && Self.hasExternalDisplay(),
+            downloading: settings.keepAwake.whileDownloading && DownloadsWatcher.shared.isActive,
+            schedule: settings.keepAwake.onSchedule && settings.keepAwake.schedule.isActive(at: Date())
+                ? settings.keepAwake.schedule.description() : nil,
+            agentWorking: settings.keepAwake.whileAgentWorks
                 && AgentWatch.anyWorking(AgentUsageStore.shared.sample.agents, now: Date()),
             onCall: settings.callGuardEnabled && CallGuard.shared.inCall,
             wifi: wifiMatch(),
@@ -298,15 +298,15 @@ final class KeepAwake {
 
     /// The wanted network's name while the trigger is on and the Mac is connected to it.
     private func wifiMatch() -> String? {
-        guard settings.keepAwakeWhileOnWiFi else { return nil }
+        guard settings.keepAwake.whileOnWiFi else { return nil }
         WiFiTrigger.shared.refresh()
-        let wanted = settings.keepAwakeWiFiName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let wanted = settings.keepAwake.wifiName.trimmingCharacters(in: .whitespacesAndNewlines)
         return WiFiTrigger.matches(current: WiFiTrigger.shared.ssid, wanted: wanted) ? wanted : nil
     }
 
     /// The display stays on during a call even when "keep display on" is off.
     private var wantsDisplayOn: Bool {
-        settings.keepAwakeDisplayOn || (settings.callGuardEnabled && CallGuard.shared.inCall)
+        settings.keepAwake.displayOn || (settings.callGuardEnabled && CallGuard.shared.inCall)
             || FocusFilterState.keepAwakeActive(focus: FocusFilterStore.shared.state)
     }
 

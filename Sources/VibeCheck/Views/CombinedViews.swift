@@ -10,15 +10,15 @@ struct CombinedLabel: View {
     var body: some View {
         let all = settings.orderedModules
         let shown = fit?.visibleCount.map { Array(all.prefix($0)) } ?? all
-        HStack(spacing: settings.menuBarSpacing.between) {
-            if settings.ringVisible { VibeRing(vibe: stats.vibe.vibe, awake: AwakeCup.inRing(settings)).frame(height: 22) }
+        HStack(spacing: settings.menuBar.spacing.between) {
+            if settings.menuBar.ringVisible { VibeRing(vibe: stats.vibe.vibe, awake: AwakeCup.inRing(settings)).frame(height: 22) }
             if AwakeCup.isShown(settings) { AwakeCup() }
             ForEach(shown) { MenuBarLabel(module: $0, padded: false) }
             if shown.count < all.count {
                 HiddenCountChip(count: all.count - shown.count)
             }
         }
-        .padding(.horizontal, settings.menuBarSpacing.padding)
+        .padding(.horizontal, settings.menuBar.spacing.padding)
     }
 }
 
@@ -42,14 +42,14 @@ struct HiddenCountChip: View {
 struct AwakeCup: View {
     /// A session runs and the cup is wanted in the ring (not while the standalone item shows the state).
     @MainActor static func wanted(_ settings: AppSettings) -> Bool {
-        settings.keepAwakeShowInMenuBar && KeepAwake.shared.isActive && !settings.keepAwakeMenuBarItem
+        settings.keepAwake.showInMenuBar && KeepAwake.shared.isActive && !settings.keepAwake.menuBarItem
     }
 
     /// The cup is drawn inside the ring's centre, so the item's width never changes.
-    @MainActor static func inRing(_ settings: AppSettings) -> Bool { wanted(settings) && settings.ringVisible }
+    @MainActor static func inRing(_ settings: AppSettings) -> Bool { wanted(settings) && settings.menuBar.ringVisible }
 
     /// A separate cup beside the other content: only when there is no ring to hold it.
-    @MainActor static func isShown(_ settings: AppSettings) -> Bool { wanted(settings) && !settings.ringVisible }
+    @MainActor static func isShown(_ settings: AppSettings) -> Bool { wanted(settings) && !settings.menuBar.ringVisible }
 
     var body: some View {
         if let session = KeepAwake.shared.session, session.focus {
@@ -82,7 +82,7 @@ struct KeepAwakeItemLabel: View {
     var body: some View {
         Group {
             if KeepAwake.shared.isActive {
-                AwakeCup().foregroundStyle(settings.colorfulMenuBar ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.primary))
+                AwakeCup().foregroundStyle(settings.menuBar.colorful ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.primary))
             } else {
                 Image(systemName: "cup.and.saucer")
                     .font(.system(size: 11, weight: .medium))
@@ -91,6 +91,6 @@ struct KeepAwakeItemLabel: View {
                     .accessibilityLabel("Keep awake, off")
             }
         }
-        .padding(.horizontal, max(settings.menuBarSpacing.padding, 3))
+        .padding(.horizontal, max(settings.menuBar.spacing.padding, 3))
     }
 }

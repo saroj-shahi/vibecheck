@@ -7,8 +7,10 @@ are added or split. Plans, decisions and history are in [ROADMAP.md](ROADMAP.md)
 
 | File | What's in it |
 |---|---|
-| `AppDelegate.swift` | `StatusItemController` (one menu bar item: kinds `.single(Module)`, `.combined`, `.vibe`, `.keepAwake`), `AppDelegate` (launch, `syncItems` / reorder rebuild by `statusItemGeneration`, deck/Settings opening, shortcuts, `--deck-demo`) |
-| `AppSettings.swift` | `Module` enum (10 modules, order, symbols, label styles), `LabelStyle`, `Palette`, `AppSettings` (every setting, defaults domain `local.vibecheck.app`), `autosaveName` |
+| `AppDelegate.swift` | `StatusItemController` (one menu bar item: kinds `.single(Module)`, `.combined`, `.vibe`, `.keepAwake`), `AppDelegate` (launch, `syncItems` / reorder rebuild by `statusItemGeneration`, deck/Settings opening, shortcuts) |
+| `AppDelegate+DeckDemo.swift` | `--deck-demo` launch mode (logs item, deck and Settings frames); kept in release builds for QA |
+| `AppSettings.swift` | `Module` enum (10 modules, order, symbols, label styles), `LabelStyle`, `Palette`, `AppSettings` (module-level settings, refresh, hotkeys, alerts; defaults domain `local.vibecheck.app`; groups below), `autosaveName` |
+| `AppSettingsGroups.swift` | `SettingsWriter` (shared save helper) and the setting groups `settings.menuBar`, `.clock`, `.weather`, `.keepAwake` (same flat defaults keys as before the split) |
 | `ItemOptions.swift` | Per-item menu bar options (Agents: which agents, % left/used/tokens, windows, reset; Memory, Network, Disk, Battery, Sensors) + `AgentUsageSample.menuBarContent` |
 | `SystemStats.swift` | The tick: samples every monitor, histories, demand counters (`processDemand`, `networkAppDemand`, `sensorDemand`), vibe input, listening ports |
 | `Vibe.swift` | Vibe score (vibing / mid / cooked), the verdict sentence and its culprit module |
@@ -52,7 +54,14 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `PortSampler` (`lso
 | `CombinedViews.swift` | Combined item, `AwakeCup`, `KeepAwakeItemLabel` |
 | `DeckView.swift` | Deck shell (header, drawn search field, live chips, footer), home (quick toggles, tiles, culprit outline), tiles' spoken labels, glass hairline |
 | `CommandPalette.swift` | ⌘K palette results, ⌘↩ action card, `KeyCap`, `Caret` |
-| `Panels.swift` | `Panel`, `PanelHeader` (pinned by `DeckRoot` in the deck), detail panels per module, `ProcessList`, `ListeningPortsSection`, `USBDevicesSection` |
+| `Panels.swift` | Shared panel pieces: `Panel`, `PanelHeader` (pinned by `DeckRoot`), `StatRow`, `SectionTitle`, `DetailsDisclosure`, and `ModulePanel` (module to panel switch) |
+| `ProcessList.swift` | `ProcessList` (CPU/memory top processes), quit/force-quit menu items, `ForceQuitConfirmRow` |
+| `CPUGPUPanels.swift` | `CPUPanel`, `GPUPanel` |
+| `MemoryPanel.swift` | `MemoryPanel` |
+| `NetworkPanel.swift` | `NetworkPanel`, `ListeningPortsSection` |
+| `DiskPanel.swift` | `DiskPanel` |
+| `SensorsPanel.swift` | `SensorsPanel` |
+| `BatteryPanel.swift` | `BatteryPanel`, `DeviceBatteryRow`, `USBDevicesSection` |
 | `AgentsPanel.swift` | Agents detail: Now card, charts, agent cards, `LimitGauge`, `PaceBar`, `DailyBars` |
 | `AgentLogo.swift` | Agent logos (`AgentLogo`, `AgentLogoTile`, brand colors) from SVG path data, and `SVGPath` (small path-data parser) |
 | `VibeStrip.swift` | `VibeStripView`: 24 h vibe strip + weekly sentence (top of the CPU panel) |

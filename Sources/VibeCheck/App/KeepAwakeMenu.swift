@@ -33,8 +33,8 @@ final class KeepAwakeMenu: NSObject {
             menu.addItem(status)
             menu.addItem(ActionItem(session.focus ? String(localized: "End Focus Session") : String(localized: "Stop Keeping Awake")) { awake.stop() })
         } else {
-            menu.addItem(ActionItem(String(localized: "Start (\(AwakePreset.title(settings.keepAwakeDefaultMinutes)))")) {
-                awake.start(minutes: settings.keepAwakeDefaultMinutes)
+            menu.addItem(ActionItem(String(localized: "Start (\(AwakePreset.title(settings.keepAwake.defaultMinutes)))")) {
+                awake.start(minutes: settings.keepAwake.defaultMinutes)
             })
         }
 
@@ -67,8 +67,8 @@ final class KeepAwakeMenu: NSObject {
         }
 
         menu.addItem(.separator())
-        menu.addItem(ActionItem(String(localized: "Keep the Display On"), state: settings.keepAwakeDisplayOn ? .on : .off) {
-            settings.keepAwakeDisplayOn.toggle()
+        menu.addItem(ActionItem(String(localized: "Keep the Display On"), state: settings.keepAwake.displayOn ? .on : .off) {
+            settings.keepAwake.displayOn.toggle()
         })
         menu.addItem(ActionItem(String(localized: "Keep Awake Settings…")) {
             (NSApp.delegate as? AppDelegate)?.showSettings(.keepAwake)

@@ -7,7 +7,7 @@ struct WeatherPanel: View {
     var body: some View {
         let forecast = store.forecast
         Panel(module: .weather, headline: forecast.map { temp($0.temperature) } ?? "—") {
-            if let location = settings.weatherLocation {
+            if let location = settings.weather.location {
                 if let forecast {
                     current(forecast, location: location)
                     hourly(forecast)

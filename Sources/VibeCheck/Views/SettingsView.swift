@@ -232,31 +232,31 @@ private struct MenuBarSettings: View {
             }
 
             Section("Style") {
-                Picker("Show as", selection: $settings.menuBarStyle) {
+                Picker("Show as", selection: $settings.menuBar.style) {
                     ForEach(MenuBarStyle.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.radioGroup)
-                Toggle("Show vibe ring", isOn: $settings.showVibeRing)
-                    .disabled(settings.menuBarStyle == .ring)
+                Toggle("Show vibe ring", isOn: $settings.menuBar.showVibeRing)
+                    .disabled(settings.menuBar.style == .ring)
             }
 
             AdvancedSection {
-                Picker("Spacing", selection: $settings.menuBarSpacing) {
+                Picker("Spacing", selection: $settings.menuBar.spacing) {
                     ForEach(MenuBarSpacing.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
-                Toggle("Colorful graphs", isOn: $settings.colorfulMenuBar)
-                Toggle(isOn: $settings.autoFitNotch) {
+                Toggle("Colorful graphs", isOn: $settings.menuBar.colorful)
+                Toggle(isOn: $settings.menuBar.autoFitNotch) {
                     Text("Fit around the camera notch")
                     Text("On a display with a notch, the combined item shows as many stats as fit beside it (in the order below) plus a +N badge. Everything stays in the deck.")
                 }
-                .disabled(settings.menuBarStyle != .combined)
-                Picker("Stats beside the notch", selection: $settings.notchMaxStats) {
+                .disabled(settings.menuBar.style != .combined)
+                Picker("Stats beside the notch", selection: $settings.menuBar.notchMaxStats) {
                     Text("As many as fit").tag(0)
                     ForEach(1...4, id: \.self) { Text("At most \($0)").tag($0) }
                 }
-                .disabled(!settings.autoFitNotch || settings.menuBarStyle != .combined)
-                if settings.menuBarStyle != .combined {
+                .disabled(!settings.menuBar.autoFitNotch || settings.menuBar.style != .combined)
+                if settings.menuBar.style != .combined {
                     Text("The notch options only apply to \"One combined item\". With separate items, macOS hides whatever doesn't fit beside the notch.")
                         .settingsFooter()
                 }
@@ -333,12 +333,12 @@ private struct MenuBarPreview: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 14) {
                 Spacer(minLength: 0)
-                if settings.menuBarStyle == .combined {
+                if settings.menuBar.style == .combined {
                     CombinedLabel()
                 } else {
                     HStack(spacing: 10) {
-                        if settings.ringVisible { VibeItemLabel() }
-                        if settings.menuBarStyle != .ring { ForEach(settings.orderedModules) { MenuBarLabel(module: $0) } }
+                        if settings.menuBar.ringVisible { VibeItemLabel() }
+                        if settings.menuBar.style != .ring { ForEach(settings.orderedModules) { MenuBarLabel(module: $0) } }
                     }
                 }
                 HStack(spacing: 14) {
@@ -376,7 +376,7 @@ private struct GeneralSettings: View {
         let snooze = BluetoothSnooze.shared
         guard snooze.isAvailable else { return String(localized: "Not available on this version of macOS.") }
         let about = String(localized: "Stops a sleeping Mac from grabbing headphones you also use with your phone. Bluetooth comes back on when the Mac wakes, if it was on before. While asleep, a Bluetooth keyboard or mouse can't wake the Mac, and Apple Watch unlock won't work.")
-        if settings.bluetoothOffWhileAsleep, snooze.access == .denied {
+        if settings.keepAwake.bluetoothOffWhileAsleep, snooze.access == .denied {
             return String(localized: "VibeCheck isn't allowed to use Bluetooth, so this does nothing. Allow it in System Settings → Privacy & Security → Bluetooth. ") + about
         }
         return about
@@ -403,7 +403,7 @@ private struct GeneralSettings: View {
                     Text("3 seconds").tag(3.0)
                     Text("5 seconds").tag(5.0)
                 }
-                Toggle("Turn Bluetooth off while the Mac sleeps", isOn: $settings.bluetoothOffWhileAsleep)
+                Toggle("Turn Bluetooth off while the Mac sleeps", isOn: $settings.keepAwake.bluetoothOffWhileAsleep)
                     .disabled(!BluetoothSnooze.shared.isAvailable)
                 Text(bluetoothFooter).settingsFooter()
             }

@@ -584,7 +584,7 @@ struct TileContent {
                                spoken: v)
         case .weather:
             guard let forecast = WeatherStore.shared.forecast else {
-                return TileContent(value: "—", detail: settings.weatherLocation == nil ? String(localized: "Pick a city") : String(localized: "Loading…"),
+                return TileContent(value: "—", detail: settings.weather.location == nil ? String(localized: "Pick a city") : String(localized: "Loading…"),
                                    spoken: String(localized: "unavailable"))
             }
             let v = String(format: "%.0f°", forecast.temperature)

@@ -220,16 +220,16 @@ final class WeatherStore {
     /// Fetches if the item is on and the city/unit changed (or `force`). Cheap to call often.
     func refresh(force: Bool = false) {
         let settings = AppSettings.shared
-        guard settings.isEnabled(.weather), let location = settings.weatherLocation else {
-            if settings.weatherLocation == nil { forecast = nil; loadedKey = nil }
+        guard settings.isEnabled(.weather), let location = settings.weather.location else {
+            if settings.weather.location == nil { forecast = nil; loadedKey = nil }
             return
         }
-        let key = "\(location.id)|\(settings.temperatureUnit.rawValue)"
+        let key = "\(location.id)|\(settings.weather.unit.rawValue)"
         guard force || key != loadedKey, !isLoading else { return }
         isLoading = true
         Task {
             do {
-                let result = try await OpenMeteo.forecast(for: location, unit: settings.temperatureUnit)
+                let result = try await OpenMeteo.forecast(for: location, unit: settings.weather.unit)
                 forecast = result
                 lastUpdated = Date()
                 errorMessage = nil

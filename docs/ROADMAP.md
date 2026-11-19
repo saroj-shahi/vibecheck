@@ -5,7 +5,7 @@ working, the design rules and the decisions behind them. **Read sections 1 and 2
 only for the area you're touching. Code locations are in [CODEMAP.md](CODEMAP.md); brand, voice and motion
 in [BRAND.md](../branding/BRAND.md) (it wins over this file on those).
 
-_Last updated: 2026-11-19 · version 1.5 · ~13,700 lines of Swift · 223 tests_
+_Last updated: 2026-11-19 · version 1.5 · ~14,000 lines of Swift · 223 tests_
 
 **Keeping it current (every session):** when a feature is done, move its row from §2 to §3 *Shipped* with
 the date and how it was checked, update §4 if anything was seen on screen, add any decision to §6, and add a
@@ -103,10 +103,6 @@ list; owner said no).
 
 ### Tech debt
 
-- `Views/Panels.swift` is large; split per module.
-- `AppDelegate.runDeckDemo()` is debug code in the app target; move behind `#if DEBUG` or a debug file.
-- `AppSettings` keeps growing; group into sub-objects (menu bar, alerts, clock, weather).
-- `ClockFormatStyle` caches formatters in a `nonisolated(unsafe)` static; add a lock if used off the main thread.
 - Private / undocumented APIs, all looked up at runtime with fallbacks: `IOHIDEventSystemClient*`
   (temperatures), `responsibility_get_pid_responsible_for_pid` (app grouping), SMC keys `PSTR`/`PDTR`/`F0Ac`,
   `IOBluetoothPreference{Get,Set}ControllerPowerState`. Re-check after each macOS update.
@@ -120,6 +116,7 @@ actions, keep awake, notification history) are in `git log` and the README.
 
 | Date | Feature | How it was checked |
 |---|---|---|
+| 2026-11-19 | **Tech debt cleared:** `Panels.swift` split per module (`CPUGPUPanels`, `MemoryPanel`, `NetworkPanel`, `DiskPanel`, `SensorsPanel`, `BatteryPanel`, `ProcessList`); `--deck-demo` moved to `AppDelegate+DeckDemo.swift` (still in release builds, which QA runs); clock formatter cache behind a lock; `AppSettings` grouped into `settings.menuBar` / `.clock` / `.weather` / `.keepAwake` with unchanged defaults keys | Pure refactor: build clean, 223 tests pass, defaults key sets diffed old vs new (identical), reviewed; not run on screen |
 | 2026-11-19 | **New app icon, "Mood Dial":** the chosen AI render (`branding/art/icon-render.png`) is the icon itself: `render_brand.swift` cuts out its plate, fills its rounder corners with nearby plate color and masks it to the squircle for `AppIcon.icns`, and writes the same plate as the single layer of `VibeCheck.icon`; `icon-small.svg` redrawn for 16/32 px; the vector `icon.svg` and the glass SVG layers removed. Mark and wordmark unchanged | Rendered PNGs and corners looked at; `actool` compiled the `.icon`; the built app's icon drawn through `NSWorkspace` and looked at (macOS 26 shows the render). Not seen in the Dock / Finder, or in tinted and clear modes |
 | 2026-11-19 | **Liquid Glass app icon:** `branding/VibeCheck.icon` (Dusk→Night fill, glass group with the ring and the pulse / check), compiled by `actool` in `build.sh` into `Assets.car` (`CFBundleIconName`); `AppIcon.icns` stays for macOS 14–15 | actool compiles it; `assetutil` lists it; the app's icon rendered through `NSWorkspace` and looked at. Dock / Finder in light, dark and tinted not seen |
 | 2026-11-19 | **String Catalog finished:** Shortcuts actions (titles, parameters, dialogs, stat sentences), Focus filter, accessibility labels and the remaining tooltips; new text goes through `Text("…")` / `String(localized:)` + `scripts/extract_strings.sh`. Integers that can pass 999 go in as `String(n)` | Tests compare English output with the old strings; not seen on screen |
@@ -441,6 +438,13 @@ scripts/qa/build.sh && .build/qa/qa help   # on-screen QA tools
 ## 8. Session notes
 
 Newest first; keep about five. Older notes are folded into §3, §6 and §7 (and `git log`).
+
+#### 2026-11-19: Tech debt
+
+Cleared the four tech debt items (§3). The deck demo stayed out of `#if DEBUG` on purpose: `build.sh` builds
+release and QA runs `--deck-demo` on that build. Settings call sites renamed (e.g. `settings.menuBarStyle` →
+`settings.menuBar.style`, `keepAwakeDisplayOn` → `keepAwake.displayOn`); the stored keys did not change. Only
+the private-API watch list is left under Tech debt.
 
 #### 2026-11-19: Mood Dial icon
 

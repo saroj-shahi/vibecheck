@@ -42,7 +42,7 @@ enum DeckCommands {
 
         // One row whose title follows the state, so rows never appear or vanish under the selection.
         let awake = KeepAwake.shared
-        let length = settings.keepAwakeDefaultMinutes
+        let length = settings.keepAwake.defaultMinutes
         list.append(DeckCommand(id: "awake.toggle",
                                 title: awake.isActive ? String(localized: "Stop keeping awake")
                                     : length == 0 ? String(localized: "Keep awake") : String(localized: "Keep awake for \(AwakePreset.title(length))"),

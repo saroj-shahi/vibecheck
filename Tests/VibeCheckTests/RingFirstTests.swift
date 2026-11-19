@@ -12,20 +12,20 @@ struct RingFirstTests {
     @Test func freshInstallIsRingOnly() {
         let (d, name) = suite(); defer { d.removePersistentDomain(forName: name) }
         let s = AppSettings(defaults: d)
-        #expect(s.menuBarStyle == .ring)
-        #expect(s.ringVisible)
-        #expect(!s.keepAwakeMenuBarItem)
+        #expect(s.menuBar.style == .ring)
+        #expect(s.menuBar.ringVisible)
+        #expect(!s.keepAwake.menuBarItem)
         #expect(!s.enabledModules.isEmpty) // the deck keeps its tiles
     }
 
     @Test func existingInstallKeepsItsStyle() {
         let (d, name) = suite(); defer { d.removePersistentDomain(forName: name) }
         d.set(["cpu", "memory"], forKey: "enabledModules")
-        #expect(AppSettings(defaults: d).menuBarStyle == .combined)
+        #expect(AppSettings(defaults: d).menuBar.style == .combined)
         d.set("separate", forKey: "menuBarStyle")
         let s = AppSettings(defaults: d)
-        #expect(s.menuBarStyle == .separate)
-        #expect(!s.ringVisible == !s.showVibeRing)
+        #expect(s.menuBar.style == .separate)
+        #expect(!s.menuBar.ringVisible == !s.menuBar.showVibeRing)
     }
 
     @Test func standaloneCupSettingIsKept() {
@@ -33,7 +33,7 @@ struct RingFirstTests {
         d.set(["cpu"], forKey: "enabledModules")
         d.set(true, forKey: "keepAwakeMenuBarItem")
         let s = AppSettings(defaults: d)
-        #expect(s.keepAwakeMenuBarItem)
+        #expect(s.keepAwake.menuBarItem)
         #expect(!AwakeCup.inRing(s))
     }
 
@@ -50,9 +50,9 @@ struct RingFirstTests {
     let defaults = UserDefaults(suiteName: suite)!
     defer { defaults.removePersistentDomain(forName: suite) }
     let settings = AppSettings(defaults: defaults)
-    settings.menuBarStyle = .ring
+    settings.menuBar.style = .ring
     #expect(settings.isEnabled(.cpu))
     #expect(!settings.showsInMenuBar(.cpu))
-    settings.menuBarStyle = .separate
+    settings.menuBar.style = .separate
     #expect(settings.showsInMenuBar(.cpu))
 }
