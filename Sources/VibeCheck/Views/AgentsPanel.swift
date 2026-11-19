@@ -229,7 +229,10 @@ private struct WorkingBadge: View {
                 .opacity(pulse ? 0.35 : 1)
                 .animation(reduceMotion ? nil : .easeInOut(duration: 0.9).repeatForever(autoreverses: true), value: pulse)
             Text("Working now").font(.caption2.weight(.medium)).foregroundStyle(.green)
+                .lineLimit(1)
         }
+        // Keep the badge on one line; the account name beside it truncates first.
+        .fixedSize()
         .onAppear { pulse = true }
         .accessibilityElement(children: .combine)
     }

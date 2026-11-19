@@ -5,7 +5,7 @@ working, the design rules and the decisions behind them. **Read sections 1 and 2
 only for the area you're touching. Code locations are in [CODEMAP.md](CODEMAP.md); brand, voice and motion
 in [BRAND.md](../branding/BRAND.md) (it wins over this file on those).
 
-_Last updated: 2026-11-19 · version 1.5 · ~14,000 lines of Swift · 237 tests_
+_Last updated: 2026-11-19 · version 1.5 · ~14,000 lines of Swift · 245 tests_
 
 **Keeping it current (every session):** when a feature is done, move its row from §2 to §3 *Shipped* with
 the date and how it was checked, update §4 if anything was seen on screen, add any decision to §6, and add a
@@ -33,7 +33,7 @@ Development identity. Owner's setup: separate items, tight spacing, ring on; Mem
 notch cap 0.
 
 **Biggest open gaps:** on-screen checks of light mode, animations, Reduce Motion and VoiceOver (P0);
-nobody else can install it (distribution, now P3 by the owner's choice); the ring-first menu bar and the 2026-11-19 batch haven't been seen on screen (P0).
+nobody else can install it (distribution, now P3 by the owner's choice); the ring symbol, wobble and badge were seen on 2026-11-19, but most of the P2 batch, animations and the Settings drags haven't been (P0).
 
 ---
 
@@ -45,21 +45,20 @@ On-screen QA needs the owner to keep hands off the Mac (see "On-screen QA" in §
 
 | Feature / check | Status | Notes |
 |---|---|---|
-| Deck: light mode, tile hover and press, unfold / fold animation | ⬜ | Dark mode, Esc, arrows, ⌘1/⌘2/⌘6/⌘0 done |
-| Vibe ring bounce | ⬜ | Colors seen (yellow mid, red cooked) |
-| Ring badge ("CPU 96%") and verdict tooltip on the installed app | ⬜ | Built and installed 2026-11-18; the ring's new label shows up in the accessibility tree |
+| Deck: light mode, tile hover and press, unfold / fold animation | 🟡 | Dark mode, Esc, arrows, ⌘1/⌘2/⌘6/⌘0 done; tile hover outline seen 2026-11-19. Left: press, unfold / fold (needs a human or a screen recording), light mode needs a relaunch with `-AppleInterfaceStyle Light` |
+| Vibe ring bounce | ⬜ | Colors seen (yellow mid, red cooked); burst captures too coarse to catch it (2026-11-19), needs a human |
 | Agent watch: session ends after 3 quiet minutes; "is done" notification | ⬜ | Trigger start seen with `pmset` |
 | Settings: drag to reorder, number drag, banner preview | ⬜ | Reorder skipped so far: it would change the owner's order |
 | Reduce Motion and Increase Contrast: readable, springs become fades | ⬜ | |
 | Real VoiceOver over deck, menu bar items, palette; alert number adjustable | 🟡 | Tiles read as sentences in the accessibility tree |
 | Bluetooth off while asleep: permission prompt, really off in sleep and back on after wake | ⬜ | Owner will test: switch it on in Settings → General, sleep, wake, check the log (§7) |
-| Agent logos in the menu bar and deck; Agents settings rows and Claude account picker (switch to a second account, live limits follow) | ⬜ | Rendered offscreen and looked at; not installed yet |
-| Quit / Force Quit menus and confirmation, mic-muted and shortcuts-paused chips, notification red dot | ⬜ | Unit-tested only |
-| P2 batch (2026-11-19): ring drop and ⌥-click, notch auto-collapse, palette process commands, toggle shake, update hint, Advanced sections, vibe strip, battery history, call guard, Wi-Fi trigger, network extras, recovery check, culprit drain | ⬜ | Unit-tested only; see §3 |
-| Ring wobble (2026-11-19): bumps actually move in the menu bar (captures showed a frozen frame); deck header ring | ⬜ | See §3 |
-| Ring symbol (2026-11-19): menu bar ring in all three states at 16 pt, replace transition, deck header ring | ⬜ | Rendered offscreen only |
+| Agent logos in the menu bar and deck; Agents settings rows and Claude account picker (switch to a second account, live limits follow) | 🟡 | Logos seen in the menu bar item and deck (2026-11-19); settings rows only in the accessibility tree; picker shows one account. Left: rows seen rendered, switching to a second account (owner) |
+| Quit / Force Quit menus and confirmation, mic-muted and shortcuts-paused chips, notification red dot | 🟡 | Red dot seen and labelled "1 new notification" (2026-11-19); palette lists Quit / Force Quit for the loudest group. Left: the confirmation dialog (needs a throwaway target process that is the loudest), both chips |
+| P2 batch (2026-11-19): ring drop and ⌥-click, notch auto-collapse, palette process commands, toggle shake, update hint, Advanced sections, vibe strip, battery history, call guard, Wi-Fi trigger, network extras, recovery check, culprit drain | 🟡 | Palette process commands seen; call guard / Wi-Fi trigger / public IP rows present in the accessibility tree. "Advanced" disclosures didn't open with AXPress (try a real click before calling it a bug). Rest not seen; see §3 |
+| Ring wobble (2026-11-19): bumps actually move in the menu bar (captures showed a frozen frame); deck header ring | 🟡 | Menu bar motion seen 2026-11-19 (captures 0.13–0.5 s apart differ, the 3-bump ring rotates); deck header bump counts right. Left: deck header motion |
 | Widgets: small "Vibe" render; light / tinted modes; update after a vibe change; dim after quitting | 🟡 | Medium "CPU and Memory" seen on the desktop by the owner (dark wallpaper, live data, vibing) |
-| Ring-only style and the cup inside the ring (2026-11-19): legible at 16 pt, item width steady, deck opens | ⬜ | Unit-tested only |
+| Ring-only style and the cup inside the ring (2026-11-19): legible at 16 pt, item width steady, deck opens | 🟡 | Ring-only seen 2026-11-19: legible, steady across 91→92%, deck opens, "CPU 91%" badge beside it. Left: the cup inside the ring (owner keeps keep-awake as its own item) |
+| Agents card "Working now" badge on one line (fixed 2026-11-19, was wrapping as "Work-/ing now") | ⬜ | Not seen after the fix |
 
 Fix whatever turns up before starting new features.
 
@@ -110,6 +109,8 @@ actions, keep awake, notification history) are in `git log` and the README.
 
 | Date | Feature | How it was checked |
 |---|---|---|
+| 2026-11-19 | **P0 QA pass, verified**: ring symbol in all three states at 16 pt with the replace transition and the deck header ring; ring badge ("CPU 91%") and verdict tooltip | Seen on the installed app with `scripts/qa` captures under a `yes` load; owner defaults diffed identical afterwards |
+| 2026-11-19 | **Fixes from the QA pass**: Agents card "Working now" no longer wraps; `build.sh` rebuilds when a no-op release build leaves the App Intents const values empty (the install failed with "App Intents metadata missing") | Tests; two `./build.sh` runs in a row both succeed. Badge not seen after the fix |
 | 2026-11-19 | **Mood wobble on the ring** (option C from the design canvas, few nodes): still while vibing; mid shows three bumps and cooked four, drawn by `RingWobble` through `WobbleRingView` (shape layers, precomputed frames swapped by a 20 fps timer; Reduce Motion keeps the plain ring) | Shapes seen in the menu bar under load (yellow 3 bumps, red 4 bumps); CPU under the same load 2.7% vs 2.2% without the wobble (a SwiftUI TimelineView version cost ~30%). **Motion not seen:** timed captures 0.28 s apart showed the same frame; left unresolved at the owner's request |
 | 2026-11-19 | **Ring as a custom SF Symbol:** `vibe.ring.vibing / .mid / .cooked` (full, two-thirds, one-third), two layers (track secondary, arc primary) drawn in palette mode, three weights so it follows the type weight (regular in the menu bar, light in the deck). Written by `scripts/render_ring_symbol.swift` into `Resources/Symbols.xcassets`, compiled by `build.sh` with the icon into `Assets.car`; state changes use a symbol replace. Drawn shapes stay as the fallback when `Assets.car` is missing (`swift test` / `swift run`). Variable value was not used: its SVG annotation isn't documented anywhere reachable without the SF Symbols app | Symbols compiled by actool and listed by `assetutil`; rendered offscreen from the built app's catalog at 16 / 36 / 64 pt in three weights beside the old drawn ring (same thickness); 3 unit tests; not seen in the menu bar. Redraw cost not measured |
 | 2026-11-19 | **Removed:** the Dark (dark / light mode) quick toggle, from the deck and ⌘K; System Events is no longer used (Finder only, for Empty Trash) | 237 tests passed after the removal; not seen on screen |
@@ -173,7 +174,7 @@ whole screen.
 | Deck in light mode | ✅ owner looked and it's fine (captures read grey) |
 | Mic-muted and shortcuts-paused chips, 1× hairline | ❌ not seen |
 | Ring mid (yellow) and cooked (red), "Cooked" verdict in the deck | ✅ seen (7 then 10 busy `yes` loops) |
-| Tile hover / press, unfold animation, ring bounce | ❌ never seen |
+| Tile hover / press, unfold animation, ring bounce | 🟡 hover outline seen (2026-11-19); press, unfold, bounce ❌ |
 | Chart scrubbing bubble | ✅ seen with synthetic mouse moves |
 | Range morph, peak haptic, drag-to-adjust numbers | ❌ never touched |
 | Deck keys: Esc, arrows, ⌘2 | ✅ synthetic key events |
@@ -189,13 +190,14 @@ whole screen.
 | Keep awake triggers: plugged in, external display, downloading, schedule | ✅ built app with launch arguments + `pmset -g assertions` |
 | Keep awake "while an AI agent is working": assertion ~3 s after launch while Claude Code wrote logs; none with it off | ✅ built app with launch arguments + `pmset` (2026-11-18). Ending and the "is done" notification: unit tests only |
 | Keep awake: ending on unplug / display removal, end notification, ⌃⌥⌘A, "Until" menu | ❌ unit tests only |
-| Ring badge beside the menu bar ring; verdict tooltip on hover | ❌ installed, not seen (accessibility label confirmed by `qa item Vibe`) |
+| Ring badge beside the menu bar ring; verdict tooltip on hover | ✅ seen 2026-11-19 in ring-only style ("CPU 91%"); none in separate-items style, by design |
+| Ring symbol (vibing / mid / cooked), replace transition, deck header ring; wobble motion in the menu bar | ✅ seen 2026-11-19 (timed captures); deck header motion ❌ |
 | App Intents metadata in the bundle | ✅ `extract.actionsdata` inspected |
 | Shortcuts app lists the 5 actions | ✅ seen by the owner; running them, Spotlight and Siri not tried |
 | Idle CPU / memory with the deck closed: ~3.3% / ~100 MB | ✅ installed app, 3× 40 s with `ps` |
 | Detail views: CPU, GPU, Battery, Network (+ ports), Sensors, Agents | ✅ seen; Weather not (module off) |
 | Swift 6 language mode: no warnings, no runtime isolation crashes in an 80 s run | ✅ |
-| Notification history: logic; bell and empty popover | ✅ unit tests; seen. Red dot and filled list ❌ |
+| Notification history: logic; bell and empty popover | ✅ unit tests; seen. Red dot ✅ (2026-11-19); filled list ❌ |
 | Agents: token totals from real logs, menu bar item, tile, cards, gauges, plan badges, Now card | ✅ `--dump` + seen |
 | Live Claude limits from the real CLI | ✅ probe test + real menu bar values |
 | Copilot CLI / OpenCode parsing and quota | ✅ unit tests + `--dump` |
@@ -205,7 +207,7 @@ whole screen.
 | Quit / Force Quit: rules and real child process | ✅ unit tests; menus and confirmation ❌ |
 | Secure input detection | ✅ probe test; warning and deck line ❌ |
 | Listening ports: `lsof -F` parsing; section in the deck | ✅ 7 unit tests; seen (quit not tried) |
-| P2 batch (2026-11-19): ring drop / ⌥-click / notch auto-collapse, palette process commands, toggle shake, update hint, Advanced sections, vibe strip, battery history, call guard, Wi-Fi trigger, network extras, recovery check, culprit drain | ❌ unit tests only; none seen on screen |
+| P2 batch (2026-11-19): ring drop / ⌥-click / notch auto-collapse, palette process commands, toggle shake, update hint, Advanced sections, vibe strip, battery history, call guard, Wi-Fi trigger, network extras, recovery check, culprit drain | 🟡 palette process commands seen; settings rows in the accessibility tree; the rest ❌ |
 
 ---
 
@@ -445,6 +447,10 @@ scripts/qa/build.sh && .build/qa/qa help   # on-screen QA tools
 ## 8. Session notes
 
 Newest first; keep about five. Older notes are folded into §3, §6 and §7 (and `git log`).
+
+#### 2026-11-19: P0 QA pass
+
+QA agent on the installed HEAD build. Seen: ring symbol (all states, transition, deck header), wobble motion in the menu bar, ring-only style and badge, tooltip, agent logos, red dot, palette process commands, tile hover. Found and fixed: "Working now" wrapping, and `build.sh` failing on a no-op release build. Not seen: bounce, press / unfold, Settings drags, widgets, the Quit confirmation, chips, most of the P2 batch. The owner still has to do Reduce Motion / Increase Contrast, VoiceOver, Bluetooth sleep and a second Claude account. Before QA, check the running PID started after the install (an old instance kept running once).
 
 #### 2026-11-19: Branded DMG window
 

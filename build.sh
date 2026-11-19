@@ -8,9 +8,18 @@ cd "$(dirname "$0")"
 INTENTS=.build/intents
 mkdir -p "$INTENTS"
 echo '["AppIntent","EntityQuery","AppEntity","TransientEntity","AppEnum","AppShortcutProviding","AppShortcutsProvider","AnyResolverProviding","AppIntentsPackage","DynamicOptionsProvider","IntentValueQuery","Resolver","AppExtension","ExtensionPointDefining","_IntentValueRepresentable","_AssistantIntentsProvider"]' > "$INTENTS/protocols.json"
-swift build -c release \
-  -Xswiftc -emit-const-values-path -Xswiftc "$PWD/$INTENTS/VibeCheck.swiftconstvalues" \
-  -Xswiftc -Xfrontend -Xswiftc -const-gather-protocols-file -Xswiftc -Xfrontend -Xswiftc "$PWD/$INTENTS/protocols.json"
+build_release() {
+  swift build -c release \
+    -Xswiftc -emit-const-values-path -Xswiftc "$PWD/$INTENTS/VibeCheck.swiftconstvalues" \
+    -Xswiftc -Xfrontend -Xswiftc -const-gather-protocols-file -Xswiftc -Xfrontend -Xswiftc "$PWD/$INTENTS/protocols.json"
+}
+build_release
+# A no-op incremental build leaves the const values empty ("[]"), and the metadata step below then fails.
+# Touching a source file makes the module recompile and write them again.
+if [ "$(wc -c < "$INTENTS/VibeCheck.swiftconstvalues" 2>/dev/null || echo 0)" -lt 16 ]; then
+  touch Sources/VibeCheck/App/Intents.swift
+  build_release
+fi
 APP=build/VibeCheck.app
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
