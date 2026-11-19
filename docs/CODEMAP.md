@@ -75,6 +75,15 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `PortSampler` (`lso
 | `KeepAwakeViews.swift` | Deck cup (click → `KeepAwakeMenu`, hold → `AwakeDial`), Keep Awake settings pane |
 | `QuickTogglesView.swift`, `NotificationHistoryView.swift`, `VibeRing.swift`, `ClockPanel.swift`, `WeatherPanel.swift`, `Charts.swift` | as named |
 
+## Widgets (separate targets)
+
+| File | What |
+|---|---|
+| `App/WidgetPublisher.swift` | Called on every tick: writes the widget snapshot into the app group once a minute while a widget is placed; reloads timelines on a vibe change |
+| `Sources/VibeCheckShared/WidgetSnapshot.swift` | Library shared by app and widget: `WidgetSnapshot` (vibe, verdict, CPU / memory now and last hour), `WidgetShared` (app group `77HKFF78Z8.local.vibecheck`, read / write) |
+| `Sources/VibeCheckWidget/VibeCheckWidgets.swift`, `WidgetViews.swift` | The WidgetKit extension: bundle, timeline provider (15 min), small "Vibe" ring and medium "CPU and Memory" sparklines |
+| `Resources/Widget/` (`Info.plist`, `Widget.entitlements`), `Resources/VibeCheck.entitlements` | Appex plist and sandbox + app group entitlements; `build.sh` assembles `Contents/PlugIns/VibeCheckWidget.appex` (Apple Development identity only) |
+
 ## Tests/VibeCheckTests/
 
 Swift Testing (`@Test`, `#expect`). Pure logic is tested with fixtures; anything touching the system (Keychain,

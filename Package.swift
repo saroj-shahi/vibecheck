@@ -6,8 +6,11 @@ let package = Package(
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     targets: [
+        // Shared with the widget extension: the snapshot the app writes into the app group.
+        .target(name: "VibeCheckShared", path: "Sources/VibeCheckShared"),
         .executableTarget(
             name: "VibeCheck",
+            dependencies: ["VibeCheckShared"],
             path: "Sources/VibeCheck",
             resources: [.process("Resources/Localizable.xcstrings")],
             linkerSettings: [
@@ -20,6 +23,19 @@ let package = Package(
                 .linkedLibrary("sqlite3"),
             ]
         ),
-        .testTarget(name: "VibeCheckTests", dependencies: ["VibeCheck"], path: "Tests/VibeCheckTests"),
+        // WidgetKit extension. SwiftPM builds the executable; build.sh wraps it into VibeCheckWidget.appex.
+        .executableTarget(
+            name: "VibeCheckWidget",
+            dependencies: ["VibeCheckShared"],
+            path: "Sources/VibeCheckWidget",
+            swiftSettings: [.unsafeFlags(["-application-extension"])],
+            linkerSettings: [
+                .linkedFramework("WidgetKit"),
+                // Extensions start in Foundation's NSExtensionMain (as Xcode links them), not Swift's main:
+                // without it the widget traps while bootstrapping.
+                .unsafeFlags(["-Xlinker", "-application_extension", "-Xlinker", "-e", "-Xlinker", "_NSExtensionMain"]),
+            ]
+        ),
+        .testTarget(name: "VibeCheckTests", dependencies: ["VibeCheck", "VibeCheckShared"], path: "Tests/VibeCheckTests"),
     ]
 )

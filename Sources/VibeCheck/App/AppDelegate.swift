@@ -257,6 +257,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.checkNotchHiding()
             self.watchAgents()
             self.combinedItem?.updateVerdict()
+            WidgetPublisher.shared.tick(stats: self.stats)
         }
         KeepAwake.shared.batteryProvider = { [unowned stats] in stats.battery }
         KeepAwake.shared.onSessionEnded = { [weak self] reason in

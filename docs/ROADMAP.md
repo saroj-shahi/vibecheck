@@ -56,6 +56,7 @@ On-screen QA needs the owner to keep hands off the Mac (see "On-screen QA" in §
 | Agent logos in the menu bar and deck; Agents settings rows and Claude account picker (switch to a second account, live limits follow) | ⬜ | Rendered offscreen and looked at; not installed yet |
 | Quit / Force Quit menus and confirmation, mic-muted and shortcuts-paused chips, notification red dot | ⬜ | Unit-tested only |
 | P2 batch (2026-11-19): ring drop and ⌥-click, notch auto-collapse, palette process commands, toggle shake, update hint, Advanced sections, vibe strip, battery history, call guard, Wi-Fi trigger, network extras, recovery check, culprit drain | ⬜ | Unit-tested only; see §3 |
+| Widgets: small "Vibe" render; light / tinted modes; update after a vibe change; dim after quitting | 🟡 | Medium "CPU and Memory" seen on the desktop by the owner (dark wallpaper, live data, vibing) |
 | Ring-only style and the cup inside the ring (2026-11-19): legible at 16 pt, item width steady, deck opens | ⬜ | Unit-tested only |
 
 Fix whatever turns up before starting new features.
@@ -73,9 +74,7 @@ All shipped 2026-11-19 (§3).
 
 **Features that reuse what VibeCheck knows**
 
-| Feature | Status | Notes |
-|---|---|---|
-| WidgetKit widgets: vibe ring, CPU / memory sparkline | ⬜ | Needs an app group to share samples, and a widget extension target: SwiftPM can't build an `.appex`, so this needs an Xcode project for the extension |
+All shipped (§3).
 
 **Polish and presence**
 
@@ -116,6 +115,7 @@ actions, keep awake, notification history) are in `git log` and the README.
 
 | Date | Feature | How it was checked |
 |---|---|---|
+| 2026-11-19 | **Desktop widgets** (macOS 14+): small "Vibe" (ring, vibe word, reason or CPU / memory) and medium "CPU and Memory" (ring, verdict, last-hour sparklines). The app writes a snapshot into the app group `77HKFF78Z8.local.vibecheck` once a minute while a widget is placed and reloads timelines on a vibe change (≥5 min apart, a throttled one goes out later); widgets re-read every 15 min and dim on time once the snapshot is 15 min old. Built by SwiftPM as an `-application-extension` executable and wrapped into `PlugIns/VibeCheckWidget.appex` by `build.sh` (no Xcode project); only with the Apple Development identity | Unit tests (downsampling, file round trip, staleness, snapshot); build signs the appex (sandbox + group) and the app (group); signed app launches; `pluginkit` lists `local.vibecheck.app.widget` after `lsregister`. Owner saw the medium widget on the desktop with live data (vibing); small widget, light / tinted and updates not seen. First build crashed at launch: the extension must be linked with `-e _NSExtensionMain` |
 | 2026-11-19 | **Tech debt cleared:** `Panels.swift` split per module (`CPUGPUPanels`, `MemoryPanel`, `NetworkPanel`, `DiskPanel`, `SensorsPanel`, `BatteryPanel`, `ProcessList`); `--deck-demo` moved to `AppDelegate+DeckDemo.swift` (still in release builds, which QA runs); clock formatter cache behind a lock; `AppSettings` grouped into `settings.menuBar` / `.clock` / `.weather` / `.keepAwake` with unchanged defaults keys | Pure refactor: build clean, 223 tests pass, defaults key sets diffed old vs new (identical), reviewed; not run on screen |
 | 2026-11-19 | **New app icon, "Mood Dial":** the chosen AI render (`branding/art/icon-render.png`) is the icon itself: `render_brand.swift` cuts out its plate, fills its rounder corners with nearby plate color and masks it to the squircle for `AppIcon.icns`, and writes the same plate as the single layer of `VibeCheck.icon`; `icon-small.svg` redrawn for 16/32 px; the vector `icon.svg` and the glass SVG layers removed. Mark and wordmark unchanged | Rendered PNGs and corners looked at; `actool` compiled the `.icon`; the built app's icon drawn through `NSWorkspace` and looked at (macOS 26 shows the render). Not seen in the Dock / Finder, or in tinted and clear modes |
 | 2026-11-19 | **Liquid Glass app icon:** `branding/VibeCheck.icon` (Dusk→Night fill, glass group with the ring and the pulse / check), compiled by `actool` in `build.sh` into `Assets.car` (`CFBundleIconName`); `AppIcon.icns` stays for macOS 14–15 | actool compiles it; `assetutil` lists it; the app's icon rendered through `NSWorkspace` and looked at. Dock / Finder in light, dark and tinted not seen |
@@ -294,6 +294,8 @@ Choices future sessions shouldn't silently undo.
 
 | Decision | Why |
 |---|---|
+| Widgets without an Xcode project: SwiftPM builds the extension executable (linked with `-e _NSExtensionMain`), `build.sh` wraps and signs the `.appex` | Keeps the "no Xcode project" decision; without that entry point the extension traps on load |
+| Team-prefixed app group (`77HKFF78Z8.local.vibecheck`), main app stays unsandboxed | Works without a provisioning profile; only the widget is sandboxed, as WidgetKit requires |
 | Swift Package + `build.sh` instead of an Xcode project | Simple, scriptable, no project file churn |
 | `LSUIElement` accessory app, AppKit status items + SwiftUI views | Menu bar only; SwiftUI for UI, AppKit for windows and status items |
 | One shared `DeckPanel` (borderless non-activating `NSPanel`) instead of `NSPopover` | Smooth resize, matched-geometry transitions, no arrow, one window for every item |
@@ -438,6 +440,16 @@ scripts/qa/build.sh && .build/qa/qa help   # on-screen QA tools
 ## 8. Session notes
 
 Newest first; keep about five. Older notes are folded into §3, §6 and §7 (and `git log`).
+
+#### 2026-11-19: Widgets
+
+Shipped the last P2 feature, desktop widgets, without an Xcode project (§3, §6). The widget extension is
+sandboxed and reads `widget-snapshot.json` from the app group container; the main app gained an app group
+entitlement but no sandbox. Builds signed with anything but Apple Development skip the widget. Widget strings
+are English literals (no catalog in the extension yet). The first install crashed on load (the gallery
+just left it out): extensions start in `_NSExtensionMain`, which Xcode sets and SwiftPM doesn't, so
+`Package.swift` now passes `-e _NSExtensionMain`. Crash reports land in `~/Library/Logs/DiagnosticReports/
+VibeCheckWidget-*.ips`. After the fix the owner saw the medium widget live; the small one is still unseen.
 
 #### 2026-11-19: Tech debt
 

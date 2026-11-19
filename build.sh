@@ -66,7 +66,24 @@ IDENTITIES=$(security find-identity -v -p codesigning)
 DEVELOPMENT=$(printf '%s\n' "$IDENTITIES" | sed -n 's/.*"\(Apple Development: [^"]*\)".*/\1/p' | head -1)
 IDENTITY="${VIBECHECK_SIGN_IDENTITY:-${DEVELOPMENT:-VibeCheck Local Signing}}"
 if printf '%s\n' "$IDENTITIES" | grep -qF "\"$IDENTITY\""; then
-  codesign --force --sign "$IDENTITY" "$APP"
+  # Widgets: the extension must be sandboxed and shares the app group "<Team ID>.local.vibecheck" with the
+  # app, so it needs a Team ID; with other identities the app ships without widgets.
+  if [[ "$IDENTITY" == "Apple Development:"* ]]; then
+    APPEX="$APP/Contents/PlugIns/VibeCheckWidget.appex"
+    mkdir -p "$APPEX/Contents/MacOS"
+    cp .build/release/VibeCheckWidget "$APPEX/Contents/MacOS/VibeCheckWidget"
+    cp Resources/Widget/Info.plist "$APPEX/Contents/Info.plist"
+    for key in CFBundleShortVersionString CFBundleVersion; do
+      /usr/libexec/PlistBuddy -c "Set :$key $(/usr/libexec/PlistBuddy -c "Print :$key" "$APP/Contents/Info.plist")" "$APPEX/Contents/Info.plist"
+    done
+    mkdir -p "$APPEX/Contents/Resources"
+    cp -R "$APP/Contents/Resources/"*.lproj "$APPEX/Contents/Resources/"
+    codesign --force --sign "$IDENTITY" --entitlements Resources/Widget/Widget.entitlements "$APPEX"
+    codesign --force --sign "$IDENTITY" --entitlements Resources/VibeCheck.entitlements "$APP"
+  else
+    echo "warning: \"$IDENTITY\" has no Team ID; building without widgets" >&2
+    codesign --force --sign "$IDENTITY" "$APP"
+  fi
   echo "Signed with \"$IDENTITY\""
 else
   codesign --force --sign - "$APP"
