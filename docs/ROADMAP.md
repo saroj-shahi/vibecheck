@@ -139,6 +139,7 @@ actions, keep awake, notification history) are in `git log` and the README.
 
 | Date | Feature | How it was checked |
 |---|---|---|
+| 2026-11-19 | Agents detail: shorter and limits-first (agent cards on top, compact one-line gauges, 24 h and 7-day charts side by side, top 3 projects) | Tests; seen on screen (deck 928 pt tall, was over 1032 and clipped). `qa`: restored `pos`, which the input guard needs |
 | 2026-11-18 | Cleanup: unused QA helpers removed, `qa item` matches by prefix | Tests; `qa item` against the installed app |
 | 2026-11-18 | **Agent watch:** keep awake while an AI agent is working (log write in the last 3 min); opt-in "<Agent> is done" after runs of 10+ min | `pmset -g assertions` with the trigger on / off; unit tests |
 | 2026-11-18 | **Ring badge:** "CPU 96%" beside the ring on mid / cooked, unless the culprit has its own item | Unit tests; installed, not seen |

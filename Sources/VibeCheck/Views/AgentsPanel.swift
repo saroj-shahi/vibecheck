@@ -18,25 +18,28 @@ struct AgentsPanel: View {
                 if !sample.activeSessions.isEmpty {
                     NowSection(sessions: sample.activeSessions)
                 }
-                VStack(alignment: .leading, spacing: 6) {
-                    SectionTitle(text: "Last 24 hours")
-                    HourlyBars(values: sample.hourly, color: Palette.agents)
-                        .frame(height: 56)
-                }
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        SectionTitle(text: "Last 7 days")
-                        Spacer()
-                        Text(Fmt.tokens(sample.week.total)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                    }
-                    DailyBars(values: sample.daily, color: Palette.agents)
-                        .frame(height: 64)
-                }
+                // Limits first: "how much is left" is what people open this for.
                 ForEach(sample.agents) { AgentCard(summary: $0) }
+                HStack(alignment: .top, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        SectionTitle(text: "24 hours")
+                        HourlyBars(values: sample.hourly, color: Palette.agents)
+                            .frame(height: 44)
+                    }
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            SectionTitle(text: "7 days")
+                            Spacer()
+                            Text(Fmt.tokens(sample.week.total)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        }
+                        DailyBars(values: sample.daily, color: Palette.agents)
+                            .frame(height: 44)
+                    }
+                }
                 if !sample.projectsToday.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
                         SectionTitle(text: "Busiest projects today")
-                        ForEach(sample.projectsToday.prefix(5), id: \.name) { project in
+                        ForEach(sample.projectsToday.prefix(3), id: \.name) { project in
                             StatRow(label: project.name, value: Fmt.tokens(project.tokens))
                         }
                     }
@@ -89,13 +92,13 @@ private struct AgentCard: View {
             // The local estimate only when there's no real limit: its reset time is a guess and would
             // contradict the provider's own (seen in QA: "resets 5:00 PM" above "Resets in … (5:34 PM)").
             if let block = summary.block, !summary.limits.contains(where: { $0.windowMinutes == 300 }) {
-                Text("This 5-hour window (estimate): \(Fmt.tokens(block.tokens.total)) · resets about \(block.end.formatted(date: .omitted, time: .shortened))")
+                Text("5-hour window ≈ \(Fmt.tokens(block.tokens.total)) · resets ~\(block.end.formatted(date: .omitted, time: .shortened))")
                     .font(.caption).foregroundStyle(.secondary)
             }
             if !summary.limits.isEmpty {
                 // Ticks on its own so the countdown and pace marker move between scans.
                 TimelineView(.periodic(from: .now, by: 30)) { context in
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 8) {
                         ForEach(summary.limits.sorted { $0.windowMinutes < $1.windowMinutes }, id: \.key) {
                             LimitGauge(limit: $0, now: context.date)
                         }
@@ -125,32 +128,29 @@ struct LimitGauge: View {
     var body: some View {
         let ahead = limit.isAheadOfPace(now: now)
         let color = limit.gaugeColor(now: now)
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 3) {
             HStack(alignment: .firstTextBaseline) {
                 Text(limit.cardTitle).font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Text("\(Int(limit.leftPercent.rounded()))% left")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded).monospacedDigit())
+                    .contentTransition(.numericText())
+            }
+            PaceBar(used: limit.usedPercent / 100, elapsed: limit.elapsedFraction(now: now), color: color)
+                .frame(height: 12)
+            HStack(alignment: .firstTextBaseline) {
+                Text(resetText).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 Spacer()
                 if let burn = limit.burnText(now: now) {
                     Text(burn)
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(ahead ? AnyShapeStyle(color) : AnyShapeStyle(.secondary))
-                        .help("Average since this window started")
+                        .help(ahead ? "At this pace it runs out before it resets" : "Average since this window started")
                 }
-            }
-            Text("\(Int(limit.leftPercent.rounded()))% left")
-                .font(.system(size: 20, weight: .semibold, design: .rounded).monospacedDigit())
-                .contentTransition(.numericText())
-            PaceBar(used: limit.usedPercent / 100, elapsed: limit.elapsedFraction(now: now), color: color)
-                .frame(height: 12)
-            Text(resetText)
-                .font(.caption).foregroundStyle(.secondary)
-            if ahead {
-                Text("Going faster than the clock: at this pace it runs out before it resets.")
-                    .font(.caption2).foregroundStyle(color)
-                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(limit.cardTitle): \(Int(limit.leftPercent.rounded())) percent left, resets in \(limit.countdown(now: now))")
+        .accessibilityLabel("\(limit.cardTitle): \(Int(limit.leftPercent.rounded())) percent left, resets in \(limit.countdown(now: now))\(ahead ? ", runs out before reset at this pace" : "")")
     }
 
     private var resetText: String {
@@ -199,7 +199,7 @@ struct HourlyBars: View {
             ForEach(Array(values.enumerated()), id: \.offset) { _, value in
                 RoundedRectangle(cornerRadius: 1.5)
                     .fill(value > 0 ? color : Color.secondary.opacity(0.2))
-                    .frame(height: max(2, CGFloat(value / peak) * 56))
+                    .frame(height: max(2, CGFloat(value / peak) * 44))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
         }
@@ -247,7 +247,7 @@ struct DailyBars: View {
                 VStack(spacing: 3) {
                     RoundedRectangle(cornerRadius: 3)
                         .fill(value > 0 ? color.opacity(index == values.count - 1 ? 1 : 0.6) : Color.secondary.opacity(0.2))
-                        .frame(height: max(3, CGFloat(value / peak) * 48))
+                        .frame(height: max(3, CGFloat(value / peak) * 30))
                         .frame(maxHeight: .infinity, alignment: .bottom)
                     Text(day.formatted(.dateTime.weekday(.narrow)))
                         .font(.system(size: 9, weight: index == values.count - 1 ? .bold : .regular))
