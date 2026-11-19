@@ -284,7 +284,7 @@ private struct MenuBarSettings: View {
                     .settingsFooter()
             }
         }
-        .formStyle(.grouped)
+        .settingsForm()
     }
 }
 
@@ -418,7 +418,7 @@ private struct GeneralSettings: View {
                 Text(bluetoothFooter).settingsFooter()
             }
         }
-        .formStyle(.grouped)
+        .settingsForm()
     }
 }
 
@@ -439,7 +439,7 @@ private struct BackupSettings: View {
                 }
             }
         }
-        .formStyle(.grouped)
+        .settingsForm()
     }
 }
 
@@ -506,7 +506,7 @@ private struct AboutSettings: View {
                 LabeledContent("Open Settings from the deck", value: "⌘,")
             }
         }
-        .formStyle(.grouped)
+        .settingsForm()
     }
 }
 
@@ -549,7 +549,7 @@ private struct ShortcutSettings: View {
                     .settingsFooter()
             }
         }
-        .formStyle(.grouped)
+        .settingsForm()
         .task {
             // Only runs while this pane is visible; cancelled when it goes away.
             while !Task.isCancelled {
@@ -572,11 +572,20 @@ struct AdvancedSection<Content: View>: View {
 }
 
 extension View {
+    /// Every Settings page: grouped form with roomier margins than the system default.
+    func settingsForm() -> some View {
+        formStyle(.grouped)
+            .contentMargins(.vertical, 8, for: .scrollContent) // added to the form's own 20: 28 top and bottom
+            .padding(.horizontal, 8) // grouped forms ignore horizontal contentMargins; 20 + 8 at the sides
+            .environment(\.defaultMinListRowHeight, 36)
+    }
+
     /// Form section footer: caption, secondary, leading-aligned (grouped forms align footers trailing by default).
     func settingsFooter() -> some View {
         font(.caption)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 2)
     }
 }

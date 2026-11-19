@@ -275,7 +275,7 @@ struct KeepAwakeSettings: View {
                     .settingsFooter()
             }
         }
-        .formStyle(.grouped)
+        .settingsForm()
     }
 
     /// A stored minute-of-day setting as a Date for a time picker.

@@ -64,7 +64,7 @@ struct ModuleSettings: View {
             if !metrics.isEmpty { ModuleAlertsSection(module: module, metrics: metrics) }
             shortcutSection
         }
-        .formStyle(.grouped)
+        .settingsForm()
     }
 
     private var hero: some View {

@@ -47,7 +47,7 @@ struct AlertSettings: View {
                 }
             }
         }
-        .formStyle(.grouped)
+        .settingsForm()
     }
 }
 
