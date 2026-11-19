@@ -383,7 +383,7 @@ private struct FooterButton: View {
 
 // MARK: - Home
 
-/// Quick toggles and the bento grid. Tiles are 104 pt: (360 − 2 × 16 − 2 × 8) / 3, whole pixels at 1× and 2×.
+/// Quick toggles and the bento grid. Tiles are 114 pt: (390 − 2 × 16 − 2 × 8) / 3, whole pixels at 1× and 2×.
 struct DeckHome: View {
     @Environment(DeckModel.self) private var model
     @AppStorage("showQuickToggles") private var showQuickToggles = true

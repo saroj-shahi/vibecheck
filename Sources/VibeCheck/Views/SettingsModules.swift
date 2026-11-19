@@ -310,6 +310,7 @@ private struct AgentSourcesSection: View {
             let alert = NSAlert()
             alert.messageText = String(localized: "That folder isn't a Claude Code profile")
             alert.informativeText = String(localized: "Choose a folder that has Claude Code's projects folder or .claude.json in it, like ~/.claude-work. Sign in to Claude Code with CLAUDE_CONFIG_DIR set to it first.")
+            alert.widen()
             alert.runModal()
         }
     }

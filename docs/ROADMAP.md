@@ -108,6 +108,7 @@ actions, keep awake, notification history) are in `git log` and the README.
 
 | Date | Feature | How it was checked |
 |---|---|---|
+| 2026-11-19 | **Wider pop-ups**: deck 360→390 pt (tiles 114 pt), notifications 320→346, ⌘↩ actions card 250→270, settings alerts widened to 288 | Tests; installed and approved on screen by the owner |
 | 2026-11-19 | **P0 QA pass, verified**: ring symbol in all three states at 16 pt with the replace transition and the deck header ring; ring badge ("CPU 91%") and verdict tooltip | Seen on the installed app with `scripts/qa` captures under a `yes` load; owner defaults diffed identical afterwards |
 | 2026-11-19 | **Fixes from the QA pass**: Agents card "Working now" no longer wraps; `build.sh` rebuilds when a no-op release build leaves the App Intents const values empty (the install failed with "App Intents metadata missing") | Tests; two `./build.sh` runs in a row both succeed; badge seen on one line by the owner on the installed build |
 | 2026-11-19 | **Mood wobble on the ring** (option C from the design canvas, few nodes): still while vibing; mid shows three bumps and cooked four, drawn by `RingWobble` through `WobbleRingView` (shape layers, precomputed frames swapped by a 20 fps timer; Reduce Motion keeps the plain ring) | Shapes seen in the menu bar under load (yellow 3 bumps, red 4 bumps); CPU under the same load 2.7% vs 2.2% without the wobble (a SwiftUI TimelineView version cost ~30%). **Motion not seen:** timed captures 0.28 s apart showed the same frame; left unresolved at the owner's request |
@@ -216,7 +217,7 @@ Condensed from three reviews: the "menu bar Creative Director" brief (round one)
 mockup (a different app, round two; the HTML file was removed 2026-11-19, it is in git history) and the Apple Design Award style
 teardown (round three). BRAND.md still decides voice, color and motion.
 
-**The idea.** A verdict first and a cockpit second, in a 360 pt sheet of glass. Everything folds behind three
+**The idea.** A verdict first and a cockpit second, in a 390 pt sheet of glass. Everything folds behind three
 doors: **tile → detail**, **cup → menu**, **⌘K → anything**. Before adding UI, ask whether it can be a palette
 command.
 
@@ -233,7 +234,7 @@ item count, hidden gestures, unverified accessibility, no distribution. The §2 
 - Haptics only fire with a finger on a Force Touch trackpad: use them for direct manipulation (dial
   detents, chart peaks), never for background events.
 
-**The deck shell, top to bottom** (360 pt wide, never wider)
+**The deck shell, top to bottom** (390 pt wide since 2026-11-19, never wider)
 
 | Zone | Height | Rule |
 |---|---|---|
@@ -244,7 +245,7 @@ item count, hidden gestures, unverified accessibility, no distribution. The §2 
 | Footer | 30 pt | Settings (⌘,) · version · Quit; key hints and result count while the palette is open |
 | Detail view | up to the screen | Matched-geometry unfold; pinned header; lists cap at 8 rows + "+N more" |
 
-- Tiles: 3 columns, 8 pt gutters, (360 − 32 − 16) / 3 = **104 pt** so edges land on whole pixels. One hero
+- Tiles: 3 columns, 8 pt gutters, (390 − 32 − 16) / 3 = **114 pt** so edges land on whole pixels. One hero
   number per tile; detail lives one click deeper.
 - Settings stays a separate window; the deck never shows a configuration control except the quick toggles.
 
@@ -296,6 +297,7 @@ Choices future sessions shouldn't silently undo.
 
 | Decision | Why |
 |---|---|
+| Deck 390 pt (was 360), notifications popover 346 pt, ⌘↩ actions card 270 pt, alerts widened to 288 pt with an empty accessory view (2026-11-19) | Owner asked for wider pop-ups (~20% was too much; settled ~8% over the old sizes). 390 keeps tiles whole-pixel (114 pt) |
 | Share with colleagues through an un-notarized `--share` DMG signed with Apple Development, not a paid Developer ID | The owner wants to share, not sell; each person runs one `xattr -dr com.apple.quarantine` command (a colleague found Open Anyway didn't work on their Mac, 2026-11-19; Terminal did). Building from source would need Xcode and repo access and loses the widget (team-signed app group) |
 | Updates via the GitHub Releases API (`releases/latest`, tag `v<version>`, first `.dmg` asset), not Sparkle; the app opens the download, it doesn't replace itself | No framework to embed with SwiftPM, no EdDSA keys; enough for a small app. Revisit Sparkle if silent in-place updates are wanted |
 | Hardened runtime only for Developer ID builds (or `VIBECHECK_HARDENED=1`), not the owner's daily Apple Development builds | Notarization needs it; keeps local builds as they were |

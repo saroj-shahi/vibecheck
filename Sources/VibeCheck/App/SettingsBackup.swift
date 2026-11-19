@@ -92,6 +92,7 @@ enum SettingsBackup {
         alert.informativeText = detail
         alert.addButton(withTitle: action)
         alert.addButton(withTitle: String(localized: "Cancel"))
+        alert.widen()
         NSApp.activate()
         return alert.runModal() == .alertFirstButtonReturn
     }
@@ -99,6 +100,7 @@ enum SettingsBackup {
     @MainActor
     private static func showError(_ error: Error) {
         let alert = NSAlert(error: error)
+        alert.widen()
         NSApp.activate()
         alert.runModal()
     }
@@ -113,5 +115,14 @@ enum SettingsBackup {
         task.arguments = ["-c", "sleep 1; /usr/bin/open \"$0\"", path]
         try? task.run()
         NSApp.terminate(nil)
+    }
+}
+
+extension NSAlert {
+    /// macOS sizes alerts narrow (about 260 pt); an empty accessory view of this width makes them roomier.
+    static let preferredWidth: CGFloat = 288
+
+    func widen() {
+        accessoryView = NSView(frame: NSRect(x: 0, y: 0, width: Self.preferredWidth, height: 0))
     }
 }

@@ -12,10 +12,10 @@ enum DeckDirection { case left, right, up, down }
 
 /// Shared motion and layout constants for the deck.
 enum Deck {
-    static let width: CGFloat = 360
+    static let width: CGFloat = 390
     static let cornerRadius: CGFloat = 18
     static let columns = 3
-    /// Between tiles, both ways; with 16 pt padding it makes tiles exactly 104 pt wide.
+    /// Between tiles, both ways; with 16 pt padding it makes tiles exactly 114 pt wide.
     static let gutter: CGFloat = 8
     /// Unfold / fold spring (response 0.38, damping 0.86).
     static let spring = Animation.spring(response: 0.38, dampingFraction: 0.86)

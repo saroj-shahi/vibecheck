@@ -64,7 +64,7 @@ struct NotificationHistoryList: View {
                 .frame(maxHeight: 360)
             }
         }
-        .frame(width: 320)
+        .frame(width: 346)
     }
 }
 
