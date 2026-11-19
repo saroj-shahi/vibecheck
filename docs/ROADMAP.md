@@ -98,6 +98,9 @@ with the lid closed, a sandboxed App Store edition, display brightness, iCloud s
 - Private / undocumented APIs, all looked up at runtime with fallbacks: `IOHIDEventSystemClient*`
   (temperatures), `responsibility_get_pid_responsible_for_pid` (app grouping), SMC keys `PSTR`/`PDTR`/`F0Ac`,
   `IOBluetoothPreference{Get,Set}ControllerPowerState`. Re-check after each macOS update.
+  **Last checked 2026-11-19 on macOS 27.2.1 (26B131), M5:** all resolve and return real values (`--dump`: 45 HID
+  sensors, `PSTR` 16 W, `PDTR` 0 W on battery, `F0Ac` 0 rpm idle with range 2317–6550, Bluetooth symbols
+  found; a probe mapped Chrome helpers to Google Chrome).
 
 ---
 
@@ -108,6 +111,7 @@ actions, keep awake, notification history) are in `git log` and the README.
 
 | Date | Feature | How it was checked |
 |---|---|---|
+| 2026-11-19 | **Private APIs re-checked on macOS 27.2.1**; `--dump` APPS line names apps like the deck does (it showed helper names when the parent had no traffic) | `--dump` + a `dlsym` probe on live Chrome helpers |
 | 2026-11-19 | **Wider pop-ups**: deck 360→390 pt (tiles 114 pt), notifications 320→346, ⌘↩ actions card 250→270, settings alerts widened to 288 | Tests; installed and approved on screen by the owner |
 | 2026-11-19 | **P0 QA pass, verified**: ring symbol in all three states at 16 pt with the replace transition and the deck header ring; ring badge ("CPU 91%") and verdict tooltip | Seen on the installed app with `scripts/qa` captures under a `yes` load; owner defaults diffed identical afterwards |
 | 2026-11-19 | **Fixes from the QA pass**: Agents card "Working now" no longer wraps; `build.sh` rebuilds when a no-op release build leaves the App Intents const values empty (the install failed with "App Intents metadata missing") | Tests; two `./build.sh` runs in a row both succeed; badge seen on one line by the owner on the installed build |

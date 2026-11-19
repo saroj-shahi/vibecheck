@@ -63,7 +63,7 @@ MainActor.assumeIsolated {
         let extra = DispatchSemaphore(value: 0)
         Task.detached {
             let rows = await NetworkAppSampler.fetch()
-            let apps = NetworkAppSampler.groupByApp(rows) { _ in nil }.prefix(4)
+            let apps = NetworkAppSampler.groupByApp(rows) { NSRunningApplication(processIdentifier: $0)?.localizedName }.prefix(4)
             print("APPS " + apps.map { "\($0.name) ↓\(Fmt.compactRate($0.download)) ↑\(Fmt.compactRate($0.upload))" }.joined(separator: " | "))
             if let f = try? await OpenMeteo.forecast(for: WeatherLocation(name: "London", region: nil, country: nil,
                                                                           latitude: 51.5085, longitude: -0.1257), unit: .celsius) {
