@@ -1,29 +1,11 @@
 {
   "fill": {
-    "linear-gradient": ["srgb:0.14510,0.16471,0.32157,1.00000", "srgb:0.04314,0.05490,0.13333,1.00000"],
-    "orientation": {"start": {"x": 0.5, "y": 0}, "stop": {"x": 0.5, "y": 1}}
+    "solid": "srgb:0.08235,0.09804,0.22745,1.00000"
   },
   "groups": [
     {
       "layers": [
-        {"glass": true, "image-name": "check.svg", "name": "check", "position": {"scale": 1, "translation-in-points": [0, 0]}},
-        {"glass": true, "image-name": "cap.svg", "name": "cap", "position": {"scale": 1, "translation-in-points": [0, 0]}},
-        {"glass": false, "image-name": "knob-side.svg", "name": "knob-side", "position": {"scale": 1, "translation-in-points": [0, 0]}}
-      ],
-      "shadow": {"kind": "neutral", "opacity": 0.6},
-      "translucency": {"enabled": true, "value": 0.2}
-    },
-    {
-      "layers": [
-        {"glass": true, "image-name": "ring.svg", "name": "ring", "position": {"scale": 1, "translation-in-points": [0, 0]}}
-      ],
-      "shadow": {"kind": "layer-color", "opacity": 0.5},
-      "translucency": {"enabled": true, "value": 0.4}
-    },
-    {
-      "layers": [
-        {"glass": false, "image-name": "ticks.svg", "name": "ticks", "position": {"scale": 1, "translation-in-points": [0, 0]}},
-        {"glass": false, "image-name": "groove.svg", "name": "groove", "position": {"scale": 1, "translation-in-points": [0, 0]}}
+        {"glass": false, "image-name": "plate.png", "name": "plate", "position": {"scale": 1, "translation-in-points": [0, 0]}}
       ],
       "shadow": {"kind": "none", "opacity": 0},
       "translucency": {"enabled": false, "value": 0}

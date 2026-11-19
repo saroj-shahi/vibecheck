@@ -9,7 +9,7 @@
 
 Everything you need to present VibeCheck consistently: the idea behind it, the logo and app icon, color,
 type, voice and motion. All artwork is generated from the SVG sources in [`svg/`](svg/) by
-[`scripts/render_brand.swift`](../scripts/render_brand.swift), so a change to a source file plus one command
+[`scripts/render_brand.swift`](../scripts/render_brand.swift) (the app icon comes from the render in [`art/`](art/)), so a change to a source file plus one command
 updates every asset.
 
 ```bash
@@ -46,7 +46,7 @@ through a gap in the ring. Pulse = monitoring; check = verdict; the ring = your 
 
 | Asset | File | Use for |
 |---|---|---|
-| App icon | `svg/icon.svg` → `png/icon-*.png`, `Resources/AppIcon.icns` | Dock, Finder, Launchpad, About |
+| App icon | `art/icon-render.png` → `png/icon-*.png`, `Resources/AppIcon.icns`, `VibeCheck.icon` | Dock, Finder, Launchpad, About |
 | App icon, small sizes | `svg/icon-small.svg` | 16 and 32 px only (thick ring, plain knob, bold check; no ticks or glow) |
 | Mark on dark | `svg/mark-on-dark.svg` | Dark UI, slides, social |
 | Mark on light | `svg/mark-on-light.svg` | Light UI, docs, print |
@@ -84,19 +84,18 @@ name).
   to "vibing." Same ring, gap and check as the mark, built as an object you'd want to touch.
 - **Shape:** macOS's continuous-corner rounded square on the standard 824/1024 grid, with a soft drop
   shadow baked in, as macOS icons expect.
-- **Layers, back to front:** anodized navy plate (Dusk → Night with faint diagonal brushing and mint /
-  violet glows) · etched scale ticks (none in the gap) · dark groove · gradient ring with a soft bloom and a
-  top highlight · knob shadow · knurled side with mint spill · machined silver cap with a concave dish and
-  a 1px rim bevel · engraved pointer with a mint light line · Cloud check with mint glow · top gloss ·
-  hairline edge. Glows are clipped to the plate.
-- **Liquid Glass (macOS 26+):** `VibeCheck.icon` (Icon Composer; Dusk → Night fill, flat layers, no baked
-  effects) in three depth groups, front to back: knob (check with mint pointer line, glass cap, ridged
-  side) · ring (glass) · plate engraving (ticks, groove). Compiled by `build.sh` into `Assets.car`;
-  macOS 14–15 use `AppIcon.icns`.
-- **Small sizes:** at 16 and 32 px the icon switches to `icon-small.svg`: a thicker ring, a plain silver
-  knob and a bold Ink check on it, because ticks, knurling and the pointer turn to mush that small.
-- **Source:** the SVGs are plain shapes and gradients (NSImage's SVG renderer draws them); edit them
-  directly, then run `render_brand.swift`.
+- **Art:** a 3D render, `art/icon-render.png` (2048 px), not vector: brushed navy anodized plate, etched
+  ticks, the gradient ring glowing in a groove, a knurled satin-titanium knob, a lit pointer and a mint
+  check in the gap. `render_brand.swift` cuts the plate out of it, fills the render's rounder corners with
+  plate color taken just inside them, and masks the result to the macOS squircle. To change the icon,
+  replace the render (same framing: plate centred on a light grey background) and update `plateRect` in
+  the script if the plate moved.
+- **Liquid Glass (macOS 26+):** `VibeCheck.icon` holds the same plate full bleed as one non-glass image
+  layer (`Assets/plate.png`, written by `render_brand.swift`), so macOS 26 shows the render rather than a
+  flattened version. Compiled by `build.sh` into `Assets.car`; macOS 14–15 use `AppIcon.icns`. Tinted and
+  clear modes get only the system's treatment of that image.
+- **Small sizes:** at 16 and 32 px the icon switches to `svg/icon-small.svg`: a thick ring, a plain silver
+  knob and a bold Ink check, because the render's detail turns to mush that small.
 
 ## 4. Color
 

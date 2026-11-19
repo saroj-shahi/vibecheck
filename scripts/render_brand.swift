@@ -1,4 +1,4 @@
-// Renders every VibeCheck brand asset from the SVG sources in branding/svg.
+// Renders every VibeCheck brand asset from branding/svg and the app icon render in branding/art.
 // Usage (from the repo root):  swift scripts/render_brand.swift
 // Outputs: Resources/AppIcon.icns, branding/png/*.png
 import AppKit
@@ -109,7 +109,74 @@ func darkBackground(_ context: CGContext, _ rect: CGRect) {
 // MARK: 1. App icon (.icns): simplified art at 16–32 px, full art above
 
 print("App icon")
-let icon = svg("icon.svg"), iconSmall = svg("icon-small.svg")
+let iconSmall = svg("icon-small.svg")
+
+// Full-size art is the "Mood Dial" render (branding/art/icon-render.png, 2048 px). Its plate is cut out, its
+// grey background knocked out of the corners, and the result masked to the macOS squircle.
+let plateRect = CGRect(x: 182, y: 173, width: 1672, height: 1676)  // the plate inside the render
+let plateArt: NSBitmapImageRep = {
+    let source = NSBitmapImageRep(data: try! Data(contentsOf: root.appendingPathComponent("branding/art/icon-render.png")))!
+    let plate = source.cgImage!.cropping(to: plateRect)!
+    let rep = canvas(1024, 1024) { $0.interpolationQuality = .high; $0.draw(plate, in: CGRect(x: 0, y: 0, width: 1024, height: 1024)) }
+    // The render's corners are rounder than the macOS squircle. Flood-fill its grey background (and the
+    // light fringe next to it) from each corner and paint it navy, so the squircle mask never shows grey.
+    let pixels = rep.bitmapData!, stride = rep.bytesPerRow
+    func at(_ x: Int, _ y: Int) -> UnsafeMutablePointer<UInt8> { pixels + y * stride + x * 4 }
+    func background(_ x: Int, _ y: Int) -> Bool {
+        let p = at(x, y), hi = max(p[0], p[1], p[2]), lo = min(p[0], p[1], p[2])
+        return hi > 120 && Double(hi - lo) / Double(hi) < 0.25
+    }
+    var filled = Set<Int>(), stack = [(0, 0), (1023, 0), (0, 1023), (1023, 1023)]
+    while let (x, y) = stack.popLast() {
+        guard x >= 0, y >= 0, x < 1024, y < 1024, !filled.contains(y * 1024 + x), background(x, y) else { continue }
+        filled.insert(y * 1024 + x)
+        stack += [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+    }
+    var region = Set<Int>()  // the background plus a 12 px band of the render's edge highlight
+    for index in filled {
+        let (x, y) = (index % 1024, index / 1024)
+        for dy in -12...12 { for dx in -12...12 where (0..<1024).contains(x + dx) && (0..<1024).contains(y + dy) {
+            region.insert((y + dy) * 1024 + x + dx)
+        } }
+    }
+    // Paint each pixel with the plate color a little way in from the edge, toward the centre.
+    for index in region {
+        let (x, y) = (Double(index % 1024), Double(index / 1024))
+        let length = ((512 - x) * (512 - x) + (512 - y) * (512 - y)).squareRoot()
+        let (ux, uy) = ((512 - x) / length, (512 - y) / length)
+        var step = 1.0
+        while region.contains(Int(y + uy * step) * 1024 + Int(x + ux * step)) { step += 1 }
+        let source = at(Int(x + ux * (step + 6)), Int(y + uy * (step + 6))), p = at(Int(x), Int(y))
+        p[0] = source[0]; p[1] = source[1]; p[2] = source[2]; p[3] = 0xFF
+    }
+    return rep
+}()
+let squircle: CGPath = {
+    let source = try! String(contentsOf: svgDir.appendingPathComponent("icon-small.svg"), encoding: .utf8)
+    let d = source.components(separatedBy: "d=\"M924.0")[1].components(separatedBy: "\"")[0]
+    let numbers = ("924.0" + d).split(whereSeparator: { !"0123456789.-".contains($0) }).compactMap { Double($0) }
+    let path = CGMutablePath()
+    for i in stride(from: 0, to: numbers.count - 1, by: 2) {
+        let p = CGPoint(x: numbers[i], y: numbers[i + 1])
+        if i == 0 { path.move(to: p) } else { path.addLine(to: p) }
+    }
+    path.closeSubpath()
+    return path
+}()
+let icon = NSImage(size: NSSize(width: 1024, height: 1024), flipped: false) { _ in
+    let context = NSGraphicsContext.current!.cgContext
+    context.saveGState()
+    context.setShadow(offset: CGSize(width: 0, height: -12), blur: 28, color: NSColor(white: 0, alpha: 0.35).cgColor)
+    context.addPath(squircle); context.setFillColor(NSColor(hex: 0x15193A).cgColor); context.fillPath()
+    context.restoreGState()
+    context.addPath(squircle); context.clip()
+    context.interpolationQuality = .high
+    context.draw(plateArt.cgImage!, in: CGRect(x: 100, y: 100, width: 824, height: 824))
+    return true
+}
+// Liquid Glass (macOS 26+): the same plate, full bleed; the system applies the squircle.
+try! plateArt.representation(using: .png, properties: [:])!
+    .write(to: root.appendingPathComponent("branding/VibeCheck.icon/Assets/plate.png"))
 let iconset = root.appendingPathComponent("build/AppIcon.iconset")
 try? FileManager.default.removeItem(at: iconset)
 try! FileManager.default.createDirectory(at: iconset, withIntermediateDirectories: true)

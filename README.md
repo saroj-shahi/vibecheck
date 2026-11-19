@@ -100,7 +100,7 @@ build/VibeCheck.app/Contents/MacOS/VibeCheck --deck-demo   # open the deck and l
 | `Sources/VibeCheck/App/` | `SystemStats`, settings, the deck controller, vibe score, alerts, history, weather, hotkeys |
 | `Sources/VibeCheck/Views/` | Menu bar labels, deck, detail panels, charts, settings window |
 | `branding/` | Brand guide, SVG sources and rendered PNGs |
-| `scripts/` | `render_brand.swift`: renders the app icon and every brand asset from SVG |
+| `scripts/` | `render_brand.swift`: renders the app icon (from the render in `branding/art`) and every brand asset (from SVG) |
 
 ## Brand
 

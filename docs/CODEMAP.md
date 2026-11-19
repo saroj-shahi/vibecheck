@@ -74,5 +74,5 @@ pass explicit empty locations (`claudeRoots`, `opencodeDB`, `claudeConfig`, …)
 
 ## scripts/
 
-`extract_strings.sh` (refreshes `Sources/VibeCheck/Resources/Localizable.xcstrings` from the code; `build.sh` copies the compiled `en.lproj` into the app), `render_brand.swift` (brand assets from `branding/svg`); `branding/VibeCheck.icon` (Liquid Glass icon, compiled by `actool` in `build.sh`), `qa/` (on-screen QA tools: `scripts/qa/build.sh`,
+`extract_strings.sh` (refreshes `Sources/VibeCheck/Resources/Localizable.xcstrings` from the code; `build.sh` copies the compiled `en.lproj` into the app), `render_brand.swift` (brand assets from `branding/svg`; the app icon from the render in `branding/art`); `branding/VibeCheck.icon` (Liquid Glass icon, compiled by `actool` in `build.sh`), `qa/` (on-screen QA tools: `scripts/qa/build.sh`,
 then `.build/qa/qa help`).
