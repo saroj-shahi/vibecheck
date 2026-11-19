@@ -6,5 +6,5 @@
       <stop offset="1" stop-color="#8B6CFF"/>
     </linearGradient>
   </defs>
-  <circle cx="512" cy="512" r="268" fill="none" stroke="url(#ring)" stroke-width="72" stroke-linecap="round" stroke-dasharray="1450.0 233.9" transform="rotate(-20 512 512)"/>
+  <circle cx="512" cy="512" r="268" fill="none" stroke-width="72" stroke-linecap="round" stroke-dasharray="1450.0 233.9" transform="rotate(-20 512 512)" stroke="url(#ring)"/>
 </svg>

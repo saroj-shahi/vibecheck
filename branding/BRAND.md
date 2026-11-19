@@ -47,7 +47,7 @@ through a gap in the ring. Pulse = monitoring; check = verdict; the ring = your 
 | Asset | File | Use for |
 |---|---|---|
 | App icon | `svg/icon.svg` → `png/icon-*.png`, `Resources/AppIcon.icns` | Dock, Finder, Launchpad, About |
-| App icon, small sizes | `svg/icon-small.svg` | 16 and 32 px only (ring + plain check, no pulse or glow) |
+| App icon, small sizes | `svg/icon-small.svg` | 16 and 32 px only (thick ring, plain knob, bold check; no ticks or glow) |
 | Mark on dark | `svg/mark-on-dark.svg` | Dark UI, slides, social |
 | Mark on light | `svg/mark-on-light.svg` | Light UI, docs, print |
 | Mark, monochrome | `svg/mark-mono.svg` | Single-color contexts, embossing, template images |
@@ -79,13 +79,24 @@ name).
 
 <img src="png/icon-256.png" alt="App icon" width="128" align="right">
 
+- **Concept, "Mood Dial":** your Mac's vibe as a machined volume knob. The ring becomes the dial's lit
+  track, the knob's pointer runs out to the gap, and the check breaks out through it: the dial is turned
+  to "vibing." Same ring, gap and check as the mark, built as an object you'd want to touch.
 - **Shape:** macOS's continuous-corner rounded square on the standard 824/1024 grid, with a soft drop
   shadow baked in, as macOS icons expect.
-- **Layers, back to front:** Dusk → Night vertical gradient · mint glow (lower left) · violet glow (upper
-  right) · gradient ring · mint glow behind the pulse · Cloud pulse/check · top gloss · hairline edge.
-- **Liquid Glass (macOS 26+):** `VibeCheck.icon` (Icon Composer; Dusk → Night fill, flat ring and pulse layers, no baked effects) is compiled by `build.sh` into `Assets.car`; macOS 14–15 use `AppIcon.icns`.
-- **Small sizes:** at 16 and 32 px the icon switches to `icon-small.svg`: a thicker ring and a plain check,
-  because the pulse turns to mush that small.
+- **Layers, back to front:** anodized navy plate (Dusk → Night with faint diagonal brushing and mint /
+  violet glows) · etched scale ticks (none in the gap) · dark groove · gradient ring with a soft bloom and a
+  top highlight · knob shadow · knurled side with mint spill · machined silver cap with a concave dish and
+  a 1px rim bevel · engraved pointer with a mint light line · Cloud check with mint glow · top gloss ·
+  hairline edge. Glows are clipped to the plate.
+- **Liquid Glass (macOS 26+):** `VibeCheck.icon` (Icon Composer; Dusk → Night fill, flat layers, no baked
+  effects) in three depth groups, front to back: knob (check with mint pointer line, glass cap, ridged
+  side) · ring (glass) · plate engraving (ticks, groove). Compiled by `build.sh` into `Assets.car`;
+  macOS 14–15 use `AppIcon.icns`.
+- **Small sizes:** at 16 and 32 px the icon switches to `icon-small.svg`: a thicker ring, a plain silver
+  knob and a bold Ink check on it, because ticks, knurling and the pointer turn to mush that small.
+- **Source:** the SVGs are plain shapes and gradients (NSImage's SVG renderer draws them); edit them
+  directly, then run `render_brand.swift`.
 
 ## 4. Color
 

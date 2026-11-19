@@ -120,6 +120,7 @@ actions, keep awake, notification history) are in `git log` and the README.
 
 | Date | Feature | How it was checked |
 |---|---|---|
+| 2026-11-19 | **New app icon, "Mood Dial":** a machined knob in the gradient ring, pointer running out to the gap, check breaking out through it; `branding/svg/icon.svg`, `icon-small.svg` and the `VibeCheck.icon` layers redrawn in three depth groups (knob side, cap and check · ring · ticks and groove); `AppIcon.icns` and brand PNGs re-rendered; BRAND.md §3 updated. Mark and wordmark unchanged | Rendered PNGs looked at (1024 and 64 px); `actool` compiled the `.icon`; the built app's icon drawn through `NSWorkspace` and looked at. Not seen in the Dock / Finder, or in tinted and clear modes |
 | 2026-11-19 | **Liquid Glass app icon:** `branding/VibeCheck.icon` (Dusk→Night fill, glass group with the ring and the pulse / check), compiled by `actool` in `build.sh` into `Assets.car` (`CFBundleIconName`); `AppIcon.icns` stays for macOS 14–15 | actool compiles it; `assetutil` lists it; the app's icon rendered through `NSWorkspace` and looked at. Dock / Finder in light, dark and tinted not seen |
 | 2026-11-19 | **String Catalog finished:** Shortcuts actions (titles, parameters, dialogs, stat sentences), Focus filter, accessibility labels and the remaining tooltips; new text goes through `Text("…")` / `String(localized:)` + `scripts/extract_strings.sh`. Integers that can pass 999 go in as `String(n)` | Tests compare English output with the old strings; not seen on screen |
 | 2026-11-19 | **Fix:** opening Settings crashed (the menu bar preview drew the ring label, which required the drop state only the real item has) | Crash reports read; regression test hosting the labels with Settings' environment; fixed build installed |
@@ -440,6 +441,13 @@ scripts/qa/build.sh && .build/qa/qa help   # on-screen QA tools
 ## 8. Session notes
 
 Newest first; keep about five. Older notes are folded into §3, §6 and §7 (and `git log`).
+
+#### 2026-11-19: Mood Dial icon
+
+Replaced the app icon with the "Mood Dial" direction (five concepts rendered as AI images first; the owner picked
+this one). The shipping art is hand-built SVG, not the AI render. Seen: rendered PNGs and the `NSWorkspace` icon
+of the built and installed app (the Liquid Glass version, which macOS 26+ shows). Not seen: the Dock, Finder, or tinted / clear Liquid Glass modes. The brand mark still uses the
+pulse; decide whether it should follow the icon.
 
 #### 2026-11-19: P2 batch
 
