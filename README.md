@@ -106,8 +106,8 @@ build/VibeCheck.app/Contents/MacOS/VibeCheck --deck-demo   # open the deck and l
 
 <img src="branding/png/icon-256.png" alt="VibeCheck app icon" width="96" align="left">
 
-The mark is the **vibe ring** with a **pulse that turns into a check** and breaks out through the ring's
-gap: monitoring, then a verdict. The palette runs **Mint → Sky → Violet** on deep **Ink** and **Night**;
+The mark is a **mood dial**: the **vibe ring** as its track, a knob pointing at the ring's gap and a
+**check** in that gap: your Mac, dialled to vibing. The palette runs **Mint → Sky → Violet** on deep **Ink** and **Night**;
 the wordmark is SF Pro Rounded Bold with "Check" in the gradient. Voice: casual and honest, slang only for
 **vibing, mid, cooked**.
 

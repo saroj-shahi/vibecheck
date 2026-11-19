@@ -1,30 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="196 196 632 632" width="632" height="632">
-  <!-- VibeCheck mark: the vibe ring with a pulse that ends in a check. -->
+  <!-- VibeCheck mark, "Mood Dial": the vibe ring is the dial track, the knob's notch points at the gap,
+       and the check sits in the gap. Same ring geometry as the app icon. -->
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#252A52"/>
-      <stop offset="1" stop-color="#0B0E22"/>
-    </linearGradient>
-    <radialGradient id="glowMint" cx="0.42" cy="0.62" r="0.55">
-      <stop offset="0" stop-color="#3DE0B5" stop-opacity="0.22"/>
-      <stop offset="1" stop-color="#3DE0B5" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="glowViolet" cx="0.78" cy="0.22" r="0.5">
-      <stop offset="0" stop-color="#8B6CFF" stop-opacity="0.28"/>
-      <stop offset="1" stop-color="#8B6CFF" stop-opacity="0"/>
-    </radialGradient>
     <linearGradient id="ring" x1="0.1" y1="0.15" x2="0.9" y2="0.9">
       <stop offset="0" stop-color="#3DE0B5"/>
       <stop offset="0.5" stop-color="#36B6F2"/>
       <stop offset="1" stop-color="#8B6CFF"/>
     </linearGradient>
-    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.14"/>
-      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
-    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feGaussianBlur stdDeviation="14"/></filter>
+    <mask id="notch" maskUnits="userSpaceOnUse" x="196" y="196" width="632" height="632">
+      <rect x="196" y="196" width="632" height="632" fill="#FFFFFF"/>
+      <path d="M545 479 L660 364" fill="none" stroke="#000000" stroke-width="36" stroke-linecap="round"/>
+    </mask>
   </defs>
   <circle cx="512" cy="512" r="268" fill="none" stroke="url(#ring)" stroke-width="72" stroke-linecap="round" stroke-dasharray="1450.0 233.9" transform="rotate(-20 512 512)"/>
-  <path d="M300 532 L392 532 L440 452 L506 640 L772 328" fill="none" stroke="#F5F7FF" stroke-width="60" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="512" cy="512" r="152" fill="#F5F7FF" mask="url(#notch)"/>
+  <path d="M652 320 L688 356 L754 286" fill="none" stroke="#F5F7FF" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

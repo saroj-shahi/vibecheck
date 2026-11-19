@@ -35,12 +35,16 @@ when you want them. The brand follows the same rule: calm and confident on the s
 
 <img src="png/mark-on-light-512.png" alt="VibeCheck mark" width="140" align="right">
 
-The mark is the app's **vibe ring** with a **pulse line that turns into a check mark** and breaks out
-through a gap in the ring. Pulse = monitoring; check = verdict; the ring = your Mac's overall health.
+The mark is the flat version of the app icon's **Mood Dial**: the **vibe ring** is the dial's track, a
+**knob** sits in the middle with a **notch pointing at the gap**, and a **check** sits in that gap. The
+dial is turned to "vibing"; the ring = your Mac's overall health, the check = the verdict.
 
-- The ring is a 310° arc with round caps. Its gap sits at about 1–2 o'clock, exactly where the check exits.
-- The ring uses the brand gradient (Mint → Sky → Violet). The pulse/check is a single solid stroke.
-- On dark backgrounds the pulse/check is **Cloud** (`#F5F7FF`); on light backgrounds it's **Ink** (`#141833`).
+- The ring is a 310° arc with round caps. Its gap sits at about 1–2 o'clock (centred on 45°).
+- The knob is a solid disc about 57% of the ring's radius; its notch is cut out (transparent), from near
+  the centre through the knob's edge, aimed at the middle of the gap.
+- The check sits upright inside the gap, clear of both ring caps.
+- The ring uses the brand gradient (Mint → Sky → Violet). The knob and check are one solid color:
+  **Cloud** (`#F5F7FF`) on dark backgrounds, **Ink** (`#141833`) on light ones.
 
 ### Variants
 
@@ -70,7 +74,7 @@ name).
 ### Don't
 
 - Recolor the ring with anything other than the gradient (or the single color of the mono mark).
-- Close the ring's gap, move it, or let the check stay inside the ring.
+- Close the ring's gap, move it, or move the check out of the gap or the notch off it.
 - Add effects (bevels, outer glows, drop shadows) to the mark outside the app icon.
 - Stretch, rotate or outline the wordmark, or put the gradient on "Vibe".
 - Place the gradient mark on busy photos; use the mono mark instead.
@@ -81,7 +85,7 @@ name).
 
 - **Concept, "Mood Dial":** your Mac's vibe as a machined volume knob. The ring becomes the dial's lit
   track, the knob's pointer runs out to the gap, and the check breaks out through it: the dial is turned
-  to "vibing." Same ring, gap and check as the mark, built as an object you'd want to touch.
+  to "vibing." Same ring, gap, knob and check as the mark, built as an object you'd want to touch.
 - **Shape:** macOS's continuous-corner rounded square on the standard 824/1024 grid, with a soft drop
   shadow baked in, as macOS icons expect.
 - **Art:** a 3D render, `art/icon-render.png` (2048 px), not vector: brushed navy anodized plate, etched
@@ -109,7 +113,7 @@ name).
 | **Mint** | `#3DE0B5` | Brand accent, start of the gradient, the **vibing** state |
 | **Sky** | `#36B6F2` | Middle of the gradient, links and data accents |
 | **Violet** | `#8B6CFF` | End of the gradient, highlights |
-| **Cloud** | `#F5F7FF` | Text and the pulse/check on dark |
+| **Cloud** | `#F5F7FF` | Text and the mark's knob and check on dark |
 | **Haze** | `#AEB4D6` | Secondary text on dark |
 | **Mid** | `#FFC542` | The **mid** state in marketing |
 | **Cooked** | `#FF5A5F` | The **cooked** state in marketing |

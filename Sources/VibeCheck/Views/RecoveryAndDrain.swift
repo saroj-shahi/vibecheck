@@ -10,7 +10,7 @@ enum RecoveryCheck {
     }
 }
 
-/// The brand's pulse-to-check path (branding/svg/mark-mono.svg, viewBox 196...828) fitted to a rect.
+/// The pulse-to-check path of the original brand mark (viewBox 196...828) fitted to a rect.
 struct PulseCheckShape: Shape {
     func path(in rect: CGRect) -> Path {
         let pts: [(CGFloat, CGFloat)] = [(300, 532), (392, 532), (440, 452), (506, 640), (772, 328)]
