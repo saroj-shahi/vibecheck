@@ -102,3 +102,68 @@ final class DownloadsWatcher {
         }
     }
 }
+
+/// Tells whether a dropped file or folder is still changing, for the "keep awake while it's written" drop on
+/// the ring. Same idea as `DownloadsWatcher`: a scan off the main thread at most every 5 s, and the item counts
+/// as busy until nothing under it changed for `DownloadsWatcher.recentWindow`.
+@MainActor
+final class PathActivity {
+    static let shared = PathActivity()
+
+    private var newest: [String: Date] = [:]
+    private var scanStarted: [String: Date] = [:]
+    private var lastScan: [String: Date] = [:]
+
+    /// Newest modification date seen by the last finished scan.
+    func lastChange(_ path: String) -> Date? { newest[path] }
+
+    func refreshIfDue(path: String, now: Date = Date()) {
+        if let started = scanStarted[path] {
+            guard now.timeIntervalSince(started) > 30 else { return }   // stuck on a stalled volume: try again
+        }
+        guard lastScan[path].map({ now.timeIntervalSince($0) >= 5 }) ?? true else { return }
+        scanStarted[path] = now
+        lastScan[path] = now
+        Task.detached(priority: .utility) {
+            let date = Self.newestModification(URL(fileURLWithPath: path))
+            await PathActivity.shared.finish(path: path, date: date)
+        }
+    }
+
+    private func finish(path: String, date: Date?) {
+        scanStarted[path] = nil
+        // A vanished path keeps its last known date, so it goes quiet by itself.
+        if let date { newest[path] = max(date, newest[path] ?? .distantPast) }
+        KeepAwake.shared.check()
+    }
+
+    /// Forget a path once its session is over.
+    func forget(_ path: String) {
+        newest[path] = nil
+        scanStarted[path] = nil
+        lastScan[path] = nil
+    }
+
+    /// Quiet when neither the item's own changes nor the drop itself happened within the recent window.
+    nonisolated static func isQuiet(lastChange: Date?, started: Date, now: Date) -> Bool {
+        let latest = max(lastChange ?? .distantPast, started)
+        return now.timeIntervalSince(latest) >= DownloadsWatcher.recentWindow
+    }
+
+    /// Newest modification date of the item and (for a folder) everything inside it, capped so a huge tree
+    /// can't keep the scan busy.
+    nonisolated static func newestModification(_ url: URL, limit: Int = 5000) -> Date? {
+        let fm = FileManager.default
+        let keys: Set<URLResourceKey> = [.contentModificationDateKey]
+        var newest = (try? url.resourceValues(forKeys: keys))?.contentModificationDate
+        guard let walker = fm.enumerator(at: url, includingPropertiesForKeys: Array(keys)) else { return newest }
+        var seen = 0
+        for case let child as URL in walker {
+            seen += 1
+            if seen > limit { break }
+            if let date = try? child.resourceValues(forKeys: keys).contentModificationDate,
+               date > (newest ?? .distantPast) { newest = date }
+        }
+        return newest
+    }
+}

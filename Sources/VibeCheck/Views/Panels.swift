@@ -88,7 +88,7 @@ struct PanelHeader: View {
 }
 
 struct StatRow: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: String
     var color: Color? = nil
 
@@ -106,7 +106,7 @@ struct StatRow: View {
 }
 
 struct SectionTitle: View {
-    let text: String
+    let text: LocalizedStringKey
     var body: some View {
         Text(text)
             .font(.system(size: 11, weight: .semibold))
@@ -249,7 +249,10 @@ struct ProcessList: View {
     private func run(_ target: ProcessKiller.Identity, mode: ProcessKiller.Mode, subprocesses: Bool) {
         confirming = nil
         guard case .failed(let text) = ProcessKiller.quit(target, mode: mode, subprocesses: subprocesses)
-        else { return }
+        else {
+            CulpritDrain.shared.start(culpritPresent: stats.vibe.culprit != nil)
+            return
+        }
         notice = (target.pid, text)
         noticeClear?.cancel()
         noticeClear = Task { @MainActor in
@@ -300,7 +303,7 @@ private struct QuitAccessibility<Actions: View>: ViewModifier {
 
     func body(content: Content) -> some View {
         if let reason = ProcessKiller.protectionReason(pid: pid) {
-            content.accessibilityHint("Can't be quit: \(reason.lowercased())")
+            content.accessibilityHint(String(localized: "Can't be quit: \(reason.lowercased())"))
         } else {
             content.accessibilityActions { actions() }
         }
@@ -445,7 +448,8 @@ struct CPUPanel: View {
     var body: some View {
         let cpu = stats.cpu
         Panel(module: .cpu, headline: Fmt.percent(cpu.total),
-              subtitle: "User \(Fmt.percent(cpu.user)) · Sys \(Fmt.percent(cpu.system))") {
+              subtitle: String(localized: "User \(Fmt.percent(cpu.user)) · Sys \(Fmt.percent(cpu.system))")) {
+            VibeStripView()
             MetricChart(lines: [.init(key: .cpu, color: Palette.user, name: "Total"),
                                 .init(key: .cpuSystem, color: Palette.system, name: "Sys")],
                         maxValue: 1, height: 96, format: Fmt.percent)
@@ -459,7 +463,7 @@ struct CPUPanel: View {
                     StatRow(label: "Idle", value: Fmt.percent(cpu.idle), color: .gray.opacity(0.5))
                 }
                 VStack(alignment: .leading, spacing: 6) {
-                    SectionTitle(text: coreTitle)
+                    SectionTitle(text: LocalizedStringKey(coreTitle))
                     HStack(alignment: .bottom, spacing: 3) {
                         ForEach(Array(cpu.perCore.enumerated()), id: \.offset) { _, usage in
                             GeometryReader { geo in
@@ -492,11 +496,11 @@ struct CPUPanel: View {
 
     private var thermalLabel: String {
         switch stats.thermalState {
-        case .nominal: "Nominal"
-        case .fair: "Fair"
-        case .serious: "Serious"
-        case .critical: "Critical"
-        @unknown default: "Unknown"
+        case .nominal: String(localized: "Nominal")
+        case .fair: String(localized: "Fair")
+        case .serious: String(localized: "Serious")
+        case .critical: String(localized: "Critical")
+        @unknown default: String(localized: "Unknown")
         }
     }
 }
@@ -516,7 +520,7 @@ struct GPUPanel: View {
                 DetailsDisclosure(.gpu) {
                     ForEach(sample.gpus) { gpu in
                         VStack(alignment: .leading, spacing: 6) {
-                            if sample.gpus.count > 1 { SectionTitle(text: gpu.model) }
+                            if sample.gpus.count > 1 { SectionTitle(text: LocalizedStringKey(gpu.model)) }
                             StatRow(label: "Utilization", value: Fmt.percent(gpu.device), color: Palette.gpu)
                             if let r = gpu.renderer { StatRow(label: "Renderer", value: Fmt.percent(r), color: Palette.user) }
                             if let t = gpu.tiler { StatRow(label: "Tiler", value: Fmt.percent(t), color: Palette.tiler) }
@@ -536,7 +540,7 @@ struct MemoryPanel: View {
     var body: some View {
         let m = stats.memory
         Panel(module: .memory, headline: Fmt.percent(m.usage),
-              subtitle: "\(Fmt.bytes(m.used)) of \(Fmt.bytes(m.total))") {
+              subtitle: String(localized: "\(Fmt.bytes(m.used)) of \(Fmt.bytes(m.total))")) {
             VStack(alignment: .leading, spacing: 6) {
                 StackedBar(segments: [(m.app, Palette.app), (m.wired, Palette.wired),
                                       (m.compressed, Palette.compressed), (m.cached, Palette.cached)],
@@ -559,7 +563,7 @@ struct MemoryPanel: View {
                     StatRow(label: "Cached files", value: Fmt.bytes(m.cached), color: Palette.cached)
                     StatRow(label: "Free", value: Fmt.bytes(m.free))
                     StatRow(label: "Swap used",
-                            value: m.swapTotal > 0 ? "\(Fmt.bytes(m.swapUsed)) of \(Fmt.bytes(m.swapTotal))" : "None")
+                            value: m.swapTotal > 0 ? String(localized: "\(Fmt.bytes(m.swapUsed)) of \(Fmt.bytes(m.swapTotal))") : String(localized: "None"))
                 }
             }
         }
@@ -571,8 +575,8 @@ struct NetworkPanel: View {
 
     var body: some View {
         let n = stats.network
-        Panel(module: .network, headline: n.interface == nil ? "Offline" : "↓ \(Fmt.compactRate(n.download))",
-              subtitle: n.interface == nil ? nil : "↑ \(Fmt.rate(n.upload))\n\(statusText(n))") {
+        Panel(module: .network, headline: n.interface == nil ? String(localized: "Offline") : "↓ \(Fmt.compactRate(n.download))",
+              subtitle: n.interface == nil ? nil : String(localized: "↑ \(Fmt.rate(n.upload))\n\(statusText(n))")) {
             MetricChart(lines: [.init(key: .upload, color: Palette.upload), .init(key: .download, color: Palette.download)],
                         mirrored: true, height: 96, format: Fmt.rate)
 
@@ -601,6 +605,22 @@ struct NetworkPanel: View {
                 }
             }
 
+            let hour = stats.appTraffic.top(limit: 5, now: Date())
+            if !hour.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    SectionTitle(text: "Last hour")
+                    ForEach(hour) { app in
+                        HStack(spacing: 6) {
+                            Text(app.name).lineLimit(1).truncationMode(.middle)
+                            Spacer()
+                            Text("↓ \(Fmt.bytes(app.download))  ↑ \(Fmt.bytes(app.upload))")
+                                .monospacedDigit().foregroundStyle(.secondary)
+                        }
+                        .font(.callout)
+                    }
+                }
+            }
+
             ListeningPortsSection()
 
             DetailsDisclosure(.network) {
@@ -608,6 +628,16 @@ struct NetworkPanel: View {
                     StatRow(label: "Status", value: statusText(n), color: statusColor(n))
                     StatRow(label: "Interface", value: n.interface ?? "—")
                     StatRow(label: "Local IP", value: n.ipv4 ?? "—")
+                    if AppSettings.shared.showPublicIP {
+                        StatRow(label: "Public IP", value: stats.publicIP ?? "—")
+                    }
+                    if let w = stats.wifi {
+                        StatRow(label: "Wi-Fi", value: w.ssid ?? String(localized: "Hidden without Location access"))
+                        StatRow(label: "Signal", value: String(localized: "\(w.rssi) dBm, noise \(w.noise) dBm"))
+                        if let c = w.channel { StatRow(label: "Channel", value: [String(c), w.band].compactMap { $0 }.joined(separator: ", ")) }
+                        if let p = w.phyMode { StatRow(label: "Standard", value: p) }
+                        StatRow(label: "Link speed", value: String(localized: "\(Int(w.transmitRate)) Mbps"))
+                    }
                     StatRow(label: "Downloaded since boot", value: Fmt.bytes(Double(n.totalDownloaded)))
                     StatRow(label: "Uploaded since boot", value: Fmt.bytes(Double(n.totalUploaded)))
                 }
@@ -632,13 +662,13 @@ struct NetworkPanel: View {
     }
 
     private func statusText(_ n: NetworkSample) -> String {
-        guard n.interface != nil else { return "Offline" }
+        guard n.interface != nil else { return String(localized: "Offline") }
         let up = n.upload >= MenuBarLabel.activeThreshold, down = n.download >= MenuBarLabel.activeThreshold
         switch (up, down) {
-        case (true, true): return "Sending & receiving"
-        case (true, false): return "Sending"
-        case (false, true): return "Receiving"
-        case (false, false): return "Idle"
+        case (true, true): return String(localized: "Sending & receiving")
+        case (true, false): return String(localized: "Sending")
+        case (false, true): return String(localized: "Receiving")
+        case (false, false): return String(localized: "Idle")
         }
     }
 
@@ -702,7 +732,7 @@ struct SensorsPanel: View {
             if !s.summary.isEmpty {
                 VStack(spacing: 4) {
                     ForEach(s.summary) { t in
-                        StatRow(label: t.name, value: celsius(t.celsius), color: Palette.temperature(t.celsius))
+                        StatRow(label: LocalizedStringKey(t.name), value: celsius(t.celsius), color: Palette.temperature(t.celsius))
                     }
                 }
             }
@@ -713,10 +743,10 @@ struct SensorsPanel: View {
                         SectionTitle(text: s.fans.count == 1 ? "Fan" : "Fans")
                         ForEach(s.fans) { fan in
                             StatRow(label: s.fans.count == 1 ? "Speed" : "Fan \(fan.id + 1)",
-                                    value: fan.rpm < 1 ? "Off" : String(format: "%.0f rpm", fan.rpm))
+                                    value: fan.rpm < 1 ? String(localized: "Off") : String(localized: "\(String(Int(fan.rpm.rounded()))) rpm"))
                             CapacityBar(fraction: fan.level, color: .cyan)
                             if let lo = fan.minRPM, let hi = fan.maxRPM {
-                                Text(String(format: "Range %.0f–%.0f rpm", lo, hi)).font(.caption2).foregroundStyle(.tertiary)
+                                Text(String(localized: "Range \(String(Int(lo.rounded())))–\(String(Int(hi.rounded()))) rpm")).font(.caption2).foregroundStyle(.tertiary)
                             }
                         }
                     }
@@ -731,7 +761,7 @@ struct SensorsPanel: View {
                 if s.all.count > s.summary.count {
                     VStack(spacing: 3) {
                         SectionTitle(text: "All sensors (\(s.all.count))").frame(maxWidth: .infinity, alignment: .leading)
-                        ForEach(s.all) { t in StatRow(label: t.name, value: celsius(t.celsius)) }
+                        ForEach(s.all) { t in StatRow(label: LocalizedStringKey(t.name), value: celsius(t.celsius)) }
                     }
                 }
             }
@@ -740,7 +770,7 @@ struct SensorsPanel: View {
 
     private func fanSummary(_ s: SensorsSample) -> String? {
         guard let fan = s.fans.first else { return nil }
-        return fan.rpm < 1 ? "Fan off" : String(format: "Fan %.0f rpm", fan.rpm)
+        return fan.rpm < 1 ? String(localized: "Fan off") : String(localized: "Fan \(String(Int(fan.rpm.rounded()))) rpm")
     }
 
     private func celsius(_ value: Double) -> String { String(format: "%.0f °C", value) }
@@ -780,11 +810,12 @@ struct BatteryPanel: View {
 
     var body: some View {
         let b = stats.battery
-        Panel(module: .battery, headline: b.present ? Fmt.percent(b.percent) : "AC",
-              subtitle: b.present ? subtitle(b) : "No internal battery") {
+        Panel(module: .battery, headline: b.present ? Fmt.percent(b.percent) : String(localized: "AC"),
+              subtitle: b.present ? subtitle(b) : String(localized: "No internal battery")) {
             if b.present {
                 CapacityBar(fraction: b.percent, color: b.percent < 0.2 ? .red : .green)
                 MetricChart(lines: [.init(key: .battery, color: .green)], maxValue: 1, height: 64, format: Fmt.percent)
+                BatteryHistorySection()
             }
 
             if !stats.devices.isEmpty {
@@ -799,7 +830,7 @@ struct BatteryPanel: View {
             if b.present {
                 DetailsDisclosure(.battery) {
                     VStack(spacing: 4) {
-                        StatRow(label: "Power source", value: b.onAC ? "Power adapter" : "Battery")
+                        StatRow(label: "Power source", value: b.onAC ? String(localized: "Power adapter") : String(localized: "Battery"))
                         StatRow(label: "State", value: stateLabel(b))
                         if let w = b.powerWatts, abs(w) > 0.05 {
                             StatRow(label: w > 0 ? "Charging at" : "Drawing", value: String(format: "%.1f W", abs(w)))
@@ -819,15 +850,15 @@ struct BatteryPanel: View {
 
     private func subtitle(_ b: BatterySample) -> String {
         if let mins = b.minutesRemaining {
-            return "\(stateLabel(b)) · \(Fmt.minutes(mins)) \(b.isCharging ? "to full" : "left")"
+            return b.isCharging ? String(localized: "\(stateLabel(b)) · \(Fmt.minutes(mins)) to full") : String(localized: "\(stateLabel(b)) · \(Fmt.minutes(mins)) left")
         }
         return stateLabel(b)
     }
 
     private func stateLabel(_ b: BatterySample) -> String {
-        if b.isCharging { return "Charging" }
-        if b.isCharged || (b.onAC && b.percent >= 0.99) { return "Charged" }
-        return b.onAC ? "Not charging" : "On battery"
+        if b.isCharging { return String(localized: "Charging") }
+        if b.isCharged || (b.onAC && b.percent >= 0.99) { return String(localized: "Charged") }
+        return b.onAC ? String(localized: "Not charging") : String(localized: "On battery")
     }
 }
 

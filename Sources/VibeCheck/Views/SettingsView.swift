@@ -10,8 +10,8 @@ enum SettingsSection: Hashable, Identifiable {
     /// System Settings: general things first, then one row per thing you can configure).
     static let groups: [SettingsGroup] = [
         SettingsGroup(title: nil, sections: [.general, .menuBar, .keepAwake, .alerts, .shortcuts, .backup, .about]),
-        SettingsGroup(title: "Monitors", sections: Module.allCases.filter { !$0.isExtra }.map { .module($0) }),
-        SettingsGroup(title: "Extras", sections: Module.allCases.filter(\.isExtra).map { .module($0) }),
+        SettingsGroup(title: String(localized: "Monitors"), sections: Module.allCases.filter { !$0.isExtra }.map { .module($0) }),
+        SettingsGroup(title: String(localized: "Extras"), sections: Module.allCases.filter(\.isExtra).map { .module($0) }),
     ]
 
     static var allCases: [SettingsSection] { groups.flatMap(\.sections) }
@@ -31,13 +31,13 @@ enum SettingsSection: Hashable, Identifiable {
 
     var title: String {
         switch self {
-        case .general: "General"
-        case .menuBar: "Menu Bar"
-        case .keepAwake: "Keep Awake"
-        case .alerts: "Alerts"
-        case .shortcuts: "Shortcuts"
-        case .backup: "Backup"
-        case .about: "About"
+        case .general: String(localized: "General")
+        case .menuBar: String(localized: "Menu Bar")
+        case .keepAwake: String(localized: "Keep Awake")
+        case .alerts: String(localized: "Alerts")
+        case .shortcuts: String(localized: "Shortcuts")
+        case .backup: String(localized: "Backup")
+        case .about: String(localized: "About")
         case .module(let module): module.title
         }
     }
@@ -72,14 +72,14 @@ enum SettingsSection: Hashable, Identifiable {
     /// Extra words the sidebar search matches, so "notch" finds Menu Bar and "caffeinate" finds Keep Awake.
     var keywords: String {
         switch self {
-        case .general: "update interval refresh launch login startup quick toggles dark mode mute trash bluetooth sleep"
-        case .menuBar: "style combined separate items spacing ring notch colorful order reorder preview"
+        case .general: "update interval refresh launch login startup quick toggles dark mode mute trash bluetooth sleep advanced sampling"
+        case .menuBar: "style combined separate items spacing ring notch colorful order reorder preview advanced graphs camera"
         case .keepAwake: "caffeinate sleep display focus timer schedule power downloads agents"
-        case .alerts: "notifications warnings thresholds"
-        case .shortcuts: "hotkeys keyboard global modifier secure input"
+        case .alerts: "notifications warnings thresholds advanced restore defaults test"
+        case .shortcuts: "hotkeys keyboard global modifier secure input advanced"
         case .backup: "export import reset defaults restore"
         case .about: "version"
-        case .module(let module): "\(module.settingsKeywords) \(module.settingsSummary) menu bar alerts shortcut"
+        case .module(let module): "\(module.settingsKeywords) \(module.settingsSummary) menu bar alerts shortcut advanced"
         }
     }
 
@@ -236,33 +236,31 @@ private struct MenuBarSettings: View {
                     ForEach(MenuBarStyle.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.radioGroup)
+                Toggle("Show vibe ring", isOn: $settings.showVibeRing)
+                    .disabled(settings.menuBarStyle == .ring)
+            }
+
+            AdvancedSection {
                 Picker("Spacing", selection: $settings.menuBarSpacing) {
                     ForEach(MenuBarSpacing.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
-                Toggle("Show vibe ring", isOn: $settings.showVibeRing)
                 Toggle("Colorful graphs", isOn: $settings.colorfulMenuBar)
-            }
-
-            Section {
                 Toggle(isOn: $settings.autoFitNotch) {
                     Text("Fit around the camera notch")
                     Text("On a display with a notch, the combined item shows as many stats as fit beside it (in the order below) plus a +N badge. Everything stays in the deck.")
                 }
+                .disabled(settings.menuBarStyle != .combined)
                 Picker("Stats beside the notch", selection: $settings.notchMaxStats) {
                     Text("As many as fit").tag(0)
                     ForEach(1...4, id: \.self) { Text("At most \($0)").tag($0) }
                 }
-                .disabled(!settings.autoFitNotch)
-            } header: {
-                Text("Camera notch")
-            } footer: {
+                .disabled(!settings.autoFitNotch || settings.menuBarStyle != .combined)
                 if settings.menuBarStyle != .combined {
-                    Text("Only for \"One combined item\". With separate items, macOS hides whatever doesn't fit beside the notch.")
+                    Text("The notch options only apply to \"One combined item\". With separate items, macOS hides whatever doesn't fit beside the notch.")
                         .settingsFooter()
                 }
             }
-            .disabled(settings.menuBarStyle != .combined)
 
             Section {
                 ForEach(settings.moduleOrder) { module in
@@ -339,8 +337,8 @@ private struct MenuBarPreview: View {
                     CombinedLabel()
                 } else {
                     HStack(spacing: 10) {
-                        if settings.showVibeRing { VibeItemLabel() }
-                        ForEach(settings.orderedModules) { MenuBarLabel(module: $0) }
+                        if settings.ringVisible { VibeItemLabel() }
+                        if settings.menuBarStyle != .ring { ForEach(settings.orderedModules) { MenuBarLabel(module: $0) } }
                     }
                 }
                 HStack(spacing: 14) {
@@ -376,10 +374,10 @@ private struct GeneralSettings: View {
 
     private var bluetoothFooter: String {
         let snooze = BluetoothSnooze.shared
-        guard snooze.isAvailable else { return "Not available on this version of macOS." }
-        let about = "Stops a sleeping Mac from grabbing headphones you also use with your phone. Bluetooth comes back on when the Mac wakes, if it was on before. While asleep, a Bluetooth keyboard or mouse can't wake the Mac, and Apple Watch unlock won't work."
+        guard snooze.isAvailable else { return String(localized: "Not available on this version of macOS.") }
+        let about = String(localized: "Stops a sleeping Mac from grabbing headphones you also use with your phone. Bluetooth comes back on when the Mac wakes, if it was on before. While asleep, a Bluetooth keyboard or mouse can't wake the Mac, and Apple Watch unlock won't work.")
         if settings.bluetoothOffWhileAsleep, snooze.access == .denied {
-            return "VibeCheck isn't allowed to use Bluetooth, so this does nothing. Allow it in System Settings → Privacy & Security → Bluetooth. " + about
+            return String(localized: "VibeCheck isn't allowed to use Bluetooth, so this does nothing. Allow it in System Settings → Privacy & Security → Bluetooth. ") + about
         }
         return about
     }
@@ -389,12 +387,6 @@ private struct GeneralSettings: View {
         Form {
             Section("Startup") {
                 Toggle("Launch at login", isOn: $settings.launchAtLogin)
-                Picker("Update every", selection: $settings.refreshInterval) {
-                    Text("1 second").tag(1.0)
-                    Text("2 seconds").tag(2.0)
-                    Text("3 seconds").tag(3.0)
-                    Text("5 seconds").tag(5.0)
-                }
             }
             Section {
                 Toggle("Show quick toggles in the deck", isOn: $showQuickToggles)
@@ -404,14 +396,16 @@ private struct GeneralSettings: View {
                 Text("A row for dark mode, microphone mute and Empty Trash. Dark mode and Empty Trash ask macOS for Automation access the first time.")
                     .settingsFooter()
             }
-            Section {
+            AdvancedSection {
+                Picker("Update every", selection: $settings.refreshInterval) {
+                    Text("1 second").tag(1.0)
+                    Text("2 seconds").tag(2.0)
+                    Text("3 seconds").tag(3.0)
+                    Text("5 seconds").tag(5.0)
+                }
                 Toggle("Turn Bluetooth off while the Mac sleeps", isOn: $settings.bluetoothOffWhileAsleep)
                     .disabled(!BluetoothSnooze.shared.isAvailable)
-            } header: {
-                Text("Sleep")
-            } footer: {
-                Text(bluetoothFooter)
-                    .settingsFooter()
+                Text(bluetoothFooter).settingsFooter()
             }
         }
         .formStyle(.grouped)
@@ -489,12 +483,13 @@ private struct ShortcutSettings: View {
             }
             Section {
                 Toggle("Enable keyboard shortcuts", isOn: $settings.hotkeysEnabled)
+            }
+            AdvancedSection {
                 Picker("Modifier keys", selection: $settings.hotkeyModifier) {
                     ForEach(HotkeyModifier.allCases) { Text($0.symbols).tag($0) }
                 }
                 .disabled(!settings.hotkeysEnabled)
-            }
-            Section("Shortcuts") {
+
                 ForEach(Array(Module.allCases.enumerated()), id: \.element) { index, module in
                     HStack {
                         Label(module.title, systemImage: module.symbol)
@@ -518,6 +513,16 @@ private struct ShortcutSettings: View {
                 if status != secureInput { secureInput = status }
                 try? await Task.sleep(for: .seconds(2))
             }
+        }
+    }
+}
+
+/// Collapsed "Advanced" section for rarely changed options; rows only (no nested sections).
+struct AdvancedSection<Content: View>: View {
+    @ViewBuilder var content: Content
+    var body: some View {
+        Section {
+            DisclosureGroup("Advanced") { content }
         }
     }
 }

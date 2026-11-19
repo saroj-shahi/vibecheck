@@ -14,19 +14,19 @@ struct SecureInputStatus: Equatable, Sendable {
 
     /// One line for the deck; the full `message` goes in its tooltip.
     var shortMessage: String {
-        appName.map { "Shortcuts paused: secure keyboard entry is on (macOS points to \($0))" }
-            ?? "Shortcuts paused: secure keyboard entry is on"
+        appName.map { String(localized: "Shortcuts paused: secure keyboard entry is on (macOS points to \($0))") }
+            ?? String(localized: "Shortcuts paused: secure keyboard entry is on")
     }
 
     /// Plain-language warning for Settings.
     var message: String {
         // macOS records the app that was frontmost when secure input started, which isn't always the one
         // holding it (seen 2026-11-18: a command-line tool's secure input was reported as Chrome's).
-        let generic = "Look for an open password field, or Secure Keyboard Entry in a terminal app."
+        let generic = String(localized: "Look for an open password field, or Secure Keyboard Entry in a terminal app.")
         if let appName {
-            return "Shortcuts are paused while secure keyboard entry is on. macOS points to \(appName). " + generic
+            return String(localized: "Shortcuts are paused while secure keyboard entry is on. macOS points to \(appName).") + " " + generic
         }
-        return "Shortcuts are paused while secure keyboard entry is on. " + generic
+        return String(localized: "Shortcuts are paused while secure keyboard entry is on.") + " " + generic
     }
 }
 

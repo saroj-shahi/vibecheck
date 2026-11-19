@@ -82,10 +82,10 @@ final class NetworkMonitor {
     static func fallbackName(_ bsd: String) -> String {
         switch bsd {
         case let n where n.hasPrefix("utun"): "VPN / tunnel (\(n))"
-        case let n where n.hasPrefix("awdl"): "AirDrop (\(n))"
-        case let n where n.hasPrefix("llw"): "Low-latency Wi-Fi (\(n))"
-        case let n where n.hasPrefix("bridge"): "Bridge (\(n))"
-        case let n where n.hasPrefix("anpi"): "Internal link (\(n))"
+        case let n where n.hasPrefix(String(localized: "awdl")): String(localized: "AirDrop (\(n))")
+        case let n where n.hasPrefix(String(localized: "llw")): String(localized: "Low-latency Wi-Fi (\(n))")
+        case let n where n.hasPrefix(String(localized: "bridge")): String(localized: "Bridge (\(n))")
+        case let n where n.hasPrefix(String(localized: "anpi")): String(localized: "Internal link (\(n))")
         default: bsd
         }
     }

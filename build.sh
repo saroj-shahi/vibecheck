@@ -17,6 +17,16 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp .build/release/VibeCheck "$APP/Contents/MacOS/VibeCheck"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
+# Strings: SwiftPM compiles Sources/VibeCheck/Resources/Localizable.xcstrings into <language>.lproj folders inside
+# its resource bundle. SwiftUI's Text("…") and String(localized:) look in the main bundle, so copy them there.
+LPROJ_FOUND=0
+for lproj in .build/release/VibeCheck_VibeCheck.bundle/Contents/Resources/*.lproj .build/release/VibeCheck_VibeCheck.bundle/*.lproj; do
+  [ -d "$lproj" ] || continue
+  cp -R "$lproj" "$APP/Contents/Resources/"
+  LPROJ_FOUND=1
+done
+[ "$LPROJ_FOUND" = 1 ] || { echo "error: compiled strings (*.lproj) missing from the SwiftPM resource bundle" >&2; exit 1; }
+
 if xcrun --find appintentsmetadataprocessor >/dev/null 2>&1; then
   find "$PWD/Sources/VibeCheck" -name '*.swift' > "$INTENTS/sources.txt"
   echo "$PWD/$INTENTS/VibeCheck.swiftconstvalues" > "$INTENTS/constvals.txt"
@@ -33,6 +43,18 @@ fi
 
 # The icon is rendered from branding/svg by scripts/render_brand.swift and committed.
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+
+# Liquid Glass icon (macOS 26+): compile branding/VibeCheck.icon into Assets.car. CFBundleIconName in
+# Info.plist points at it; macOS 14-15 keep using AppIcon.icns above. Skipped if actool can't do it.
+ICON_OUT="$(mktemp -d)"
+if xcrun actool branding/VibeCheck.icon --compile "$ICON_OUT" --app-icon VibeCheck --platform macosx \
+     --minimum-deployment-target 14.0 --output-partial-info-plist "$ICON_OUT/partial.plist" \
+     --enable-on-demand-resources NO >/dev/null 2>&1 && [ -f "$ICON_OUT/Assets.car" ]; then
+  cp "$ICON_OUT/Assets.car" "$APP/Contents/Resources/Assets.car"
+else
+  echo "warning: actool could not compile branding/VibeCheck.icon; using the flat icon only" >&2
+  /usr/libexec/PlistBuddy -c "Delete :CFBundleIconName" "$APP/Contents/Info.plist" 2>/dev/null || true
+fi
 
 # Signing identity, best first (override with VIBECHECK_SIGN_IDENTITY):
 # 1. "Apple Development: …" (free with an Apple ID in Xcode). It carries a Team ID, and Keychain

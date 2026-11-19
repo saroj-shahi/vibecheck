@@ -11,7 +11,7 @@ struct CombinedLabel: View {
         let all = settings.orderedModules
         let shown = fit?.visibleCount.map { Array(all.prefix($0)) } ?? all
         HStack(spacing: settings.menuBarSpacing.between) {
-            if settings.showVibeRing { VibeRing(vibe: stats.vibe.vibe).frame(height: 22) }
+            if settings.ringVisible { VibeRing(vibe: stats.vibe.vibe, awake: AwakeCup.inRing(settings)).frame(height: 22) }
             if AwakeCup.isShown(settings) { AwakeCup() }
             ForEach(shown) { MenuBarLabel(module: $0, padded: false) }
             if shown.count < all.count {
@@ -40,10 +40,16 @@ struct HiddenCountChip: View {
 
 /// Small cup shown in the menu bar while a keep-awake session runs.
 struct AwakeCup: View {
-    @MainActor static func isShown(_ settings: AppSettings) -> Bool {
-        // Not while the standalone Keep Awake item is on: it already shows the state.
+    /// A session runs and the cup is wanted in the ring (not while the standalone item shows the state).
+    @MainActor static func wanted(_ settings: AppSettings) -> Bool {
         settings.keepAwakeShowInMenuBar && KeepAwake.shared.isActive && !settings.keepAwakeMenuBarItem
     }
+
+    /// The cup is drawn inside the ring's centre, so the item's width never changes.
+    @MainActor static func inRing(_ settings: AppSettings) -> Bool { wanted(settings) && settings.ringVisible }
+
+    /// A separate cup beside the other content: only when there is no ring to hold it.
+    @MainActor static func isShown(_ settings: AppSettings) -> Bool { wanted(settings) && !settings.ringVisible }
 
     var body: some View {
         if let session = KeepAwake.shared.session, session.focus {

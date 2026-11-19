@@ -15,23 +15,26 @@ enum AwakeEnd: Hashable {
     case at(Date)
     /// While an app keeps running.
     case whileRunning(bundleID: String, name: String)
+    /// While a dropped file or folder keeps changing; ends once it has been quiet for a while.
+    case whileChanging(path: String, name: String)
     /// Started by a trigger (power adapter, external display); ends when the trigger goes away.
     case whileTriggered(String)
 }
 
 /// Why a session stopped by itself.
 enum AwakeEndReason: Equatable {
-    case timeUp, appQuit, lowBattery, triggerOff
+    case timeUp, appQuit, lowBattery, triggerOff, fileDone
     /// A focus session ran its full length.
     case focusDone
 
     var message: String {
         switch self {
-        case .timeUp: "Time's up."
-        case .appQuit: "The app it was waiting on quit."
-        case .lowBattery: "The battery got low."
-        case .triggerOff: "What started it is gone (unplugged, display disconnected, downloads done, schedule over or agent finished)."
-        case .focusDone: "Focus session done. Take a break."
+        case .timeUp: String(localized: "Time's up.")
+        case .appQuit: String(localized: "The app it was waiting on quit.")
+        case .lowBattery: String(localized: "The battery got low.")
+        case .triggerOff: String(localized: "What started it is gone (unplugged, display disconnected, downloads done, schedule over or agent finished).")
+        case .focusDone: String(localized: "Focus session done. Take a break.")
+        case .fileDone: String(localized: "The file it was waiting on stopped changing.")
         }
     }
 
@@ -47,11 +50,14 @@ struct AwakeSession: Equatable {
 
     /// Checks the session's end condition and the battery floor (0 = no floor). Plain function so it's testable.
     static func endReason(_ session: AwakeSession, now: Date, battery: BatterySample, batteryFloor: Int,
-                          isRunning: (String) -> Bool) -> AwakeEndReason? {
+                          isRunning: (String) -> Bool,
+                          lastChange: (String) -> Date? = { _ in nil }) -> AwakeEndReason? {
         switch session.end {
         case .never, .whileTriggered: break
         case .at(let date): if now >= date { return session.focus ? .focusDone : .timeUp }
         case .whileRunning(let bundleID, _): if !isRunning(bundleID) { return .appQuit }
+        case .whileChanging(let path, _):
+            if PathActivity.isQuiet(lastChange: lastChange(path), started: session.started, now: now) { return .fileDone }
         }
         if batteryFloor > 0, battery.present, !battery.onAC, battery.percent * 100 < Double(batteryFloor) {
             return .lowBattery
@@ -64,6 +70,7 @@ struct AwakeSession: Equatable {
         switch end {
         case .never: return "until you stop it"
         case .whileRunning(_, let name): return "until \(name) quits"
+        case .whileChanging(_, let name): return "until \(name) stops changing"
         case .whileTriggered(let description): return description
         case .at(let date):
             let minutes = max(0, Int((date.timeIntervalSince(now) / 60).rounded(.up)))
@@ -166,10 +173,12 @@ enum AwakeTriggerAction: Equatable {
     /// schedule (until …)", or several;
     /// nil when no trigger is on and met.
     static func description(onPower: Bool, externalDisplay: Bool, downloading: Bool = false,
-                            schedule: String? = nil, agentWorking: Bool = false) -> String? {
+                            schedule: String? = nil, agentWorking: Bool = false,
+                            onCall: Bool = false, wifi: String? = nil, focus: Bool = false) -> String? {
         let parts = [onPower ? "plugged in" : nil, externalDisplay ? "a display is connected" : nil,
                      downloading ? "files are downloading" : nil, schedule,
-                     agentWorking ? "an AI agent is working" : nil].compactMap { $0 }
+                     agentWorking ? "an AI agent is working" : nil, onCall ? "you're on a call" : nil,
+                     wifi.map { "on Wi-Fi \($0)" }, focus ? "a Focus asks for it" : nil].compactMap { $0 }
         guard let last = parts.last else { return nil }
         let head = parts.dropLast().joined(separator: ", ")
         return "while " + (head.isEmpty ? last : head + " and " + last)
@@ -229,6 +238,7 @@ final class KeepAwake {
 
     func stop(reason: AwakeEndReason? = nil) {
         guard session != nil else { return }
+        if case .whileChanging(let path, _) = session?.end { PathActivity.shared.forget(path) }
         session = nil
         lastEndReason = reason
         releaseAssertion()
@@ -247,12 +257,14 @@ final class KeepAwake {
     func check(now: Date = Date()) {
         evaluateTriggers()
         guard let session else { return }
+        if case .whileChanging(let path, _) = session.end { PathActivity.shared.refreshIfDue(path: path, now: now) }
         let running = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier))
         if let reason = AwakeSession.endReason(session, now: now, battery: batteryProvider(),
                                                batteryFloor: settings.keepAwakeBatteryFloor,
-                                               isRunning: running.contains) {
+                                               isRunning: running.contains,
+                                               lastChange: { PathActivity.shared.lastChange($0) }) {
             stop(reason: reason)
-        } else if assertionKeepsDisplayOn != settings.keepAwakeDisplayOn {
+        } else if assertionKeepsDisplayOn != wantsDisplayOn {
             applyAssertion()
         }
     }
@@ -271,7 +283,10 @@ final class KeepAwake {
             schedule: settings.keepAwakeOnSchedule && settings.keepAwakeSchedule.isActive(at: Date())
                 ? settings.keepAwakeSchedule.description() : nil,
             agentWorking: settings.keepAwakeWhileAgentWorks
-                && AgentWatch.anyWorking(AgentUsageStore.shared.sample.agents, now: Date()))
+                && AgentWatch.anyWorking(AgentUsageStore.shared.sample.agents, now: Date()),
+            onCall: settings.callGuardEnabled && CallGuard.shared.inCall,
+            wifi: wifiMatch(),
+            focus: FocusFilterState.keepAwakeActive(focus: FocusFilterStore.shared.state))
         let action = AwakeTriggerAction.decide(active: active, wasActive: triggerWasActive, session: session)
         triggerWasActive = active != nil
         switch action {
@@ -279,6 +294,20 @@ final class KeepAwake {
         case .stop: stop(reason: .triggerOff)
         case .none: break
         }
+    }
+
+    /// The wanted network's name while the trigger is on and the Mac is connected to it.
+    private func wifiMatch() -> String? {
+        guard settings.keepAwakeWhileOnWiFi else { return nil }
+        WiFiTrigger.shared.refresh()
+        let wanted = settings.keepAwakeWiFiName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return WiFiTrigger.matches(current: WiFiTrigger.shared.ssid, wanted: wanted) ? wanted : nil
+    }
+
+    /// The display stays on during a call even when "keep display on" is off.
+    private var wantsDisplayOn: Bool {
+        settings.keepAwakeDisplayOn || (settings.callGuardEnabled && CallGuard.shared.inCall)
+            || FocusFilterState.keepAwakeActive(focus: FocusFilterStore.shared.state)
     }
 
     /// Any display that isn't the built-in panel (on a desktop Mac, any display).
@@ -292,7 +321,7 @@ final class KeepAwake {
     // MARK: Power assertion
 
     private func applyAssertion() {
-        let displayOn = settings.keepAwakeDisplayOn
+        let displayOn = wantsDisplayOn
         guard assertionKeepsDisplayOn != displayOn || assertionID == 0 else { return }
         releaseAssertion()
         // Display assertion keeps both the screen and the system awake; the system one lets the screen dim and sleep.

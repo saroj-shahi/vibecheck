@@ -361,11 +361,13 @@ struct MetricChart: View {
         let fraction = (Double(bucket) + 0.5) / Double(ChartResampler.buckets)
         if range == .live {
             let secondsAgo = Int(((1 - fraction) * liveSpan).rounded())
-            when = secondsAgo < 3 ? "now" : secondsAgo < 60 ? "\(secondsAgo)s ago" : "\(secondsAgo / 60)m \(secondsAgo % 60)s ago"
+            when = secondsAgo < 3 ? String(localized: "now")
+                : secondsAgo < 60 ? String(localized: "\(secondsAgo)s ago")
+                : String(localized: "\(secondsAgo / 60)m \(secondsAgo % 60)s ago")
         } else {
             let date = Date(timeIntervalSinceNow: -(1 - fraction) * range.span)
             when = date.formatted(date: .omitted, time: .shortened)
         }
-        return (values.isEmpty ? ["No data"] : values).joined(separator: " · ") + " · " + when
+        return (values.isEmpty ? [String(localized: "No data")] : values).joined(separator: " · ") + " · " + when
     }
 }

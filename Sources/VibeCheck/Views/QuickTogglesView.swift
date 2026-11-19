@@ -1,28 +1,21 @@
 import SwiftUI
 
-/// Row of three quick toggles on the deck home: dark mode, microphone mute, Empty Trash.
+/// Row of two quick toggles on the deck home: dark mode and microphone mute. (Empty Trash lives in the
+/// ⌘K palette only.) A toggle that fails shakes; its symbol swaps with a replace transition.
 struct QuickTogglesView: View {
     private let actions = QuickActions.shared
-    @State private var confirming = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if confirming {
-                confirmRow
-            } else {
-                HStack(spacing: 8) {
-                    chip(symbol: actions.isDark ? "moon.fill" : "sun.max", label: "Dark", on: actions.isDark,
-                         spoken: "Dark mode, \(actions.isDark ? "on" : "off")",
-                         help: "Switch to \(actions.isDark ? "light" : "dark") mode") { actions.toggleDarkMode() }
-                    chip(symbol: actions.isMicMuted ? "mic.slash.fill" : "mic.fill", label: "Mic", on: actions.isMicMuted,
-                         spoken: "Microphone, \(actions.isMicMuted ? "muted" : "on")",
-                         help: actions.isMicMuted ? "Unmute the microphone" : "Mute the microphone") { actions.toggleMic() }
-                    chip(symbol: "trash", label: QuickActionsText.trashLabel(count: actions.trashCount), on: false,
-                         spoken: QuickActionsText.trashSpoken(count: actions.trashCount), help: "Empty Trash",
-                         disabled: actions.trashCount == 0) {
-                        withAnimation(Deck.animation) { confirming = true }
-                    }
-                }
+            HStack(spacing: 8) {
+                QuickChip(symbol: actions.isDark ? "moon.fill" : "sun.max", label: "Dark", on: actions.isDark,
+                          spoken: actions.isDark ? String(localized: "Dark mode, on") : String(localized: "Dark mode, off"),
+                          help: actions.isDark ? "Switch to light mode" : "Switch to dark mode",
+                          failTick: actions.failedToggle == .dark ? actions.failureTick : 0) { actions.toggleDarkMode() }
+                QuickChip(symbol: actions.isMicMuted ? "mic.slash.fill" : "mic.fill", label: "Mic", on: actions.isMicMuted,
+                          spoken: actions.isMicMuted ? String(localized: "Microphone, muted") : String(localized: "Microphone, on"),
+                          help: actions.isMicMuted ? "Unmute the microphone" : "Mute the microphone",
+                          failTick: actions.failedToggle == .mic ? actions.failureTick : 0) { actions.toggleMic() }
             }
             if let message = actions.failure {
                 Text(message)
@@ -35,38 +28,65 @@ struct QuickTogglesView: View {
         .animation(Deck.animation, value: actions.failure)
         .onAppear { actions.refresh() }
     }
+}
 
-    private var confirmRow: some View {
-        HStack(spacing: 8) {
-            Text(QuickActionsText.confirmPrompt(count: actions.trashCount))
-                .font(.system(size: 12, weight: .medium))
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, 4)
-            Button("Cancel") { withAnimation(Deck.animation) { confirming = false } }
-                .buttonStyle(QuickChipStyle(on: false))
-            Button("Empty") {
-                withAnimation(Deck.animation) { confirming = false }
-                actions.emptyTrash()
-            }
-            .buttonStyle(QuickChipStyle(on: true))
-            .accessibilityLabel(QuickActionsText.trashSpoken(count: actions.trashCount))
-        }
+/// Horizontal shake: `amount` pt side to side, two swings per whole step of `progress`.
+struct ShakeEffect: GeometryEffect {
+    static let amount: CGFloat = 3
+    static let duration = 0.24
+    var progress: CGFloat
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
     }
 
-    private func chip(symbol: String, label: String, on: Bool, spoken: String, help: String,
-                      disabled: Bool = false, action: @escaping () -> Void) -> some View {
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        ProjectionTransform(CGAffineTransform(translationX: Self.amount * sin(progress * .pi * 4), y: 0))
+    }
+}
+
+private struct QuickChip: View {
+    let symbol: String
+    let label: LocalizedStringKey
+    let on: Bool
+    let spoken: String
+    let help: LocalizedStringKey
+    /// Changes whenever this toggle's action fails; 0 while it is not the one that failed.
+    let failTick: Int
+    let action: () -> Void
+    @State private var shake: CGFloat = 0
+    @State private var dimmed = false
+
+    var body: some View {
         Button(action: action) {
             HStack(spacing: 5) {
-                Image(systemName: symbol).font(.system(size: 11, weight: .semibold))
+                Image(systemName: symbol)
+                    .font(.system(size: 11, weight: .semibold))
+                    .contentTransition(.symbolEffect(.replace))
+                    .animation(Deck.reduceMotion ? nil : .default, value: symbol)
                 Text(label).font(.system(size: 11, weight: .medium)).lineLimit(1)
             }
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(QuickChipStyle(on: on))
-        .disabled(disabled)
+        .modifier(ShakeEffect(progress: shake))
+        .opacity(dimmed ? 0.35 : 1)
         .help(help)
         .accessibilityLabel(spoken)
+        .onChange(of: failTick) { _, tick in
+            guard tick != 0 else { return }
+            if Deck.reduceMotion {
+                // No motion: fade down and back up instead.
+                withAnimation(.easeOut(duration: ShakeEffect.duration / 2)) { dimmed = true }
+                Task {
+                    try? await Task.sleep(for: .milliseconds(120))
+                    withAnimation(.easeIn(duration: ShakeEffect.duration / 2)) { dimmed = false }
+                }
+            } else {
+                shake = 0
+                withAnimation(.linear(duration: ShakeEffect.duration)) { shake = 1 }
+            }
+        }
     }
 }
 

@@ -42,6 +42,37 @@ enum NotchFit {
     }
 }
 
+extension NotchFit {
+    /// True when macOS has put an item behind the notch (its frame overlaps the notch gap) or off the left
+    /// edge of the screen. nil areas mean the display has no notch.
+    static func isHidden(itemRect: NSRect, screenFrame: NSRect, notchLeft: NSRect?, notchRight: NSRect?) -> Bool {
+        guard let left = notchLeft, let right = notchRight else { return false }
+        if itemRect.minX < screenFrame.minX - 1 { return true }
+        let overlap = min(itemRect.maxX, right.minX) - max(itemRect.minX, left.maxX)
+        return overlap > itemRect.width / 2
+    }
+}
+
+/// Debounce for the notch auto-collapse: only reports once an item has stayed hidden for `hold` seconds, and
+/// starts over whenever it shows up again.
+struct NotchHideWatch {
+    var hiddenSince: Date?
+
+    mutating func update(hidden: Bool, now: Date, hold: TimeInterval = 8) -> Bool {
+        guard hidden else { hiddenSince = nil; return false }
+        let since = hiddenSince ?? now
+        hiddenSince = since
+        return now.timeIntervalSince(since) >= hold
+    }
+
+    /// Whether VibeCheck may collapse by itself: separate items, the fit setting on, and the owner hasn't
+    /// switched separate items back on after an earlier collapse.
+    static func mayCollapse(separate: Bool, autoFit: Bool, optedOut: Bool) -> Bool { separate && autoFit && !optedOut }
+
+    static var noticeTitle: String { String(localized: "Switched to one menu bar item") }
+    static var noticeBody: String { String(localized: "Your Mac's notch was hiding some items, so VibeCheck combined them. You can switch back in Settings.") }
+}
+
 private extension Bool {
     func width(_ value: CGFloat) -> CGFloat { self ? value : 0 }
 }

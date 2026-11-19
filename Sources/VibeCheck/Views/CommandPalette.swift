@@ -27,6 +27,7 @@ struct CommandPaletteView: View {
                 }
             }
         }
+        .onAppear { QuickActions.shared.refresh() }
         .padding(.horizontal, -6)   // rows carry their own 6 pt inset; align their icons with the field's
         .overlay(alignment: .bottomTrailing) {
             if model.paletteActionsOpen, results.indices.contains(model.paletteIndex) {

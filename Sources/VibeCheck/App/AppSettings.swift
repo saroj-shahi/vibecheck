@@ -10,16 +10,16 @@ enum Module: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .cpu: "CPU"
-        case .gpu: "GPU"
-        case .memory: "Memory"
-        case .network: "Network"
-        case .disk: "Disk"
-        case .sensors: "Sensors"
-        case .battery: "Battery"
-        case .clock: "Clock"
-        case .weather: "Weather"
-        case .agents: "Agents"
+        case .cpu: String(localized: "CPU")
+        case .gpu: String(localized: "GPU")
+        case .memory: String(localized: "Memory")
+        case .network: String(localized: "Network")
+        case .disk: String(localized: "Disk")
+        case .sensors: String(localized: "Sensors")
+        case .battery: String(localized: "Battery")
+        case .clock: String(localized: "Clock")
+        case .weather: String(localized: "Weather")
+        case .agents: String(localized: "Agents")
         }
     }
 
@@ -63,6 +63,9 @@ enum Module: String, CaseIterable, Identifiable {
     }
 
     var enabledByDefault: Bool { ![.battery, .clock, .weather].contains(self) }
+
+    /// Tiles a brand-new install starts with (six, in the fixed module order). Existing installs keep their saved set.
+    var enabledForNewInstall: Bool { [.cpu, .memory, .network, .sensors, .battery, .agents].contains(self) }
 
     /// Number key for ⌘N in the deck and the global shortcuts: 1–9, then 0 for the tenth module.
     var shortcutKey: String? {
@@ -120,16 +123,16 @@ enum LabelStyle: String, CaseIterable, Identifiable {
         switch self {
         case .standard:
             switch module {
-            case .cpu, .gpu: "Graph + value"
-            case .memory: "Gauge + value"
-            case .network: "Rates + arrows"
-            case .disk: "Rates + R/W"
-            case .sensors, .battery, .weather, .agents: "Icon + value"
-            case .clock: "Time only"
+            case .cpu, .gpu: String(localized: "Graph + value")
+            case .memory: String(localized: "Gauge + value")
+            case .network: String(localized: "Rates + arrows")
+            case .disk: String(localized: "Rates + R/W")
+            case .sensors, .battery, .weather, .agents: String(localized: "Icon + value")
+            case .clock: String(localized: "Time only")
             }
-        case .iconAndValue: module == .clock ? "Icon + time" : "Icon + value"
-        case .valueOnly: "Value only"
-        case .limits: "Limits left"
+        case .iconAndValue: module == .clock ? String(localized: "Icon + time") : String(localized: "Icon + value")
+        case .valueOnly: String(localized: "Value only")
+        case .limits: String(localized: "Limits left")
         }
     }
 }
@@ -138,7 +141,7 @@ enum LabelStyle: String, CaseIterable, Identifiable {
 enum MenuBarSpacing: String, CaseIterable, Identifiable {
     case normal, compact, tight
     var id: String { rawValue }
-    var title: String { rawValue.capitalized }
+    var title: String { switch self { case .normal: String(localized: "Normal"); case .compact: String(localized: "Compact"); case .tight: String(localized: "Tight") } }
     /// Gap between an item's icon/graph and its value.
     var inner: CGFloat { switch self { case .normal: 4; case .compact: 2; case .tight: 1 } }
     /// Empty space on each side of an item.
@@ -148,9 +151,15 @@ enum MenuBarSpacing: String, CaseIterable, Identifiable {
 }
 
 enum MenuBarStyle: String, CaseIterable, Identifiable {
-    case separate, combined
+    case ring, separate, combined
     var id: String { rawValue }
-    var title: String { self == .separate ? "Separate items" : "One combined item" }
+    var title: String {
+        switch self {
+        case .ring: String(localized: "Just the vibe ring")
+        case .separate: String(localized: "Separate items")
+        case .combined: String(localized: "One combined item")
+        }
+    }
 }
 
 /// Modifier combination for the global shortcuts; the key is the module's number (1 = CPU, 2 = GPU, ...).
@@ -170,7 +179,7 @@ enum HotkeyModifier: String, CaseIterable, Identifiable {
 @MainActor
 final class AppSettings {
     static let shared = AppSettings()
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
 
     private(set) var enabledModules: Set<Module>
     var refreshInterval: Double {
@@ -184,6 +193,10 @@ final class AppSettings {
     }
     var hotkeysEnabled: Bool {
         didSet { save(hotkeysEnabled, "hotkeysEnabled", structural: true) }
+    }
+    /// Opt-in: look up the public IP address (contacts api.ipify.org).
+    var showPublicIP: Bool {
+        didSet { save(showPublicIP, "showPublicIP", structural: false) }
     }
     var hotkeyModifier: HotkeyModifier {
         didSet { save(hotkeyModifier.rawValue, "hotkeyModifier", structural: true) }
@@ -208,6 +221,19 @@ final class AppSettings {
     var notchMaxStats: Int {
         didSet { save(notchMaxStats, "notchMaxStats", structural: true) }
     }
+    /// Notch auto-collapse state (per Mac, not part of backups): the one-time notice was shown; VibeCheck
+    /// switched to the combined item by itself; the owner switched back to separate items, so don't again.
+    var notchNoticeShown: Bool {
+        didSet { save(notchNoticeShown, "notchNoticeShown", structural: false) }
+    }
+    var notchAutoCollapsed: Bool {
+        didSet { save(notchAutoCollapsed, "notchAutoCollapsed", structural: false) }
+    }
+    var notchCollapseOptOut: Bool {
+        didSet { save(notchCollapseOptOut, "notchCollapseOptOut", structural: false) }
+    }
+    /// The ring is drawn when it's on, and always in the ring-only style.
+    var ringVisible: Bool { showVibeRing || menuBarStyle == .ring }
     var showVibeRing: Bool {
         didSet { save(showVibeRing, "showVibeRing", structural: true) }
     }
@@ -292,6 +318,23 @@ final class AppSettings {
             KeepAwake.shared.check()
         }
     }
+    /// Call guard: while the camera or mic is in use, hold non-critical alerts, keep the display awake and
+    /// warn about one heavy app.
+    var callGuardEnabled: Bool {
+        didSet { save(callGuardEnabled, "callGuardEnabled", structural: false); KeepAwake.shared.check() }
+    }
+    /// Trigger: stay awake while connected to the Wi-Fi network named in `keepAwakeWiFiName`.
+    /// Asks for Location permission when switched on (macOS hides network names without it).
+    var keepAwakeWhileOnWiFi: Bool {
+        didSet {
+            save(keepAwakeWhileOnWiFi, "keepAwakeWhileOnWiFi", structural: false)
+            if keepAwakeWhileOnWiFi { WiFiTrigger.shared.requestAccess() }
+            KeepAwake.shared.check()
+        }
+    }
+    var keepAwakeWiFiName: String {
+        didSet { save(keepAwakeWiFiName, "keepAwakeWiFiName", structural: false); KeepAwake.shared.check() }
+    }
     /// Notify when an agent finishes a run of 10 minutes or more.
     var notifyAgentFinished: Bool {
         didSet { save(notifyAgentFinished, "notifyAgentFinished", structural: false); AgentUsageStore.shared.refresh() }
@@ -350,10 +393,14 @@ final class AppSettings {
         }
     }
 
-    private init() {
+    private convenience init() { self.init(defaults: .standard) }
+
+    /// Internal so tests can use a throwaway suite.
+    init(defaults: UserDefaults) {
+        self.defaults = defaults
         let stored = defaults.array(forKey: "enabledModules") as? [String]
         var enabled = stored.map { Set($0.compactMap(Module.init(rawValue:))) }
-            ?? Set(Module.allCases.filter(\.enabledByDefault))
+            ?? Set(Module.allCases.filter(\.enabledForNewInstall))
         // Modules added in a newer version show up once if they're on by default.
         // Before "knownModules" existed (v1.0), every module except GPU and Sensors had shipped.
         let known = (defaults.array(forKey: "knownModules") as? [String])
@@ -368,9 +415,12 @@ final class AppSettings {
         let interval = defaults.double(forKey: "refreshInterval")
         refreshInterval = interval > 0 ? interval : 2
         launchAtLogin = SMAppService.mainApp.status == .enabled
-        // New installs start with the single combined item; existing choices are kept.
-        menuBarStyle = defaults.string(forKey: "menuBarStyle").flatMap(MenuBarStyle.init(rawValue:)) ?? .combined
+        // New installs start with just the vibe ring (the deck has everything else); an existing install
+        // (it had saved its modules) without a stored choice keeps the combined item.
+        menuBarStyle = defaults.string(forKey: "menuBarStyle").flatMap(MenuBarStyle.init(rawValue:))
+            ?? (stored == nil ? .ring : .combined)
         hotkeysEnabled = defaults.object(forKey: "hotkeysEnabled") as? Bool ?? true
+        showPublicIP = defaults.object(forKey: "showPublicIP") as? Bool ?? false
         hotkeyModifier = defaults.string(forKey: "hotkeyModifier").flatMap(HotkeyModifier.init(rawValue:))
             ?? .controlOptionCommand
         let storedOrder = (defaults.array(forKey: "moduleOrder") as? [String] ?? []).compactMap(Module.init(rawValue:))
@@ -389,6 +439,9 @@ final class AppSettings {
         menuBarSpacing = defaults.string(forKey: "menuBarSpacing").flatMap(MenuBarSpacing.init(rawValue:)) ?? .normal
         autoFitNotch = defaults.object(forKey: "autoFitNotch") as? Bool ?? true
         notchMaxStats = defaults.integer(forKey: "notchMaxStats")
+        notchNoticeShown = defaults.bool(forKey: "notchNoticeShown")
+        notchAutoCollapsed = defaults.bool(forKey: "notchAutoCollapsed")
+        notchCollapseOptOut = defaults.bool(forKey: "notchCollapseOptOut")
         showVibeRing = defaults.object(forKey: "showVibeRing") as? Bool ?? true
         colorfulMenuBar = defaults.object(forKey: "colorfulMenuBar") as? Bool ?? true
         clockFormat = defaults.string(forKey: "clockFormat").flatMap(ClockFormat.init(rawValue:)) ?? .dayTime
@@ -415,6 +468,9 @@ final class AppSettings {
         keepAwakeOnSchedule = defaults.bool(forKey: "keepAwakeOnSchedule")
         keepAwakeWhileAgentWorks = defaults.bool(forKey: "keepAwakeWhileAgentWorks")
         notifyAgentFinished = defaults.bool(forKey: "notifyAgentFinished")
+        callGuardEnabled = defaults.object(forKey: "callGuardEnabled") as? Bool ?? true
+        keepAwakeWhileOnWiFi = defaults.bool(forKey: "keepAwakeWhileOnWiFi")
+        keepAwakeWiFiName = defaults.string(forKey: "keepAwakeWiFiName") ?? ""
         keepAwakeScheduleDays = defaults.object(forKey: "keepAwakeScheduleDays") as? Int ?? AwakeSchedule.weekdays
         keepAwakeScheduleStart = defaults.object(forKey: "keepAwakeScheduleStart") as? Int ?? 9 * 60
         keepAwakeScheduleEnd = defaults.object(forKey: "keepAwakeScheduleEnd") as? Int ?? 17 * 60
@@ -509,6 +565,9 @@ final class AppSettings {
     }
 
     func isEnabled(_ module: Module) -> Bool { enabledModules.contains(module) }
+    /// Whether the module's number is in the menu bar (its own item or the combined one). "Just the vibe ring"
+    /// draws no module numbers, so the ring badge must name the culprit there.
+    func showsInMenuBar(_ module: Module) -> Bool { menuBarStyle != .ring && isEnabled(module) }
 
     func setEnabled(_ module: Module, _ enabled: Bool) {
         if enabled { enabledModules.insert(module) } else {

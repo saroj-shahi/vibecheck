@@ -53,11 +53,20 @@ final class SystemStats {
     @ObservationIgnored private var fetchingDevices = false
     private(set) var uptime: TimeInterval = 0
     private(set) var processes: [ProcessRow] = []
-    private(set) var vibe = VibeReport(vibe: .vibing, verdict: "Checking the vibes…")
+    private(set) var vibe = VibeReport(vibe: .vibing, verdict: String(localized: "Checking the vibes…"))
     @ObservationIgnored private var vibeTracker = VibeTracker()
     @ObservationIgnored var refreshInterval: TimeInterval = 2
     private(set) var networkApps: [AppNetworkUsage] = []
     @ObservationIgnored private var fetchingNetworkApps = false
+    private(set) var wifi: WiFiInfo?
+    private(set) var publicIP: String?
+    private(set) var appTraffic = AppTrafficHistory()
+    @ObservationIgnored private var lastNetworkAppSample: Date?
+    @ObservationIgnored private var fetchingWiFi = false
+    @ObservationIgnored private var lastWiFiFetch = Date.distantPast
+    @ObservationIgnored private var fetchingPublicIP = false
+    @ObservationIgnored private var lastPublicIPFetch: Date?
+    @ObservationIgnored private var lastNetworkKey: String?
     private(set) var listeningPorts: [ListeningPort] = []
     @ObservationIgnored private var fetchingPorts = false
     @ObservationIgnored private var lastPortFetch = Date.distantPast
@@ -71,6 +80,8 @@ final class SystemStats {
     }
 
     let history = HistoryStore()
+    let vibeReplay = VibeReplayStore()
+    let batteryLog = BatteryLogStore()
     /// Called after every sample; the app delegate hooks alerts in here.
     var onTick: (() -> Void)?
 
@@ -132,6 +143,7 @@ final class SystemStats {
         network = networkMonitor.sample()
         downloadHistory.append(network.download)
         uploadHistory.append(network.upload)
+        refreshNetworkExtrasIfDue()
 
         disk = diskMonitor.sample()
         readHistory.append(disk.readRate)
@@ -148,7 +160,7 @@ final class SystemStats {
         if tickCount % 5 == 0 {
             volumes = DiskMonitor.volumes()
             battery = BatteryMonitor.sample()
-            if battery.present { batteryHistory.append(battery.percent) }
+            if battery.present { batteryHistory.append(battery.percent); batteryLog.record(battery) }
             // `system_profiler` once a minute is the most expensive sample: only when something shows it.
             if Self.needsDevices(batteryOn: AppSettings.shared.isEnabled(.battery), rules: AppSettings.shared.alertRules) {
                 refreshDevicesIfDue()
@@ -200,6 +212,7 @@ final class SystemStats {
                                 culprit: VibeScore.culprit(for: level, input: input),
                                 badge: VibeScore.badge(for: level, input: input))
         if report != vibe { vibe = report }
+        vibeReplay.observe(level: level, culprit: report.culprit, process: top?.0)
     }
 
     /// Accessory batteries are shown by the Battery module and checked by "Accessory battery" alerts.
@@ -219,12 +232,44 @@ final class SystemStats {
         }
     }
 
+    /// Wi-Fi details (panel open only, every 5 s) and the opt-in public IP (every 10 min and on network change).
+    private func refreshNetworkExtrasIfDue() {
+        let now = Date()
+        if networkAppDemand > 0, !fetchingWiFi, now.timeIntervalSince(lastWiFiFetch) >= 5 {
+            fetchingWiFi = true
+            lastWiFiFetch = now
+            Task.detached {
+                let info = WiFiReader.read()
+                await MainActor.run { self.wifi = info; self.fetchingWiFi = false }
+            }
+        }
+        let key = "\(network.interface ?? "")|\(network.ipv4 ?? "")"
+        let changed = key != lastNetworkKey
+        lastNetworkKey = key
+        guard AppSettings.shared.showPublicIP else { publicIP = nil; lastPublicIPFetch = nil; return }
+        guard network.interface != nil else { publicIP = nil; return }
+        if !fetchingPublicIP, PublicIPFetcher.isDue(lastFetch: lastPublicIPFetch, now: now, networkChanged: changed) {
+            fetchingPublicIP = true
+            lastPublicIPFetch = now
+            Task {
+                let ip = await PublicIPFetcher.fetch()
+                if AppSettings.shared.showPublicIP { self.publicIP = ip }
+                self.fetchingPublicIP = false
+            }
+        }
+    }
+
     private func refreshNetworkApps() {
         guard !fetchingNetworkApps else { return }
         fetchingNetworkApps = true
         Task {
             let rows = await NetworkAppSampler.fetch()
             self.networkApps = NetworkAppSampler.groupByApp(rows) { NSRunningApplication(processIdentifier: $0)?.localizedName }
+            let now = Date()
+            // History only grows while the panel is open (that's when nettop runs).
+            let seconds = min(self.lastNetworkAppSample.map { now.timeIntervalSince($0) } ?? 1, 5)
+            self.lastNetworkAppSample = now
+            self.appTraffic.record(self.networkApps, seconds: seconds, now: now)
             self.fetchingNetworkApps = false
         }
     }

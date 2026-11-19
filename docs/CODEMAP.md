@@ -14,25 +14,34 @@ are added or split. Plans, decisions and history are in [ROADMAP.md](ROADMAP.md)
 | `Vibe.swift` | Vibe score (vibing / mid / cooked), the verdict sentence and its culprit module |
 | `Alerts.swift` | `AlertMetric`, `AlertRule` (sentence alerts), `AlertEngine` (evaluate, notify, history log) |
 | `KeepAwake.swift` | Sessions (`AwakeEnd`, focus sessions, triggers: power / display / downloads / `AwakeSchedule`), IOKit assertion |
+| `CallGuard.swift` | Call detection (camera/mic in use via CoreMediaIO/CoreAudio), debounce, held alerts, heavy-app warning |
+| `WiFiTrigger.swift` | Keep-awake "while on Wi-Fi X": CoreWLAN SSID, Location permission |
+| `FocusFilter.swift` | `VibeCheckFocusFilter` (`SetFocusFilterIntent`: hold alerts, keep display awake), `FocusFilterStore` (persisted per Mac) |
+| `RingDrop.swift` | `RingDropView` over the ring item's button: file / folder / app drops start keep awake (`.whileChanging` / `.whileRunning`), dilate while hovering |
+| `VibeReplay.swift` | `VibeReplayStore`: 30-day log of mid / cooked episodes (culprit, worst level), `weeklySummary`, strip `segments` |
+| `BatteryLog.swift` | `BatteryLogStore`: 90-day charge samples (every 15 min or 3% change) and daily health trend |
 | `KeepAwakeMenu.swift` | Native keep-awake menu: the menu bar item's right-click and the deck's cup |
 | `Deck.swift` | `DeckPanel` (borderless non-activating NSPanel), `DeckController` (open/close, frame, keys, outside clicks) |
 | `AgentUsage.swift` | `AgentUsageStore` (rescans agent logs every 60 s, merges live Claude limits) |
+| `ClaudeProfiles.swift` | Claude Code accounts: `ClaudeProfile` (default `~/.claude` or a `CLAUDE_CONFIG_DIR` folder; log roots, `.claude.json`, discovery of `~/.claude-*`), `ClaudeProfiles` (selected account, added folders; per Mac) |
 | `ClaudeLimits.swift` | Live Claude limits from the user's `claude` CLI (`get_usage` control request); opt-in |
 | `ProcessKiller.swift` | Quit / Force Quit (optionally with subprocesses) with protected processes and pid start-time identity |
 | `QuickActions.swift` | Quick toggles: dark mode (System Events), mic mute (CoreAudio), empty Trash (Finder) |
 | `SecureInput.swift` | Which app holds Secure Event Input (shortcuts paused) |
 | `DeckCommands.swift` | ⌘K palette: the command list, ⌘↩ actions, and how typing filters it |
+| `RecentCommands.swift` | Palette MRU (last 8 command ids, key `recentCommands`) |
 | `AgentWatch.swift` | Agent runs from `AgentUsageStore`: working-now for the keep-awake trigger, long-run "is done" notification |
 | `DownloadsWatcher.swift` | Whether files are arriving in the watched folder (keep-awake "while downloading" trigger) |
 | `BluetoothSnooze.swift` | Bluetooth off while asleep (private IOBluetooth, CoreBluetooth permission) |
 | `Weather.swift` | Open-Meteo forecast + city search, `TemperatureUnit` |
-| `Clock.swift`, `NotchFit.swift`, `Hotkeys.swift`, `HistoryStore.swift`, `NotificationLog.swift`, `SettingsBackup.swift`, `Intents.swift`, `Format.swift` | Clock formats/world clocks, notch fitting maths, global shortcuts, 1H/24H history file, notification history, settings export/import (key list!), Shortcuts actions, formatters (`Fmt`) |
+| `Clock.swift`, `NotchFit.swift` (+ `NotchHideWatch`, notch auto-collapse), `Hotkeys.swift`, `HistoryStore.swift`, `NotificationLog.swift`, `SettingsBackup.swift`, `Intents.swift`, `Format.swift` | Clock formats/world clocks, notch fitting maths, global shortcuts, 1H/24H history file, notification history, settings export/import (key list!), Shortcuts actions, formatters (`Fmt`) |
 
 ## Monitors/ (one sampler each; no UI)
 
 `CPUMonitor`, `GPUMonitor`, `MemoryMonitor`, `NetworkMonitor` (+ `NetworkAppSampler`: `nettop`), `DiskMonitor`,
 `SensorsMonitor` (HID temps, private API) + `SMC`, `BatteryMonitor`, `DeviceBatteryMonitor` (Bluetooth
 accessories via `system_profiler`), `ProcessSampler` (`ps`), `PortSampler` (`lsof`), `USBDeviceMonitor` (IOKit),
+`NetworkExtras` (`WiFiReader` CoreWLAN, `PublicIPFetcher` opt-in api.ipify.org, `AppTrafficHistory` 1 h per app),
 `AgentUsageMonitor` (parsers for Claude / Codex / Copilot / OpenCode logs, `RateWindow`, scanner, summaries).
 
 ## Views/
@@ -45,6 +54,11 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `PortSampler` (`lso
 | `CommandPalette.swift` | ⌘K palette results, ⌘↩ action card, `KeyCap`, `Caret` |
 | `Panels.swift` | `Panel`, `PanelHeader` (pinned by `DeckRoot` in the deck), detail panels per module, `ProcessList`, `ListeningPortsSection`, `USBDevicesSection` |
 | `AgentsPanel.swift` | Agents detail: Now card, charts, agent cards, `LimitGauge`, `PaceBar`, `DailyBars` |
+| `AgentLogo.swift` | Agent logos (`AgentLogo`, `AgentLogoTile`, brand colors) from SVG path data, and `SVGPath` (small path-data parser) |
+| `VibeStrip.swift` | `VibeStripView`: 24 h vibe strip + weekly sentence (top of the CPU panel) |
+| `BatteryHistoryCharts.swift` | `BatteryHistorySection`: multi-day charge chart and health trend (Battery panel) |
+| `RecoveryAndDrain.swift` | `RecoveryCheck` (cooked/mid to vibing, never on launch), `PulseCheckShape`, `CulpritDrain` (post-quit outline drain) |
+| `DeckHintView.swift` | One dismissible what's-new line on the deck home after an update |
 | `MetricChart.swift` | Detail charts (resampling, `SeriesShape`, scrubbing) |
 | `SettingsView.swift` | Settings window: `SettingsSection` (sidebar groups, icons, search keywords), `SettingsRouter.open`, sidebar, Menu Bar / General / Backup / About / Shortcuts pages, `.settingsFooter()` |
 | `SettingsModules.swift` | One Settings page per module (`ModuleSettings`): on/off, menu bar options, the module's alerts, shortcut; Claude limits, Clock and Weather sections |
@@ -60,5 +74,5 @@ pass explicit empty locations (`claudeRoots`, `opencodeDB`, `claudeConfig`, …)
 
 ## scripts/
 
-`render_brand.swift` (brand assets from `branding/svg`), `qa/` (on-screen QA tools: `scripts/qa/build.sh`,
+`extract_strings.sh` (refreshes `Sources/VibeCheck/Resources/Localizable.xcstrings` from the code; `build.sh` copies the compiled `en.lproj` into the app), `render_brand.swift` (brand assets from `branding/svg`); `branding/VibeCheck.icon` (Liquid Glass icon, compiled by `actool` in `build.sh`), `qa/` (on-screen QA tools: `scripts/qa/build.sh`,
 then `.build/qa/qa help`).

@@ -7,7 +7,10 @@ struct VibeRing: View {
     var size: CGFloat = 16
     var lineWidth: CGFloat = 2.25
     var monochromeWhenVibing = true
+    /// A keep-awake session runs: a small cup sits in the ring's centre.
+    var awake = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var checkTrigger = 0
 
     var body: some View {
         let color: Color = vibe == .vibing && monochromeWhenVibing ? .primary : vibe.color
@@ -20,11 +23,26 @@ struct VibeRing: View {
         }
         .padding(lineWidth / 2)
         .frame(width: size, height: size)
+        .overlay {
+            if awake {
+                Image(systemName: "cup.and.saucer.fill")
+                    .font(.system(size: size * 0.38, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .accessibilityHidden(true)
+            }
+        }
+        .overlay {
+            RecoveryCheckOverlay(trigger: checkTrigger, lineWidth: lineWidth, reduceMotion: reduceMotion)
+                .padding(lineWidth + size * 0.12)
+        }
+        .onChange(of: vibe) { old, new in
+            if RecoveryCheck.isRecovery(from: old, to: new) { checkTrigger += 1 }
+        }
         .animation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.5, dampingFraction: 0.75),
                    value: vibe)
         .accessibilityElement()
         .accessibilityAddTraits(.isImage)
-        .accessibilityLabel("Vibe: \(vibe.title)")
+        .accessibilityLabel(awake ? "Vibe: \(vibe.title). Keeping your Mac awake." : "Vibe: \(vibe.title)")
 
         if reduceMotion {
             ring
@@ -44,10 +62,12 @@ struct VibeRing: View {
 struct VibeItemLabel: View {
     @Environment(SystemStats.self) private var stats
     @Environment(AppSettings.self) private var settings
+    /// Only the real menu bar item has one (Settings' preview draws this label too), so it's optional.
+    @Environment(RingDropState.self) private var drop: RingDropState?
 
     /// The ring earns width only with bad news: "CPU 96%" beside it while mid or cooked, unless the culprit's
     /// own item is already in the menu bar (it would say the same thing twice).
-    static func shownBadge(_ report: VibeReport, ringShown: Bool, isShown: (Module) -> Bool) -> String? {
+    nonisolated static func shownBadge(_ report: VibeReport, ringShown: Bool, isShown: (Module) -> Bool) -> String? {
         guard ringShown, let badge = report.badge else { return nil }
         if let culprit = report.culprit, isShown(culprit) { return nil }
         return badge
@@ -55,10 +75,12 @@ struct VibeItemLabel: View {
 
     var body: some View {
         HStack(spacing: settings.menuBarSpacing.between) {
-            if settings.showVibeRing {
+            if settings.ringVisible {
                 HStack(spacing: 4) {
-                    VibeRing(vibe: stats.vibe.vibe)
-                    if let badge = Self.shownBadge(stats.vibe, ringShown: true, isShown: settings.isEnabled) {
+                    VibeRing(vibe: stats.vibe.vibe, awake: AwakeCup.inRing(settings))
+                        .scaleEffect(drop?.isTargeted == true ? RingDropState.scale : 1)
+                        .animation(.easeOut(duration: 0.12), value: drop?.isTargeted == true)
+                    if let badge = Self.shownBadge(stats.vibe, ringShown: true, isShown: settings.showsInMenuBar) {
                         Text(badge).font(.system(size: 11, weight: .medium).monospacedDigit()).lineLimit(1)
                     }
                 }

@@ -51,15 +51,29 @@ final class ClaudeLiveLimits {
         guard now.timeIntervalSince(lastAttempt) >= interval else { return }
         fetching = true
         lastAttempt = now
+        let profile = ClaudeProfiles.shared.selected
+        let configDirectory = profile.configDirectoryForCLI
         Task {
-            let result = await Task.detached(priority: .utility) { ClaudeLimitsClient.fetch() }.value
-            ClaudeLiveLimits.shared.finish(result)
+            let result = await Task.detached(priority: .utility) { ClaudeLimitsClient.fetch(configDirectory: configDirectory) }.value
+            ClaudeLiveLimits.shared.finish(result, profile: profile.id)
         }
     }
 
-    private func finish(_ result: ClaudeLimitsClient.Result) {
+    /// The Claude account changed: forget the old account's limits and ask again.
+    func profileChanged() {
+        windows = []
+        plan = nil
+        fetchedAt = nil
+        outcome = .none
+        lastAttempt = .distantPast
+        AgentUsageStore.shared.reapply()
+        if !fetching { tick() }
+    }
+
+    private func finish(_ result: ClaudeLimitsClient.Result, profile: String) {
         fetching = false
         guard isOn else { return }
+        guard profile == ClaudeProfiles.shared.selected.id else { tick(); return }
         switch result {
         case .usage(let list, let plan):
             windows = list
@@ -75,14 +89,14 @@ final class ClaudeLiveLimits {
 
     func statusText(now: Date = Date()) -> String {
         switch outcome {
-        case .none: return "Waiting for the first update"
-        case .notInstalled: return "Claude Code isn't installed"
-        case .signedOut: return "Claude Code is signed out"
-        case .noAnswer: return "Claude Code didn't answer"
+        case .none: return String(localized: "Waiting for the first update")
+        case .notInstalled: return String(localized: "Claude Code isn't installed")
+        case .signedOut: return String(localized: "Claude Code is signed out")
+        case .noAnswer: return String(localized: "Claude Code didn't answer")
         case .live:
-            guard let fetchedAt else { return "Waiting for the first update" }
+            guard let fetchedAt else { return String(localized: "Waiting for the first update") }
             let minutes = max(0, Int(now.timeIntervalSince(fetchedAt) / 60))
-            return "Live from Claude Code · updated " + (minutes == 0 ? "just now" : "\(minutes) min ago")
+            return minutes == 0 ? String(localized: "Live from Claude Code · updated just now") : String(localized: "Live from Claude Code · updated \(String(minutes)) min ago")
         }
     }
 
@@ -138,7 +152,8 @@ enum ClaudeLimitsClient {
     }
 
     /// Blocking; call off the main thread. Hard 30 s limit for the whole exchange.
-    nonisolated static func fetch() -> Result {
+    /// `configDirectory` runs Claude Code as another account (`CLAUDE_CONFIG_DIR`); nil uses the default.
+    nonisolated static func fetch(configDirectory: String? = nil) -> Result {
         guard let cli = findCLI() else { return .notInstalled }
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("vibecheck-claude-" + UUID().uuidString)
         guard (try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)) != nil else { return .noAnswer }
@@ -150,6 +165,7 @@ enum ClaudeLimitsClient {
         process.currentDirectoryURL = directory
         var environment = ProcessInfo.processInfo.environment
         environment["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+        if let configDirectory { environment["CLAUDE_CONFIG_DIR"] = configDirectory }
         process.environment = environment
         let input = Pipe(), output = Pipe()
         process.standardInput = input
@@ -207,8 +223,8 @@ enum ClaudeLimitsClient {
             return Usage(windows: [], plan: plan, available: false)
         }
         let keys: [(String, Int, String?)] = [("five_hour", 300, nil), ("seven_day", 10080, nil),
-                                              ("seven_day_opus", 10080, "Weekly · Opus"),
-                                              ("seven_day_sonnet", 10080, "Weekly · Sonnet")]
+                                              (String(localized: "seven_day_opus"), 10080, String(localized: "Weekly · Opus")),
+                                              (String(localized: "seven_day_sonnet"), 10080, String(localized: "Weekly · Sonnet"))]
         let windows = keys.compactMap { key, minutes, name -> RateWindow? in
             guard let window = limits[key] as? [String: Any],
                   let used = (window["utilization"] as? NSNumber)?.doubleValue, used.isFinite,

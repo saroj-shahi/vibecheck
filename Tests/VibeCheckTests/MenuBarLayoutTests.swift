@@ -30,6 +30,21 @@ struct MenuBarLayoutTests {
         print("menu bar widths normal/compact/tight →", report.joined(separator: ", "))
     }
 
+    /// Settings' menu bar preview hosts these labels with only settings and stats in the environment
+    /// (2026-11-19: the ring label required the drop state and opening Settings crashed).
+    @Test func previewLabelsNeedOnlySettingsAndStats() {
+        let stats = SystemStats()
+        let settings = AppSettings.shared
+        let original = (settings.menuBarStyle, settings.showVibeRing)
+        defer { settings.menuBarStyle = original.0; settings.showVibeRing = original.1 }
+        for style in MenuBarStyle.allCases {
+            settings.menuBarStyle = style
+            settings.showVibeRing = true
+            #expect(width(VibeItemLabel(), stats: stats, settings: settings) > 10, "\(style)")
+            #expect(width(CombinedLabel(), stats: stats, settings: settings) > 10, "\(style)")
+        }
+    }
+
     @Test func combinedItemShrinksWithSpacing() {
         let stats = SystemStats()
         let settings = AppSettings.shared

@@ -8,7 +8,7 @@ struct NotificationBellButton: View {
 
     var body: some View {
         let unseen = log.unseenCount
-        let help = unseen > 0 ? "\(unseen) new notification\(unseen == 1 ? "" : "s")" : "Recent notifications"
+        let help: LocalizedStringKey = unseen > 0 ? (unseen == 1 ? "\(unseen) new notification" : "\(unseen) new notifications") : "Recent notifications"
         Button { showing.toggle() } label: {
             Image(systemName: "bell")
                 .font(.system(size: 12, weight: .medium))
@@ -99,7 +99,7 @@ private struct NotificationRow: View {
     private var timeText: String {
         let time = entry.date.formatted(date: .omitted, time: .shortened)
         if Calendar.current.isDateInToday(entry.date) { return time }
-        if Calendar.current.isDateInYesterday(entry.date) { return "Yesterday \(time)" }
+        if Calendar.current.isDateInYesterday(entry.date) { return String(localized: "Yesterday \(time)") }
         return entry.date.formatted(.dateTime.month(.abbreviated).day().hour().minute())
     }
 }

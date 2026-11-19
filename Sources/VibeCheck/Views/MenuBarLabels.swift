@@ -248,24 +248,25 @@ struct MenuBarLabel: View {
     @ViewBuilder
     private func agentsContent(_ options: ItemOptions) -> some View {
         let showIcon = style != .valueOnly
-        switch AgentUsageStore.shared.sample.menuBarContent(options) {
+        let sample = AgentUsageStore.shared.sample
+        let agent = sample.menuBarAgent(options)
+        switch sample.menuBarContent(options) {
         case .limits(let limits, let used):
-            AgentLimitsLabel(limits: limits, tint: tint(Palette.agents), used: used,
+            AgentLimitsLabel(limits: limits, tint: tint(Palette.agents), agent: agent, used: used,
                              showReset: options.agentShowReset, showIcon: showIcon)
         case .claudeEstimate(let block, let today) where options.agentShowReset:
             ClaudeEstimateLabel(block: block, today: today, tint: tint(Palette.agents), showIcon: showIcon)
         case .claudeEstimate(_, let today):
-            agentTokens(today, showIcon: showIcon)
+            agentTokens(today, agent: agent, showIcon: showIcon)
         case .tokens(let total):
-            agentTokens(total, showIcon: showIcon)
+            agentTokens(total, agent: agent, showIcon: showIcon)
         }
     }
 
-    private func agentTokens(_ total: Int, showIcon: Bool) -> some View {
+    private func agentTokens(_ total: Int, agent: AgentKind, showIcon: Bool) -> some View {
         HStack(spacing: gap) {
             if showIcon {
-                Image(systemName: "sparkles").font(.system(size: 12))
-                    .foregroundStyle(tint(Palette.agents))
+                AgentLogo(agent: agent, size: 13).foregroundStyle(tint(Palette.agents))
             }
             value(AgentUsageStore.shared.sample.scanned ? Fmt.tokens(total) : "–", width: 34)
         }
@@ -356,6 +357,7 @@ struct MiniBars: View {
 struct AgentLimitsLabel: View {
     let limits: [RateWindow]
     let tint: Color
+    var agent: AgentKind = .claude
     /// Show "% used" instead of "% left".
     var used = false
     var showReset = true
@@ -364,7 +366,7 @@ struct AgentLimitsLabel: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 60)) { context in
             HStack(spacing: 4) {
-                if showIcon { Image(systemName: "sparkles").font(.system(size: 11)).foregroundStyle(tint) }
+                if showIcon { AgentLogo(agent: agent, size: 12).foregroundStyle(tint) }
                 VStack(alignment: .trailing, spacing: -1) {
                     ForEach(limits.prefix(2), id: \.key) { limit in
                         HStack(spacing: 3) {
@@ -383,9 +385,9 @@ struct AgentLimitsLabel: View {
                 .lineLimit(1)
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(limits.prefix(2).map {
-                used ? "\($0.cardTitle) \(Int($0.usedPercent.rounded())) percent used"
-                     : "\($0.cardTitle) \(Int($0.leftPercent.rounded())) percent left" }
+            .accessibilityLabel(agent.title + ": " + limits.prefix(2).map {
+                used ? String(localized: "\($0.cardTitle) \(Int($0.usedPercent.rounded())) percent used")
+                     : String(localized: "\($0.cardTitle) \(Int($0.leftPercent.rounded())) percent left") }
                 .joined(separator: ", "))
         }
     }
@@ -403,7 +405,7 @@ struct ClaudeEstimateLabel: View {
         TimelineView(.periodic(from: .now, by: 60)) { context in
             let reset = RateWindow(usedPercent: 0, windowMinutes: 300, resetsAt: block.end).countdown(now: context.date)
             HStack(spacing: 4) {
-                if showIcon { Image(systemName: "sparkles").font(.system(size: 11)).foregroundStyle(tint) }
+                if showIcon { AgentLogo(agent: .claude, size: 12).foregroundStyle(tint) }
                 VStack(alignment: .trailing, spacing: -1) {
                     HStack(spacing: 3) {
                         Text(Fmt.tokens(block.tokens.total)).frame(width: 30, alignment: .trailing)

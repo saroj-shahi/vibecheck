@@ -37,7 +37,7 @@ struct AlertSettings: View {
                 Text("Click a highlighted word to change it; drag a number sideways to adjust it (hold ⌥ for fine steps). Each alert fires once, then waits until things recover and at least 5 minutes pass.")
                     .settingsFooter()
             }
-            Section {
+            AdvancedSection {
                 HStack {
                     Button("Restore Default Alerts") {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { settings.alertRules = AlertRule.defaults }
@@ -73,9 +73,9 @@ struct AlertRuleRow: View {
                         }
                     }
                     Text("is")
-                    TokenMenu(title: rule.comparison.rawValue) {
+                    TokenMenu(title: rule.comparison.label) {
                         ForEach(AlertComparison.allCases) { comparison in
-                            Button(comparison.rawValue) { rule.comparison = comparison }
+                            Button(comparison.label) { rule.comparison = comparison }
                         }
                     }
                     NumberToken(value: $rule.threshold, unit: rule.metric.unit, range: rule.metric.range)
@@ -97,7 +97,7 @@ struct AlertRuleRow: View {
                     .help("Delete alert")
             }
             if showPreview {
-                NotificationPreview(title: "VibeCheck · \(rule.metric.title)", message: rule.describe(current: exampleValue))
+                NotificationPreview(title: String(localized: "VibeCheck · \(rule.metric.title)"), message: rule.describe(current: exampleValue))
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }

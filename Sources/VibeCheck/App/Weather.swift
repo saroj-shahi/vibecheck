@@ -15,7 +15,7 @@ struct WeatherLocation: Codable, Equatable, Identifiable {
 enum TemperatureUnit: String, CaseIterable, Identifiable {
     case celsius, fahrenheit
     var id: String { rawValue }
-    var title: String { self == .celsius ? "Celsius (°C)" : "Fahrenheit (°F)" }
+    var title: String { self == .celsius ? String(localized: "Celsius (°C)") : String(localized: "Fahrenheit (°F)") }
 }
 
 struct WeatherForecast {
@@ -52,25 +52,25 @@ struct WeatherForecast {
 enum WeatherCode {
     static func describe(_ code: Int) -> String {
         switch code {
-        case 0: "Clear"
-        case 1: "Mostly clear"
-        case 2: "Partly cloudy"
-        case 3: "Overcast"
-        case 45, 48: "Fog"
-        case 51, 53, 55: "Drizzle"
-        case 56, 57: "Freezing drizzle"
-        case 61, 63: "Rain"
-        case 65: "Heavy rain"
-        case 66, 67: "Freezing rain"
-        case 71, 73: "Snow"
-        case 75: "Heavy snow"
-        case 77: "Snow grains"
-        case 80, 81: "Showers"
-        case 82: "Heavy showers"
-        case 85, 86: "Snow showers"
-        case 95: "Thunderstorm"
-        case 96, 99: "Thunderstorm with hail"
-        default: "Unknown"
+        case 0: String(localized: "Clear")
+        case 1: String(localized: "Mostly clear")
+        case 2: String(localized: "Partly cloudy")
+        case 3: String(localized: "Overcast")
+        case 45, 48: String(localized: "Fog")
+        case 51, 53, 55: String(localized: "Drizzle")
+        case 56, 57: String(localized: "Freezing drizzle")
+        case 61, 63: String(localized: "Rain")
+        case 65: String(localized: "Heavy rain")
+        case 66, 67: String(localized: "Freezing rain")
+        case 71, 73: String(localized: "Snow")
+        case 75: String(localized: "Heavy snow")
+        case 77: String(localized: "Snow grains")
+        case 80, 81: String(localized: "Showers")
+        case 82: String(localized: "Heavy showers")
+        case 85, 86: String(localized: "Snow showers")
+        case 95: String(localized: "Thunderstorm")
+        case 96, 99: String(localized: "Thunderstorm with hail")
+        default: String(localized: "Unknown")
         }
     }
 
@@ -235,7 +235,7 @@ final class WeatherStore {
                 errorMessage = nil
                 loadedKey = key
             } catch {
-                errorMessage = "Couldn't load weather. Check your connection."
+                errorMessage = String(localized: "Couldn't load weather. Check your connection.")
             }
             isLoading = false
         }

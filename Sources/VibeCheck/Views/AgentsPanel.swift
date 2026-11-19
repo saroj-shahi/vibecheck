@@ -40,7 +40,7 @@ struct AgentsPanel: View {
                     VStack(alignment: .leading, spacing: 4) {
                         SectionTitle(text: "Busiest projects today")
                         ForEach(sample.projectsToday.prefix(3), id: \.name) { project in
-                            StatRow(label: project.name, value: Fmt.tokens(project.tokens))
+                            StatRow(label: LocalizedStringKey(project.name), value: Fmt.tokens(project.tokens))
                         }
                     }
                 }
@@ -56,7 +56,7 @@ struct AgentsPanel: View {
                         VStack(alignment: .leading, spacing: 4) {
                             SectionTitle(text: "\(summary.agent.title) models today")
                             ForEach(summary.modelsToday.prefix(4), id: \.name) { model in
-                                StatRow(label: model.name, value: Fmt.tokens(model.tokens))
+                                StatRow(label: LocalizedStringKey(model.name), value: Fmt.tokens(model.tokens))
                             }
                         }
                     }
@@ -75,7 +75,8 @@ private struct AgentCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
+            HStack(alignment: .center, spacing: 6) {
+                AgentLogoTile(agent: summary.agent, size: 18)
                 Text(summary.agent.title).font(.system(size: 13, weight: .semibold))
                     .layoutPriority(1)
                 if let name = summary.account.name {
@@ -114,8 +115,8 @@ private struct AgentCard: View {
     }
 
     private var lastActiveText: String {
-        guard let last = summary.lastActive else { return "No activity this week" }
-        return "Last active \(last.formatted(.relative(presentation: .named)))"
+        guard let last = summary.lastActive else { return String(localized: "No activity this week") }
+        return String(localized: "Last active \(last.formatted(.relative(presentation: .named)))")
     }
 
 }
@@ -150,14 +151,16 @@ struct LimitGauge: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(limit.cardTitle): \(Int(limit.leftPercent.rounded())) percent left, resets in \(limit.countdown(now: now))\(ahead ? ", runs out before reset at this pace" : "")")
+        .accessibilityLabel(ahead
+            ? String(localized: "\(limit.cardTitle): \(Int(limit.leftPercent.rounded())) percent left, resets in \(limit.countdown(now: now)), runs out before reset at this pace")
+            : String(localized: "\(limit.cardTitle): \(Int(limit.leftPercent.rounded())) percent left, resets in \(limit.countdown(now: now))"))
     }
 
     private var resetText: String {
         let when = Calendar.current.isDateInToday(limit.resetsAt)
             ? limit.resetsAt.formatted(date: .omitted, time: .shortened)
             : limit.resetsAt.formatted(.dateTime.weekday(.abbreviated).hour().minute())
-        return "Resets in \(limit.countdown(now: now)) (\(when))"
+        return String(localized: "Resets in \(limit.countdown(now: now)) (\(when))")
     }
 }
 
@@ -290,7 +293,8 @@ private struct NowSection: View {
             ForEach(sessions.prefix(3)) { session in
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     VStack(alignment: .leading, spacing: 2) {
-                        HStack(alignment: .firstTextBaseline) {
+                        HStack(alignment: .center, spacing: 5) {
+                            AgentLogo(agent: session.agent, size: 11).foregroundStyle(session.agent.brandColor)
                             Text(session.project).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                             Spacer()
                             Text(elapsed(since: session.started, now: context.date))

@@ -83,6 +83,7 @@ name).
   shadow baked in, as macOS icons expect.
 - **Layers, back to front:** Dusk → Night vertical gradient · mint glow (lower left) · violet glow (upper
   right) · gradient ring · mint glow behind the pulse · Cloud pulse/check · top gloss · hairline edge.
+- **Liquid Glass (macOS 26+):** `VibeCheck.icon` (Icon Composer; Dusk → Night fill, flat ring and pulse layers, no baked effects) is compiled by `build.sh` into `Assets.car`; macOS 14–15 use `AppIcon.icns`.
 - **Small sizes:** at 16 and 32 px the icon switches to `icon-small.svg`: a thicker ring and a plain check,
   because the pulse turns to mush that small.
 

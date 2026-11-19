@@ -94,6 +94,14 @@ enum AgentNames {
         let name = (account["displayName"] as? String) ?? (account["fullName"] as? String)
         return AgentAccount(name: name?.isEmpty == false ? name : nil, plan: plan(account["organizationType"] as? String))
     }
+
+    /// The signed-in email from a `.claude.json` (to tell two Claude Code accounts apart).
+    static func claudeEmail(_ data: Data) -> String? {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let account = object["oauthAccount"] as? [String: Any],
+              let email = account["emailAddress"] as? String, !email.isEmpty else { return nil }
+        return email
+    }
 }
 
 /// A provider-reported usage limit (Codex writes these into its logs).
@@ -108,12 +116,12 @@ struct RateWindow: Equatable {
 
     private var lengthTitle: String {
         switch windowMinutes {
-        case 300: "5-hour limit"
-        case 10080: "Weekly limit"
-        case 40320...44640: "Monthly limit"
-        case let m where m % 1440 == 0: "\(m / 1440)-day limit"
-        case let m where m % 60 == 0: "\(m / 60)-hour limit"
-        default: "\(windowMinutes)-min limit"
+        case 300: String(localized: "5-hour limit")
+        case 10080: String(localized: "Weekly limit")
+        case 40320...44640: String(localized: "Monthly limit")
+        case let m where m % 1440 == 0: String(localized: "\(String(m / 1440))-day limit")
+        case let m where m % 60 == 0: String(localized: "\(String(m / 60))-hour limit")
+        default: String(localized: "\(String(windowMinutes))-min limit")
         }
     }
 }
@@ -125,7 +133,7 @@ extension RateWindow {
     var leftPercent: Double { min(max(100 - usedPercent, 0), 100) }
 
     /// "Current session" for the 5-hour window, otherwise the plain title.
-    var cardTitle: String { windowMinutes == 300 ? "Current session" : title }
+    var cardTitle: String { windowMinutes == 300 ? String(localized: "Current session") : title }
 
     /// How far through the window we are, 0–1.
     func elapsedFraction(now: Date) -> Double {
@@ -150,7 +158,7 @@ extension RateWindow {
     /// Burn rate as shown: per hour for windows up to a week, per day for longer ones ("0.3%/day").
     func burnText(now: Date) -> String? {
         guard let perHour = burnPerHour(now: now) else { return nil }
-        return windowMinutes > 10080 ? String(format: "%.1f%%/day", perHour * 24) : String(format: "%.1f%%/hr", perHour)
+        return windowMinutes > 10080 ? String(localized: "\(String(format: "%.1f", perHour * 24))%/day") : String(localized: "\(String(format: "%.1f", perHour))%/hr")
     }
 
     /// "2h 42m", "5d 22h", "18m", "now".
@@ -210,9 +218,11 @@ struct AgentUsageSample: Equatable {
     var activeSessions: [ActiveSession] = []
     var projectsToday: [(name: String, tokens: Int)] = []
     var scanned = false
+    /// Every agent with logs on this Mac, including ones switched off in Settings (`agents` leaves those out).
+    var found: Set<AgentKind> = []
 
     static func == (a: AgentUsageSample, b: AgentUsageSample) -> Bool {
-        a.agents == b.agents && a.today == b.today && a.week == b.week && a.hourly == b.hourly && a.scanned == b.scanned
+        a.agents == b.agents && a.found == b.found && a.today == b.today && a.week == b.week && a.hourly == b.hourly && a.scanned == b.scanned
             && a.daily == b.daily && a.lastHour == b.lastHour && a.activeSessions == b.activeSessions
             && a.projectsToday.map(\.name) == b.projectsToday.map(\.name)
             && a.projectsToday.map(\.tokens) == b.projectsToday.map(\.tokens)
@@ -343,7 +353,7 @@ enum AgentLogParser {
                                                         project: state.project, tokens: tokens), nil, time)
         case "model.model_call_success":
             guard let quotas = data["quotaSnapshots"] as? [String: Any] else { return (nil, nil, nil, nil) }
-            let names = [("chat", "Chat requests"), ("completions", "Completions"), ("premium_interactions", "Premium requests")]
+            let names = [("chat", String(localized: "Chat requests")), ("completions", String(localized: "Completions")), ("premium_interactions", String(localized: "Premium requests"))]
             let windows = names.compactMap { key, name -> RateWindow? in
                 guard let quota = quotas[key] as? [String: Any],
                       quota["isUnlimitedEntitlement"] as? Bool != true, int(quota["entitlementRequests"]) > 0,
@@ -513,8 +523,10 @@ final class AgentUsageScanner: @unchecked Sendable {
             ?? (env["CLAUDE_CONFIG_DIR"].map { URL(fileURLWithPath: $0) } ?? home).appending(path: ".claude.json")
     }
 
-    /// `fullWalk` forces looking for new files now (e.g. when the Agents panel opens).
-    func scan(now: Date = Date(), calendar: Calendar = .current, fullWalk: Bool = false) -> AgentUsageSample {
+    /// `fullWalk` forces looking for new files now (e.g. when the Agents panel opens). `shown` leaves the other
+    /// agents out of every total, chart and list (they're still read, so switching one back on is instant).
+    func scan(now: Date = Date(), calendar: Calendar = .current, fullWalk: Bool = false,
+              shown: Set<AgentKind> = Set(AgentKind.allCases)) -> AgentUsageSample {
         let cutoff = calendar.date(byAdding: .day, value: -7, to: calendar.startOfDay(for: now)) ?? now
         if fullWalk || now.timeIntervalSince(lastWalk) >= walkInterval || now < lastWalk {
             lastWalk = now
@@ -550,8 +562,12 @@ final class AgentUsageScanner: @unchecked Sendable {
         seen = Set(keptKeys.filter { !$0.isEmpty })
         var accounts = self.accounts
         if let codexPlan { accounts[.codex] = AgentAccount(plan: AgentNames.plan(codexPlan)) }
-        return AgentLogParser.summarize(entries, limits: limits.mapValues(\.windows), present: present,
-                                        now: now, calendar: calendar, accounts: accounts)
+        var sample = AgentLogParser.summarize(entries.filter { shown.contains($0.agent) },
+                                              limits: limits.mapValues(\.windows).filter { shown.contains($0.key) },
+                                              present: present.intersection(shown),
+                                              now: now, calendar: calendar, accounts: accounts)
+        sample.found = present
+        return sample
     }
 
     private static func modified(_ url: URL) -> Date {

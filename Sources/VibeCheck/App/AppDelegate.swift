@@ -28,6 +28,10 @@ final class StatusItemController: NSObject {
     private unowned let settings: AppSettings
     /// Combined item only: how many stats fit beside the camera notch.
     let fit = CombinedFit()
+    /// Ring item only: lights up while a drag hovers over it.
+    let dropState = RingDropState()
+    /// Ring item only: called with what was dropped on it.
+    var onDrop: (([URL]) -> Void)?
 
     var button: NSStatusBarButton? { item.button }
 
@@ -60,7 +64,7 @@ final class StatusItemController: NSObject {
             item.autosaveName = AppSettings.autosaveName("keepawake", generation: settings.statusItemGeneration)
             label = AnyView(KeepAwakeItemLabel())
         }
-        labelView = AnyView(label.environment(stats).environment(settings).environment(fit))
+        labelView = AnyView(label.environment(stats).environment(settings).environment(fit).environment(dropState))
         refreshLength()
 
         if let button = item.button {
@@ -74,10 +78,21 @@ final class StatusItemController: NSObject {
                 host.topAnchor.constraint(equalTo: button.topAnchor),
                 host.bottomAnchor.constraint(equalTo: button.bottomAnchor),
             ])
+            if kind == .vibe {
+                let target = RingDropView(state: dropState) { [weak self] urls in self?.onDrop?(urls) }
+                target.translatesAutoresizingMaskIntoConstraints = false
+                button.addSubview(target)
+                NSLayoutConstraint.activate([
+                    target.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+                    target.trailingAnchor.constraint(equalTo: button.trailingAnchor),
+                    target.topAnchor.constraint(equalTo: button.topAnchor),
+                    target.bottomAnchor.constraint(equalTo: button.bottomAnchor),
+                ])
+            }
             button.target = self
             button.action = #selector(buttonClicked(_:))
             if kind == .keepAwake { button.sendAction(on: [.leftMouseUp, .rightMouseUp]) }
-            button.setAccessibilityLabel(kind == .combined ? "VibeCheck" : "VibeCheck \(title)")
+            button.setAccessibilityLabel(kind == .combined ? String(localized: "VibeCheck") : String(localized: "VibeCheck \(title)"))
         }
         if kind == .combined { observePlacement() }
         updateVerdict()
@@ -90,19 +105,23 @@ final class StatusItemController: NSObject {
 
     /// Hover tooltip and VoiceOver label for the items that stand for the whole Mac (ring and combined):
     /// the verdict sentence, so the answer is there without opening the deck. Other items keep their title.
-    static func verdictText(for kind: Kind, verdict: String) -> (toolTip: String, accessibility: String)? {
+    static func verdictText(for kind: Kind, verdict: String, keepAwake: Bool = false) -> (toolTip: String, accessibility: String)? {
+        let awake = String(localized: "Keeping your Mac awake.")
+        let suffix = keepAwake ? " \(awake)" : ""
         switch kind {
-        case .combined: (verdict, "VibeCheck. \(verdict)")
-        case .vibe: (verdict, "VibeCheck vibe. \(verdict)")
-        case .single, .keepAwake: nil
+        case .combined: return ("\(verdict)\(suffix)", String(localized: "VibeCheck. \(verdict)\(suffix)"))
+        case .vibe: return ("\(verdict)\(suffix)", String(localized: "VibeCheck vibe. \(verdict)\(suffix)"))
+        case .single, .keepAwake: return nil
         }
     }
 
     func updateVerdict() {
         let verdict = stats.vibe.verdict
-        guard verdict != shownVerdict, let button = item.button,
-              let text = Self.verdictText(for: kind, verdict: verdict) else { return }
-        shownVerdict = verdict
+        let awake = AwakeCup.inRing(settings)
+        let key = awake ? "\(verdict)|awake" : verdict
+        guard key != shownVerdict, let button = item.button,
+              let text = Self.verdictText(for: kind, verdict: verdict, keepAwake: awake) else { return }
+        shownVerdict = key
         button.toolTip = text.toolTip
         button.setAccessibilityLabel(text.accessibility)
     }
@@ -118,7 +137,7 @@ final class StatusItemController: NSObject {
 
     func updateBadgeWidth() {
         guard kind == .vibe else { return }
-        let badge = VibeItemLabel.shownBadge(stats.vibe, ringShown: settings.showVibeRing, isShown: settings.isEnabled)
+        let badge = VibeItemLabel.shownBadge(stats.vibe, ringShown: settings.ringVisible, isShown: settings.showsInMenuBar)
         let shape = Self.badgeShape(badge)
         guard shape != measuredBadge else { return }
         measuredBadge = shape
@@ -158,7 +177,7 @@ final class StatusItemController: NSObject {
                         .environment(stats).environment(settings)).fittingSize.width
                 }
                 let chip = NSHostingView(rootView: HiddenCountChip(count: 8)).fittingSize.width
-                let ring: CGFloat = settings.showVibeRing ? 16 : 0
+                let ring: CGFloat = settings.ringVisible ? 16 : 0
                 let cup = AwakeCup.isShown(settings) ? NSHostingView(rootView: AwakeCup()).fittingSize.width + spacing.between : 0
                 let fitted = NotchFit.visibleCount(itemWidths: widths, fixed: ring + cup + spacing.padding * 2,
                                                    gap: spacing.between, chipWidth: chip, available: available)
@@ -170,12 +189,22 @@ final class StatusItemController: NSObject {
         refreshLength()
     }
 
+    /// True when macOS has hidden this item behind the notch (or off the screen's left edge).
+    var isHiddenByNotch: Bool {
+        guard let window = item.button?.window, window.isVisible,
+              let screen = window.screen ?? NSScreen.main else { return false }
+        // Off the left edge also happens when macOS parks an item; only count it when it really isn't drawn.
+        if window.frame.minX < screen.frame.minX - 1, window.occlusionState.contains(.visible) { return false }
+        return NotchFit.isHidden(itemRect: window.frame, screenFrame: screen.frame,
+                                 notchLeft: screen.auxiliaryTopLeftArea, notchRight: screen.auxiliaryTopRightArea)
+    }
+
     private var title: String {
         switch kind {
         case .single(let module): module.title
-        case .vibe: "Vibe"
-        case .combined: "VibeCheck"
-        case .keepAwake: "Keep Awake"
+        case .vibe: String(localized: "Vibe")
+        case .combined: String(localized: "VibeCheck")
+        case .keepAwake: String(localized: "Keep Awake")
         }
     }
 
@@ -220,10 +249,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alerts.log = NotificationLog.shared
         stats.onTick = { [weak self] in
             guard let self else { return }
+            CallGuard.shared.tick(stats: self.stats, alerts: self.alerts)
             self.alerts.evaluate(self.settings.alertRules, stats: self.stats)
             KeepAwake.shared.check()
             self.vibeItem?.updateVerdict()
             self.vibeItem?.updateBadgeWidth()
+            self.checkNotchHiding()
             self.watchAgents()
             self.combinedItem?.updateVerdict()
         }
@@ -232,11 +263,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self else { return }
             // A finished focus session always says so; other endings follow the keep-awake setting.
             if reason == .focusDone {
-                self.alerts.notify(title: "Focus session done", body: "Take a break. Your Mac can sleep again.", kind: .keepAwake)
+                self.alerts.notify(title: String(localized: "Focus session done"), body: String(localized: "Take a break. Your Mac can sleep again."), kind: .keepAwake)
                 return
             }
             guard reason.notifies, self.settings.keepAwakeNotify else { return }
-            self.alerts.notify(title: "Keep awake ended", body: "\(reason.message) Your Mac can sleep again.", kind: .keepAwake)
+            self.alerts.notify(title: String(localized: "Keep awake ended"), body: String(localized: "\(reason.message) Your Mac can sleep again."), kind: .keepAwake)
         }
         NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
                                                object: nil, queue: .main) { _ in
@@ -258,6 +289,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(forName: .vibeCheckSettingsChanged, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
+                self.noteExplicitStyleChoice()
                 self.syncItems()
                 self.configureHotkeys()
                 self.stats.start(interval: self.settings.refreshInterval)
@@ -270,6 +302,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.combinedItem?.refitAroundNotch()
                 self.combinedItem?.refreshLength()
                 self.syncVibeItem()
+                self.vibeItem?.updateVerdict()
+                self.combinedItem?.updateVerdict()
                 self.keepAwakeItem?.refreshLength()
             }
         }
@@ -279,6 +313,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         KeepAwake.shared.stop()
         stats.history.save()
+        stats.vibeReplay.save()
+        stats.batteryLog.save()
     }
 
     /// Re-opening the app (e.g. double-clicking it in Finder) shows Settings.
@@ -299,15 +335,73 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func makeItem(_ kind: StatusItemController.Kind) -> StatusItemController {
-        StatusItemController(kind: kind, stats: stats, settings: settings) { [weak self] item in
+        let item = StatusItemController(kind: kind, stats: stats, settings: settings) { [weak self] item in
             guard let self, let button = item.button else { return }
+            // ⌥-click on the ring does what the cup's click does.
+            if item.kind == .vibe, NSApp.currentEvent?.modifierFlags.contains(.option) == true {
+                self.deck.close()
+                KeepAwake.shared.toggle()
+                return
+            }
             self.deck.toggle(from: button, route: item.route)
         }
+        if kind == .vibe { item.onDrop = { [weak self] urls in self?.handleDrop(urls) } }
+        return item
+    }
+
+    /// A file, folder or app dropped on the ring: keep awake until it stops changing, or while the app runs.
+    private func handleDrop(_ urls: [URL]) {
+        guard let url = urls.first else { return }
+        deck.close()
+        switch RingDropAction.action(for: url) {
+        case .keepAwake(let end):
+            KeepAwake.shared.start(end)
+            KeepAwake.shared.check()
+        }
+    }
+
+    // MARK: Notch auto-collapse
+
+    private var notchWatch = NotchHideWatch()
+
+    /// Separate items: when macOS hides one behind the notch for a few seconds, switch to the combined item
+    /// (which fits itself around the notch) and say so once. Turning separate items back on is respected.
+    private func checkNotchHiding() {
+        guard NotchHideWatch.mayCollapse(separate: settings.menuBarStyle == .separate, autoFit: settings.autoFitNotch,
+                                         optedOut: settings.notchCollapseOptOut) else {
+            notchWatch.hiddenSince = nil
+            return
+        }
+        let separate = Array(items.values) + [vibeItem, keepAwakeItem].compactMap { $0 }
+        let hidden = separate.contains { $0.isHiddenByNotch }
+        guard notchWatch.update(hidden: hidden, now: Date()) else { return }
+        notchWatch.hiddenSince = nil
+        settings.notchAutoCollapsed = true
+        settings.menuBarStyle = .combined
+        if !settings.notchNoticeShown {
+            settings.notchNoticeShown = true
+            alerts.notify(title: NotchHideWatch.noticeTitle, body: NotchHideWatch.noticeBody, kind: .alert)
+        }
+    }
+
+    /// The owner switched back to separate items after an automatic collapse: don't collapse again.
+    private func noteExplicitStyleChoice() {
+        guard settings.notchAutoCollapsed, settings.menuBarStyle == .separate else { return }
+        settings.notchAutoCollapsed = false
+        settings.notchCollapseOptOut = true
     }
 
     private func syncItems() {
         deck.close()
         defer { syncKeepAwakeItem() }
+        if settings.menuBarStyle == .ring {
+            items.values.forEach { $0.remove() }
+            items.removeAll()
+            combinedItem?.remove()
+            combinedItem = nil
+            syncVibeItem()
+            return
+        }
         if settings.menuBarStyle == .combined {
             items.values.forEach { $0.remove() }
             items.removeAll()
@@ -380,8 +474,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Separate items: the standalone item holds the ring and/or the keep-awake cup. Created after the
     /// modules so it sits to their left.
     private func syncVibeItem() {
-        guard settings.menuBarStyle == .separate else { return }
-        let needed = settings.showVibeRing || AwakeCup.isShown(settings)
+        guard settings.menuBarStyle != .combined else { return }
+        let needed = settings.ringVisible || AwakeCup.isShown(settings)
         if needed, vibeItem == nil {
             vibeItem = makeItem(.vibe)
         } else if !needed {
@@ -424,7 +518,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let controller = NSHostingController(rootView: view)
             controller.sizingOptions = [.minSize]
             let window = NSWindow(contentViewController: controller)
-            window.title = "VibeCheck Settings"
+            window.title = String(localized: "VibeCheck Settings")
             window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
             window.toolbarStyle = .unified
             window.setContentSize(NSSize(width: 760, height: 560))
@@ -475,7 +569,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             (3.2, "home-again", { self.deck.close() }),
             (3.8, "closed", { self.deck.ignoresOutsideClicks = false; self.showSettings() }),
             (4.8, "settings", {
-                let window = NSApp.windows.first { $0.title == "VibeCheck Settings" }
+                let window = NSApp.windows.first { $0.title == String(localized: "VibeCheck Settings") }
                 NSLog("%@", "VibeCheck deck-demo settings-window: visible=\(window?.isVisible ?? false) frame=\(NSStringFromRect(window?.frame ?? .zero)) vibe=\(self.stats.vibe.vibe.title) verdict=\(self.stats.vibe.verdict)")
                 window?.close()
             }),

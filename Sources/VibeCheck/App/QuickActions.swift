@@ -11,9 +11,9 @@ enum QuickResult: Equatable, Sendable {
 
 /// Pure helpers, kept separate so they can be tested without touching the system.
 enum QuickActionsText {
-    static let automationDenied = "Allow VibeCheck to control System Events in System Settings → Privacy & Security → Automation."
-    static let automationDeniedFinder = "Allow VibeCheck to control Finder in System Settings → Privacy & Security → Automation."
-    static let genericFailure = "That didn't work. Try again."
+    static let automationDenied = String(localized: "Allow VibeCheck to control System Events in System Settings → Privacy & Security → Automation.")
+    static let automationDeniedFinder = String(localized: "Allow VibeCheck to control Finder in System Settings → Privacy & Security → Automation.")
+    static let genericFailure = String(localized: "That didn't work. Try again.")
 
     /// The AppleScript error number macOS reports when Automation access is denied.
     static let deniedCode = -1743
@@ -27,20 +27,24 @@ enum QuickActionsText {
     /// Chip label: "Trash" when empty or unreadable, otherwise "Trash 12".
     static func trashLabel(count: Int?) -> String {
         guard let count, count > 0 else { return "Trash" }
-        return "Trash \(count)"
+        return String(localized: "Trash \(count)")
     }
 
     /// Inline question shown before emptying.
     static func confirmPrompt(count: Int?) -> String {
-        guard let count else { return "Empty Trash?" }
-        return "Empty \(count) \(count == 1 ? "item" : "items")?"
+        guard let count else { return String(localized: "Empty Trash?") }
+        return count == 1 ? String(localized: "Empty \(count) item?") : String(localized: "Empty \(count) items?")
     }
 
     static func trashSpoken(count: Int?) -> String {
-        guard let count else { return "Empty Trash" }
-        return count == 0 ? "Empty Trash, nothing to empty" : "Empty Trash, \(count) \(count == 1 ? "item" : "items")"
+        guard let count else { return String(localized: "Empty Trash") }
+        if count == 0 { return String(localized: "Empty Trash, nothing to empty") }
+        return count == 1 ? String(localized: "Empty Trash, \(count) item") : String(localized: "Empty Trash, \(count) items")
     }
 }
+
+/// The two quick toggles on the deck home.
+enum QuickToggle: Sendable { case dark, mic }
 
 /// Dark mode, microphone mute and Empty Trash, run on request only.
 @MainActor
@@ -53,6 +57,10 @@ final class QuickActions {
     /// Items in ~/.Trash; nil when it can't be read (no access).
     private(set) var trashCount: Int? = 0
     private(set) var failure: String?
+    /// Which toggle's action failed last, and a counter that changes on every failure (even a repeat),
+    /// so a chip can shake each time.
+    private(set) var failedToggle: QuickToggle?
+    private(set) var failureTick = 0
     private var failureTask: Task<Void, Never>?
     /// Input volume to restore when the device has no mute switch and was silenced via its volume.
     private var savedVolume: Float32?
@@ -80,7 +88,7 @@ final class QuickActions {
             let result = await Self.runAppleScript(script, target: "System Events")
             switch result {
             case .ok: isDark.toggle()
-            case .failure(let message): show(message)
+            case .failure(let message): show(message, toggle: .dark)
             }
         }
     }
@@ -123,7 +131,7 @@ final class QuickActions {
 
     func toggleMic() {
         let muted = Self.readMicMuted()
-        if let message = setMicMuted(!muted) { show(message) }
+        if let message = setMicMuted(!muted) { show(message, toggle: .mic) }
         isMicMuted = Self.readMicMuted()
     }
 
@@ -185,25 +193,26 @@ final class QuickActions {
 
     /// Returns a failure message, or nil on success.
     private func setMicMuted(_ muted: Bool) -> String? {
-        guard let device = Self.defaultInputDevice() else { return "No microphone found." }
+        guard let device = Self.defaultInputDevice() else { return String(localized: "No microphone found.") }
         if Self.isSettable(device, kAudioDevicePropertyMute) {
-            return Self.writeUInt32(device, kAudioDevicePropertyMute, muted ? 1 : 0) ? nil : "Couldn't change the microphone."
+            return Self.writeUInt32(device, kAudioDevicePropertyMute, muted ? 1 : 0) ? nil : String(localized: "Couldn't change the microphone.")
         }
         guard Self.isSettable(device, kAudioDevicePropertyVolumeScalar), let current = Self.readVolume(device) else {
-            return "This microphone can't be muted."
+            return String(localized: "This microphone can't be muted.")
         }
         if muted {
             if current > 0 { savedVolume = current }
-            return Self.writeVolume(device, 0) ? nil : "Couldn't change the microphone."
+            return Self.writeVolume(device, 0) ? nil : String(localized: "Couldn't change the microphone.")
         }
         let restore = savedVolume ?? 0.75
         savedVolume = nil
-        return Self.writeVolume(device, restore) ? nil : "Couldn't change the microphone."
+        return Self.writeVolume(device, restore) ? nil : String(localized: "Couldn't change the microphone.")
     }
 
     // MARK: Failure message
 
-    private func show(_ message: String) {
+    private func show(_ message: String, toggle: QuickToggle? = nil) {
+        if let toggle { failedToggle = toggle; failureTick &+= 1 }
         failure = message
         failureTask?.cancel()
         failureTask = Task {

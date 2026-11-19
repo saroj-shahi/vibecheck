@@ -27,33 +27,33 @@ final class KeepAwakeMenu: NSObject {
         menu.autoenablesItems = false
 
         if let session = awake.session {
-            let status = NSMenuItem(title: session.focus ? "Focusing, \(session.remaining(now: now))"
-                                                         : "Awake \(session.remaining(now: now))", action: nil, keyEquivalent: "")
+            let status = NSMenuItem(title: session.focus ? String(localized: "Focusing, \(session.remaining(now: now))")
+                                                         : String(localized: "Awake \(session.remaining(now: now))"), action: nil, keyEquivalent: "")
             status.isEnabled = false
             menu.addItem(status)
-            menu.addItem(ActionItem(session.focus ? "End Focus Session" : "Stop Keeping Awake") { awake.stop() })
+            menu.addItem(ActionItem(session.focus ? String(localized: "End Focus Session") : String(localized: "Stop Keeping Awake")) { awake.stop() })
         } else {
-            menu.addItem(ActionItem("Start (\(AwakePreset.title(settings.keepAwakeDefaultMinutes)))") {
+            menu.addItem(ActionItem(String(localized: "Start (\(AwakePreset.title(settings.keepAwakeDefaultMinutes)))")) {
                 awake.start(minutes: settings.keepAwakeDefaultMinutes)
             })
         }
 
         menu.addItem(.separator())
-        menu.addItem(.sectionHeader(title: awake.isActive ? "Start Over" : "Keep Awake"))
+        menu.addItem(.sectionHeader(title: awake.isActive ? String(localized: "Start Over") : String(localized: "Keep Awake")))
         for minutes in AwakePreset.minutes {
             menu.addItem(ActionItem(AwakePreset.title(minutes)) { awake.start(minutes: minutes) })
         }
-        let until = NSMenuItem(title: "Until", action: nil, keyEquivalent: "")
+        let until = NSMenuItem(title: String(localized: "Until"), action: nil, keyEquivalent: "")
         let untilMenu = NSMenu()
         for date in AwakePreset.upcomingHours(after: now) {
             untilMenu.addItem(ActionItem(date.formatted(date: .omitted, time: .shortened)) { awake.start(.at(date)) })
         }
         until.submenu = untilMenu
         menu.addItem(until)
-        let running = NSMenuItem(title: "While an App Is Running", action: nil, keyEquivalent: "")
+        let running = NSMenuItem(title: String(localized: "While an App Is Running"), action: nil, keyEquivalent: "")
         let runningMenu = NSMenu()
         let apps = KeepAwake.runningApps()
-        if apps.isEmpty { runningMenu.addItem(ActionItem("No apps running", enabled: false) {}) }
+        if apps.isEmpty { runningMenu.addItem(ActionItem(String(localized: "No apps running"), enabled: false) {}) }
         for app in apps {
             runningMenu.addItem(ActionItem(app.name) { awake.start(.whileRunning(bundleID: app.bundleID, name: app.name)) })
         }
@@ -61,16 +61,16 @@ final class KeepAwakeMenu: NSObject {
         menu.addItem(running)
 
         menu.addItem(.separator())
-        menu.addItem(.sectionHeader(title: "Focus"))
+        menu.addItem(.sectionHeader(title: String(localized: "Focus")))
         for minutes in FocusPreset.minutes {
-            menu.addItem(ActionItem("Focus for \(minutes) Minutes") { awake.startFocus(minutes: minutes) })
+            menu.addItem(ActionItem(String(localized: "Focus for \(minutes) Minutes")) { awake.startFocus(minutes: minutes) })
         }
 
         menu.addItem(.separator())
-        menu.addItem(ActionItem("Keep the Display On", state: settings.keepAwakeDisplayOn ? .on : .off) {
+        menu.addItem(ActionItem(String(localized: "Keep the Display On"), state: settings.keepAwakeDisplayOn ? .on : .off) {
             settings.keepAwakeDisplayOn.toggle()
         })
-        menu.addItem(ActionItem("Keep Awake Settings…") {
+        menu.addItem(ActionItem(String(localized: "Keep Awake Settings…")) {
             (NSApp.delegate as? AppDelegate)?.showSettings(.keepAwake)
         })
         return menu

@@ -9,16 +9,17 @@ enum SettingsBackup {
         "worldClocks", "weatherLocation", "temperatureUnit", "chartRange", "groupProcessesByApp",
         "keepAwakeDefaultMinutes", "keepAwakeDisplayOn", "keepAwakeBatteryFloor", "keepAwakeAtLaunch", "keepAwakeShowInMenuBar",
         "keepAwakeUntilMinute", "keepAwakeNotify", "keepAwakeHotkey", "keepAwakeOnPower", "keepAwakeWithDisplay",
-        "keepAwakeWhileDownloading", "keepAwakeDownloadsFolder",
+        "showPublicIP", "keepAwakeWhileDownloading", "keepAwakeDownloadsFolder",
         "keepAwakeOnSchedule", "keepAwakeScheduleDays", "keepAwakeScheduleStart", "keepAwakeScheduleEnd",
-        "keepAwakeWhileAgentWorks", "notifyAgentFinished",
-        "bluetoothOffWhileAsleep", "itemOptions", "keepAwakeMenuBarItem",  // not "claudeLiveLimits": Keychain access is opted into on each Mac
+        "keepAwakeWhileAgentWorks", "notifyAgentFinished", "callGuardEnabled", "keepAwakeWiFiName",
+        // not "keepAwakeWhileOnWiFi": switching it on asks for Location access, decided on each Mac
+        "bluetoothOffWhileAsleep", "itemOptions", "keepAwakeMenuBarItem", "recentCommands",  // not "claudeLiveLimits": Keychain access is opted into on each Mac
     ]
     static let formatKey = "VibeCheckSettingsVersion"
 
     enum BackupError: LocalizedError {
         case notASettingsFile
-        var errorDescription: String? { "That file isn't a VibeCheck settings export." }
+        var errorDescription: String? { String(localized: "That file isn't a VibeCheck settings export.") }
     }
 
     static func exportData(from defaults: UserDefaults = .standard) throws -> Data {
@@ -64,9 +65,9 @@ enum SettingsBackup {
         panel.allowsMultipleSelection = false
         NSApp.activate()
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        guard confirm("Import settings from “\(url.lastPathComponent)”?",
-                      detail: "Your current VibeCheck settings will be replaced and VibeCheck will restart.",
-                      action: "Import") else { return }
+        guard confirm(String(localized: "Import settings from “\(url.lastPathComponent)”?"),
+                      detail: String(localized: "Your current VibeCheck settings will be replaced and VibeCheck will restart."),
+                      action: String(localized: "Import")) else { return }
         do {
             try importData(Data(contentsOf: url))
             relaunch()
@@ -77,9 +78,9 @@ enum SettingsBackup {
 
     @MainActor
     static func runReset() {
-        guard confirm("Reset all VibeCheck settings?",
-                      detail: "Menu bar items, alerts, clocks and weather go back to their defaults and VibeCheck restarts. History graphs are kept.",
-                      action: "Reset") else { return }
+        guard confirm(String(localized: "Reset all VibeCheck settings?"),
+                      detail: String(localized: "Menu bar items, alerts, clocks and weather go back to their defaults and VibeCheck restarts. History graphs are kept."),
+                      action: String(localized: "Reset")) else { return }
         reset()
         relaunch()
     }
@@ -90,7 +91,7 @@ enum SettingsBackup {
         alert.messageText = message
         alert.informativeText = detail
         alert.addButton(withTitle: action)
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: String(localized: "Cancel"))
         NSApp.activate()
         return alert.runModal() == .alertFirstButtonReturn
     }

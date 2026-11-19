@@ -51,7 +51,7 @@ struct AgentWatch {
     /// "Claude Code is done" / "It worked for 24 min."
     static func message(_ run: Finished) -> (title: String, body: String) {
         let minutes = Int((run.duration / 60).rounded())
-        let length = minutes >= 60 ? "\(minutes / 60) h \(minutes % 60) min" : "\(minutes) min"
-        return ("\(run.agent.title) is done", "It worked for \(length).")
+        let length = minutes >= 60 ? String(localized: "\(String(minutes / 60)) h \(String(minutes % 60)) min") : String(localized: "\(String(minutes)) min")
+        return (String(localized: "\(run.agent.title) is done"), String(localized: "It worked for \(length)."))
     }
 }

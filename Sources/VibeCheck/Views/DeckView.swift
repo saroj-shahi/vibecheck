@@ -25,6 +25,7 @@ extension View {
 struct DeckRoot: View {
     let onHeight: (CGFloat) -> Void
     @Environment(DeckModel.self) private var model
+    @Environment(SystemStats.self) private var stats
     @Namespace private var namespace
     @State private var contentHeight: CGFloat = 0
     @State private var headerHeight: CGFloat = 0
@@ -59,6 +60,7 @@ struct DeckRoot: View {
             .scrollIndicators(.automatic)
         }
         .environment(\.deckNamespace, namespace)
+        .onAppear { DeckCommands.stats = stats }
         .frame(width: Deck.width)
         .frame(maxHeight: .infinity, alignment: .top)
         .onPreferenceChange(DeckHeightKey.self) { height in
@@ -205,7 +207,7 @@ private struct DeckSearchField: View {
         .buttonStyle(.plain)
         .onHover { hovering in withAnimation(.easeOut(duration: 0.12)) { self.hovering = hovering } }
         .accessibilityLabel(query.map { $0.isEmpty ? "Search actions" : "Search actions, \($0)" } ?? "Search actions (⌘K)")
-        .accessibilityHint(open ? "Type to filter; Escape clears" : "Opens the action search")
+        .accessibilityHint(open ? String(localized: "Type to filter; Escape clears") : String(localized: "Opens the action search"))
     }
 }
 
@@ -235,7 +237,7 @@ private struct LiveChipsRow: View {
                 }
                 if let secureInput {
                     LiveChip(symbol: "exclamationmark.triangle.fill", tint: .orange, title: "Shortcuts paused",
-                             help: secureInput.message) {
+                             help: LocalizedStringKey(secureInput.message)) {
                         (NSApp.delegate as? AppDelegate)?.showSettings(.shortcuts)
                     }
                 }
@@ -250,10 +252,10 @@ private struct LiveChipsRow: View {
 private struct LiveChip: View {
     let symbol: String
     let tint: Color
-    let title: String
+    let title: LocalizedStringKey
     var detail: String? = nil
-    var help: String? = nil
-    var stopLabel: String? = nil
+    var help: LocalizedStringKey? = nil
+    var stopLabel: LocalizedStringKey? = nil
     let action: () -> Void
     @State private var hovering = false
 
@@ -355,8 +357,8 @@ private struct DeckFooter: View {
 
 private struct FooterButton: View {
     let symbol: String
-    let title: String?
-    let help: String
+    let title: LocalizedStringKey?
+    let help: LocalizedStringKey
     let action: () -> Void
     @State private var hovering = false
 
@@ -389,6 +391,7 @@ struct DeckHome: View {
     private let columns = Array(repeating: GridItem(.flexible(), spacing: Deck.gutter), count: Deck.columns)
 
     var body: some View {
+        DeckHintView()
         if showQuickToggles {
             QuickTogglesView()
         }
@@ -411,7 +414,7 @@ struct DeckHome: View {
 /// 26-pt circular icon button with a hover fill, used in deck headers.
 struct DeckIconButton: View {
     let symbol: String
-    let help: String
+    let help: LocalizedStringKey
     let action: () -> Void
     @State private var hovering = false
 
@@ -441,11 +444,13 @@ struct ModuleTile: View {
     @Environment(SystemStats.self) private var stats
     @Environment(AppSettings.self) private var settings
     @State private var hovering = false
+    private var drain: CulpritDrain { .shared }
 
     var body: some View {
         let content = TileContent.make(module, stats: stats, settings: settings)
         // The tile behind a mid / cooked verdict: the verdict says why, the outline says where.
-        let culprit: Vibe? = stats.vibe.culprit == module ? stats.vibe.vibe : nil
+        // Right after the user quits the culprit, the outline drains without waiting for the next sample.
+        let culprit: Vibe? = stats.vibe.culprit == module && !drain.active ? stats.vibe.vibe : nil
         Button(action: action) {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 5) {
@@ -476,6 +481,7 @@ struct ModuleTile: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                     .contentTransition(.numericText())
+                    .animation(Deck.reduceMotion ? nil : .easeOut(duration: 0.4), value: content.value)
                     // Yellow text is unreadable on light glass, so only cooked tints the number.
                     .foregroundStyle(culprit == .cooked ? Color.red : Color.primary)
                     .deckMatched("value.\(module.rawValue)", namespace)
@@ -508,8 +514,11 @@ struct ModuleTile: View {
             .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(TilePressStyle())
+        .onChange(of: stats.vibe.culprit) { _, _ in drain.clear() }
+        .onChange(of: stats.vibe.vibe) { _, _ in drain.clear() }
         .onHover { hovering in withAnimation(.easeOut(duration: hovering ? 0.15 : 0.12)) { self.hovering = hovering } }
-        .accessibilityLabel("\(module.title), \(content.spoken)" + (culprit.map { ", making your Mac \($0.title.lowercased())" } ?? ""))
+        .accessibilityLabel(culprit.map { String(localized: "\(module.title), \(content.spoken), making your Mac \($0.title.lowercased())") }
+                            ?? String(localized: "\(module.title), \(content.spoken)"))
         .accessibilityHint("Shows \(module.title) details")
         .help("\(module.title) — click for details")
     }
@@ -538,36 +547,36 @@ struct TileContent {
         switch module {
         case .cpu:
             let v = Fmt.percent(stats.cpu.total)
-            return TileContent(value: v, spark: recent(.cpu), sparkMax: 1, spoken: "\(v) in use")
+            return TileContent(value: v, spark: recent(.cpu), sparkMax: 1, spoken: String(localized: "\(v) in use"))
         case .gpu:
-            guard !stats.gpu.gpus.isEmpty else { return TileContent(value: "—", detail: "No GPU stats", spoken: "unavailable") }
+            guard !stats.gpu.gpus.isEmpty else { return TileContent(value: "—", detail: String(localized: "No GPU stats"), spoken: String(localized: "unavailable")) }
             let v = Fmt.percent(stats.gpu.utilization)
-            return TileContent(value: v, spark: recent(.gpu), sparkMax: 1, spoken: "\(v) in use")
+            return TileContent(value: v, spark: recent(.gpu), sparkMax: 1, spoken: String(localized: "\(v) in use"))
         case .memory:
             let v = Fmt.percent(stats.memory.usage)
             return TileContent(value: v, spark: recent(.memory), sparkMax: 1,
-                               spoken: "\(v) used, pressure \(stats.memory.pressure.label)")
+                               spoken: String(localized: "\(v) used, pressure \(stats.memory.pressure.label)"))
         case .network:
             let n = stats.network
-            guard n.interface != nil else { return TileContent(value: "Offline", detail: "No connection", spoken: "offline") }
+            guard n.interface != nil else { return TileContent(value: String(localized: "Offline"), detail: String(localized: "No connection"), spoken: String(localized: "offline")) }
             return TileContent(value: "↓ \(Fmt.compactRate(n.download))", spark: recent(.download),
-                               spoken: "downloading \(Fmt.rate(n.download)), uploading \(Fmt.rate(n.upload))")
+                               spoken: String(localized: "downloading \(Fmt.rate(n.download)), uploading \(Fmt.rate(n.upload))"))
         case .disk:
             guard let volume = stats.volumes.first(where: { $0.path == "/" }) ?? stats.volumes.first else {
-                return TileContent(value: "—", spoken: "unavailable")
+                return TileContent(value: "—", spoken: String(localized: "unavailable"))
             }
-            return TileContent(value: Fmt.percent(volume.usage), detail: "\(Fmt.bytes(volume.available)) free",
-                               spoken: "\(Fmt.percent(volume.usage)) full, \(Fmt.bytes(volume.available)) free")
+            return TileContent(value: Fmt.percent(volume.usage), detail: String(localized: "\(Fmt.bytes(volume.available)) free"),
+                               spoken: String(localized: "\(Fmt.percent(volume.usage)) full, \(Fmt.bytes(volume.available)) free"))
         case .sensors:
-            guard let hottest = stats.sensors.hottest else { return TileContent(value: "—", detail: "No sensors", spoken: "unavailable") }
+            guard let hottest = stats.sensors.hottest else { return TileContent(value: "—", detail: String(localized: "No sensors"), spoken: String(localized: "unavailable")) }
             let v = String(format: "%.0f°", hottest)
-            return TileContent(value: v, spark: recent(.temperature), spoken: "hottest \(v) Celsius")
+            return TileContent(value: v, spark: recent(.temperature), spoken: String(localized: "hottest \(v) Celsius"))
         case .battery:
             let b = stats.battery
-            guard b.present else { return TileContent(value: "AC", detail: "No battery", spoken: "on AC power") }
+            guard b.present else { return TileContent(value: String(localized: "AC"), detail: String(localized: "No battery"), spoken: String(localized: "on AC power")) }
             let v = Fmt.percent(b.percent)
-            let state = b.isCharging ? "Charging" : b.onAC ? "On power" : "On battery"
-            return TileContent(value: v, detail: state, spoken: "\(v), \(state.lowercased())")
+            let state = b.isCharging ? String(localized: "Charging") : b.onAC ? String(localized: "On power") : String(localized: "On battery")
+            return TileContent(value: v, detail: state, spoken: String(localized: "\(v), \(state.lowercased())"))
         case .clock:
             let now = ClockTicker.shared.now
             let v = now.formatted(date: .omitted, time: .shortened)
@@ -575,18 +584,18 @@ struct TileContent {
                                spoken: v)
         case .weather:
             guard let forecast = WeatherStore.shared.forecast else {
-                return TileContent(value: "—", detail: settings.weatherLocation == nil ? "Pick a city" : "Loading…",
-                                   spoken: "unavailable")
+                return TileContent(value: "—", detail: settings.weatherLocation == nil ? String(localized: "Pick a city") : String(localized: "Loading…"),
+                                   spoken: String(localized: "unavailable"))
             }
             let v = String(format: "%.0f°", forecast.temperature)
             return TileContent(value: v, detail: WeatherCode.describe(forecast.code),
-                               spoken: "\(v), \(WeatherCode.describe(forecast.code))")
+                               spoken: String(localized: "\(v), \(WeatherCode.describe(forecast.code))"))
         case .agents:
             let sample = AgentUsageStore.shared.sample
-            guard sample.scanned else { return TileContent(value: "—", detail: "Reading logs…", spoken: "loading") }
-            guard !sample.agents.isEmpty else { return TileContent(value: "—", detail: "No agent logs", spoken: "no agent logs found") }
+            guard sample.scanned else { return TileContent(value: "—", detail: String(localized: "Reading logs…"), spoken: String(localized: "loading")) }
+            guard !sample.agents.isEmpty else { return TileContent(value: "—", detail: String(localized: "No agent logs"), spoken: String(localized: "no agent logs found")) }
             let v = Fmt.tokens(sample.today.total)
-            return TileContent(value: v, spark: sample.hourly, spoken: "\(v) tokens today")
+            return TileContent(value: v, spark: sample.hourly, spoken: String(localized: "\(v) tokens today"))
         }
     }
 }

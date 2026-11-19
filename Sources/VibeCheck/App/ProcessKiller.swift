@@ -18,10 +18,10 @@ enum ProcessKiller {
     /// Why a process can't be quit from VibeCheck, or nil if it can. Pure, for tests.
     nonisolated static func protectionReason(pid: Int32, name: String, ownerUID: uid_t?,
                                              currentUID: uid_t, ownPID: Int32) -> String? {
-        if pid <= 1 || protectedNames.contains(name) { return "Part of macOS" }
-        if pid == ownPID { return "That's VibeCheck" }
-        guard let ownerUID else { return "Already gone" }
-        if ownerUID != currentUID { return "Owned by another user" }
+        if pid <= 1 || protectedNames.contains(name) { return String(localized: "Part of macOS") }
+        if pid == ownPID { return String(localized: "That's VibeCheck") }
+        guard let ownerUID else { return String(localized: "Already gone") }
+        if ownerUID != currentUID { return String(localized: "Owned by another user") }
         return nil
     }
 
@@ -52,7 +52,7 @@ enum ProcessKiller {
     /// process itself. For CLI tools like `npm run dev`, whose children outlive a quit parent.
     @discardableResult
     static func quit(_ target: Identity, mode: Mode, subprocesses: Bool = false) -> Outcome {
-        guard identity(of: target.pid) == target else { return .failed("Already gone") }
+        guard identity(of: target.pid) == target else { return .failed(String(localized: "Already gone")) }
         let pid = target.pid
         if let reason = protectionReason(pid: pid) { return .failed(reason) }
         if subprocesses {
@@ -75,13 +75,13 @@ enum ProcessKiller {
             for child in tree {
                 if protectionReason(pid: child.pid) != nil { refused += 1; continue }
                 // "Already gone" is fine: a child often exits when its own parent does.
-                if case .failed(let text) = quit(child, mode: mode), text != "Already gone" { refused += 1 }
+                if case .failed(let text) = quit(child, mode: mode), text != String(localized: "Already gone") { refused += 1 }
             }
             var outcome = quit(target, mode: mode)
             // Parents (npm, shells) often exit as their children die: that's success, not "Already gone".
-            if outcome == .failed("Already gone"), identity(of: pid) != target { outcome = .sent }
+            if outcome == .failed(String(localized: "Already gone")), identity(of: pid) != target { outcome = .sent }
             if outcome == .sent, refused > 0 {
-                return .failed(refused == 1 ? "1 subprocess still running" : "\(refused) subprocesses still running")
+                return .failed(refused == 1 ? String(localized: "1 subprocess still running") : String(localized: "\(refused) subprocesses still running"))
             }
             return outcome
         }
@@ -91,7 +91,7 @@ enum ProcessKiller {
             return sent ? .sent : .failed("\(name) didn't accept the request")
         }
         if kill(pid, mode == .quit ? SIGTERM : SIGKILL) == 0 { return .sent }
-        return .failed(errno == EPERM ? "Not allowed" : "Already gone")
+        return .failed(errno == EPERM ? String(localized: "Not allowed") : String(localized: "Already gone"))
     }
 
     /// Direct children of a process (one syscall), up to `max`.

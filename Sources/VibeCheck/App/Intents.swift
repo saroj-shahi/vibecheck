@@ -55,34 +55,34 @@ struct StatReading: Equatable {
         let agents = agents ?? AgentUsageStore.shared.sample
         switch kind {
         case .cpu:
-            return StatReading(value: stats.cpu.total * 100, text: "CPU is at \(Fmt.percent(stats.cpu.total)).")
+            return StatReading(value: stats.cpu.total * 100, text: String(localized: "CPU is at \(Fmt.percent(stats.cpu.total))."))
         case .gpu:
             guard !stats.gpu.gpus.isEmpty else { return nil }
-            return StatReading(value: stats.gpu.utilization * 100, text: "GPU is at \(Fmt.percent(stats.gpu.utilization)).")
+            return StatReading(value: stats.gpu.utilization * 100, text: String(localized: "GPU is at \(Fmt.percent(stats.gpu.utilization))."))
         case .memory:
             return StatReading(value: stats.memory.usage * 100,
-                               text: "Memory is \(Fmt.percent(stats.memory.usage)) used, pressure \(stats.memory.pressure.label).")
+                               text: String(localized: "Memory is \(Fmt.percent(stats.memory.usage)) used, pressure \(stats.memory.pressure.label)."))
         case .diskFree:
             guard let volume = stats.volumes.first(where: { $0.path == "/" }) ?? stats.volumes.first else { return nil }
-            return StatReading(value: volume.available, text: "\(Fmt.bytes(volume.available)) free on \(volume.name).")
+            return StatReading(value: volume.available, text: String(localized: "\(Fmt.bytes(volume.available)) free on \(volume.name)."))
         case .download:
-            guard stats.network.interface != nil else { return StatReading(value: 0, text: "You're offline.") }
-            return StatReading(value: stats.network.download, text: "Downloading at \(Fmt.rate(stats.network.download)).")
+            guard stats.network.interface != nil else { return StatReading(value: 0, text: String(localized: "You're offline.")) }
+            return StatReading(value: stats.network.download, text: String(localized: "Downloading at \(Fmt.rate(stats.network.download))."))
         case .upload:
-            guard stats.network.interface != nil else { return StatReading(value: 0, text: "You're offline.") }
-            return StatReading(value: stats.network.upload, text: "Uploading at \(Fmt.rate(stats.network.upload)).")
+            guard stats.network.interface != nil else { return StatReading(value: 0, text: String(localized: "You're offline.")) }
+            return StatReading(value: stats.network.upload, text: String(localized: "Uploading at \(Fmt.rate(stats.network.upload))."))
         case .temperature:
             guard let hottest = stats.sensors.hottest else { return nil }
-            return StatReading(value: hottest, text: String(format: "The hottest sensor is at %.0f °C.", hottest))
+            return StatReading(value: hottest, text: String(localized: "The hottest sensor is at \(String(format: "%.0f", hottest)) °C."))
         case .battery:
             let b = stats.battery
             guard b.present else { return nil }
-            let state = b.isCharging ? "charging" : b.onAC ? "on power" : "on battery"
-            return StatReading(value: b.percent * 100, text: "Battery is at \(Fmt.percent(b.percent)), \(state).")
+            let state = b.isCharging ? String(localized: "charging") : b.onAC ? String(localized: "on power") : String(localized: "on battery")
+            return StatReading(value: b.percent * 100, text: String(localized: "Battery is at \(Fmt.percent(b.percent)), \(state)."))
         case .agentTokens:
             guard agents.scanned, !agents.agents.isEmpty else { return nil }
             return StatReading(value: Double(agents.today.total),
-                               text: "Your coding agents used \(Fmt.tokens(agents.today.total)) tokens today.")
+                               text: String(localized: "Your coding agents used \(Fmt.tokens(agents.today.total)) tokens today."))
         }
     }
 }
@@ -164,7 +164,7 @@ struct StartKeepAwakeIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         KeepAwake.shared.start(minutes: minutes ?? 0)
-        let text = KeepAwake.shared.session.map { "Staying awake \($0.remaining(now: Date()))." } ?? "Couldn't start."
+        let text = KeepAwake.shared.session.map { String(localized: "Staying awake \($0.remaining(now: Date()))." ) } ?? String(localized: "Couldn't start.")
         return .result(dialog: "\(text)")
     }
 }
@@ -177,7 +177,8 @@ struct StopKeepAwakeIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let wasActive = KeepAwake.shared.isActive
         KeepAwake.shared.stop()
-        return .result(dialog: wasActive ? "Done. Your Mac can sleep again." : "Your Mac wasn't being kept awake.")
+        let message: LocalizedStringResource = wasActive ? "Done. Your Mac can sleep again." : "Your Mac wasn't being kept awake."
+        return .result(dialog: IntentDialog(message))
     }
 }
 

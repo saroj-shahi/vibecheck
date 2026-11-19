@@ -10,7 +10,7 @@ struct AwakeMenuButton: View {
     private var awake: KeepAwake { .shared }
 
     var body: some View {
-        let help = awake.isActive ? "Keeping your Mac awake" : "Keep your Mac awake"
+        let help = awake.isActive ? String(localized: "Keeping your Mac awake") : String(localized: "Keep your Mac awake")
         Image(systemName: awake.isActive ? "cup.and.saucer.fill" : "cup.and.saucer")
             .font(.system(size: 12, weight: .medium))
             .frame(width: 26, height: 26)
@@ -42,13 +42,16 @@ struct AwakeMenuButton: View {
                         Self.showMenu()
                     }
                 })
-            .help(help + " (hold for a quick length)")
+            .help(Self.tooltip(help))
             .accessibilityElement()
             .accessibilityAddTraits(.isButton)
             .accessibilityLabel(help)
             .accessibilityAction { Self.showMenu() }
             .onHover { hovering in withAnimation(.easeOut(duration: 0.12)) { self.hovering = hovering } }
     }
+
+    /// Names both gestures: click for the menu, hold for the dial.
+    static func tooltip(_ help: String) -> String { String(localized: "\(help). Click for keep awake options. Hold to set a time.") }
 
     private static func showMenu() {
         KeepAwakeMenu().build().popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
@@ -161,6 +164,17 @@ struct KeepAwakeSettings: View {
                     Text("Claude Code, Codex, Copilot CLI or OpenCode wrote to its logs in the last 3 minutes.")
                 }
                 Toggle("Notify me when an agent finishes a run of 10 minutes or more", isOn: $settings.notifyAgentFinished)
+                Toggle(isOn: $settings.callGuardEnabled) {
+                    Text("While you're on a call")
+                    Text("Camera or microphone in use: keeps the display awake, holds alerts until the call ends (overheating and low battery still come through) and warns once if one app is hogging the CPU.")
+                }
+                Toggle(isOn: $settings.keepAwakeWhileOnWiFi) {
+                    Text("While on a Wi-Fi network")
+                    Text("Needs Location access, which macOS requires to read the network name. Your location isn't used.")
+                }
+                if settings.keepAwakeWhileOnWiFi {
+                    WiFiNameRow(settings: settings)
+                }
                 Toggle("On a schedule", isOn: $settings.keepAwakeOnSchedule)
                 if settings.keepAwakeOnSchedule {
                     LabeledContent("Days") { ScheduleDaysPicker(days: $settings.keepAwakeScheduleDays) }
@@ -199,10 +213,10 @@ struct KeepAwakeSettings: View {
                 Toggle("\(settings.hotkeyModifier.symbols)A starts or stops a session", isOn: $settings.keepAwakeHotkey)
                     .disabled(!settings.hotkeysEnabled)
                 Toggle(isOn: $settings.keepAwakeMenuBarItem) {
-                    Text("Keep Awake item in the menu bar")
-                    Text("Always shown. Click it to start or stop, using the length in “Start sessions for” above. Right-click (or ⌥-click) for every option.")
+                    Text("Show keep awake as its own item")
+                    Text("Off: a small cup appears in the vibe ring while a session runs. On: a separate item, always shown. Click it to start or stop, using the length in “Start sessions for” above. Right-click (or ⌥-click) for every option.")
                 }
-                Toggle("Show a cup in the menu bar while awake", isOn: $settings.keepAwakeShowInMenuBar)
+                Toggle("Show a cup in the ring while awake", isOn: $settings.keepAwakeShowInMenuBar)
                     .disabled(settings.keepAwakeMenuBarItem)
             } footer: {
                 Text("With the display allowed to sleep, the screen turns off but downloads, builds and music keep going. Closing the lid still puts the Mac to sleep.")
@@ -240,14 +254,14 @@ struct KeepAwakeSettings: View {
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
         panel.directoryURL = settings.downloadsFolderURL
-        panel.prompt = "Watch"
+        panel.prompt = String(localized: "Watch")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         settings.keepAwakeDownloadsFolder = url == DownloadsWatcher.defaultFolder ? "" : url.path(percentEncoded: false)
     }
 
     private func status(_ now: Date) -> String {
-        guard let session = awake.session else { return "Your Mac sleeps as usual" }
-        return "Staying awake \(session.remaining(now: now))"
+        guard let session = awake.session else { return String(localized: "Your Mac sleeps as usual") }
+        return String(localized: "Staying awake \(session.remaining(now: now))")
     }
 }
 
@@ -270,6 +284,27 @@ private struct ScheduleDaysPicker: View {
                     .accessibilityLabel(calendar.standaloneWeekdaySymbols[weekday - 1])
                     .accessibilityAddTraits(on ? .isSelected : [])
             }
+        }
+    }
+}
+
+/// Network name field for the Wi-Fi trigger, with a shortcut that fills in the network the Mac is on now.
+private struct WiFiNameRow: View {
+    @Bindable var settings: AppSettings
+
+    var body: some View {
+        LabeledContent("Network") {
+            HStack {
+                TextField("Network name", text: $settings.keepAwakeWiFiName).labelsHidden().frame(maxWidth: 180)
+                Button("Use current") {
+                    if let name = WiFiTrigger.shared.ssid { settings.keepAwakeWiFiName = name }
+                }
+                .disabled(WiFiTrigger.shared.ssid == nil)
+            }
+        }
+        if WiFiTrigger.shared.denied {
+            Text("Location access is off for VibeCheck. Turn it on in System Settings > Privacy & Security > Location Services.")
+                .settingsFooter()
         }
     }
 }

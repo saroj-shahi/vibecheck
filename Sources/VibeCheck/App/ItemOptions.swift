@@ -45,6 +45,14 @@ struct ItemOptions: Codable, Equatable {
     /// Whether `kind` is counted (empty selection = all).
     func includes(_ kind: AgentKind) -> Bool { agents.isEmpty || agents.contains(kind) }
 
+    /// Turns one agent on or off for the item; all on is stored as "all" (empty) so new agents show up too.
+    mutating func setAgent(_ kind: AgentKind, shown: Bool) {
+        var set = agents.isEmpty ? Set(AgentKind.allCases) : agents
+        if shown { set.insert(kind) } else { set.remove(kind) }
+        guard !set.isEmpty else { return }
+        agents = set == Set(AgentKind.allCases) ? [] : set
+    }
+
     /// Modules that have options beyond the look.
     static func hasOptions(_ module: Module) -> Bool {
         [.agents, .memory, .network, .disk, .battery, .sensors].contains(module)
@@ -55,11 +63,11 @@ struct ItemOptions: Codable, Equatable {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .limitsLeft: "Limits: % left"
-            case .limitsUsed: "Limits: % used"
-            case .tokensToday: "Tokens today"
-            case .tokensWeek: "Tokens this week"
-            case .tokensWindow: "Tokens this 5-hour window"
+            case .limitsLeft: String(localized: "Limits: % left")
+            case .limitsUsed: String(localized: "Limits: % used")
+            case .tokensToday: String(localized: "Tokens today")
+            case .tokensWeek: String(localized: "Tokens this week")
+            case .tokensWindow: String(localized: "Tokens this 5-hour window")
             }
         }
         var isLimits: Bool { self == .limitsLeft || self == .limitsUsed }
@@ -70,9 +78,9 @@ struct ItemOptions: Codable, Equatable {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .both: "Session and weekly"
-            case .session: "Current session only"
-            case .longest: "Weekly (or monthly) only"
+            case .both: String(localized: "Session and weekly")
+            case .session: String(localized: "Current session only")
+            case .longest: String(localized: "Weekly (or monthly) only")
             }
         }
     }
@@ -82,9 +90,9 @@ struct ItemOptions: Codable, Equatable {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .percent: "Percent used"
-            case .used: "Amount used"
-            case .free: "Amount free"
+            case .percent: String(localized: "Percent used")
+            case .used: String(localized: "Amount used")
+            case .free: String(localized: "Amount free")
             }
         }
     }
@@ -94,9 +102,9 @@ struct ItemOptions: Codable, Equatable {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .both: "Upload and download"
-            case .download: "Download only"
-            case .upload: "Upload only"
+            case .both: String(localized: "Upload and download")
+            case .download: String(localized: "Download only")
+            case .upload: String(localized: "Upload only")
             }
         }
     }
@@ -104,7 +112,7 @@ struct ItemOptions: Codable, Equatable {
     enum DiskValue: String, Codable, CaseIterable, Identifiable {
         case rates, free
         var id: String { rawValue }
-        var title: String { self == .rates ? "Read and write rates" : "Startup disk free space" }
+        var title: String { self == .rates ? String(localized: "Read and write rates") : String(localized: "Startup disk free space") }
     }
 
     enum BatteryValue: String, Codable, CaseIterable, Identifiable {
@@ -112,9 +120,9 @@ struct ItemOptions: Codable, Equatable {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .percent: "Percent"
-            case .time: "Time remaining"
-            case .both: "Percent and time"
+            case .percent: String(localized: "Percent")
+            case .time: String(localized: "Time remaining")
+            case .both: String(localized: "Percent and time")
             }
         }
     }
@@ -154,6 +162,27 @@ extension AgentUsageSample {
         default: counted.reduce(0) { $0 + $1.today.total }
         }
         return .tokens(total)
+    }
+}
+
+extension AgentUsageSample {
+    /// Whose logo the agents item draws: the agent the number comes from (limits, Claude's estimate), else
+    /// the busiest counted agent for the chosen value, else the first counted one (Claude Code before any scan).
+    func menuBarAgent(_ options: ItemOptions) -> AgentKind {
+        let counted = agents(for: options)
+        if options.agentValue.isLimits {
+            if let withLimits = counted.first(where: { !$0.limits.isEmpty }) { return withLimits.agent }
+            if counted.contains(where: { $0.agent == .claude && $0.block != nil }) { return .claude }
+        }
+        func value(_ a: AgentSummary) -> Int {
+            switch options.agentValue {
+            case .tokensWeek: a.week.total
+            case .tokensWindow: a.block?.tokens.total ?? 0
+            default: a.today.total
+            }
+        }
+        if let busiest = counted.max(by: { value($0) < value($1) }), value(busiest) > 0 { return busiest.agent }
+        return counted.first?.agent ?? AgentKind.allCases.first(where: options.includes) ?? .claude
     }
 }
 

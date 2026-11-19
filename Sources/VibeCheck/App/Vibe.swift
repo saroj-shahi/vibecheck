@@ -9,9 +9,9 @@ enum Vibe: Int, Comparable, Sendable {
 
     var title: String {
         switch self {
-        case .vibing: "Vibing"
-        case .mid: "Mid"
-        case .cooked: "Cooked"
+        case .vibing: String(localized: "Vibing", comment: "Brand term for the Mac's state; keep it casual")
+        case .mid: String(localized: "Mid", comment: "Brand term for the Mac's state; keep it casual")
+        case .cooked: String(localized: "Cooked", comment: "Brand term for the Mac's state; keep it casual")
         }
     }
 
@@ -58,35 +58,35 @@ enum VibeScore {
     static func reasons(_ input: VibeInput) -> [(Vibe, String, Module, String)] {
         var found: [(Vibe, String, Module, String)] = []
         let cpu = Int((input.cpuRecent * 100).rounded())
-        if input.cpuRecent >= 0.85 { found.append((.cooked, "CPU has been pinned at \(cpu)%", .cpu, "CPU \(cpu)%")) }
-        else if input.cpuRecent >= 0.6 { found.append((.mid, "CPU has been busy at \(cpu)%", .cpu, "CPU \(cpu)%")) }
+        if input.cpuRecent >= 0.85 { found.append((.cooked, String(localized: "CPU has been pinned at \(cpu)%", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .cpu, String(localized: "CPU \(cpu)%", comment: "Short menu bar badge"))) }
+        else if input.cpuRecent >= 0.6 { found.append((.mid, String(localized: "CPU has been busy at \(cpu)%", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .cpu, String(localized: "CPU \(cpu)%", comment: "Short menu bar badge"))) }
 
         switch input.memoryPressure {
-        case .critical: found.append((.cooked, "memory pressure is critical", .memory, "Memory"))
-        case .warning: found.append((.mid, "memory is getting tight", .memory, "Memory"))
+        case .critical: found.append((.cooked, String(localized: "memory pressure is critical", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .memory, String(localized: "Memory", comment: "Short menu bar badge")))
+        case .warning: found.append((.mid, String(localized: "memory is getting tight", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .memory, String(localized: "Memory", comment: "Short menu bar badge")))
         case .normal: break
         }
 
         if let t = input.hottest {
-            if t >= 90 { found.append((.cooked, "it's running hot at \(Int(t)) °C", .sensors, "\(Int(t)) °C")) }
-            else if t >= 80 { found.append((.mid, "it's warm at \(Int(t)) °C", .sensors, "\(Int(t)) °C")) }
+            if t >= 90 { found.append((.cooked, String(localized: "it's running hot at \(Int(t)) °C", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .sensors, String(localized: "\(Int(t)) °C", comment: "Short menu bar badge"))) }
+            else if t >= 80 { found.append((.mid, String(localized: "it's warm at \(Int(t)) °C", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .sensors, String(localized: "\(Int(t)) °C", comment: "Short menu bar badge"))) }
         }
 
         if let free = input.startupDiskFree {
             let pct = Int((free * 100).rounded())
-            if free < 0.05 { found.append((.cooked, "only \(pct)% disk space left", .disk, "Disk \(pct)% free")) }
-            else if free < 0.10 { found.append((.mid, "disk is \(100 - pct)% full", .disk, "Disk \(pct)% free")) }
+            if free < 0.05 { found.append((.cooked, String(localized: "only \(pct)% disk space left", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .disk, String(localized: "Disk \(pct)% free", comment: "Short menu bar badge"))) }
+            else if free < 0.10 { found.append((.mid, String(localized: "disk is \(100 - pct)% full", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .disk, String(localized: "Disk \(pct)% free", comment: "Short menu bar badge"))) }
         }
 
         if let battery = input.batteryOnBattery {
             let pct = Int((battery * 100).rounded())
-            if battery < 0.10 { found.append((.cooked, "battery is at \(pct)%", .battery, "Battery \(pct)%")) }
-            else if battery < 0.20 { found.append((.mid, "battery is at \(pct)%", .battery, "Battery \(pct)%")) }
+            if battery < 0.10 { found.append((.cooked, String(localized: "battery is at \(pct)%", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .battery, String(localized: "Battery \(pct)%", comment: "Short menu bar badge"))) }
+            else if battery < 0.20 { found.append((.mid, String(localized: "battery is at \(pct)%", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .battery, String(localized: "Battery \(pct)%", comment: "Short menu bar badge"))) }
         }
 
         switch input.thermalState {
-        case .critical: found.append((.cooked, "macOS is throttling to cool down", .sensors, "Throttling"))
-        case .serious: found.append((.mid, "macOS is starting to throttle", .sensors, "Throttling"))
+        case .critical: found.append((.cooked, String(localized: "macOS is throttling to cool down", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .sensors, String(localized: "Throttling", comment: "Short menu bar badge")))
+        case .serious: found.append((.mid, String(localized: "macOS is starting to throttle", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .sensors, String(localized: "Throttling", comment: "Short menu bar badge")))
         default: break
         }
         return found.sorted { $0.0 > $1.0 }
@@ -111,14 +111,14 @@ enum VibeScore {
     /// One friendly sentence for the deck header.
     static func verdict(for vibe: Vibe, input: VibeInput, topApp: (name: String, cpu: Double)?) -> String {
         let loudest = topApp.flatMap { app in
-            app.cpu >= 5 ? "\(app.name) is the loudest at \(Int(app.cpu.rounded()))% CPU." : nil
+            app.cpu >= 5 ? String(localized: "\(app.name) is the loudest at \(Int(app.cpu.rounded()))% CPU.") : nil
         }
         guard vibe != .vibing else {
-            return "Your Mac is vibing. " + (loudest ?? "Nothing's working hard.")
+            return String(localized: "Your Mac is vibing.") + " " + (loudest ?? String(localized: "Nothing's working hard."))
         }
-        let reason = reasons(input).first { $0.0 >= vibe }?.1 ?? "things are settling down"
-        let opener = vibe == .cooked ? "Your Mac is cooked" : "Kinda mid"
-        return "\(opener): \(reason)." + (loudest.map { " " + $0 } ?? "")
+        let reason = reasons(input).first { $0.0 >= vibe }?.1 ?? String(localized: "things are settling down")
+        let opener = vibe == .cooked ? String(localized: "Your Mac is cooked") : String(localized: "Kinda mid")
+        return String(localized: "\(opener): \(reason).") + (loudest.map { " " + $0 } ?? "")
     }
 }
 

@@ -10,16 +10,16 @@ extension Module {
     /// One line under the module's name at the top of its Settings page.
     var settingsSummary: String {
         switch self {
-        case .cpu: "How hard the processor is working, and which apps are pushing it."
-        case .gpu: "Graphics load from games, video and machine learning."
-        case .memory: "Memory in use, memory pressure and the apps holding the most."
-        case .network: "Download and upload speed, the apps doing the talking and listening ports."
-        case .disk: "Free space on the startup disk, and read and write speed."
-        case .sensors: "Temperatures and fan speeds from the Mac's own sensors."
-        case .battery: "Charge, time left and health, plus Bluetooth accessories and USB devices."
-        case .agents: "Tokens and plan limits for Claude Code, Codex, Copilot and OpenCode."
+        case .cpu: String(localized: "How hard the processor is working, and which apps are pushing it.")
+        case .gpu: String(localized: "Graphics load from games, video and machine learning.")
+        case .memory: String(localized: "Memory in use, memory pressure and the apps holding the most.")
+        case .network: String(localized: "Download and upload speed, the apps doing the talking and listening ports.")
+        case .disk: String(localized: "Free space on the startup disk, and read and write speed.")
+        case .sensors: String(localized: "Temperatures and fan speeds from the Mac's own sensors.")
+        case .battery: String(localized: "Charge, time left and health, plus Bluetooth accessories and USB devices.")
+        case .agents: String(localized: "Tokens and plan limits for Claude Code, Codex, Copilot and OpenCode.")
         case .clock: "A menu bar clock, with world clocks in the deck."
-        case .weather: "Today's forecast for one city, from Open-Meteo."
+        case .weather: String(localized: "Today's forecast for one city, from Open-Meteo.")
         }
     }
 
@@ -53,7 +53,10 @@ struct ModuleSettings: View {
             Section { hero }
             menuBarSection
             switch module {
-            case .agents: ClaudeLimitsSection()
+            case .agents:
+                AgentSourcesSection()
+                ClaudeLimitsSection()
+            case .network: PublicIPSection()
             case .clock: ClockSections()
             case .weather: WeatherSections()
             default: EmptyView()
@@ -109,7 +112,7 @@ struct ModuleSettings: View {
     }
 
     private var shortcutSection: some View {
-        Section {
+        AdvancedSection {
             LabeledContent("Open from anywhere") {
                 Text(module.shortcutKey.map { "\(settings.hotkeyModifier.symbols)\($0)" } ?? "None")
                     .font(.body.monospaced())
@@ -120,9 +123,6 @@ struct ModuleSettings: View {
                     .font(.body.monospaced())
                     .foregroundStyle(isOn ? .primary : .tertiary)
             }
-        } header: {
-            Text("Shortcut")
-        } footer: {
             HStack(spacing: 4) {
                 Text(settings.hotkeysEnabled ? "Press it again to close." : "Global shortcuts are off.")
                 Button("Change in Shortcuts") { SettingsRouter.shared.open(.shortcuts) }
@@ -176,23 +176,6 @@ private struct ModuleOptionRows: View {
         if options.agentValue.isLimits {
             picker("Limits", binding(\.agentWindows))
             Toggle("Show time until reset", isOn: binding(\.agentShowReset))
-        }
-        Toggle("Count all agents", isOn: Binding(get: { options.agents.isEmpty }, set: { all in
-            settings.updateOptions(module) { $0.agents = all ? [] : [.claude] }
-        }))
-        if !options.agents.isEmpty {
-            LabeledContent("Agents") {
-                HStack(spacing: 12) {
-                    ForEach(AgentKind.allCases) { kind in
-                        Toggle(kind.title, isOn: Binding(get: { options.agents.contains(kind) }, set: { on in
-                            settings.updateOptions(module) { if on { $0.agents.insert(kind) } else { $0.agents.remove(kind) } }
-                        }))
-                        .toggleStyle(.checkbox)
-                        // At least one agent stays ticked.
-                        .disabled(options.agents == [kind])
-                    }
-                }
-            }
         }
     }
 }
@@ -257,6 +240,81 @@ private struct ModuleAlertsSection: View {
     }
 }
 
+/// Which agents the menu bar item counts (logo rows with switches) and which Claude Code account is read.
+private struct AgentSourcesSection: View {
+    @Environment(AppSettings.self) private var settings
+    private let module = Module.agents
+
+    private var options: ItemOptions { settings.options(module) }
+
+    var body: some View {
+        @Bindable var profiles = ClaudeProfiles.shared
+        let sample = AgentUsageStore.shared.sample
+        let found = sample.found
+        Section {
+            Text("Reads the usage Claude Code, Codex, OpenCode and GitHub Copilot record on this Mac and the plan limits Claude Code reports. Prompts, replies and files are never kept, and your usage never leaves your Mac.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            ForEach(AgentKind.allCases) { kind in
+                HStack(spacing: 10) {
+                    AgentLogoTile(agent: kind, size: 26)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(kind.title)
+                        Text(found.contains(kind) ? "Found on this Mac" : sample.scanned ? "Not found on this Mac" : "Looking…")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Toggle("Show \(kind.title)", isOn: Binding(
+                        get: { options.includes(kind) },
+                        set: { on in
+                            settings.updateOptions(module) { $0.setAgent(kind, shown: on) }
+                            AgentUsageStore.shared.refresh()
+                        }))
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                        // At least one agent stays on.
+                        .disabled(options.includes(kind) && options.agents.count == 1)
+                }
+            }
+            HStack(spacing: 10) {
+                SettingsIcon(symbol: "person.crop.circle", color: .indigo, size: 26)
+                Picker("Claude account", selection: $profiles.selectedID) {
+                    ForEach(profiles.profiles) { Text($0.label).tag($0.id) }
+                }
+            }
+            Button("Choose account folder…") { chooseFolder() }
+        } header: {
+            Text("Agents")
+        } footer: {
+            Text("Switched-off agents are left out of the menu bar; the deck still shows them all. For a second Claude Code account, pick its profile folder (the one CLAUDE_CONFIG_DIR points to, like ~/.claude-work): usage and live limits then come from that account. Claude Code itself isn't changed.")
+                .settingsFooter()
+        }
+        .onAppear {
+            profiles.refresh()
+            AgentUsageStore.shared.refresh(fullWalk: true)
+        }
+    }
+
+    private func chooseFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.showsHiddenFiles = true
+        panel.directoryURL = FileManager.default.homeDirectoryForCurrentUser
+        panel.message = String(localized: "Choose a Claude Code profile folder (the one CLAUDE_CONFIG_DIR points to).")
+        panel.prompt = String(localized: "Use Folder")
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        if !ClaudeProfiles.shared.add(url) {
+            let alert = NSAlert()
+            alert.messageText = String(localized: "That folder isn't a Claude Code profile")
+            alert.informativeText = String(localized: "Choose a folder that has Claude Code's projects folder or .claude.json in it, like ~/.claude-work. Sign in to Claude Code with CLAUDE_CONFIG_DIR set to it first.")
+            alert.runModal()
+        }
+    }
+}
+
 /// Opt-in live Claude limits (lives on the Agents page).
 private struct ClaudeLimitsSection: View {
     var body: some View {
@@ -274,8 +332,8 @@ private struct ClaudeLimitsSection: View {
             Text("Claude Code")
         } footer: {
             Text(claudeLimits.isOn
-                 ? "Asks your Claude Code for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access; Claude Code signs in itself."
-                 : "Off: Claude Code shows its local 5-hour estimate. When on, VibeCheck asks your Claude Code for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access.")
+                 ? String(localized: "Asks your Claude Code for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access; Claude Code signs in itself.")
+                 : String(localized: "Off: Claude Code shows its local 5-hour estimate. When on, VibeCheck asks your Claude Code for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access."))
                 .settingsFooter()
         }
     }
@@ -408,9 +466,24 @@ private struct WeatherSections: View {
         defer { searching = false }
         do {
             results = try await OpenMeteo.search(query)
-            searchError = results.isEmpty ? "No matches." : nil
+            searchError = results.isEmpty ? String(localized: "No matches.") : nil
         } catch {
-            if !Task.isCancelled { searchError = "Search failed. Check your connection." }
+            if !Task.isCancelled { searchError = String(localized: "Search failed. Check your connection.") }
+        }
+    }
+}
+
+/// Network page: the opt-in public IP lookup.
+private struct PublicIPSection: View {
+    @Environment(AppSettings.self) private var settings
+
+    var body: some View {
+        @Bindable var settings = settings
+        Section {
+            Toggle("Show public IP address", isOn: $settings.showPublicIP)
+        } footer: {
+            Text("Off by default. When on, VibeCheck asks api.ipify.org (over HTTPS) for your address at most every 10 minutes and when your network changes. That service sees your IP, as any website does.")
+                .settingsFooter()
         }
     }
 }
