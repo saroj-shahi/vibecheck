@@ -1,7 +1,7 @@
 import Foundation
 import SQLite3
 
-/// Token counts in one bucket. "Total" includes cache reads, matching tools as usage tools usually count them.
+/// Token counts in one bucket. "Total" includes cache reads, as usage tools usually count them.
 struct TokenCounts: Equatable {
     var input = 0
     var output = 0
@@ -386,7 +386,7 @@ enum AgentLogParser {
     }
 
     /// The active 5-hour block: starts at the hour of the first message after a previous block ended
-    /// (or after a 5-hour gap), as usage tools usually count them. Nil when the last block is over.
+    /// (or after a 5-hour gap). Nil when the last block is over.
     static func currentBlock(_ entries: [UsageEntry], now: Date, calendar: Calendar = .current) -> UsageBlock? {
         let length: TimeInterval = 5 * 3600
         var block: UsageBlock?

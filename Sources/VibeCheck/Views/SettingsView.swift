@@ -6,7 +6,7 @@ enum SettingsSection: Hashable, Identifiable {
     case general, menuBar, keepAwake, alerts, shortcuts, backup, about
     case module(Module)
 
-    /// The sidebar, top to bottom: app pages, then monitors, then extras (like 
+    /// The sidebar, top to bottom: app pages, then monitors, then extras (like
     /// System Settings: general things first, then one row per thing you can configure).
     static let groups: [SettingsGroup] = [
         SettingsGroup(title: nil, sections: [.general, .menuBar, .keepAwake, .alerts, .shortcuts, .backup, .about]),

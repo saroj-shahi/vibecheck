@@ -267,8 +267,8 @@ is earned: mint / yellow / red for vibing / mid / cooked, orange for "paused" fa
 Unchanged from BRAND.md: deck open (anchored drop, 0.38 s) and tile → detail unfold (spring 0.38 / 0.86,
 25 ms stagger).
 
-**Benchmarks.** launcher apps for the command bar (type anywhere, keyboard selection with the mouse still
-working, shortcut hints on the right). dense menu bar monitors for density (one number per tile, axis-less sparklines).
+**Benchmarks.** A launcher-style command bar (type anywhere, keyboard selection with the mouse still
+working, shortcut hints on the right). Dense menu bar monitors for density (one number per tile, axis-less sparklines).
 From another app, left out on purpose: four-column toggle tiles, blue accent fills on active tiles, grouped
 results while typing, its 12 pt radius and web fonts.
 

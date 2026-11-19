@@ -60,7 +60,7 @@ struct AgentsPanel: View {
                             }
                         }
                     }
-                    Text("Read from local logs; nothing leaves your Mac. Totals include cache reads, as usage tools usually count them. The Claude 5-hour window is an estimate.")
+                    Text("Read from local logs; nothing leaves your Mac. Totals include cache reads. The Claude 5-hour window is an estimate.")
                         .font(.caption).foregroundStyle(.tertiary)
                         .fixedSize(horizontal: false, vertical: true)
                 }

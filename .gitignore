@@ -3,3 +3,7 @@ build/
 .swiftpm/
 .DS_Store
 *.xcodeproj/xcuserdata/
+
+# Local AI assistant setup (not published)
+.claude/
+CLAUDE.md

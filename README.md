@@ -21,7 +21,7 @@
 ## Meet VibeCheck
 
 Your fan starts screaming. The battery drops faster than it should. Everything feels slow, and you have no
-idea why. Normally you'd open a process viewer and squint at a wall of numbers.
+idea why. Normally you'd open a process list and squint at a wall of numbers.
 
 **VibeCheck does the squinting for you.** One small ring sits in your menu bar and shows you how your Mac is
 doing at a glance:
