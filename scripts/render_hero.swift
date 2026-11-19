@@ -30,7 +30,8 @@ let image = NSImage(size: NSSize(width: W, height: H), flipped: true) { _ in
     }
 
     // The deck, floating on the right.
-    let deckSize = NSSize(width: 720, height: 916)
+    // 916 px tall, width from the screenshot's own aspect (the deck's width changes between versions).
+    let deckSize = NSSize(width: (916 * deck.size.width / deck.size.height).rounded(), height: 916)
     let deckRect = NSRect(x: W - deckSize.width - 170, y: (H - deckSize.height) / 2, width: deckSize.width, height: deckSize.height)
     ctx.saveGState()
     ctx.setShadow(offset: CGSize(width: 0, height: 30), blur: 90, color: NSColor.black.withAlphaComponent(0.6).cgColor)
