@@ -213,7 +213,7 @@ whole screen.
 ## 5. Design rules
 
 Condensed from three reviews: the "menu bar Creative Director" brief (round one), a popover
-mockup (`docs/otherapp-popover-mockup.html`, a different app, round two) and the Apple Design Award style
+mockup (a different app, round two; the HTML file was removed 2026-11-19, it is in git history) and the Apple Design Award style
 teardown (round three). BRAND.md still decides voice, color and motion.
 
 **The idea.** A verdict first and a cockpit second, in a 360 pt sheet of glass. Everything folds behind three
