@@ -58,6 +58,7 @@ enum Module: String, CaseIterable, Identifiable {
         case .sensors, .battery, .weather: [.standard, .valueOnly]
         case .agents: [.standard, .valueOnly]
         case .clock: [.standard, .iconAndValue]
+        case .network: [.standard, .iconAndValue, .iconValueArrows, .valueOnly]
         default: [.standard, .iconAndValue, .valueOnly]
         }
     }
@@ -115,6 +116,8 @@ extension Notification.Name {
 /// How a single item draws itself in the menu bar.
 enum LabelStyle: String, CaseIterable, Identifiable {
     case standard, iconAndValue, valueOnly
+    /// Network only: globe, rates and the direction arrows together.
+    case iconValueArrows
     /// Agents only: two stacked rows, "% left" and time to reset for the 5-hour and weekly limits.
     case limits
     var id: String { rawValue }
@@ -132,6 +135,7 @@ enum LabelStyle: String, CaseIterable, Identifiable {
             }
         case .iconAndValue: module == .clock ? String(localized: "Icon + time") : String(localized: "Icon + value")
         case .valueOnly: String(localized: "Value only")
+        case .iconValueArrows: String(localized: "Icon + rates + arrows")
         case .limits: String(localized: "Limits left")
         }
     }

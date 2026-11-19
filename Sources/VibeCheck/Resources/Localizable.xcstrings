@@ -3144,6 +3144,16 @@
         }
       }
     },
+    "Icon + rates + arrows": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Icon + rates + arrows"
+          }
+        }
+      }
+    },
     "Icon + time": {
       "localizations": {
         "en": {

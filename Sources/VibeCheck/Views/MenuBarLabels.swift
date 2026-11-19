@@ -16,6 +16,12 @@ struct MenuBarLabel: View {
     private var options: ItemOptions { settings.options(module) }
     private var gap: CGFloat { settings.menuBar.spacing.inner }
     private let valueFont = Font.system(size: 11, weight: .medium).monospacedDigit()
+    /// Item icons and graphs are drawn at the vibe ring's size (16 pt box) so the menu bar reads as one row.
+    static let iconSize: CGFloat = 15
+    static let graphHeight: CGFloat = 16
+    private let iconFont = Font.system(size: MenuBarLabel.iconSize)
+    private var showsIcon: Bool { style == .iconAndValue || style == .iconValueArrows }
+    private var showsArrows: Bool { style == .standard || style == .iconValueArrows }
 
     var body: some View {
         Group {
@@ -54,8 +60,8 @@ struct MenuBarLabel: View {
     private func meter<Graph: View>(_ text: String, width: CGFloat = 30, @ViewBuilder graph: () -> Graph) -> some View {
         HStack(spacing: gap) {
             switch style {
-            case .standard: graph().frame(width: module == .memory ? 7 : 23, height: 15)
-            case .iconAndValue: Image(systemName: module.symbol).font(.system(size: 12))
+            case .standard: graph().frame(width: module == .memory ? 7 : 23, height: Self.graphHeight)
+            case .iconAndValue, .iconValueArrows: Image(systemName: module.symbol).font(iconFont)
             case .valueOnly, .limits: EmptyView()
             }
             value(text, width: width)
@@ -80,7 +86,7 @@ struct MenuBarLabel: View {
         if options.diskValue == .free {
             let volume = stats.volumes.first { $0.path == "/" } ?? stats.volumes.first
             HStack(spacing: gap) {
-                if style != .valueOnly { Image(systemName: "internaldrive").font(.system(size: 12)) }
+                if style != .valueOnly { Image(systemName: "internaldrive").font(iconFont) }
                 value(volume.map { Fmt.compactBytes($0.available) } ?? "–", width: 36)
             }
             .help("Startup disk free space")
@@ -119,8 +125,8 @@ struct MenuBarLabel: View {
             }
             .opacity(offline ? 0 : 1)
             HStack(spacing: 2) {
-                Image(systemName: "network.slash").font(.system(size: 10, weight: .semibold))
-                    .networkStatusDot(online: false, size: 4)
+                Image(systemName: "network.slash").font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.red)
                 Text("Offline").font(.system(size: 9, weight: .semibold))
             }
             .foregroundStyle(.secondary)
@@ -134,11 +140,12 @@ struct MenuBarLabel: View {
     private func rates(top: (String, Double, Color), bottom: (String, Double, Color), highlight: Bool) -> some View {
         let anyActive = top.1 >= Self.activeThreshold || bottom.1 >= Self.activeThreshold
         return HStack(spacing: gap) {
-            if style == .iconAndValue {
-                Image(systemName: module.symbol)
-                    .font(.system(size: 11))
-                    .foregroundStyle(highlight && !anyActive ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.primary))
-                    .networkStatusDot(online: stats.network.interface != nil, size: 4, enabled: module == .network)
+            if showsIcon {
+                if module == .network {
+                    networkGlobe(active: anyActive)
+                } else {
+                    Image(systemName: module.symbol).font(iconFont)
+                }
             }
             VStack(alignment: .trailing, spacing: -2) {
                 rateLine(top, highlight: highlight)
@@ -155,7 +162,7 @@ struct MenuBarLabel: View {
                 .lineLimit(1).minimumScaleFactor(0.75)
                 .frame(width: 28, alignment: .trailing)
                 .foregroundStyle(highlight && style == .valueOnly && !active ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
-            if style == .standard {
+            if showsArrows {
                 Text(line.label)
                     .frame(width: 9)
                     .foregroundStyle(!highlight ? AnyShapeStyle(.primary)
@@ -165,17 +172,23 @@ struct MenuBarLabel: View {
         }
     }
 
+    /// The network glyph, colored by status instead of a dot: green while online (full while data moves,
+    /// softer while idle), red while offline.
+    private func networkGlobe(active: Bool) -> some View {
+        let online = stats.network.interface != nil
+        return Image(systemName: module.symbol)
+            .font(iconFont)
+            .foregroundStyle(online ? Color.green.opacity(active ? 1 : 0.55) : Color.red)
+            .accessibilityLabel(online ? "Online" : "Offline")
+    }
+
     /// One direction, one line, at the normal value size.
     private func singleRate(_ line: (label: String, rate: Double, color: Color)) -> some View {
         let active = line.rate >= Self.activeThreshold
         return HStack(spacing: gap) {
-            if style == .iconAndValue {
-                Image(systemName: module.symbol).font(.system(size: 11))
-                    .foregroundStyle(active ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
-                    .networkStatusDot(online: stats.network.interface != nil, size: 4)
-            }
+            if showsIcon { networkGlobe(active: active) }
             value(Fmt.compactRate(line.rate), width: 34)
-            if style == .standard {
+            if showsArrows {
                 Text(line.label).font(.system(size: 11, weight: active ? .heavy : .semibold))
                     .foregroundStyle(active ? AnyShapeStyle(tint(line.color)) : AnyShapeStyle(.tertiary))
             }
@@ -185,7 +198,7 @@ struct MenuBarLabel: View {
     private func iconValue(_ text: String) -> some View {
         HStack(spacing: gap) {
             if style != .valueOnly {
-                Image(systemName: "thermometer.medium").font(.system(size: 12))
+                Image(systemName: "thermometer.medium").font(iconFont)
             }
             value(text, width: 27)
         }
@@ -195,7 +208,7 @@ struct MenuBarLabel: View {
         let b = stats.battery
         return HStack(spacing: gap) {
             if style != .valueOnly {
-                Image(systemName: b.present ? batterySymbol(b) : "powerplug").font(.system(size: 13))
+                Image(systemName: b.present ? batterySymbol(b) : "powerplug").font(iconFont)
             }
             if !b.present {
                 value("AC")
@@ -222,8 +235,8 @@ struct MenuBarLabel: View {
             if style != .valueOnly {
                 Image(systemName: forecast.map { WeatherCode.symbol($0.code, isDay: $0.isDay) } ?? "cloud.sun")
                     .symbolRenderingMode(settings.menuBar.colorful ? .multicolor : .monochrome)
-                    .font(.system(size: 12))
-                    .frame(width: 18)
+                    .font(iconFont)
+                    .frame(width: 22)
             }
             value(forecast.map { String(format: "%.0f°", $0.temperature) } ?? "–", width: 27)
         }
@@ -252,10 +265,10 @@ struct MenuBarLabel: View {
         let agent = sample.menuBarAgent(options)
         switch sample.menuBarContent(options) {
         case .limits(let limits, let used):
-            AgentLimitsLabel(limits: limits, tint: tint(Palette.agents), agent: agent, used: used,
+            AgentLimitsLabel(limits: limits, tint: tint(agent.brandColor), agent: agent, used: used,
                              showReset: options.agentShowReset, showIcon: showIcon)
         case .claudeEstimate(let block, let today) where options.agentShowReset:
-            ClaudeEstimateLabel(block: block, today: today, tint: tint(Palette.agents), showIcon: showIcon)
+            ClaudeEstimateLabel(block: block, today: today, tint: tint(AgentKind.claude.brandColor), showIcon: showIcon)
         case .claudeEstimate(_, let today):
             agentTokens(today, agent: agent, showIcon: showIcon)
         case .tokens(let total):
@@ -266,7 +279,7 @@ struct MenuBarLabel: View {
     private func agentTokens(_ total: Int, agent: AgentKind, showIcon: Bool) -> some View {
         HStack(spacing: gap) {
             if showIcon {
-                AgentLogo(agent: agent, size: 13).foregroundStyle(tint(Palette.agents))
+                AgentLogo(agent: agent, size: MenuBarLabel.graphHeight).foregroundStyle(tint(agent.brandColor))
             }
             value(AgentUsageStore.shared.sample.scanned ? Fmt.tokens(total) : "–", width: 34)
         }
@@ -275,7 +288,7 @@ struct MenuBarLabel: View {
     private var clock: some View {
         HStack(spacing: gap) {
             if style == .iconAndValue {
-                Image(systemName: "clock").font(.system(size: 12))
+                Image(systemName: "clock").font(iconFont)
             }
             Text(ClockTicker.shared.now, format: settings.clock.formatStyle)
                 .font(.system(size: 13, weight: .medium).monospacedDigit())
@@ -366,7 +379,7 @@ struct AgentLimitsLabel: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 60)) { context in
             HStack(spacing: 4) {
-                if showIcon { AgentLogo(agent: agent, size: 12).foregroundStyle(tint) }
+                if showIcon { AgentLogo(agent: agent, size: MenuBarLabel.graphHeight).foregroundStyle(tint) }
                 VStack(alignment: .trailing, spacing: -1) {
                     ForEach(limits.prefix(2), id: \.key) { limit in
                         HStack(spacing: 3) {
@@ -405,7 +418,7 @@ struct ClaudeEstimateLabel: View {
         TimelineView(.periodic(from: .now, by: 60)) { context in
             let reset = RateWindow(usedPercent: 0, windowMinutes: 300, resetsAt: block.end).countdown(now: context.date)
             HStack(spacing: 4) {
-                if showIcon { AgentLogo(agent: .claude, size: 12).foregroundStyle(tint) }
+                if showIcon { AgentLogo(agent: .claude, size: MenuBarLabel.graphHeight).foregroundStyle(tint) }
                 VStack(alignment: .trailing, spacing: -1) {
                     HStack(spacing: 3) {
                         Text(Fmt.tokens(block.tokens.total)).frame(width: 30, alignment: .trailing)
