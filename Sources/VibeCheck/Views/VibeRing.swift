@@ -14,15 +14,8 @@ struct VibeRing: View {
 
     var body: some View {
         let color: Color = vibe == .vibing && monochromeWhenVibing ? .primary : vibe.color
-        let ring = ZStack {
-            Circle().stroke(.primary.opacity(0.22), lineWidth: lineWidth)
-            Circle()
-                .trim(from: 0, to: vibe.ringFill)
-                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-        }
-        .padding(lineWidth / 2)
-        .frame(width: size, height: size)
+        let ring = shape(color: color)
+            .frame(width: size, height: size)
         .overlay {
             if awake {
                 Image(systemName: "cup.and.saucer.fill")
@@ -55,6 +48,52 @@ struct VibeRing: View {
                 SpringKeyframe(1.0, duration: 0.3)
             }
         }
+    }
+
+    /// The custom SF Symbol (`vibe.ring.<state>`, from `scripts/render_ring_symbol.swift`) when the app's asset
+    /// catalog is there; drawn shapes otherwise (tests, `swift run`). The symbol renders as a glyph, so state
+    /// changes swap it with a symbol replace instead of animating a trimmed stroke.
+    @ViewBuilder
+    private func shape(color: Color) -> some View {
+        if RingSymbol.isAvailable {
+            Image(RingSymbol.name(vibe))
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(color, .primary.opacity(0.22))
+                .font(.system(size: size / RingSymbol.outerDiameter, weight: RingSymbol.weight(lineWidth: lineWidth, size: size)))
+                .contentTransition(.symbolEffect(.replace))
+        } else {
+            ZStack {
+                Circle().stroke(.primary.opacity(0.22), lineWidth: lineWidth)
+                Circle()
+                    .trim(from: 0, to: vibe.ringFill)
+                    .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+            }
+            .padding(lineWidth / 2)
+        }
+    }
+}
+
+/// The vibe ring as custom SF Symbols, one per state, compiled into the app's Assets.car by build.sh.
+enum RingSymbol {
+    /// Assets.car only exists in the built app (build.sh runs actool), never in `swift test` / `swift run`.
+    static let isAvailable = Bundle.main.url(forResource: "Assets", withExtension: "car") != nil
+            && NSImage(named: name(.vibing)) != nil
+
+    /// Outer diameter of the regular-weight ring as a fraction of the point size (93 / 100 in the template).
+    static let outerDiameter: CGFloat = 0.93
+
+    nonisolated static func name(_ vibe: Vibe) -> String {
+        switch vibe {
+        case .vibing: "vibe.ring.vibing"
+        case .mid: "vibe.ring.mid"
+        case .cooked: "vibe.ring.cooked"
+        }
+    }
+
+    /// Regular matches the menu bar's 2.25 / 16 stroke; thinner rings (the deck's 3.5 / 30) use light.
+    nonisolated static func weight(lineWidth: CGFloat, size: CGFloat) -> Font.Weight {
+        lineWidth / size < 0.13 ? .light : .regular
     }
 }
 

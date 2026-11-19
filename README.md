@@ -131,12 +131,12 @@ The glass panel that opens under the menu bar.
 - **Quit or force quit** a top app straight from its row (asks first). ⌘↩ runs a tile's main action.
 - **The cup** is keep awake (see below); **the bell** lists the last 20 alerts, with a red dot for unseen
   ones; **the gear** opens Settings.
-- **Quick toggles** for dark mode, mic mute and Empty Trash live in the deck and the palette.
+- **Mic mute** is one click in the deck; **Empty Trash** lives in the palette.
 
 ### Command palette (⌘K)
 
 Open the deck and press **⌘K**, or just start typing. Everything VibeCheck can do is a command: open a
-module, start or stop keep awake, toggle dark mode or the mic, **Empty Trash** (press ↩ twice), **Quit /
+module, start or stop keep awake, mute the mic, **Empty Trash** (press ↩ twice), **Quit /
 Force Quit** one of the top 3 apps by CPU, turn an alert on or off, **Check for Updates**. The last 8
 commands you ran come first.
 
@@ -303,7 +303,7 @@ must carry a `VibeCheck.dmg` asset, which is what the download button links to.
 | `Sources/VibeCheck/App/` | `SystemStats`, settings, the deck controller, vibe score, alerts, history, weather, hotkeys |
 | `Sources/VibeCheck/Views/` | Menu bar labels, deck, detail panels, charts, settings window |
 | `branding/` | Brand guide, SVG sources, rendered PNGs and the DMG art |
-| `scripts/` | `release.sh` (DMG), `render_brand.swift` (icon and brand assets), `render_dmg.swift` (install window art), `render_hero.swift` (the README hero) |
+| `scripts/` | `release.sh` (DMG), `render_brand.swift` (icon and brand assets), `render_dmg.swift` (install window art), `render_hero.swift` (the README hero), `render_ring_symbol.swift` (the ring's custom SF Symbols) |
 
 See [`docs/CODEMAP.md`](docs/CODEMAP.md) for which file does what.
 

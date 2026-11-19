@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg
+PUBLIC "-//W3C//DTD SVG 1.1//EN"
+       "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="3300" height="2200">
+ <!--template writer version: "101"-->
+ <style>.monochrome-0 {fill:#000000}
+
+.monochrome-1 {fill:#000000}
+
+.multicolor-0:tintColor {fill:#007AFF}
+
+.multicolor-1:tintColor {fill:#007AFF}
+
+.hierarchical-0:primary {fill:#212121}
+
+.hierarchical-1:secondary {fill:#8E8E8E}
+
+.SFSymbolsPreviewWireframe {fill:none;opacity:1.0;stroke:#000000;stroke-width:0.5}
+</style>
+<g id="Notes">
+  <rect height="2200" id="artboard" style="fill:white;opacity:1" width="3300" x="0" y="0"/>
+  <text id="template-version" style="stroke:none;fill:black;font-family:sans-serif;font-size:13;text-anchor:end;" transform="matrix(1 0 0 1 3036 1933)">Template v.4.0</text>
+  <text id="descriptive-name" style="stroke:none;fill:black;font-family:sans-serif;font-size:13;text-anchor:end;" transform="matrix(1 0 0 1 3036 1969)">vibe.ring.vibing</text>
+ </g>
+<g id="Guides">
+  <line id="Baseline-S" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="263" x2="3036" y1="696" y2="696"/>
+  <line id="Capline-S" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="263" x2="3036" y1="625.541" y2="625.541"/>
+  <line id="Baseline-M" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="263" x2="3036" y1="1126" y2="1126"/>
+  <line id="Capline-M" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="263" x2="3036" y1="1055.541" y2="1055.541"/>
+  <line id="Baseline-L" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="263" x2="3036" y1="1556" y2="1556"/>
+  <line id="Capline-L" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="263" x2="3036" y1="1485.541" y2="1485.541"/>
+  <line id="left-margin-Ultralight-S" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="514.461" x2="514.461" y1="600.785" y2="720.121"/>
+  <line id="right-margin-Ultralight-S" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="604.961" x2="604.961" y1="600.785" y2="720.121"/>
+  <line id="left-margin-Regular-S" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="1400.340" x2="1400.340" y1="600.785" y2="720.121"/>
+  <line id="right-margin-Regular-S" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="1499.340" x2="1499.340" y1="600.785" y2="720.121"/>
+  <line id="left-margin-Black-S" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="2879.900" x2="2879.900" y1="600.785" y2="720.121"/>
+  <line id="right-margin-Black-S" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="2986.900" x2="2986.900" y1="600.785" y2="720.121"/>
+ </g>
+<g id="Symbols">
+  <g id="Ultralight-S" transform="matrix(1 0 0 1 514.461 696.000)">
+   <path class="monochrome-1 multicolor-1:tintColor hierarchical-1:secondary" d="M45.250 -77.480 C68.584 -77.480 87.500 -58.564 87.500 -35.230 C87.500 -11.895 68.584 7.020 45.250 7.020 C21.916 7.021 3.000 -11.895 3.000 -35.229 C3.000 -58.564 21.916 -77.480 45.250 -77.480Z M45.250 -72.980 C24.401 -72.980 7.500 -56.078 7.500 -35.230 C7.500 -14.381 24.401 2.520 45.250 2.520 C66.099 2.521 83.000 -14.381 83.000 -35.229 C83.000 -56.078 66.099 -72.980 45.250 -72.980Z"/>
+   <path class="monochrome-0 multicolor-0:tintColor hierarchical-0:primary" d="M45.250 -77.480 C68.584 -77.480 87.500 -58.564 87.500 -35.230 C87.500 -11.895 68.584 7.020 45.250 7.020 C21.916 7.021 3.000 -11.895 3.000 -35.229 C3.000 -58.564 21.916 -77.480 45.250 -77.480Z M45.250 -72.980 C24.401 -72.980 7.500 -56.078 7.500 -35.230 C7.500 -14.381 24.401 2.520 45.250 2.520 C66.099 2.521 83.000 -14.381 83.000 -35.229 C83.000 -56.078 66.099 -72.980 45.250 -72.980Z"/>
+  </g>
+  <g id="Regular-S" transform="matrix(1 0 0 1 1400.340 696.000)">
+   <path class="monochrome-1 multicolor-1:tintColor hierarchical-1:secondary" d="M49.500 -81.730 C75.181 -81.730 96.000 -60.911 96.000 -35.230 C96.000 -9.548 75.181 11.270 49.500 11.270 C23.819 11.271 3.000 -9.548 3.000 -35.229 C3.000 -60.911 23.819 -81.730 49.500 -81.730Z M49.500 -68.730 C30.998 -68.730 16.000 -53.731 16.000 -35.230 C16.000 -16.728 30.998 -1.730 49.500 -1.730 C68.002 -1.729 83.000 -16.728 83.000 -35.229 C83.000 -53.731 68.002 -68.730 49.500 -68.730Z"/>
+   <path class="monochrome-0 multicolor-0:tintColor hierarchical-0:primary" d="M49.500 -81.730 C75.181 -81.730 96.000 -60.911 96.000 -35.230 C96.000 -9.548 75.181 11.270 49.500 11.270 C23.819 11.271 3.000 -9.548 3.000 -35.229 C3.000 -60.911 23.819 -81.730 49.500 -81.730Z M49.500 -68.730 C30.998 -68.730 16.000 -53.731 16.000 -35.230 C16.000 -16.728 30.998 -1.730 49.500 -1.730 C68.002 -1.729 83.000 -16.728 83.000 -35.229 C83.000 -53.731 68.002 -68.730 49.500 -68.730Z"/>
+  </g>
+  <g id="Black-S" transform="matrix(1 0 0 1 2879.900 696.000)">
+   <path class="monochrome-1 multicolor-1:tintColor hierarchical-1:secondary" d="M53.500 -85.730 C81.390 -85.730 104.000 -63.120 104.000 -35.230 C104.000 -7.339 81.390 15.270 53.500 15.270 C25.610 15.271 3.000 -7.339 3.000 -35.229 C3.000 -63.120 25.610 -85.730 53.500 -85.730Z M53.500 -64.730 C37.208 -64.730 24.000 -51.522 24.000 -35.230 C24.000 -18.937 37.208 -5.730 53.500 -5.730 C69.792 -5.729 83.000 -18.937 83.000 -35.229 C83.000 -51.522 69.792 -64.730 53.500 -64.730Z"/>
+   <path class="monochrome-0 multicolor-0:tintColor hierarchical-0:primary" d="M53.500 -85.730 C81.390 -85.730 104.000 -63.120 104.000 -35.230 C104.000 -7.339 81.390 15.270 53.500 15.270 C25.610 15.271 3.000 -7.339 3.000 -35.229 C3.000 -63.120 25.610 -85.730 53.500 -85.730Z M53.500 -64.730 C37.208 -64.730 24.000 -51.522 24.000 -35.230 C24.000 -18.937 37.208 -5.730 53.500 -5.730 C69.792 -5.729 83.000 -18.937 83.000 -35.229 C83.000 -51.522 69.792 -64.730 53.500 -64.730Z"/>
+  </g>
+ </g>
+</svg>

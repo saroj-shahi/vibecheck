@@ -21,8 +21,7 @@ struct QuickActionsTests {
 
     @Test func denialCodeMapsToAutomationMessage() {
         #expect(QuickActionsText.failureMessage(code: -1743) == QuickActionsText.automationDenied)
-        #expect(QuickActionsText.automationDenied == "Allow VibeCheck to control System Events in System Settings → Privacy & Security → Automation.")
-        #expect(QuickActionsText.failureMessage(code: -1743, target: "Finder").contains("Finder"))
+        #expect(QuickActionsText.automationDenied.contains("Finder"))
     }
 
     @Test func otherCodesGetGenericMessage() {

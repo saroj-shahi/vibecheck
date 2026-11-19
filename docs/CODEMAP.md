@@ -28,7 +28,7 @@ are added or split. Plans, decisions and history are in [ROADMAP.md](ROADMAP.md)
 | `ClaudeProfiles.swift` | Claude Code accounts: `ClaudeProfile` (default `~/.claude` or a `CLAUDE_CONFIG_DIR` folder; log roots, `.claude.json`, discovery of `~/.claude-*`), `ClaudeProfiles` (selected account, added folders; per Mac) |
 | `ClaudeLimits.swift` | Live Claude limits from the user's `claude` CLI (`get_usage` control request); opt-in |
 | `ProcessKiller.swift` | Quit / Force Quit (optionally with subprocesses) with protected processes and pid start-time identity |
-| `QuickActions.swift` | Quick toggles: dark mode (System Events), mic mute (CoreAudio), empty Trash (Finder) |
+| `QuickActions.swift` | Quick toggles: mic mute (CoreAudio), empty Trash (Finder) |
 | `SecureInput.swift` | Which app holds Secure Event Input (shortcuts paused) |
 | `DeckCommands.swift` | ⌘K palette: the command list, ⌘↩ actions, and how typing filters it |
 | `RecentCommands.swift` | Palette MRU (last 8 command ids, key `recentCommands`) |
@@ -93,5 +93,5 @@ pass explicit empty locations (`claudeRoots`, `opencodeDB`, `claudeConfig`, …)
 
 ## scripts/
 
-`render_dmg.swift` (the DMG install-window art in `branding/dmg/`: `share` with the Terminal step, `release` without), `render_hero.swift` (the README hero `docs/screenshots/hero.png`: the deck screenshot on the brand gradient), `release.sh` (Developer ID release: `build.sh` with hardened runtime, notarize + staple, DMG in `build/release/`; `--share` for colleagues without Developer ID; lays out the branded DMG window through Finder and checks the saved layout), `extract_strings.sh` (refreshes `Sources/VibeCheck/Resources/Localizable.xcstrings` from the code; `build.sh` copies the compiled `en.lproj` into the app), `render_brand.swift` (brand assets from `branding/svg`; the app icon from the render in `branding/art`); `branding/VibeCheck.icon` (Liquid Glass icon, compiled by `actool` in `build.sh`), `qa/` (on-screen QA tools: `scripts/qa/build.sh`,
+`render_dmg.swift` (the DMG install-window art in `branding/dmg/`: `share` with the Terminal step, `release` without), `render_ring_symbol.swift` (the vibe ring's custom SF Symbols in `Resources/Symbols.xcassets`, compiled into `Assets.car` by `build.sh`; `VibeRing` falls back to drawn shapes without it), `render_hero.swift` (the README hero `docs/screenshots/hero.png`: the deck screenshot on the brand gradient), `release.sh` (Developer ID release: `build.sh` with hardened runtime, notarize + staple, DMG in `build/release/`; `--share` for colleagues without Developer ID; lays out the branded DMG window through Finder and checks the saved layout), `extract_strings.sh` (refreshes `Sources/VibeCheck/Resources/Localizable.xcstrings` from the code; `build.sh` copies the compiled `en.lproj` into the app), `render_brand.swift` (brand assets from `branding/svg`; the app icon from the render in `branding/art`); `branding/VibeCheck.icon` (Liquid Glass icon, compiled by `actool` in `build.sh`), `qa/` (on-screen QA tools: `scripts/qa/build.sh`,
 then `.build/qa/qa help`).

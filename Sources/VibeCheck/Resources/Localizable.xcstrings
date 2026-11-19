@@ -1031,11 +1031,22 @@
       }
     },
     "A row for dark mode, microphone mute and Empty Trash. Dark mode and Empty Trash ask macOS for Automation access the first time.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "A row for dark mode, microphone mute and Empty Trash. Dark mode and Empty Trash ask macOS for Automation access the first time."
+          }
+        }
+      }
+    },
+    "A row for microphone mute. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A row for microphone mute. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time."
           }
         }
       }
@@ -1191,6 +1202,7 @@
       }
     },
     "Allow VibeCheck to control System Events in System Settings → Privacy & Security → Automation.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2068,6 +2080,7 @@
       }
     },
     "Dark": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2078,6 +2091,7 @@
       }
     },
     "Dark mode, off": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2088,6 +2102,7 @@
       }
     },
     "Dark mode, on": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5907,6 +5922,7 @@
       }
     },
     "Switch to dark mode": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5917,6 +5933,7 @@
       }
     },
     "Switch to light mode": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {

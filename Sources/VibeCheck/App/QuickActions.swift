@@ -11,17 +11,15 @@ enum QuickResult: Equatable, Sendable {
 
 /// Pure helpers, kept separate so they can be tested without touching the system.
 enum QuickActionsText {
-    static let automationDenied = String(localized: "Allow VibeCheck to control System Events in System Settings → Privacy & Security → Automation.")
-    static let automationDeniedFinder = String(localized: "Allow VibeCheck to control Finder in System Settings → Privacy & Security → Automation.")
+    static let automationDenied = String(localized: "Allow VibeCheck to control Finder in System Settings → Privacy & Security → Automation.")
     static let genericFailure = String(localized: "That didn't work. Try again.")
 
     /// The AppleScript error number macOS reports when Automation access is denied.
     static let deniedCode = -1743
 
     /// Maps an AppleScript error number to the message shown in the deck.
-    static func failureMessage(code: Int, target: String = "System Events") -> String {
-        guard code == deniedCode else { return genericFailure }
-        return target == "Finder" ? automationDeniedFinder : automationDenied
+    static func failureMessage(code: Int) -> String {
+        code == deniedCode ? automationDenied : genericFailure
     }
 
     /// Chip label: "Trash" when empty or unreadable, otherwise "Trash 12".
@@ -43,16 +41,15 @@ enum QuickActionsText {
     }
 }
 
-/// The two quick toggles on the deck home.
-enum QuickToggle: Sendable { case dark, mic }
+/// The quick toggles on the deck home.
+enum QuickToggle: Sendable { case mic }
 
-/// Dark mode, microphone mute and Empty Trash, run on request only.
+/// Microphone mute and Empty Trash, run on request only.
 @MainActor
 @Observable
 final class QuickActions {
     static let shared = QuickActions()
 
-    private(set) var isDark = false
     private(set) var isMicMuted = false
     /// Items in ~/.Trash; nil when it can't be read (no access).
     private(set) var trashCount: Int? = 0
@@ -68,28 +65,10 @@ final class QuickActions {
     // MARK: Refresh
 
     func refresh() {
-        isDark = Self.systemIsDark()
         isMicMuted = Self.readMicMuted()
         Task {
             let count = await Task.detached { Self.countTrash() }.value
             trashCount = count
-        }
-    }
-
-    // MARK: Dark mode
-
-    nonisolated static func systemIsDark() -> Bool {
-        UserDefaults(suiteName: "Apple Global Domain")?.string(forKey: "AppleInterfaceStyle") == "Dark"
-    }
-
-    func toggleDarkMode() {
-        let script = #"tell application "System Events" to tell appearance preferences to set dark mode to not dark mode"#
-        Task {
-            let result = await Self.runAppleScript(script, target: "System Events")
-            switch result {
-            case .ok: isDark.toggle()
-            case .failure(let message): show(message, toggle: .dark)
-            }
         }
     }
 
@@ -104,7 +83,7 @@ final class QuickActions {
 
     func emptyTrash() {
         Task {
-            let result = await Self.runAppleScript(#"tell application "Finder" to empty trash"#, target: "Finder")
+            let result = await Self.runAppleScript(#"tell application "Finder" to empty trash"#)
             switch result {
             case .ok: trashCount = 0
             case .failure(let message): show(message)
@@ -116,14 +95,14 @@ final class QuickActions {
     // MARK: AppleScript
 
     /// Runs on a background thread; NSAppleScript is created there and never shared.
-    nonisolated private static func runAppleScript(_ source: String, target: String) async -> QuickResult {
+    nonisolated private static func runAppleScript(_ source: String) async -> QuickResult {
         await Task.detached {
             guard let script = NSAppleScript(source: source) else { return QuickResult.failure(QuickActionsText.genericFailure) }
             var error: NSDictionary?
             script.executeAndReturnError(&error)
             guard let error else { return .ok }
             let code = (error[NSAppleScript.errorNumber] as? Int) ?? 0
-            return .failure(QuickActionsText.failureMessage(code: code, target: target))
+            return .failure(QuickActionsText.failureMessage(code: code))
         }.value
     }
 

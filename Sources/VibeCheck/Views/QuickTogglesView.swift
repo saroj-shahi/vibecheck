@@ -1,17 +1,13 @@
 import SwiftUI
 
-/// Row of two quick toggles on the deck home: dark mode and microphone mute. (Empty Trash lives in the
-/// ⌘K palette only.) A toggle that fails shakes; its symbol swaps with a replace transition.
+/// Row with one quick toggle on the deck home: microphone mute, filling the row. (Empty Trash lives in
+/// the ⌘K palette only.) A toggle that fails shakes; its symbol swaps with a replace transition.
 struct QuickTogglesView: View {
     private let actions = QuickActions.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
-                QuickChip(symbol: actions.isDark ? "moon.fill" : "sun.max", label: "Dark", on: actions.isDark,
-                          spoken: actions.isDark ? String(localized: "Dark mode, on") : String(localized: "Dark mode, off"),
-                          help: actions.isDark ? "Switch to light mode" : "Switch to dark mode",
-                          failTick: actions.failedToggle == .dark ? actions.failureTick : 0) { actions.toggleDarkMode() }
                 QuickChip(symbol: actions.isMicMuted ? "mic.slash.fill" : "mic.fill", label: "Mic", on: actions.isMicMuted,
                           spoken: actions.isMicMuted ? String(localized: "Microphone, muted") : String(localized: "Microphone, on"),
                           help: actions.isMicMuted ? "Unmute the microphone" : "Mute the microphone",

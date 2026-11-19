@@ -17,7 +17,7 @@
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
-    <key>NSAppleEventsUsageDescription</key><string>VibeCheck's quick toggles ask System Events to switch dark mode and Finder to empty the Trash, only when you click them.</string>
+    <key>NSAppleEventsUsageDescription</key><string>VibeCheck asks Finder to empty the Trash, only when you choose Empty Trash.</string>
     <key>NSBluetoothAlwaysUsageDescription</key><string>VibeCheck turns Bluetooth off while your Mac sleeps and back on when it wakes, if you switch that on in Settings.</string>
     <key>NSLocationUsageDescription</key><string>VibeCheck reads the name of your Wi-Fi network to keep your Mac awake while you're on the network you chose in Settings. Your location is never used or stored.</string>
     <key>NSLocationWhenInUseUsageDescription</key><string>VibeCheck reads the name of your Wi-Fi network to keep your Mac awake while you're on the network you chose in Settings. Your location is never used or stored.</string>

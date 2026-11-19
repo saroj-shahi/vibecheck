@@ -61,10 +61,6 @@ enum DeckCommands {
         }
 
         let quick = QuickActions.shared
-        list.append(DeckCommand(id: "toggle.dark", title: quick.isDark ? String(localized: "Switch to light mode") : String(localized: "Switch to dark mode"),
-                                symbol: quick.isDark ? "sun.max" : "moon.fill", keywords: "appearance theme dark light") {
-            quick.toggleDarkMode(); model.closePalette()
-        })
         list.append(DeckCommand(id: "toggle.mic", title: quick.isMicMuted ? String(localized: "Unmute the microphone") : String(localized: "Mute the microphone"),
                                 symbol: quick.isMicMuted ? "mic.fill" : "mic.slash.fill", keywords: "microphone audio mute") {
             quick.toggleMic(); model.closePalette()

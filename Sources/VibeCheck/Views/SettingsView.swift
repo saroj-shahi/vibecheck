@@ -72,7 +72,7 @@ enum SettingsSection: Hashable, Identifiable {
     /// Extra words the sidebar search matches, so "notch" finds Menu Bar and "caffeinate" finds Keep Awake.
     var keywords: String {
         switch self {
-        case .general: "update interval refresh launch login startup quick toggles dark mode mute trash bluetooth sleep advanced sampling"
+        case .general: "update interval refresh launch login startup quick toggles mute trash bluetooth sleep advanced sampling"
         case .menuBar: "style combined separate items spacing ring notch colorful order reorder preview advanced graphs camera"
         case .keepAwake: "caffeinate sleep display focus timer schedule power downloads agents"
         case .alerts: "notifications warnings thresholds advanced restore defaults test"
@@ -403,7 +403,7 @@ private struct GeneralSettings: View {
             } header: {
                 Text("Deck")
             } footer: {
-                Text("A row for dark mode, microphone mute and Empty Trash. Dark mode and Empty Trash ask macOS for Automation access the first time.")
+                Text("A row for microphone mute. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time.")
                     .settingsFooter()
             }
             AdvancedSection {

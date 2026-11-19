@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Hardened runtime (Developer ID / notarized builds): the dark mode and empty Trash toggles send Apple Events. -->
+	<!-- Hardened runtime (Developer ID / notarized builds): Empty Trash sends Apple Events to Finder. -->
 	<key>com.apple.security.automation.apple-events</key>
 	<true/>
 	<!-- Hardened runtime: the "while on Wi-Fi X" trigger needs Location to read the network name. -->
