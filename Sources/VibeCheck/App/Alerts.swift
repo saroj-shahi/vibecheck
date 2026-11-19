@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import UserNotifications
 
 enum AlertMetric: String, Codable, CaseIterable, Identifiable {
@@ -244,9 +245,9 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
     }
 
     /// A one-off notification from elsewhere in the app (e.g. keep awake ending).
-    func notify(title: String, body: String, kind: LoggedNotification.Kind) {
+    func notify(title: String, body: String, kind: LoggedNotification.Kind, url: URL? = nil) {
         requestPermissionIfNeeded()
-        post(title: title, body: body)
+        post(title: title, body: body, userInfo: url.map { ["url": $0.absoluteString] } ?? [:])
         log?.record(kind, title: title, body: body)
     }
 
@@ -282,6 +283,10 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
         let isQuit = response.actionIdentifier == Self.quitAction
         let pid = info["pid"] as? Int, started = (info["started"] as? String).flatMap(UInt64.init)
         completionHandler()
+        if let link = (info["url"] as? String).flatMap(URL.init(string:)), link.scheme == "https" {
+            Task { @MainActor in _ = NSWorkspace.shared.open(link) }
+            return
+        }
         guard isQuit, let pid, let started else { return }
         Task { @MainActor in
             let target = ProcessKiller.Identity(pid: Int32(pid), started: started)

@@ -35,6 +35,7 @@ are added or split. Plans, decisions and history are in [ROADMAP.md](ROADMAP.md)
 | `AgentWatch.swift` | Agent runs from `AgentUsageStore`: working-now for the keep-awake trigger, long-run "is done" notification |
 | `DownloadsWatcher.swift` | Whether files are arriving in the watched folder (keep-awake "while downloading" trigger) |
 | `BluetoothSnooze.swift` | Bluetooth off while asleep (private IOBluetooth, CoreBluetooth permission) |
+| `UpdateChecker.swift` | `UpdateChecker`: GitHub Releases check (`VCUpdateRepository` in Info.plist), version compare, 24 h throttle, one notification per version; injectable `fetch` |
 | `Weather.swift` | Open-Meteo forecast + city search, `TemperatureUnit` |
 | `Clock.swift`, `NotchFit.swift` (+ `NotchHideWatch`, notch auto-collapse), `Hotkeys.swift`, `HistoryStore.swift`, `NotificationLog.swift`, `SettingsBackup.swift`, `Intents.swift`, `Format.swift` | Clock formats/world clocks, notch fitting maths, global shortcuts, 1H/24H history file, notification history, settings export/import (key list!), Shortcuts actions, formatters (`Fmt`) |
 
@@ -92,5 +93,5 @@ pass explicit empty locations (`claudeRoots`, `opencodeDB`, `claudeConfig`, …)
 
 ## scripts/
 
-`extract_strings.sh` (refreshes `Sources/VibeCheck/Resources/Localizable.xcstrings` from the code; `build.sh` copies the compiled `en.lproj` into the app), `render_brand.swift` (brand assets from `branding/svg`; the app icon from the render in `branding/art`); `branding/VibeCheck.icon` (Liquid Glass icon, compiled by `actool` in `build.sh`), `qa/` (on-screen QA tools: `scripts/qa/build.sh`,
+`release.sh` (Developer ID release: `build.sh` with hardened runtime, notarize + staple, DMG in `build/release/`; `--dry-run` without Developer ID), `extract_strings.sh` (refreshes `Sources/VibeCheck/Resources/Localizable.xcstrings` from the code; `build.sh` copies the compiled `en.lproj` into the app), `render_brand.swift` (brand assets from `branding/svg`; the app icon from the render in `branding/art`); `branding/VibeCheck.icon` (Liquid Glass icon, compiled by `actool` in `build.sh`), `qa/` (on-screen QA tools: `scripts/qa/build.sh`,
 then `.build/qa/qa help`).

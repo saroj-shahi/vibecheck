@@ -5,7 +5,7 @@ working, the design rules and the decisions behind them. **Read sections 1 and 2
 only for the area you're touching. Code locations are in [CODEMAP.md](CODEMAP.md); brand, voice and motion
 in [BRAND.md](../branding/BRAND.md) (it wins over this file on those).
 
-_Last updated: 2026-11-19 · version 1.5 · ~14,000 lines of Swift · 223 tests_
+_Last updated: 2026-11-19 · version 1.5 · ~14,000 lines of Swift · 237 tests_
 
 **Keeping it current (every session):** when a feature is done, move its row from §2 to §3 *Shipped* with
 the date and how it was checked, update §4 if anything was seen on screen, add any decision to §6, and add a
@@ -84,7 +84,7 @@ All shipped 2026-11-19 (§3); the website and the GitHub social preview moved to
 
 | Feature | Notes |
 |---|---|
-| **Distribution:** Developer ID signing, notarization (`notarytool`), DMG, update check (Sparkle or GitHub Releases), Homebrew cask (deprioritized by the owner, 2026-11-19: good to have, last) | Nobody else can install it today. The Apple Development cert (Team ID `77HKFF78Z8`) expires Nov 2027; files: `build.sh` |
+| **Distribution** 🟡: built 2026-11-19, waiting on the owner. Left: a paid Apple Developer Program membership and a "Developer ID Application" certificate, a `notarytool` keychain profile, then the first real `scripts/release.sh` run; on the notarized build check the Wi-Fi trigger (Location), Bluetooth snooze, dark mode / empty Trash (Apple Events) and the widget; publish `v<version>` on GitHub (repo must be public, or the update check gets a 404 and stays quiet); check Gatekeeper on a second Mac. Homebrew cask last (owner, 2026-11-19) | `scripts/release.sh` (sign, notarize, staple, DMG), `build.sh` (hardened runtime for Developer ID), `App/UpdateChecker.swift`. The Apple Development cert (Team ID `77HKFF78Z8`) expires Nov 2027; the Developer ID cert must be the same team (app group) |
 | Website / landing page from the brand assets (good to have, last; owner skipped it 2026-11-19) | |
 | GitHub social preview: upload `branding/png/social-card.png` (deprioritized by the owner, 2026-11-19) | Manual, repo settings |
 | Fan control | Privileged helper (`SMAppService.daemon`) writing SMC keys; a bug can affect cooling. Only with explicit owner sign-off and a hard safety floor |
@@ -115,8 +115,10 @@ actions, keep awake, notification history) are in `git log` and the README.
 
 | Date | Feature | How it was checked |
 |---|---|---|
+| 2026-11-19 | **Distribution pipeline (code side):** `scripts/release.sh` builds with a Developer ID (hardened runtime + timestamp via `build.sh`), notarizes and staples the app, makes `build/release/VibeCheck-<version>.dmg` (app + Applications link), signs, notarizes and staples the DMG, runs `spctl`, writes a SHA-256; `--dry-run` does it all without Developer ID / notarization. Apple Events and Location entitlements added for the hardened runtime. **Update check** against the latest GitHub release (About page toggle, default on, at most daily; Check Now; one notification per new version; ⌘K "Check for Updates") | `release.sh --dry-run` (Apple Development + hardened runtime): signature verifies, DMG mounts with the app and an Applications link, the app inside verifies, `--dump` runs under the hardened runtime. Real Developer ID signing, notarization and Gatekeeper not run (no certificate yet). Update check: 14 new unit tests (237 total; only https GitHub links are opened), no real network call, not seen on screen. Reviewed; fixes applied |
 | 2026-11-19 | **Desktop widgets** (macOS 14+): small "Vibe" (ring, vibe word, reason or CPU / memory) and medium "CPU and Memory" (ring, verdict, last-hour sparklines). The app writes a snapshot into the app group `77HKFF78Z8.local.vibecheck` once a minute while a widget is placed and reloads timelines on a vibe change (≥5 min apart, a throttled one goes out later); widgets re-read every 15 min and dim on time once the snapshot is 15 min old. Built by SwiftPM as an `-application-extension` executable and wrapped into `PlugIns/VibeCheckWidget.appex` by `build.sh` (no Xcode project); only with the Apple Development identity | Unit tests (downsampling, file round trip, staleness, snapshot); build signs the appex (sandbox + group) and the app (group); signed app launches; `pluginkit` lists `local.vibecheck.app.widget` after `lsregister`. Owner saw the medium widget on the desktop with live data (vibing); small widget, light / tinted and updates not seen. First build crashed at launch: the extension must be linked with `-e _NSExtensionMain` |
 | 2026-11-19 | **Tech debt cleared:** `Panels.swift` split per module (`CPUGPUPanels`, `MemoryPanel`, `NetworkPanel`, `DiskPanel`, `SensorsPanel`, `BatteryPanel`, `ProcessList`); `--deck-demo` moved to `AppDelegate+DeckDemo.swift` (still in release builds, which QA runs); clock formatter cache behind a lock; `AppSettings` grouped into `settings.menuBar` / `.clock` / `.weather` / `.keepAwake` with unchanged defaults keys | Pure refactor: build clean, 223 tests pass, defaults key sets diffed old vs new (identical), reviewed; not run on screen |
+| 2026-11-19 | **Brand mark redrawn as the Mood Dial:** `mark-on-light/-dark/-mono.svg` are now the ring, a solid knob with a notch cut toward the gap, and the check in the gap (SVG masks, which AppKit's renderer handles); mark PNGs and both lockups re-rendered; BRAND.md §2 and the README updated | Mark (light, dark, mono) and both lockups rendered and looked at |
 | 2026-11-19 | **New app icon, "Mood Dial":** the chosen AI render (`branding/art/icon-render.png`) is the icon itself: `render_brand.swift` cuts out its plate, fills its rounder corners with nearby plate color and masks it to the squircle for `AppIcon.icns`, and writes the same plate as the single layer of `VibeCheck.icon`; `icon-small.svg` redrawn for 16/32 px; the vector `icon.svg` and the glass SVG layers removed. Mark and wordmark unchanged | Rendered PNGs and corners looked at; `actool` compiled the `.icon`; the built app's icon drawn through `NSWorkspace` and looked at (macOS 26 shows the render). Not seen in the Dock / Finder, or in tinted and clear modes |
 | 2026-11-19 | **Liquid Glass app icon:** `branding/VibeCheck.icon` (Dusk→Night fill, glass group with the ring and the pulse / check), compiled by `actool` in `build.sh` into `Assets.car` (`CFBundleIconName`); `AppIcon.icns` stays for macOS 14–15 | actool compiles it; `assetutil` lists it; the app's icon rendered through `NSWorkspace` and looked at. Dock / Finder in light, dark and tinted not seen |
 | 2026-11-19 | **String Catalog finished:** Shortcuts actions (titles, parameters, dialogs, stat sentences), Focus filter, accessibility labels and the remaining tooltips; new text goes through `Text("…")` / `String(localized:)` + `scripts/extract_strings.sh`. Integers that can pass 999 go in as `String(n)` | Tests compare English output with the old strings; not seen on screen |
@@ -294,6 +296,9 @@ Choices future sessions shouldn't silently undo.
 
 | Decision | Why |
 |---|---|
+| Updates via the GitHub Releases API (`releases/latest`, tag `v<version>`, first `.dmg` asset), not Sparkle; the app opens the download, it doesn't replace itself | No framework to embed with SwiftPM, no EdDSA keys; enough for a small app. Revisit Sparkle if silent in-place updates are wanted |
+| Hardened runtime only for Developer ID builds (or `VIBECHECK_HARDENED=1`), not the owner's daily Apple Development builds | Notarization needs it; keeps local builds as they were |
+| The flat brand mark is the Mood Dial (ring, notched knob, check in the gap), not the old pulse-to-check | The owner asked for the mark to follow the app icon so the lockup, README and icon tell one story |
 | Widgets without an Xcode project: SwiftPM builds the extension executable (linked with `-e _NSExtensionMain`), `build.sh` wraps and signs the `.appex` | Keeps the "no Xcode project" decision; without that entry point the extension traps on load |
 | Team-prefixed app group (`77HKFF78Z8.local.vibecheck`), main app stays unsandboxed | Works without a provisioning profile; only the widget is sandboxed, as WidgetKit requires |
 | Swift Package + `build.sh` instead of an Xcode project | Simple, scriptable, no project file churn |
@@ -441,6 +446,15 @@ scripts/qa/build.sh && .build/qa/qa help   # on-screen QA tools
 
 Newest first; keep about five. Older notes are folded into §3, §6 and §7 (and `git log`).
 
+#### 2026-11-19: Distribution pipeline and update check
+
+`scripts/release.sh` and the GitHub Releases update check are in (§3, §6); only `--dry-run` could be run, since
+this Mac has no "Developer ID Application" certificate (that needs the paid Apple Developer Program). Next: enrol,
+create the certificate (same team as the app group, `77HKFF78Z8`), `xcrun notarytool store-credentials
+vibecheck-notary …`, run `scripts/release.sh`, then `gh release create v1.5 …`. The repo is private, so the
+update check gets a 404 and stays quiet until the repo (or a releases-only repo) is public. Gotcha: under
+`set -o pipefail`, `cmd | grep -q` fails when grep exits early (SIGPIPE), so match captured output instead.
+
 #### 2026-11-19: Widgets
 
 Shipped the last P2 feature, desktop widgets, without an Xcode project (§3, §6). The widget extension is
@@ -463,8 +477,10 @@ the private-API watch list is left under Tech debt.
 Replaced the app icon with the "Mood Dial" direction (five concepts rendered as AI images first; the owner picked
 this one). A hand-built SVG version shipped first (91e8b1f); the owner then asked for the render itself, so the
 icon is now the render, cut out and masked (see BRAND.md §3). Seen: rendered PNGs, corner crops, and the
-`NSWorkspace` icon of the built app. Not seen: Dock, Finder, tinted / clear modes. The brand mark still uses the
-pulse; decide whether it should follow the icon.
+`NSWorkspace` icon of the built app. Not seen: Dock, Finder, tinted / clear modes. Later the same day the flat
+mark (and so the lockups) was redrawn to match: ring, notched knob pointing at the gap, check in the gap. The
+in-app recovery animation still draws the old pulse-to-check stroke (`PulseCheckShape`); decide whether it
+should become the notch turning and the check popping in.
 
 #### 2026-11-19: P2 batch
 

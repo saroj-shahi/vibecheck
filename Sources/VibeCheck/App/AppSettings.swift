@@ -186,6 +186,10 @@ final class AppSettings {
     var weather: WeatherGroup
     var keepAwake: KeepAwakeGroup
     /// Keep Awake's call guard: held with the keep-awake switches but it lives at the top level.
+    /// Looks for a newer release on GitHub about once a day (see `UpdateChecker`).
+    var checkForUpdates: Bool {
+        didSet { save(checkForUpdates, "checkForUpdates", structural: false) }
+    }
     var callGuardEnabled: Bool {
         didSet { save(callGuardEnabled, "callGuardEnabled", structural: false); KeepAwake.shared.check() }
     }
@@ -255,6 +259,7 @@ final class AppSettings {
         weather = WeatherGroup(defaults: defaults)
         keepAwake = KeepAwakeGroup(defaults: defaults)
         callGuardEnabled = defaults.object(forKey: "callGuardEnabled") as? Bool ?? true
+        checkForUpdates = defaults.object(forKey: "checkForUpdates") as? Bool ?? true
         hotkeysEnabled = defaults.object(forKey: "hotkeysEnabled") as? Bool ?? true
         showPublicIP = defaults.object(forKey: "showPublicIP") as? Bool ?? false
         hotkeyModifier = defaults.string(forKey: "hotkeyModifier").flatMap(HotkeyModifier.init(rawValue:))

@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Hardened runtime (Developer ID / notarized builds): the dark mode and empty Trash toggles send Apple Events. -->
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
+	<!-- Hardened runtime: the "while on Wi-Fi X" trigger needs Location to read the network name. -->
+	<key>com.apple.security.personal-information.location</key>
+	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>77HKFF78Z8.local.vibecheck</string>

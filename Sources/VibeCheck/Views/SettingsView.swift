@@ -435,12 +435,35 @@ private struct BackupSettings: View {
 
 private struct AboutSettings: View {
     @Environment(AppSettings.self) private var settings
+    private var updates = UpdateChecker.shared
 
     private var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.5"
     }
 
+    @ViewBuilder private var updateStatus: some View {
+        switch updates.state {
+        case .idle:
+            EmptyView()
+        case .noInfo:
+            Text("No release information yet.").foregroundStyle(.secondary)
+        case .checking:
+            Text("Checking…").foregroundStyle(.secondary)
+        case .upToDate:
+            Label("You're up to date.", systemImage: "checkmark.circle").foregroundStyle(.secondary)
+        case .available(let release):
+            HStack {
+                Text("VibeCheck \(release.version) is out")
+                Spacer()
+                Button("Download") { NSWorkspace.shared.open(release.target) }
+            }
+        case .failed(let reason):
+            Label(reason, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary)
+        }
+    }
+
     var body: some View {
+        @Bindable var settings = settings
         Form {
             Section {
                 VStack(spacing: 8) {
@@ -454,6 +477,17 @@ private struct AboutSettings: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
+            }
+            Section("Updates") {
+                Toggle("Check for updates automatically", isOn: $settings.checkForUpdates)
+                LabeledContent("Look for a newer version now") {
+                    HStack(spacing: 8) {
+                        if updates.state == .checking { ProgressView().controlSize(.small) }
+                        Button("Check Now") { Task { await updates.check() } }
+                            .disabled(updates.state == .checking)
+                    }
+                }
+                updateStatus
             }
             Section("Getting around") {
                 LabeledContent("Check the vibes", value: "Click the menu bar item")

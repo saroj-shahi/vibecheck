@@ -62,13 +62,20 @@ fi
 # 2. "VibeCheck Local Signing" (self-signed). Stable identity, but no Team ID: Keychain records the exact
 #    build (cdhash), so macOS asks again after every update.
 # 3. Ad hoc.
+# Releases use "Developer ID Application: …" (scripts/release.sh passes it in VIBECHECK_SIGN_IDENTITY): same
+# Team ID path as Apple Development, plus the hardened runtime and a secure timestamp, which notarization needs.
+# VIBECHECK_HARDENED=1 turns the hardened runtime on with any identity, to test it before a release.
 IDENTITIES=$(security find-identity -v -p codesigning)
 DEVELOPMENT=$(printf '%s\n' "$IDENTITIES" | sed -n 's/.*"\(Apple Development: [^"]*\)".*/\1/p' | head -1)
 IDENTITY="${VIBECHECK_SIGN_IDENTITY:-${DEVELOPMENT:-VibeCheck Local Signing}}"
+SIGN_FLAGS=()
+if [[ "$IDENTITY" == "Developer ID Application:"* || "${VIBECHECK_HARDENED:-0}" = 1 ]]; then
+  SIGN_FLAGS=(--options runtime --timestamp)
+fi
 if printf '%s\n' "$IDENTITIES" | grep -qF "\"$IDENTITY\""; then
   # Widgets: the extension must be sandboxed and shares the app group "<Team ID>.local.vibecheck" with the
   # app, so it needs a Team ID; with other identities the app ships without widgets.
-  if [[ "$IDENTITY" == "Apple Development:"* ]]; then
+  if [[ "$IDENTITY" == "Apple Development:"* || "$IDENTITY" == "Developer ID Application:"* ]]; then
     APPEX="$APP/Contents/PlugIns/VibeCheckWidget.appex"
     mkdir -p "$APPEX/Contents/MacOS"
     cp .build/release/VibeCheckWidget "$APPEX/Contents/MacOS/VibeCheckWidget"
@@ -78,13 +85,13 @@ if printf '%s\n' "$IDENTITIES" | grep -qF "\"$IDENTITY\""; then
     done
     mkdir -p "$APPEX/Contents/Resources"
     cp -R "$APP/Contents/Resources/"*.lproj "$APPEX/Contents/Resources/"
-    codesign --force --sign "$IDENTITY" --entitlements Resources/Widget/Widget.entitlements "$APPEX"
-    codesign --force --sign "$IDENTITY" --entitlements Resources/VibeCheck.entitlements "$APP"
+    codesign --force "${SIGN_FLAGS[@]+"${SIGN_FLAGS[@]}"}" --sign "$IDENTITY" --entitlements Resources/Widget/Widget.entitlements "$APPEX"
+    codesign --force "${SIGN_FLAGS[@]+"${SIGN_FLAGS[@]}"}" --sign "$IDENTITY" --entitlements Resources/VibeCheck.entitlements "$APP"
   else
     echo "warning: \"$IDENTITY\" has no Team ID; building without widgets" >&2
     codesign --force --sign "$IDENTITY" "$APP"
   fi
-  echo "Signed with \"$IDENTITY\""
+  echo "Signed with \"$IDENTITY\"${SIGN_FLAGS[*]+ (${SIGN_FLAGS[*]})}"
 else
   codesign --force --sign - "$APP"
   echo "Signed ad hoc (no \"$IDENTITY\" certificate)"
