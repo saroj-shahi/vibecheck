@@ -72,8 +72,8 @@ One list, highest priority first. **QA** = the QA agent can do it while the owne
 | 24 | Website / landing page from the brand assets | Dev | P3 | Owner skipped it 2026-11-19 |
 | 25 | GitHub social preview: upload `branding/png/social-card.png` | Owner | P3 | Only possible once the repo is public |
 
-**Not planned:** another app's window, Dock, file, screenshot, recording,
-uninstaller, lyrics and companion tools, its "Dynamic Island" bar, and API cost estimates. Not planned either: a mouse jiggler, scroll direction per device, typing stats and key remapping (input
+**Not planned:** window, Dock, file, screenshot, recording,
+uninstaller, lyrics and companion tools, a "Dynamic Island" bar, and API cost estimates. Not planned either: a mouse jiggler, scroll direction per device, typing stats and key remapping (input
 monitoring). Also dropped by the
 owner (2026-11-19): fan control, disk cleaner, calendar in the Clock panel, keep awake with the lid closed, a
 sandboxed App Store edition, display brightness, iCloud settings sync, and the dark mode quick toggle.
@@ -197,7 +197,7 @@ whole screen.
 ## 5. Design rules
 
 Condensed from three reviews: the "menu bar Creative Director" brief (round one), a popover
-mockup (a different app, round two; the HTML file was removed 2026-11-19, it is in git history) and the Apple Design Award style
+mockup review (round two) and the Apple Design Award style
 teardown (round three). BRAND.md still decides voice, color and motion.
 
 **The idea.** A verdict first and a cockpit second, in a 390 pt sheet of glass. Everything folds behind three
@@ -269,7 +269,7 @@ Unchanged from BRAND.md: deck open (anchored drop, 0.38 s) and tile → detail u
 
 **Benchmarks.** A launcher-style command bar (type anywhere, keyboard selection with the mouse still
 working, shortcut hints on the right). Dense menu bar monitors for density (one number per tile, axis-less sparklines).
-From another app, left out on purpose: four-column toggle tiles, blue accent fills on active tiles, grouped
+Left out on purpose: four-column toggle tiles, blue accent fills on active tiles, grouped
 results while typing, its 12 pt radius and web fonts.
 
 ---
@@ -320,12 +320,11 @@ Choices future sessions shouldn't silently undo.
 | Keep awake uses an IOKit assertion, not a `caffeinate` child process | Released automatically if the app dies; visible in `pmset -g assertions` |
 | Keep-awake sessions don't survive a restart; "Start a session when VibeCheck opens" covers that | Avoids a Mac that never sleeps after a forgotten session |
 | Slang only for vibing / mid / cooked; alerts and errors stay plain | Brand voice (see BRAND.md §6) |
-| Bluetooth sleep: never touch Bluetooth at shutdown; only re-enable what VibeCheck turned off | Unlike similar Bluetooth tools: a Mac shouldn't boot with Bluetooth off, and a user's own "off" must stick |
+| Bluetooth sleep: never touch Bluetooth at shutdown; only re-enable what VibeCheck turned off | A Mac shouldn't boot with Bluetooth off, and a user's own "off" must stick |
 | Every IOBluetooth power call is guarded by `CBManager.authorization == .allowedAlways` | Without Bluetooth permission macOS aborts the process (TCC); the prompt is shown when the toggle is switched on, never at sleep |
-| another app (GPL-3.0) is a source of ideas only, never code | Copying GPL code would make VibeCheck GPL |
 | Quit actions hold the pid's start time and refuse if it changed | pids are reused; a stale menu must never signal a different process |
 | Secure input warning says where macOS "points", not who holds it | `kCGSSessionSecureInputPID` records the frontmost app when secure input starts (a CLI tool's was reported as Chrome, then Slack) |
-| Live Claude limits come from the user's own `claude` CLI (`get_usage` control request), never the Keychain or an Anthropic endpoint directly; opt-in, not in settings backup | Claude Code signs in and refreshes itself, so no Keychain prompts and no undocumented API; idea from another app (GPL: idea only, the protocol is Claude Code's) |
+| Live Claude limits come from the user's own `claude` CLI (`get_usage` control request), never the Keychain or an Anthropic endpoint directly; opt-in, not in settings backup | Claude Code signs in and refreshes itself, so no Keychain prompts and no undocumented API |
 | "Limits left" shows Claude Code first: live limits, else its local estimate; other agents only without Claude Code | Falling back to Codex's monthly limit made Claude Code usage look missing (owner report) |
 | "Limits left" has one fixed width (104 pt) in every state | Status item length is measured only at creation/settings changes; a growing label got clipped |
 | `build.sh` signs with an "Apple Development" identity when present (then the self-signed "VibeCheck Local Signing", then ad hoc) | Keychain "Always Allow" on another app's item is stored in its partition list as `teamid:` for apps with a Team ID, but as `cdhash:` (one exact build) for apps without one, so self-signed and ad hoc builds re-prompt after every update. Don't drop the Apple Development identity |

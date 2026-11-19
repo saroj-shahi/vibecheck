@@ -1,10 +1,10 @@
 import AppKit
 import CoreBluetooth
 
-/// Turns Bluetooth off while the Mac sleeps and back on when it wakes (the idea from similar Bluetooth tools), so a
+/// Turns Bluetooth off while the Mac sleeps and back on when it wakes, so a
 /// sleeping Mac doesn't grab headphones that are also paired with a phone.
 ///
-/// Differences from similar Bluetooth tools, on purpose:
+/// Choices made on purpose:
 /// - Bluetooth is only turned back on if VibeCheck turned it off. If it was already off, it stays off.
 /// - Nothing happens at shutdown: if VibeCheck didn't relaunch, the Mac would boot with Bluetooth off.
 /// - The "we turned it off" marker is stored, so a crash or quit during sleep is repaired at next launch.
@@ -96,7 +96,7 @@ final class BluetoothSnooze {
         NSLog("VibeCheck: Bluetooth back on (\(reason))")
     }
 
-    /// `IOBluetoothPreference{Get,Set}ControllerPowerState`: private but long-standing (similar tools).
+    /// `IOBluetoothPreference{Get,Set}ControllerPowerState`: private but long-standing.
     private enum Controller {
         private typealias GetFn = @convention(c) () -> Int32
         private typealias SetFn = @convention(c) (Int32) -> Void
