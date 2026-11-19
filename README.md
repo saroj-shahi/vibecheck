@@ -5,8 +5,9 @@
   </picture>
 </p>
 
-<p align="center"><b>Is your Mac vibing or cooked?</b><br>
-A native menu bar system monitor for macOS 14+, written in Swift with SwiftUI and AppKit.</p>
+<h3 align="center">Your Mac's mood, in one little ring.</h3>
+
+<p align="center"><b>Is your Mac vibing or cooked?</b> VibeCheck tells you before you have to ask.</p>
 
 <p align="center">
   <a href="https://github.com/saroj-shahi/vibecheck/releases/latest/download/VibeCheck.dmg">
@@ -17,7 +18,45 @@ A native menu bar system monitor for macOS 14+, written in Swift with SwiftUI an
   <a href="https://github.com/saroj-shahi/vibecheck/releases/latest">release notes</a></sub>
 </p>
 
-<p align="center"><img src="branding/png/social-card.png" alt="VibeCheck: CPU, GPU, memory, network, sensors and more" width="720"></p>
+<p align="center">
+  <img src="docs/screenshots/deck.png" alt="The VibeCheck deck: 'Your Mac is vibing' with live tiles for memory, network, CPU, GPU, sensors, battery, weather and AI agents" width="300">
+  &nbsp;
+  <img src="docs/screenshots/cpu.png" alt="CPU detail: 16% now, a 24-hour chart and the apps responsible" width="300">
+</p>
+---
+
+## Meet VibeCheck
+
+Your fan starts screaming. The battery drops faster than it should. Everything feels slow, and you have no
+idea why. Normally you'd open a process viewer and squint at a wall of numbers.
+
+**VibeCheck does the squinting for you.** One small ring sits in your menu bar and shows you how your Mac is
+doing at a glance:
+
+| | |
+|---|---|
+| 🟢 **Vibing** | All good. Get on with your day. |
+| 🟡 **Mid** | Something is working hard. Worth a look. |
+| 🔴 **Cooked** | Your Mac is struggling, and VibeCheck tells you who's to blame. |
+
+Click the ring and you get the answer in plain words, like _"Kinda mid: Xcode is the loudest at 140% CPU"_,
+with a button to quit the app that's causing it.
+
+### Why you'll like it
+
+- **Answers, not numbers.** Every view starts with one sentence about what's going on. The charts are there
+  when you want them.
+- **Find the culprit in one click.** See which app is eating your battery, memory or bandwidth, and quit it
+  right there.
+- **Your Mac stays awake when you need it.** Downloads, long exports, presentations, AI agents running
+  overnight: tap the cup and your Mac won't nod off. It even goes back to normal on its own.
+- **Calm during calls.** When your camera or mic is on, VibeCheck keeps quiet and keeps the screen on.
+- **Heads-ups, only when it matters.** Set alerts in plain sentences: _"Tell me when the battery is below 20%."_
+- **See how much your AI tools are using.** It counts the tokens Claude Code, Codex and others use each day, and shows how close you are to their limits.
+- **Weather, world clocks and widgets** too, so the menu bar you already look at becomes more useful.
+- **Private by design.** No account, no tracking, no cloud. Everything stays on your Mac.
+- **Made for the Mac.** Fast, light on battery, and at home in macOS, with glass panels, keyboard shortcuts,
+  Shortcuts and Siri.
 
 ---
 
@@ -77,10 +116,18 @@ The ring sums up your Mac in one glance:
   exports); **drop an app** to stay awake while that app runs.
 - When things recover, a check sweeps through the ring's gap. States change only after two samples in a
   row, so nothing flickers.
+- Prefer numbers? Show any stat as its own menu bar item, as a graph, an icon or a value:
+
+<p align="center"><img src="docs/screenshots/menubar.png" alt="Separate menu bar items: battery, weather, CPU and GPU graphs, temperature, agent limits, network" width="620"></p>
 
 ### The deck
 
 The glass panel that opens under the menu bar.
+
+<table align="center"><tr>
+  <td align="center"><img src="docs/screenshots/deck.png" alt="The deck home: verdict, search, quick toggles and live tiles" width="300"><br><sub>The deck: verdict first, then a tile per stat</sub></td>
+  <td align="center"><img src="docs/screenshots/palette.png" alt="The ⌘K command palette" width="300"><br><sub>⌘K: every action is a command</sub></td>
+</tr></table>
 
 - **The verdict line** on top says what's going on and who is the loudest app.
 - **Tiles** show each module live. Click one (or use the arrow keys and Return) and it unfolds into the
@@ -103,7 +150,20 @@ commands you ran come first.
 ### Modules
 
 Turn each one on or off in Settings (new installs start with CPU, Memory, Network, Sensors, Battery and
-Agents).
+Agents). Every detail view follows the same order: the big number, a chart, then who's responsible.
+
+<table align="center">
+<tr>
+  <td align="center"><img src="docs/screenshots/cpu.png" alt="CPU detail view" width="250"><br><sub>CPU</sub></td>
+  <td align="center"><img src="docs/screenshots/memory.png" alt="Memory detail view" width="250"><br><sub>Memory</sub></td>
+  <td align="center"><img src="docs/screenshots/sensors.png" alt="Sensors detail view" width="250"><br><sub>Sensors</sub></td>
+</tr>
+<tr>
+  <td align="center"><img src="docs/screenshots/battery.png" alt="Battery detail view" width="250"><br><sub>Battery</sub></td>
+  <td align="center"><img src="docs/screenshots/network.png" alt="Network detail view" width="250"><br><sub>Network</sub></td>
+  <td align="center"><img src="docs/screenshots/gpu.png" alt="GPU detail view" width="250"><br><sub>GPU</sub></td>
+</tr>
+</table>
 
 | Module | Menu bar | Detail view |
 |---|---|---|
@@ -131,6 +191,8 @@ Stops your Mac from idle-sleeping, like `caffeinate`.
 - While it's on, a small cup sits inside the ring (or as its own menu bar item, if you prefer).
   Sessions stop on their own on low battery and send a notification when they end by themselves.
 
+<p align="center"><img src="docs/screenshots/settings-keepawake.png" alt="Settings → Keep Awake: start a session, stay awake until a time, and automatic triggers" width="620"></p>
+
 ### Alerts and notifications
 
 Rules read as sentences in Settings → Alerts: _Tell me when **CPU usage** is **above** **90%** for **1 min**._
@@ -138,6 +200,8 @@ Rules read as sentences in Settings → Alerts: _Tell me when **CPU usage** is *
 - Click any bold word to change it; drag the number sideways to adjust it; preview the banner.
 - Each module's page in Settings also lists that module's alerts.
 - The deck's **bell** keeps the last 20 alerts and keep-awake endings with time and value.
+
+<p align="center"><img src="docs/screenshots/settings-alerts.png" alt="Settings → Alerts: rules written as sentences" width="620"></p>
 
 ### Call guard and Focus
 
@@ -161,6 +225,8 @@ and OpenCode:
 - **Agent watch:** keep your Mac awake while an agent is working, and get an "<Agent> is done"
   notification after runs of 10 minutes or more.
 - Switch agents you don't use off in Settings → Agents; they disappear everywhere.
+
+<p align="center"><img src="docs/screenshots/agents.png" alt="Agents detail: tokens today, sessions running now, Claude Code session and weekly limits, 24-hour and 7-day charts" width="300"></p>
 
 ### Desktop widgets
 
@@ -193,6 +259,8 @@ Open with the gear in the deck, **⌘,**, or by opening the app again. A searcha
 - **About:** version and the update check.
 
 Less-used options sit under each page's **Advanced** section.
+
+<p align="center"><img src="docs/screenshots/settings-menubar.png" alt="Settings → Menu Bar: live preview, style and item order" width="620"></p>
 
 ### Keyboard shortcuts
 
@@ -258,6 +326,8 @@ the wordmark is SF Pro Rounded Bold with "Check" in the gradient. Voice: casual 
 <br clear="left">
 
 <img src="branding/png/palette.png" alt="VibeCheck palette" width="100%">
+
+<p align="center"><img src="branding/png/social-card.png" alt="VibeCheck social card" width="620"></p>
 
 The full guide (logo usage, clear space, color roles, type, voice, motion) is in
 [`branding/BRAND.md`](branding/BRAND.md). All artwork is generated from SVG:
