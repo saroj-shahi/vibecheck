@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key><string>VibeCheck</string>
+    <key>CFBundleIdentifier</key><string>local.vibecheck.app</string>
+    <key>CFBundleName</key><string>VibeCheck</string>
+    <key>CFBundleDisplayName</key><string>VibeCheck</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleShortVersionString</key><string>1.5</string>
+    <key>CFBundleVersion</key><string>5</string>
+    <key>CFBundleDevelopmentRegion</key><string>en</string>
+    <key>CFBundleLocalizations</key><array><string>en</string></array>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
+    <key>CFBundleIconName</key><string>VibeCheck</string>
+    <key>VCUpdateRepository</key><string>saroj-shahi/vibecheck</string>
+    <key>LSMinimumSystemVersion</key><string>14.0</string>
+    <key>LSUIElement</key><true/>
+    <key>NSHighResolutionCapable</key><true/>
+    <key>NSAppleEventsUsageDescription</key><string>VibeCheck asks Finder to empty the Trash, only when you choose Empty Trash.</string>
+    <key>NSBluetoothAlwaysUsageDescription</key><string>VibeCheck turns Bluetooth off while your Mac sleeps and back on when it wakes, if you switch that on in Settings.</string>
+    <key>NSLocationUsageDescription</key><string>VibeCheck reads the name of your Wi-Fi network to keep your Mac awake while you're on the network you chose in Settings. Your location is never used or stored.</string>
+    <key>NSLocationWhenInUseUsageDescription</key><string>VibeCheck reads the name of your Wi-Fi network to keep your Mac awake while you're on the network you chose in Settings. Your location is never used or stored.</string>
+    <key>NSHumanReadableCopyright</key><string>VibeCheck: your Mac's vibe, live in the menu bar</string>
+</dict>
+</plist>
