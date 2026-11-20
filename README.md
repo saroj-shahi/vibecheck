@@ -17,6 +17,13 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/saroj-shahi/vibecheck/releases/latest"><img src="https://img.shields.io/github/v/release/saroj-shahi/vibecheck?style=flat-square&color=3DE0B5&labelColor=141833" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/saroj-shahi/vibecheck?style=flat-square&color=36B6F2&labelColor=141833" alt="License: GPL-3.0"></a>
+  <img src="https://img.shields.io/badge/macOS-14%2B-8B6CFF?style=flat-square&logo=apple&logoColor=F5F7FF&labelColor=141833" alt="macOS 14 or later">
+  <a href="https://github.com/saroj-shahi/vibecheck/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/saroj-shahi/vibecheck/ci.yml?branch=main&style=flat-square&label=tests&labelColor=141833" alt="Tests"></a>
+</p>
+
+<p align="center">
   <a href="https://buymeacoffee.com/sarojshahi">
     <img src="https://img.shields.io/badge/Buy_me_a_coffee-support_VibeCheck-FFDD00?style=flat-square&logo=buymeacoffee&logoColor=141833&labelColor=F5F7FF" alt="Buy me a coffee to support VibeCheck" height="24">
   </a>
@@ -69,6 +76,7 @@ with a button to quit the app that's causing it.
     [Call guard and Focus](#call-guard-and-focus) · [AI agents](#ai-agents) · [Desktop widgets](#desktop-widgets) ·
     [Shortcuts, Spotlight and Siri](#shortcuts-spotlight-and-siri) · [Settings](#settings) ·
     [Keyboard shortcuts](#keyboard-shortcuts) · [Updates](#updates)
+- [FAQ](#faq)
 - [Privacy](#privacy)
 - [Develop](#develop) · [Brand](#brand) · [Support](#support) · [License](#license) · [Roadmap](#roadmap)
 
@@ -165,18 +173,7 @@ commands you ran come first.
 Turn each one on or off in Settings (new installs start with CPU, Memory, Network, Sensors, Battery and
 Agents). Every detail view follows the same order: the big number, a chart, then who's responsible.
 
-<table align="center">
-<tr>
-  <td align="center"><img src="docs/screenshots/cpu.png" alt="CPU detail view" width="250"><br><sub>CPU</sub></td>
-  <td align="center"><img src="docs/screenshots/memory.png" alt="Memory detail view" width="250"><br><sub>Memory</sub></td>
-  <td align="center"><img src="docs/screenshots/sensors.png" alt="Sensors detail view" width="250"><br><sub>Sensors</sub></td>
-</tr>
-<tr>
-  <td align="center"><img src="docs/screenshots/battery.png" alt="Battery detail view" width="250"><br><sub>Battery</sub></td>
-  <td align="center"><img src="docs/screenshots/network.png" alt="Network detail view" width="250"><br><sub>Network</sub></td>
-  <td align="center"><img src="docs/screenshots/gpu.png" alt="GPU detail view" width="250"><br><sub>GPU</sub></td>
-</tr>
-</table>
+<p align="center"><img src="docs/screenshots/modules.png" alt="Six module detail views: CPU with per-core bars and top apps, Memory with its pressure bar and top apps, Network with upload and download charts, GPU, Battery with time left and a one-day charge chart, and Sensors with SoC, SSD and battery temperatures" width="100%"></p>
 
 | Module | Menu bar | Detail view |
 |---|---|---|
@@ -297,6 +294,30 @@ VibeCheck checks this repository's latest release at most once a day and sends o
 version, with the command to update (`brew upgrade --cask vibecheck` or the install line). Check now from
 Settings → About or ⌘K → "Check for Updates", or turn the check off there.
 
+## FAQ
+
+**macOS says VibeCheck "can't be opened".** VibeCheck isn't notarized by Apple. The Terminal install avoids
+this message. If you downloaded the zip in a browser, run
+`xattr -dr com.apple.quarantine /Applications/VibeCheck.app`, or go to System Settings → Privacy & Security
+and click **Open Anyway**.
+
+**I can't see the ring in my menu bar.** macOS hides menu bar items when there's no room, which happens often
+on Macs with a camera notch. Quit an app or two that adds menu bar items, or open the app again to get to
+Settings → Menu Bar. There, choose **Just the vibe ring** or **One combined item**, or turn on **Fit around the
+camera notch**.
+
+**Some temperatures, fans or battery rows are missing.** Each Mac reports different sensors. VibeCheck hides a
+row when your Mac doesn't report that value.
+
+**How much does VibeCheck use itself?** About 3–4% CPU and 100 MB of memory when idle. Most of that is macOS
+drawing menu bar items, so showing fewer items (or just the ring) makes it lighter.
+
+**Does keep awake work with the lid closed?** No. It stops idle sleep, like `caffeinate`. Closing the lid still
+puts your Mac to sleep.
+
+**Does it send my AI agent logs anywhere?** No. Token counts are read from local log files and stay on your
+Mac. See [Privacy](#privacy).
+
 ## Privacy
 
 Everything is read on your Mac. VibeCheck has no account, no analytics and no server. The only network
@@ -327,7 +348,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) to send a change.
 | `Sources/VibeCheck/App/` | `SystemStats`, settings, the deck controller, vibe score, alerts, history, weather, hotkeys |
 | `Sources/VibeCheck/Views/` | Menu bar labels, deck, detail panels, charts, settings window |
 | `branding/` | Brand guide, SVG sources, rendered PNGs and the DMG art |
-| `scripts/` | `release.sh` (zip / DMG), `install.sh` (Terminal install and update), `render_brand.swift` (icon and brand assets), `render_dmg.swift` (install window art), `render_hero.swift` (the README hero), `render_ring_symbol.swift` (the ring's custom SF Symbols) |
+| `scripts/` | `release.sh` (zip / DMG), `install.sh` (Terminal install and update), `render_brand.swift` (icon and brand assets), `render_dmg.swift` (install window art), `render_hero.swift` (the README hero), `polish_screenshots.py` (cleans up screenshots and builds the modules image), `render_ring_symbol.swift` (the ring's custom SF Symbols) |
 
 See [`docs/CODEMAP.md`](docs/CODEMAP.md) for which file does what.
 

@@ -1,6 +1,7 @@
 # Contributing
 
-Thanks for helping! Bug reports, ideas and pull requests are welcome.
+Thanks for helping! Bug reports, ideas and pull requests are welcome. Please follow the
+[Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Build and test
 Requires macOS 14+ and Xcode (for the Swift 6 toolchain, `actool` and the App Intents tools).
