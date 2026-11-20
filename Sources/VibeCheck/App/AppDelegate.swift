@@ -64,6 +64,8 @@ final class StatusItemController: NSObject {
             item.autosaveName = AppSettings.autosaveName("keepawake", generation: settings.statusItemGeneration)
             label = AnyView(KeepAwakeItemLabel())
         }
+        // macOS restores a hidden item's visibility by autosave name; every item we create is meant to show.
+        item.isVisible = true
         labelView = AnyView(label.environment(stats).environment(settings).environment(fit).environment(dropState))
         refreshLength()
 
@@ -223,6 +225,13 @@ final class StatusItemController: NSObject {
         item.menu = nil
     }
 
+    /// Removing an item makes macOS forget where the user put it; hiding keeps its place among the
+    /// other menu bar items, so turning it back on puts it right where it was.
+    var isShown: Bool {
+        get { item.isVisible }
+        set { item.isVisible = newValue }
+    }
+
     func remove() { NSStatusBar.system.removeStatusItem(item) }
 }
 
@@ -240,6 +249,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: NSWindow?
     /// The standalone Keep Awake item, when it's switched on in Settings.
     private var keepAwakeItem: StatusItemController?
+    /// Items turned off in Settings, hidden rather than removed so they come back in the same spot.
+    private var parkedItems: [Module: StatusItemController] = [:]
+    private var parkedVibeItem: StatusItemController?
+    private var parkedKeepAwakeItem: StatusItemController?
     private let keepAwakeMenu = KeepAwakeMenu()
     /// Generation the separate items were created with; a reorder in Settings bumps it.
     private var itemGeneration = 0
@@ -405,6 +418,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if settings.menuBar.style == .ring {
             items.values.forEach { $0.remove() }
             items.removeAll()
+            removeParkedModuleItems()
             combinedItem?.remove()
             combinedItem = nil
             syncVibeItem()
@@ -413,8 +427,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if settings.menuBar.style == .combined {
             items.values.forEach { $0.remove() }
             items.removeAll()
+            removeParkedModuleItems()
             vibeItem?.remove()
             vibeItem = nil
+            parkedVibeItem?.remove()
+            parkedVibeItem = nil
             if let combinedItem {
                 combinedItem.refitAroundNotch()
                 combinedItem.refreshLength()
@@ -431,36 +448,61 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             itemGeneration = settings.statusItemGeneration
             items.values.forEach { $0.remove() }
             items.removeAll()
+            removeParkedModuleItems()
             vibeItem?.remove()
             vibeItem = nil
+            parkedVibeItem?.remove()
+            parkedVibeItem = nil
         }
         // Insert in reverse so the left-to-right order matches Module.allCases.
         for module in settings.moduleOrder.reversed() {
             let enabled = settings.isEnabled(module)
             if enabled, items[module] == nil {
-                items[module] = makeItem(.single(module))
+                if let parked = parkedItems.removeValue(forKey: module) {
+                    parked.isShown = true
+                    items[module] = parked
+                } else {
+                    items[module] = makeItem(.single(module))
+                }
             } else if !enabled, let existing = items.removeValue(forKey: module) {
-                existing.remove()
+                existing.isShown = false
+                parkedItems[module] = existing
             }
             items[module]?.refreshLength() // label style or clock format may have changed
         }
         syncVibeItem()
     }
 
+    private func removeParkedModuleItems() {
+        parkedItems.values.forEach { $0.remove() }
+        parkedItems.removeAll()
+    }
+
     /// The Keep Awake item, in either menu bar style. Created last so it sits left of VibeCheck's other items.
     /// Rebuilt with the others on a reorder (`syncItems` removes it first).
     private func syncKeepAwakeItem() {
         if settings.keepAwake.menuBarItem {
-            if keepAwakeItem == nil || keepAwakeItemGeneration != settings.statusItemGeneration {
+            if keepAwakeItemGeneration != settings.statusItemGeneration {
                 keepAwakeItem?.remove()
+                keepAwakeItem = nil
+                parkedKeepAwakeItem?.remove()
+                parkedKeepAwakeItem = nil
                 keepAwakeItemGeneration = settings.statusItemGeneration
+            }
+            if keepAwakeItem == nil, let parked = parkedKeepAwakeItem {
+                parked.isShown = true
+                keepAwakeItem = parked
+                parkedKeepAwakeItem = nil
+            }
+            if keepAwakeItem == nil {
                 keepAwakeItem = StatusItemController(kind: .keepAwake, stats: stats, settings: settings) { [weak self] item in
                     self?.keepAwakeClicked(item)
                 }
             }
             keepAwakeItem?.refreshLength()
-        } else {
-            keepAwakeItem?.remove()
+        } else if let item = keepAwakeItem {
+            item.isShown = false
+            parkedKeepAwakeItem = item
             keepAwakeItem = nil
         }
     }
@@ -485,9 +527,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard settings.menuBar.style != .combined else { return }
         let needed = settings.menuBar.ringVisible || AwakeCup.isShown(settings)
         if needed, vibeItem == nil {
-            vibeItem = makeItem(.vibe)
-        } else if !needed {
-            vibeItem?.remove()
+            if let parked = parkedVibeItem {
+                parked.isShown = true
+                vibeItem = parked
+                parkedVibeItem = nil
+            } else {
+                vibeItem = makeItem(.vibe)
+            }
+        } else if !needed, let item = vibeItem {
+            item.isShown = false
+            parkedVibeItem = item
             vibeItem = nil
         }
         vibeItem?.refreshLength()
