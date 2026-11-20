@@ -6,9 +6,12 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 read -r -a ARCHS <<< "${VIBECHECK_ARCHS:-$(uname -m)}"
-# Each architecture builds into its own folder; resources (strings) are the same, so they come from the first.
-products() { echo ".build/$1-apple-macosx/release"; }
-FIRST="$(products "${ARCHS[0]}")"
+# Where SwiftPM puts a release build differs between toolchains (per-architecture folders, or one shared
+# folder that each --arch build overwrites), so ask it, and copy each architecture's binaries aside right
+# after building them. Resources (strings) are the same for every architecture, so they come from the first.
+bin_path() { swift build -c release --arch "$1" --show-bin-path; }
+products() { echo ".build/archs/$1"; }
+FIRST="$(bin_path "${ARCHS[0]}")"
 # Copies one built executable into the app, merging the architectures with lipo when there are several.
 install_binary() { # $1: product name, $2: destination
   local inputs=() arch
@@ -28,6 +31,8 @@ build_release() {
     swift build -c release --arch "$arch" \
       -Xswiftc -emit-const-values-path -Xswiftc "$PWD/$INTENTS/VibeCheck.swiftconstvalues" \
       -Xswiftc -Xfrontend -Xswiftc -const-gather-protocols-file -Xswiftc -Xfrontend -Xswiftc "$PWD/$INTENTS/protocols.json"
+    mkdir -p "$(products "$arch")"
+    cp "$(bin_path "$arch")/VibeCheck" "$(bin_path "$arch")/VibeCheckWidget" "$(products "$arch")/"
   done
 }
 build_release
