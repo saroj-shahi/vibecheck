@@ -9,7 +9,7 @@
 	<key>CFBundleExecutable</key>
 	<string>VibeCheckWidget</string>
 	<key>CFBundleIdentifier</key>
-	<string>local.vibecheck.app.widget</string>
+	<string>io.github.saroj-shahi.vibecheck.widget</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>

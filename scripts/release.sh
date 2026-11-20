@@ -79,7 +79,9 @@ notarize() { # $1: file to submit (zip or dmg)
   echo "Notarized ($id)"
 }
 
-step "Building VibeCheck $VERSION ($BUILD_NUMBER)"
+step "Building VibeCheck $VERSION ($BUILD_NUMBER), universal"
+# Releases run on Apple silicon and Intel Macs.
+export VIBECHECK_ARCHS="arm64 x86_64"
 ./build.sh
 rm -rf "$OUT" && mkdir -p "$OUT"
 
@@ -87,6 +89,12 @@ step "Checking the signature"
 codesign --verify --deep --strict --verbose=2 "$APP"
 [[ "$(codesign -dv "$APP" 2>&1)" == *"(runtime)"* ]] || die "hardened runtime is off"
 [ -d "$APP/Contents/PlugIns/VibeCheckWidget.appex" ] || echo "warning: no widget extension in this build" >&2
+for binary in "$APP/Contents/MacOS/VibeCheck" "$APP/Contents/PlugIns/VibeCheckWidget.appex/Contents/MacOS/VibeCheckWidget"; do
+  [ -f "$binary" ] || continue
+  for arch in arm64 x86_64; do
+    lipo "$binary" -verify_arch "$arch" || die "$(basename "$binary") is missing $arch (lipo -archs: $(lipo -archs "$binary"))"
+  done
+done
 
 if [ "$ZIP" = 1 ]; then
   step "Making the zip"

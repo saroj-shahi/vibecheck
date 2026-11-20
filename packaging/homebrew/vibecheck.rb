@@ -16,9 +16,16 @@ cask "vibecheck" do
     run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{appdir}}/VibeCheck.app"]
   end
 
-  uninstall quit: "local.vibecheck.app"
+  uninstall quit: [
+    "io.github.saroj-shahi.vibecheck",
+    "local.vibecheck.app", # 1.5 and earlier
+  ]
 
   zap trash: [
+    "~/Library/Application Support/VibeCheck",
+    "~/Library/Group Containers/77HKFF78Z8.io.github.saroj-shahi.vibecheck",
+    "~/Library/Preferences/io.github.saroj-shahi.vibecheck.plist",
+    # 1.5 and earlier
     "~/Library/Group Containers/77HKFF78Z8.local.vibecheck",
     "~/Library/Preferences/local.vibecheck.app.plist",
   ]

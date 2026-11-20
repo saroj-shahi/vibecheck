@@ -54,7 +54,7 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
 
 public enum WidgetShared {
     /// Team-prefixed app group: works on macOS without a provisioning profile.
-    public static let appGroup = "77HKFF78Z8.local.vibecheck"
+    public static let appGroup = "77HKFF78Z8.io.github.saroj-shahi.vibecheck"
     public static let ringKind = "VibeRingWidget"
     public static let sparklineKind = "SparklineWidget"
 

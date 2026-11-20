@@ -9,7 +9,8 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 |---|---|
 | `AppDelegate.swift` | `StatusItemController` (one menu bar item: kinds `.single(Module)`, `.combined`, `.vibe`, `.keepAwake`), `AppDelegate` (launch, `syncItems` / reorder rebuild by `statusItemGeneration`, deck/Settings opening, shortcuts) |
 | `AppDelegate+DeckDemo.swift` | `--deck-demo` launch mode (logs item, deck and Settings frames); kept in release builds for QA |
-| `AppSettings.swift` | `Module` enum (10 modules, order, symbols, label styles), `LabelStyle`, `Palette`, `AppSettings` (module-level settings, refresh, hotkeys, alerts; defaults domain `local.vibecheck.app`; groups below), `autosaveName` |
+| `AppSettings.swift` | `Module` enum (10 modules, order, symbols, label styles), `LabelStyle`, `Palette`, `AppSettings` (module-level settings, refresh, hotkeys, alerts; defaults domain `io.github.saroj-shahi.vibecheck`; groups below), `autosaveName` |
+| `BundleIDMigration.swift` | One-time copy of settings from the pre-1.6 defaults domain `local.vibecheck.app`, run in `main.swift` before anything reads settings |
 | `AppSettingsGroups.swift` | `SettingsWriter` (shared save helper) and the setting groups `settings.menuBar`, `.clock`, `.weather`, `.keepAwake` (same flat defaults keys as before the split) |
 | `ItemOptions.swift` | Per-item menu bar options (Agents: which agents, % left/used/tokens, windows, reset; Memory, Network, Disk, Battery, Sensors) + `AgentUsageSample.menuBarContent` |
 | `SystemStats.swift` | The tick: samples every monitor, histories, demand counters (`processDemand`, `networkAppDemand`, `sensorDemand`), vibe input, listening ports |
@@ -81,7 +82,7 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `PortSampler` (`lso
 | File | What |
 |---|---|
 | `App/WidgetPublisher.swift` | Called on every tick: writes the widget snapshot into the app group once a minute while a widget is placed; reloads timelines on a vibe change |
-| `Sources/VibeCheckShared/WidgetSnapshot.swift` | Library shared by app and widget: `WidgetSnapshot` (vibe, verdict, CPU / memory now and last hour), `WidgetShared` (app group `77HKFF78Z8.local.vibecheck`, read / write) |
+| `Sources/VibeCheckShared/WidgetSnapshot.swift` | Library shared by app and widget: `WidgetSnapshot` (vibe, verdict, CPU / memory now and last hour), `WidgetShared` (app group `77HKFF78Z8.io.github.saroj-shahi.vibecheck`, read / write) |
 | `Sources/VibeCheckWidget/VibeCheckWidgets.swift`, `WidgetViews.swift` | The WidgetKit extension: bundle, timeline provider (15 min), small "Vibe" ring and medium "CPU and Memory" sparklines |
 | `Resources/Widget/` (`Info.plist`, `Widget.entitlements`), `Resources/VibeCheck.entitlements` | Appex plist and sandbox + app group entitlements; `build.sh` assembles `Contents/PlugIns/VibeCheckWidget.appex` (Apple Development identity only) |
 

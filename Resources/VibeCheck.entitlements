@@ -10,7 +10,7 @@
 	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>77HKFF78Z8.local.vibecheck</string>
+		<string>77HKFF78Z8.io.github.saroj-shahi.vibecheck</string>
 	</array>
 </dict>
 </plist>

@@ -87,6 +87,9 @@ MainActor.assumeIsolated {
         exit(0)
     }
 
+    // Before anything reads settings: bring them over from the pre-1.6 bundle ID.
+    if BundleIDMigration.run() { NSLog("VibeCheck: copied settings from \(BundleIDMigration.legacyDomain)") }
+
     let app = NSApplication.shared
     let delegate = AppDelegate()
     app.delegate = delegate

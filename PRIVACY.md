@@ -17,5 +17,7 @@ VibeCheck runs on your Mac. It has no account, no analytics, no crash reporting 
 | Public IP (only if you turn it on) | `api.ipify.org` | A standard HTTPS request |
 | Claude live limits (only if you turn it on) | Your own Claude Code asks Anthropic, the same way `/usage` does | VibeCheck never reads your credentials or Keychain |
 
-Settings stay in the `local.vibecheck.app` defaults domain on your Mac. Uninstalling the app and running
-`defaults delete local.vibecheck.app` removes them.
+Settings stay in the `io.github.saroj-shahi.vibecheck` defaults domain on your Mac, and history in
+`~/Library/Application Support/VibeCheck`. To remove everything after uninstalling, run
+`defaults delete io.github.saroj-shahi.vibecheck` and delete that folder. Versions 1.5 and earlier used
+`local.vibecheck.app`, so run `defaults delete local.vibecheck.app` too if you used one of them.

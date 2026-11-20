@@ -1,7 +1,20 @@
 #!/bin/bash
 # Builds VibeCheck.app into ./build. Usage: ./build.sh [--install]  (--install copies it to /Applications)
+# Builds for this Mac's architecture only. VIBECHECK_ARCHS="arm64 x86_64" makes a universal app that runs on
+# Apple silicon and Intel Macs (scripts/release.sh sets it).
 set -euo pipefail
 cd "$(dirname "$0")"
+
+read -r -a ARCHS <<< "${VIBECHECK_ARCHS:-$(uname -m)}"
+# Each architecture builds into its own folder; resources (strings) are the same, so they come from the first.
+products() { echo ".build/$1-apple-macosx/release"; }
+FIRST="$(products "${ARCHS[0]}")"
+# Copies one built executable into the app, merging the architectures with lipo when there are several.
+install_binary() { # $1: product name, $2: destination
+  local inputs=() arch
+  for arch in "${ARCHS[@]}"; do inputs+=("$(products "$arch")/$1"); done
+  if [ "${#inputs[@]}" = 1 ]; then cp "${inputs[0]}" "$2"; else lipo -create "${inputs[@]}" -output "$2"; fi
+}
 
 # App Intents (Shortcuts/Spotlight actions) need metadata that Xcode normally generates: the compiler writes
 # the intents' constant values, then appintentsmetadataprocessor turns them into Metadata.appintents.
@@ -9,9 +22,13 @@ INTENTS=.build/intents
 mkdir -p "$INTENTS"
 echo '["AppIntent","EntityQuery","AppEntity","TransientEntity","AppEnum","AppShortcutProviding","AppShortcutsProvider","AnyResolverProviding","AppIntentsPackage","DynamicOptionsProvider","IntentValueQuery","Resolver","AppExtension","ExtensionPointDefining","_IntentValueRepresentable","_AssistantIntentsProvider"]' > "$INTENTS/protocols.json"
 build_release() {
-  swift build -c release \
-    -Xswiftc -emit-const-values-path -Xswiftc "$PWD/$INTENTS/VibeCheck.swiftconstvalues" \
-    -Xswiftc -Xfrontend -Xswiftc -const-gather-protocols-file -Xswiftc -Xfrontend -Xswiftc "$PWD/$INTENTS/protocols.json"
+  local arch
+  for arch in "${ARCHS[@]}"; do
+    # The const values don't depend on the architecture, so each build may overwrite the same file.
+    swift build -c release --arch "$arch" \
+      -Xswiftc -emit-const-values-path -Xswiftc "$PWD/$INTENTS/VibeCheck.swiftconstvalues" \
+      -Xswiftc -Xfrontend -Xswiftc -const-gather-protocols-file -Xswiftc -Xfrontend -Xswiftc "$PWD/$INTENTS/protocols.json"
+  done
 }
 build_release
 # A no-op incremental build leaves the const values empty ("[]"), and the metadata step below then fails.
@@ -23,13 +40,13 @@ fi
 APP=build/VibeCheck.app
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp .build/release/VibeCheck "$APP/Contents/MacOS/VibeCheck"
+install_binary VibeCheck "$APP/Contents/MacOS/VibeCheck"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
 # Strings: SwiftPM compiles Sources/VibeCheck/Resources/Localizable.xcstrings into <language>.lproj folders inside
 # its resource bundle. SwiftUI's Text("…") and String(localized:) look in the main bundle, so copy them there.
 LPROJ_FOUND=0
-for lproj in .build/release/VibeCheck_VibeCheck.bundle/Contents/Resources/*.lproj .build/release/VibeCheck_VibeCheck.bundle/*.lproj; do
+for lproj in "$FIRST"/VibeCheck_VibeCheck.bundle/Contents/Resources/*.lproj "$FIRST"/VibeCheck_VibeCheck.bundle/*.lproj; do
   [ -d "$lproj" ] || continue
   cp -R "$lproj" "$APP/Contents/Resources/"
   LPROJ_FOUND=1
@@ -83,12 +100,12 @@ if [[ "$IDENTITY" == "Developer ID Application:"* || "${VIBECHECK_HARDENED:-0}" 
   SIGN_FLAGS=(--options runtime --timestamp)
 fi
 if printf '%s\n' "$IDENTITIES" | grep -qF "\"$IDENTITY\""; then
-  # Widgets: the extension must be sandboxed and shares the app group "<Team ID>.local.vibecheck" with the
+  # Widgets: the extension must be sandboxed and shares the app group "<Team ID>.io.github.saroj-shahi.vibecheck" with the
   # app, so it needs a Team ID; with other identities the app ships without widgets.
   if [[ "$IDENTITY" == "Apple Development:"* || "$IDENTITY" == "Developer ID Application:"* ]]; then
     APPEX="$APP/Contents/PlugIns/VibeCheckWidget.appex"
     mkdir -p "$APPEX/Contents/MacOS"
-    cp .build/release/VibeCheckWidget "$APPEX/Contents/MacOS/VibeCheckWidget"
+    install_binary VibeCheckWidget "$APPEX/Contents/MacOS/VibeCheckWidget"
     cp Resources/Widget/Info.plist "$APPEX/Contents/Info.plist"
     for key in CFBundleShortVersionString CFBundleVersion; do
       /usr/libexec/PlistBuddy -c "Set :$key $(/usr/libexec/PlistBuddy -c "Print :$key" "$APP/Contents/Info.plist")" "$APPEX/Contents/Info.plist"
@@ -106,7 +123,7 @@ else
   codesign --force --sign - "$APP"
   echo "Signed ad hoc (no \"$IDENTITY\" certificate)"
 fi
-echo "Built $APP"
+echo "Built $APP ($(lipo -archs "$APP/Contents/MacOS/VibeCheck"))"
 
 if [ "${1:-}" = "--install" ]; then
   rm -rf /Applications/VibeCheck.app

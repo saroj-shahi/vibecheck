@@ -97,7 +97,7 @@ Choices that shouldn't be undone without a good reason.
 | Hardened runtime only for Developer ID builds (or `VIBECHECK_HARDENED=1`), not the owner's daily Apple Development builds | Notarization needs it; keeps local builds as they were |
 | The flat brand mark is the Mood Dial (ring, notched knob, check in the gap), not the old pulse-to-check | The owner asked for the mark to follow the app icon so the lockup, README and icon tell one story |
 | Widgets without an Xcode project: SwiftPM builds the extension executable (linked with `-e _NSExtensionMain`), `build.sh` wraps and signs the `.appex` | Keeps the "no Xcode project" decision; without that entry point the extension traps on load |
-| Team-prefixed app group (`77HKFF78Z8.local.vibecheck`), main app stays unsandboxed | Works without a provisioning profile; only the widget is sandboxed, as WidgetKit requires |
+| Team-prefixed app group (`77HKFF78Z8.io.github.saroj-shahi.vibecheck`), main app stays unsandboxed | Works without a provisioning profile; only the widget is sandboxed, as WidgetKit requires |
 | Swift Package + `build.sh` instead of an Xcode project | Simple, scriptable, no project file churn |
 | `LSUIElement` accessory app, AppKit status items + SwiftUI views | Menu bar only; SwiftUI for UI, AppKit for windows and status items |
 | One shared `DeckPanel` (borderless non-activating `NSPanel`) instead of `NSPopover` | Smooth resize, matched-geometry transitions, no arrow, one window for every item |
@@ -171,7 +171,7 @@ swift scripts/render_brand.swift # regenerate icon and brand assets from brandin
 scripts/qa/build.sh && .build/qa/qa help   # on-screen QA tools
 ```
 
-- Settings live in the `local.vibecheck.app` defaults domain; history in
+- Settings live in the `io.github.saroj-shahi.vibecheck` defaults domain; history in
   `~/Library/Application Support/VibeCheck/history.json`.
 - Conventional commit messages, signed off (`git commit -s`, see [CONTRIBUTING](../CONTRIBUTING.md)).
 - Repo: `saroj-shahi/vibecheck` (public, GPL-3.0).
