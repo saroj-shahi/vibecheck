@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// A page of the Settings window. App-wide pages first, then one page per module.
 enum SettingsSection: Hashable, Identifiable {
@@ -234,6 +235,7 @@ struct SettingsIcon: View {
 
 private struct MenuBarSettings: View {
     @Environment(AppSettings.self) private var settings
+    @State private var itemDrag = ItemDrag()
 
     var body: some View {
         @Bindable var settings = settings
@@ -280,9 +282,8 @@ private struct MenuBarSettings: View {
 
             Section {
                 ForEach(settings.moduleOrder) { module in
-                    ModuleRow(module: module)
+                    ModuleRow(module: module, drag: itemDrag)
                 }
-                .onMove { settings.moveModules(from: $0, to: $1) }
             } header: {
                 Text("Items")
             } footer: {
@@ -294,14 +295,66 @@ private struct MenuBarSettings: View {
     }
 }
 
+/// Live state of a drag in the Items list: which row is moving and the gap it would drop into.
+@Observable
+private final class ItemDrag {
+    var dragging: Module?
+    /// Insertion index into `moduleOrder` (0...count); nil when the drop would change nothing.
+    var gap: Int?
+    /// True while the drag is over the list; a cancelled or finished drag clears it.
+    var isOver = false
+}
+
+private struct ItemDropDelegate: DropDelegate {
+    let module: Module
+    let rowHeight: CGFloat
+    let settings: AppSettings
+    let drag: ItemDrag
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        drag.isOver = true
+        guard let dragged = drag.dragging,
+              let from = settings.moduleOrder.firstIndex(of: dragged),
+              let index = settings.moduleOrder.firstIndex(of: module) else { return DropProposal(operation: .move) }
+        let gap = info.location.y < rowHeight / 2 ? index : index + 1
+        drag.gap = (gap == from || gap == from + 1) ? nil : gap
+        return DropProposal(operation: .move)
+    }
+
+    func dropEntered(info: DropInfo) { _ = dropUpdated(info: info) }
+
+    func dropExited(info: DropInfo) {
+        drag.isOver = false
+        drag.gap = nil
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        defer { drag.dragging = nil; drag.gap = nil; drag.isOver = false }
+        guard let dragged = drag.dragging, let gap = drag.gap,
+              let from = settings.moduleOrder.firstIndex(of: dragged) else { return false }
+        withAnimation(.snappy(duration: 0.2)) { settings.moveModules(from: [from], to: gap) }
+        return true
+    }
+}
+
 private struct ModuleRow: View {
     let module: Module
+    let drag: ItemDrag
     @Environment(AppSettings.self) private var settings
+    @State private var rowHeight: CGFloat = 28
+
+    private var index: Int? { settings.moduleOrder.firstIndex(of: module) }
+    private var isDragged: Bool { drag.isOver && drag.dragging == module }
+    private var lineAbove: Bool { drag.gap != nil && drag.gap == index }
+    private var lineBelow: Bool { drag.gap != nil && drag.gap == settings.moduleOrder.count && index == settings.moduleOrder.count - 1 }
 
     var body: some View {
         HStack {
             Image(systemName: "line.3.horizontal")
                 .foregroundStyle(.tertiary)
+                .frame(width: 20, height: 28)
+                .contentShape(Rectangle())
+                .onHover { inside in if inside { NSCursor.openHand.push() } else { NSCursor.pop() } }
                 .accessibilityHidden(true)
             Toggle(isOn: Binding(get: { settings.isEnabled(module) }, set: { settings.setEnabled(module, $0) })) {
                 Label {
@@ -328,6 +381,22 @@ private struct ModuleRow: View {
             .help("\(module.title) settings")
             .accessibilityLabel("\(module.title) settings")
         }
+        // Grouped Forms on macOS ignore .onMove (it only works in a List), so rows reorder by drag and drop.
+        .contentShape(Rectangle())
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { rowHeight = $0 }
+        .opacity(isDragged ? 0.35 : 1)
+        .overlay(alignment: .top) { insertionLine.opacity(lineAbove ? 1 : 0).offset(y: -5) }
+        .overlay(alignment: .bottom) { insertionLine.opacity(lineBelow ? 1 : 0).offset(y: 5) }
+        .animation(.easeOut(duration: 0.12), value: drag.gap)
+        .onDrag {
+            drag.dragging = module
+            return NSItemProvider(object: module.rawValue as NSString)
+        } preview: {
+            Label { Text(module.title) } icon: { SettingsIcon(symbol: module.symbol, color: module.accent, size: 18) }
+                .padding(.horizontal, 10).padding(.vertical, 6)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        }
+        .onDrop(of: [.plainText], delegate: ItemDropDelegate(module: module, rowHeight: rowHeight, settings: settings, drag: drag))
         .contextMenu {
             if let index = settings.moduleOrder.firstIndex(of: module) {
                 Button("Move Up") { settings.moveModules(from: [index], to: max(0, index - 1)) }
@@ -338,6 +407,16 @@ private struct ModuleRow: View {
             Divider()
             Button("\(module.title) Settings…") { SettingsRouter.shared.open(.module(module)) }
         }
+    }
+
+    /// Accent bar with a dot at the leading end, Finder-style, marking where the dragged item will land.
+    private var insertionLine: some View {
+        HStack(spacing: 0) {
+            Circle().strokeBorder(Color.accentColor, lineWidth: 2).frame(width: 8, height: 8)
+            Rectangle().fill(Color.accentColor).frame(height: 2)
+        }
+        .frame(height: 8)
+        .allowsHitTesting(false)
     }
 }
 

@@ -152,6 +152,7 @@ Choices that shouldn't be undone without a good reason.
 | Agents module: no network of its own; live Claude limits run the local `claude` CLI | Keeps "local logs only" true for VibeCheck itself |
 | No cost estimates in the Agents module (owner, 2026-11-18) | It would need downloading a price list; never hard-code prices either |
 | Settings: one sidebar page per module; the Menu Bar page keeps only order, on/off and display, and › opens the module page. Monitors list in fixed order, not the menu bar order | Options live in one place; a sidebar that reshuffles on reorder is hard to scan |
+| Settings item rows reorder with `.onDrag` + a `DropDelegate` (insertion line, dimmed source row), not `.onMove` | `.onMove` does nothing in a macOS grouped `Form` (it needs a real `List`); `.dropDestination` only says "over this row", too vague to show where the item lands |
 | Settings footers use `settingsFooter()` (caption, leading) | Grouped `Form` footers align trailing by default on macOS |
 | Chart areas add points with `addLine`, never `addLines` | `addLines` starts a new subpath and breaks the closed fill |
 | Agent watch counts an agent as working for 3 min after its last write (not the 2 min "working now" rule) | Long tool calls (tests, builds) write nothing for minutes; a shorter gap would end the session and notify mid-run |
