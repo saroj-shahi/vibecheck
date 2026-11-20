@@ -148,6 +148,7 @@ Choices that shouldn't be undone without a good reason.
 | Palette never offers Empty Trash or process kills; Quit needs a second ↩ | Type-to-act means "q" + Return would quit; Return in a list is too easy to hit by accident |
 | A finished focus session always notifies | It's the point of a focus timer; other keep-awake endings follow the notify setting |
 | Separate items' autosave names carry a generation (`vibecheck.cpu.g3`) bumped on each Settings reorder; generation 0 keeps the original names | macOS 27 remembers item positions by autosave name outside the app's defaults; new names are placed in creation order, each to the left (probe app). Don't revert to fixed names |
+| Turning an item off hides it (`isVisible = false`) instead of removing it; it's only removed on a reorder or a menu bar style change | `removeStatusItem` makes macOS forget where the user dragged the item among other apps' items; a hidden item keeps its spot and comes back there |
 | Limit lists key on `RateWindow.key` (length + name) | Copilot's two monthly quotas share a length; keying on length drew one twice |
 | Agents module: no network of its own; live Claude limits run the local `claude` CLI | Keeps "local logs only" true for VibeCheck itself |
 | No cost estimates in the Agents module (owner, 2026-11-18) | It would need downloading a price list; never hard-code prices either |
