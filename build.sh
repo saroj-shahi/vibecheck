@@ -43,8 +43,10 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 install_binary VibeCheck "$APP/Contents/MacOS/VibeCheck"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
-# Strings: SwiftPM compiles Sources/VibeCheck/Resources/Localizable.xcstrings into <language>.lproj folders inside
-# its resource bundle. SwiftUI's Text("…") and String(localized:) look in the main bundle, so copy them there.
+# Strings: compile Sources/VibeCheck/Resources/Localizable.xcstrings into <language>.lproj folders inside the
+# SwiftPM resource bundle (`swift build` only copies the catalog). SwiftUI's Text("…") and String(localized:) look
+# in the main bundle, so copy them there.
+scripts/compile_strings.sh "$FIRST/VibeCheck_VibeCheck.bundle"
 LPROJ_FOUND=0
 for lproj in "$FIRST"/VibeCheck_VibeCheck.bundle/Contents/Resources/*.lproj "$FIRST"/VibeCheck_VibeCheck.bundle/*.lproj; do
   [ -d "$lproj" ] || continue
