@@ -253,6 +253,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                 kind: .alert, url: release.pageURL)
         }
         UpdateChecker.shared.start()
+        if !CommandLine.arguments.contains("--deck-demo") { StarPrompt.shared.start() }
         stats.onTick = { [weak self] in
             guard let self else { return }
             CallGuard.shared.tick(stats: self.stats, alerts: self.alerts)

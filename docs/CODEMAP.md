@@ -37,6 +37,7 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 | `DownloadsWatcher.swift` | Whether files are arriving in the watched folder (keep-awake "while downloading" trigger) |
 | `BluetoothSnooze.swift` | Bluetooth off while asleep (private IOBluetooth, CoreBluetooth permission) |
 | `UpdateChecker.swift` | `UpdateChecker`: GitHub Releases check (`VCUpdateRepository` in Info.plist), version compare, 24 h throttle, one notification per version; injectable `fetch` |
+| `StarPrompt.swift` | `StarPrompt`: one-time modal 2 days after first launch (keys `starPromptFirstSeen`, `starPromptShown`) asking for a GitHub star or a coffee |
 | `Weather.swift` | Open-Meteo forecast + city search, `TemperatureUnit` |
 | `Clock.swift`, `NotchFit.swift` (+ `NotchHideWatch`, notch auto-collapse), `Hotkeys.swift`, `HistoryStore.swift`, `NotificationLog.swift`, `SettingsBackup.swift`, `Intents.swift`, `Format.swift` | Clock formats/world clocks, notch fitting maths, global shortcuts, 1H/24H history file, notification history, settings export/import (key list!), Shortcuts actions, formatters (`Fmt`) |
 

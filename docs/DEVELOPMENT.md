@@ -87,6 +87,7 @@ Choices that shouldn't be undone without a good reason.
 
 | Decision | Why |
 |---|---|
+| The star / support prompt shows exactly once, 2 days after first launch, and is marked shown before it opens (owner, 2026-11-20) | Asking for support must never become a nag; existing installs count from the first launch of the version that added it |
 | Keep awake on state loops (steam shimmer) though motion otherwise never decorates (2026-11-19) | Owner found the old filled-cup state "not fun"; the loop only runs while the deck is open and stops with Reduce Motion |
 | Mouse, keyboard and clipboard back on the roadmap (2026-11-19, owner): clipboard history in ⌘K and pinned snippets (P1); find my cursor and keyboard cleaning mode (P2). History is off by default and never records concealed / transient items or anything copied during Secure Input | Owner asked for them. Kept to ⌘K commands and the fewest permissions, per the product rules; no input monitoring |
 | Deck 390 pt (was 360), notifications popover 346 pt, ⌘↩ actions card 270 pt, alerts widened to 288 pt with an empty accessory view (2026-11-19) | Owner asked for wider pop-ups (~20% was too much; settled ~8% over the old sizes). 390 keeps tiles whole-pixel (114 pt) |

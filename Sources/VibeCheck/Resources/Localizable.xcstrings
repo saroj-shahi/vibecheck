@@ -3256,6 +3256,16 @@
         }
       }
     },
+    "If it's been useful, a star on GitHub helps other people find it, and a coffee keeps it going. This is the only time we'll ask.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If it's been useful, a star on GitHub helps other people find it, and a coffee keeps it going. This is the only time we'll ask."
+          }
+        }
+      }
+    },
     "Import": {
       "localizations": {
         "en": {
@@ -4437,6 +4447,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Normal"
+          }
+        }
+      }
+    },
+    "Not Now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Now"
           }
         }
       }
@@ -5829,6 +5849,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Standard"
+          }
+        }
+      }
+    },
+    "Star on GitHub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Star on GitHub"
           }
         }
       }
