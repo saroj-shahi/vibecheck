@@ -64,6 +64,8 @@ struct ProcessKillerTests {
         try shell.run()
         defer { if shell.isRunning { shell.terminate() } }
         var kids: [Int32] = []
+        // Reads `kids` when the test exits, so it also cleans up if an earlier step throws.
+        defer { for kid in kids { kill(kid, SIGKILL) } }
         for _ in 0..<40 where kids.count < 2 {
             try await Task.sleep(for: .milliseconds(50))
             kids = ProcessKiller.children(of: shell.processIdentifier)
@@ -77,6 +79,5 @@ struct ProcessKillerTests {
         }
         #expect(!shell.isRunning)
         for kid in kids { #expect(kill(kid, 0) != 0, "sleep \(kid) still running") }
-        defer { for kid in kids { kill(kid, SIGKILL) } }
     }
 }
