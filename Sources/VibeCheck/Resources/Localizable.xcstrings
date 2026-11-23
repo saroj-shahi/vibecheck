@@ -5473,11 +5473,22 @@
       }
     },
     "New in 1.6: dev servers, a 30-day vibe timeline and Vibe Card. Press ⌘K to find them.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "New in 1.6: dev servers, a 30-day vibe timeline and Vibe Card. Press ⌘K to find them."
+          }
+        }
+      }
+    },
+    "New in 1.7: a Reminders to-do list, volume and brightness, and when your agent limits run out.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New in 1.7: a Reminders to-do list, volume and brightness, and when your agent limits run out."
           }
         }
       }
