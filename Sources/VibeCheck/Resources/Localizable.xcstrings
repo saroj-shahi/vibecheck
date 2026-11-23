@@ -733,6 +733,16 @@
         }
       }
     },
+    "%lld more from ~/.config/vibecheck/hooks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld more from ~/.config/vibecheck/hooks"
+          }
+        }
+      }
+    },
     "%lld more in the deck. Click to see everything.": {
       "localizations": {
         "en": {
@@ -1402,6 +1412,16 @@
         }
       }
     },
+    "App %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App %lld"
+          }
+        }
+      }
+    },
     "App memory": {
       "localizations": {
         "en": {
@@ -1967,6 +1987,16 @@
         }
       }
     },
+    "Check": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check"
+          }
+        }
+      }
+    },
     "Check Now": {
       "localizations": {
         "en": {
@@ -2309,12 +2339,32 @@
         }
       }
     },
+    "Cool": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cool"
+          }
+        }
+      }
+    },
     "Copied": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Copied"
+          }
+        }
+      }
+    },
+    "Copied.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied."
           }
         }
       }
@@ -2349,6 +2399,16 @@
         }
       }
     },
+    "Copy Image": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Image"
+          }
+        }
+      }
+    },
     "Couldn't change the microphone.": {
       "localizations": {
         "en": {
@@ -2379,12 +2439,32 @@
         }
       }
     },
+    "Couldn't make the image.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't make the image."
+          }
+        }
+      }
+    },
     "Couldn't reach GitHub.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Couldn't reach GitHub."
+          }
+        }
+      }
+    },
+    "Couldn't save: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't save: %@"
           }
         }
       }
@@ -2460,7 +2540,6 @@
       }
     },
     "Dark": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3355,6 +3434,16 @@
         }
       }
     },
+    "From %@, updated %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From %1$@, updated %2$@"
+          }
+        }
+      }
+    },
     "From power adapter": {
       "localizations": {
         "en": {
@@ -3581,6 +3670,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hidden without Location access"
+          }
+        }
+      }
+    },
+    "Hide app names": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide app names"
           }
         }
       }
@@ -4249,6 +4348,16 @@
         }
       }
     },
+    "Light": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
+          }
+        }
+      }
+    },
     "Limits left": {
       "localizations": {
         "en": {
@@ -4450,6 +4559,16 @@
         }
       }
     },
+    "Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac"
+          }
+        }
+      }
+    },
     "Mac Vibe": {
       "localizations": {
         "en": {
@@ -4557,6 +4676,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Memory is %1$@ used, pressure %2$@."
+          }
+        }
+      }
+    },
+    "Memory pressure": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memory pressure"
           }
         }
       }
@@ -5382,6 +5511,16 @@
         }
       }
     },
+    "On battery, %lld%%": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On battery, %lld%%"
+          }
+        }
+      }
+    },
     "On battery, stop below": {
       "localizations": {
         "en": {
@@ -5772,6 +5911,26 @@
         }
       }
     },
+    "Plugged in": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plugged in"
+          }
+        }
+      }
+    },
+    "Plugged in, %lld W charger": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plugged in, %lld W charger"
+          }
+        }
+      }
+    },
     "Power": {
       "localizations": {
         "en": {
@@ -5878,6 +6037,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Public IP"
+          }
+        }
+      }
+    },
+    "Pulse the ring when an agent needs you": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pulse the ring when an agent needs you"
           }
         }
       }
@@ -6023,6 +6192,16 @@
         }
       }
     },
+    "Reads hook files in ~/.config/vibecheck/hooks. See examples/hooks for how to write them.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reads hook files in ~/.config/vibecheck/hooks. See examples/hooks for how to write them."
+          }
+        }
+      }
+    },
     "Reads one stat: a percentage for CPU, GPU, memory and battery; bytes for free disk; bytes per second for network; °C for temperature; a count for agent tokens.": {
       "localizations": {
         "en": {
@@ -6059,6 +6238,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recent notifications"
+          }
+        }
+      }
+    },
+    "Refresh": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
           }
         }
       }
@@ -6179,6 +6368,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Run"
+          }
+        }
+      }
+    },
+    "Save PNG…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save PNG…"
+          }
+        }
+      }
+    },
+    "Saved.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved."
           }
         }
       }
@@ -6359,6 +6568,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Settings (⌘,)"
+          }
+        }
+      }
+    },
+    "Share Vibe Card": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Vibe Card"
           }
         }
       }
@@ -7268,6 +7487,16 @@
         }
       }
     },
+    "Thermals": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thermals"
+          }
+        }
+      }
+    },
     "Thinking…": {
       "localizations": {
         "en": {
@@ -7485,6 +7714,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tokens today"
+          }
+        }
+      }
+    },
+    "Top apps by CPU": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top apps by CPU"
+          }
+        }
+      }
+    },
+    "Top apps by memory": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top apps by memory"
           }
         }
       }
@@ -7869,6 +8118,16 @@
         }
       }
     },
+    "Vibe Card preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vibe Card preview"
+          }
+        }
+      }
+    },
     "Vibe over the last 24 hours. %@": {
       "localizations": {
         "en": {
@@ -8078,6 +8337,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Waiting for the first update"
+          }
+        }
+      }
+    },
+    "Warm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warm"
           }
         }
       }

@@ -76,7 +76,8 @@ with a button to quit the app that's causing it.
   - [The vibe ring](#the-vibe-ring) · [The deck](#the-deck) · [Command palette (⌘K)](#command-palette-k) ·
     [Modules](#modules) · [Keep awake](#keep-awake) · [Alerts and notifications](#alerts-and-notifications) ·
     [Call guard and Focus](#call-guard-and-focus) · [AI agents](#ai-agents) · [Desktop widgets](#desktop-widgets) ·
-    [Shortcuts, Spotlight and Siri](#shortcuts-spotlight-and-siri) · [Settings](#settings) ·
+    [Vibe Hooks](#vibe-hooks) · [Vibe Card](#vibe-card) · [Shortcuts, Spotlight and Siri](#shortcuts-spotlight-and-siri) ·
+    [Command line](#command-line) · [Settings](#settings) ·
     [Keyboard shortcuts](#keyboard-shortcuts) · [Updates](#updates)
 - [FAQ](#faq)
 - [Privacy](#privacy)
@@ -240,6 +241,22 @@ and OpenCode:
 
 <p align="center"><img src="docs/screenshots/agents.png" alt="Agents detail: tokens today, sessions running now, Claude Code session and weekly limits, 24-hour and 7-day charts" width="300"></p>
 
+### Vibe Hooks
+
+Any tool can put a small status pill in the deck by writing a JSON file to `~/.config/vibecheck/hooks/`.
+VibeCheck watches the folder (no polling), shows up to three pills and drops each one when its `ttlSeconds`
+runs out:
+
+```json
+{ "id": "claude-code", "label": "Claude Code", "value": "needs you", "state": "needs_input",
+  "icon": "hand.raised.fill", "updatedAt": "2026-11-23T08:30:00Z", "ttlSeconds": 300 }
+```
+
+`state` is `active`, `idle`, `needs_input`, `done` or `error`. Turn on Settings → Menu Bar → **Pulse the
+ring when an agent needs you** to get a gentle pulse while any hook says `needs_input`. Starter scripts for
+Claude Code hooks and for any other CLI (Codex, Gemini CLI, build scripts) are in
+[`examples/hooks/`](examples/hooks/).
+
 ### Desktop widgets
 
 Right-click the desktop → **Edit Widgets** → search "VibeCheck":
@@ -247,14 +264,39 @@ Right-click the desktop → **Edit Widgets** → search "VibeCheck":
 - **Vibe** (small): the ring, the vibe word and the reason.
 - **CPU and Memory** (medium): the ring, the verdict and last-hour sparklines.
 
-Widgets update while VibeCheck runs and dim if it has been quit for a while.
+Widgets update while VibeCheck runs and dim if it has been quit for a while. They follow the desktop's tinted
+and clear styles. On macOS 26 there's also a **Keep Awake** control for Control Center (System Settings →
+Control Center); it works while VibeCheck is running.
+
+### Vibe Card
+
+⌘K → **Share Vibe Card** makes a 1200×630 image of the current vibe: the ring and verdict, your Mac's chip
+and memory, memory pressure, thermals, power and the top three apps. Pick Light or Dark, optionally hide app
+names, then **Copy Image** or **Save PNG…**. Nothing is uploaded.
 
 ### Shortcuts, Spotlight and Siri
 
 The Shortcuts app gets **Get Mac Vibe**, **Get Mac Stat** (CPU, GPU, memory, free disk, download/upload
 speed, hottest temperature, battery, agent tokens today), **Open VibeCheck Deck** (optionally on a module),
-**Keep Mac Awake** (for N minutes or until stopped) and **Let Mac Sleep**. Several also work from Spotlight
-and Siri, e.g. _"Keep my Mac awake with VibeCheck"_.
+**Keep Mac Awake** (for N minutes or until stopped), **Let Mac Sleep**, **What's Slowing My Mac** (top apps
+by CPU or memory) and **Stop Dev Servers** (asks first). Several also work from Spotlight and Siri, e.g.
+_"Keep my Mac awake with VibeCheck"_.
+
+### Command line
+
+The app includes a `vibecheck` command (Homebrew links it for you; otherwise it's at
+`/Applications/VibeCheck.app/Contents/Helpers/vibecheck`). It reads a small status file the app keeps in
+`~/Library/Application Support/VibeCheck/status.json`, so it's instant and launches nothing:
+
+```bash
+vibecheck status            # "Mid: memory is getting tight. Chrome grew 2.4 GB in the last hour."
+vibecheck status --json     # for scripts, tmux, Starship, Raycast, Alfred
+vibecheck mood              # vibing / mid / cooked (exit code 0 / 1 / 2)
+vibecheck culprits --top 5  # by memory; --by cpu while the deck is open
+```
+
+If you also installed Homebrew's unrelated `vibecheck` formula, the two commands clash; uninstall one or
+call ours by its full path.
 
 ### Settings
 
