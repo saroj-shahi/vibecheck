@@ -402,7 +402,12 @@ struct DeckHome: View {
     private let columns = Array(repeating: GridItem(.flexible(), spacing: Deck.gutter), count: Deck.columns)
 
     var body: some View {
-        DeckHintView()
+        // One hint line at a time: the overnight note first; the what's-new tip shows once it's dismissed.
+        if let report = SleepDrain.shared.report {
+            SleepDrainLineView(report: report)
+        } else {
+            DeckHintView()
+        }
         if showQuickToggles {
             QuickTogglesView()
         }

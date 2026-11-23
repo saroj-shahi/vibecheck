@@ -322,6 +322,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AgentUsageStore.shared.start()
         BluetoothSnooze.shared.isEnabled = { [unowned settings] in settings.keepAwake.bluetoothOffWhileAsleep }
         BluetoothSnooze.shared.start()
+        SleepDrain.shared.start()
 
         NotificationCenter.default.addObserver(forName: .vibeCheckSettingsChanged, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
