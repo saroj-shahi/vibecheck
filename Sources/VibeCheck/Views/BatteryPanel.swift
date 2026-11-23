@@ -56,6 +56,13 @@ struct BatteryPanel: View {
                     VStack(spacing: 4) {
                         StatRow(label: "Power source", value: b.onAC ? String(localized: "Power adapter") : String(localized: "Battery"))
                         StatRow(label: "State", value: stateLabel(b))
+                        if b.onAC, let cw = b.chargerWatts {
+                            StatRow(label: "Charger", value: "\(cw) W")
+                            if BatteryMonitor.isChargingSlowly(b) {
+                                Text("Charging slowly").font(.caption).foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                            }
+                        }
                         if let w = b.powerWatts, abs(w) > 0.05 {
                             StatRow(label: w > 0 ? "Charging at" : "Drawing", value: String(format: "%.1f W", abs(w)))
                         }
