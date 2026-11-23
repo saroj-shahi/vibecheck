@@ -14,7 +14,7 @@ import Testing
         let phrases = regex.matches(in: provider, range: range).compactMap { m in
             Range(m.range(at: 1), in: provider).map { String(provider[$0]).replacingOccurrences(of: "\\(.applicationName)", with: "${applicationName}") }
         }
-        #expect(phrases.count == 5)
+        #expect(phrases.count == 8)
         for p in phrases { #expect(keys.contains(p), "missing in AppShortcuts.xcstrings: \(p)") }
     }
 }

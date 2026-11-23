@@ -55,6 +55,39 @@
           }
         }
       }
+    },
+    "What's slowing my Mac down in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's slowing my Mac down in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Which apps are busiest in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which apps are busiest in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Stop my dev servers with ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop my dev servers with ${applicationName}"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
