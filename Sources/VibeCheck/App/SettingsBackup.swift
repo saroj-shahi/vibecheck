@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 enum SettingsBackup {
     static let keys = [
         "enabledModules", "knownModules", "refreshInterval", "menuBarStyle", "menuBarSpacing", "labelStyles",
-        "colorfulMenuBar", "showVibeRing", "autoFitNotch", "notchMaxStats", "moduleOrder", "hotkeysEnabled", "hotkeyModifier", "alertRules", "clockFormat", "clockShowSeconds",
+        "colorfulMenuBar", "alwaysColorRing", "showVibeRing", "autoFitNotch", "notchMaxStats", "moduleOrder", "hotkeysEnabled", "hotkeyModifier", "alertRules", "clockFormat", "clockShowSeconds",
         "worldClocks", "weatherLocation", "temperatureUnit", "chartRange", "groupProcessesByApp",
         "keepAwakeDefaultMinutes", "keepAwakeDisplayOn", "keepAwakeBatteryFloor", "keepAwakeAtLaunch", "keepAwakeShowInMenuBar",
         "keepAwakeUntilMinute", "keepAwakeNotify", "keepAwakeHotkey", "keepAwakeOnPower", "keepAwakeWithDisplay",

@@ -262,6 +262,10 @@ private struct MenuBarSettings: View {
                 .pickerStyle(.radioGroup)
                 Toggle("Show vibe ring", isOn: $settings.menuBar.showVibeRing)
                     .disabled(settings.menuBar.style == .ring)
+                Toggle(isOn: $settings.menuBar.alwaysColorRing) {
+                    Text("Always color the ring")
+                    Text("Shows the vibe color even when everything's vibing.")
+                }
             }
 
             AdvancedSection {

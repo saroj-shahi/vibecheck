@@ -7,14 +7,16 @@ struct VibeRing: View {
     let vibe: Vibe
     var size: CGFloat = 16
     var lineWidth: CGFloat = 2.25
-    var monochromeWhenVibing = true
+    /// nil: follow Settings (monochrome unless "Always color the ring" is on).
+    var monochromeWhenVibing: Bool?
     /// A keep-awake session runs: a small cup sits in the ring's centre.
     var awake = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var checkTrigger = 0
 
     var body: some View {
-        let color: Color = vibe == .vibing && monochromeWhenVibing ? .primary : vibe.color
+        let mono = monochromeWhenVibing ?? !AppSettings.shared.menuBar.alwaysColorRing
+        let color: Color = vibe == .vibing && mono ? .primary : vibe.color
         let ring = shape(color: color)
             .frame(width: size, height: size)
         .overlay {
@@ -197,9 +199,6 @@ final class WobbleRingView: NSView {
         timer = nil
     }
 
-    private func startIfNeeded() {
-        observeGate()
-        guard timer == nil, window != nil, frames.count > 1, !TickGate.isSuspended else { return }
     @ObservationIgnored private var gateObserver: NSObjectProtocol?
 
     /// Follows the tick: nobody is looking while the display sleeps or the Mac is locked.
@@ -213,6 +212,9 @@ final class WobbleRingView: NSView {
         }
     }
 
+    private func startIfNeeded() {
+        observeGate()
+        guard timer == nil, window != nil, frames.count > 1, !TickGate.isSuspended else { return }
         let timer = Timer(timeInterval: 1 / Self.framesPerSecond, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.advance() }
         }
