@@ -101,6 +101,11 @@ enum DeckCommands {
             close()
             CursorFinder.flash()
         })
+        list.append(DeckCommand(id: "vibe.card", title: String(localized: "Share Vibe Card"), symbol: "square.and.arrow.up",
+                                keywords: "export image png screenshot share vibe card copy save") {
+            close()
+            VibeCardWindow.show(stats: stats)
+        })
         list.append(DeckCommand(id: "keyboard.clean", title: String(localized: "Clean keyboard"), symbol: "keyboard",
                                 keywords: "wipe disable lock keys clean") {
             close()
