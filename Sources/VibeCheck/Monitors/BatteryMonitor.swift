@@ -14,9 +14,25 @@ struct BatterySample {
     var temperature: Double?     // °C
     var powerWatts: Double?      // positive = charging, negative = draining
     var condition: String?
+    var chargerWatts: Int?       // rated wattage of the connected adapter; nil when unknown
+    var chargerName: String?
 }
 
 enum BatteryMonitor {
+    /// Rated watts from an adapter-details dictionary. Nil when missing, not a number or not above 0.
+    nonisolated static func adapterWatts(from details: [String: Any]?) -> Int? {
+        guard let n = details?["Watts"] as? NSNumber, CFGetTypeID(n) != CFBooleanGetTypeID() else { return nil }
+        let w = n.doubleValue
+        guard w.isFinite, w > 0, w < 10_000 else { return nil }
+        return Int(w.rounded())
+    }
+
+    /// True when a charger under 30 W is plugged in but the battery is still losing charge.
+    nonisolated static func isChargingSlowly(_ b: BatterySample) -> Bool {
+        guard b.onAC, let w = b.chargerWatts, w < 30, let p = b.powerWatts else { return false }
+        return p < -0.5
+    }
+
     static func sample() -> BatterySample {
         var result = BatterySample()
 
@@ -40,6 +56,15 @@ enum BatteryMonitor {
         }
         guard result.present else { return result }
 
+        // Adapter rating, only read while on external power.
+        if result.onAC {
+            let details = IOPSCopyExternalPowerAdapterDetails()?.takeRetainedValue() as? [String: Any]
+            result.chargerWatts = adapterWatts(from: details)
+            if result.chargerWatts != nil {
+                result.chargerName = (details?["Name"] as? String) ?? (details?["Description"] as? String)
+            }
+        }
+
         // Extra detail from the smart battery controller.
         let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("AppleSmartBattery"))
         guard service != 0 else { return result }
@@ -61,6 +86,11 @@ enum BatteryMonitor {
         }
         if let temp = (number("Temperature") ?? number("VirtualTemperature"))?.doubleValue, temp > 0 {
             result.temperature = temp / 100
+        }
+        if result.onAC, result.chargerWatts == nil,
+           let adapter = top["AdapterDetails"] as? [String: Any] {
+            result.chargerWatts = adapterWatts(from: adapter)
+            if result.chargerWatts != nil { result.chargerName = adapter["Name"] as? String ?? adapter["Description"] as? String }
         }
         let dict = top
         if let volts = (dict["Voltage"] as? NSNumber)?.doubleValue,
