@@ -133,7 +133,7 @@ struct TodoTests {
         #expect(!Module.todo.enabledByDefault)
         #expect(!Module.todo.enabledForNewInstall)
         #expect(Module.todo.isExtra)
-        #expect(Module.todo.symbol == "checklist")
+        #expect(Module.todo.symbol == "checkmark.circle")
         #expect(Module.todo.labelStyles == [.standard, .valueOnly])
         #expect(DeckModuleOption.todo.module == .todo)
         #expect(SettingsBackup.keys.contains("todoListID"))

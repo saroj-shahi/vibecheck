@@ -226,6 +226,9 @@ final class DeckController: NSObject {
         let kind = DeckBackgroundKind.choose(osMajor: ProcessInfo.processInfo.operatingSystemVersion.majorVersion,
                                              reduceTransparency: NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency)
         backgroundKind = kind
+        // Liquid Glass draws its own edge and depth. A window shadow traced on top of it showed as a dark
+        // square-cornered outline around the rounded glass, so only the blur / opaque backgrounds get one.
+        panel.hasShadow = kind != .liquidGlass
         let frame = container.superview?.frame ?? initialFrame
         container.removeFromSuperview()
         let background: NSView

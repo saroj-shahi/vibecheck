@@ -196,7 +196,7 @@ Agents). Every detail view follows the same order: the big number, a chart, then
 | Weather | condition + temperature | now, next 12 hours, 7 days ([Open-Meteo](https://open-meteo.com/); pick a city, no location access) |
 | Agents | agent logo + tokens today | see [AI agents](#ai-agents) |
 | Clock | time | date, month calendar, world clocks with day/night and offset |
-| To-do | checklist + open count | your chosen Apple Reminders list: add (Return), tick off, delete, due dates, a Completed section; switch lists from the header. Asks for Reminders access only when you turn it on |
+| To-do | ticked circle + open count | your chosen Apple Reminders list: add (Return), tick off, delete, due dates, a Completed section; switch lists from the header. Asks for Reminders access only when you turn it on |
 
 ### Keep awake
 

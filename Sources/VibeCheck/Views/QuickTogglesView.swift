@@ -16,7 +16,7 @@ struct QuickTogglesView: View {
                           spoken: actions.isMicMuted ? String(localized: "Microphone, muted") : String(localized: "Microphone, on"),
                           help: actions.isMicMuted ? "Unmute the microphone" : "Mute the microphone",
                           failTick: actions.failedToggle == .mic ? actions.failureTick : 0) { actions.toggleMic() }
-                QuickChip(symbol: "dot.radiowaves.left.and.right", label: "Bluetooth", on: actions.bluetoothOn == true,
+                QuickChip(symbol: "dot.radiowaves.left.and.right", label: "Bluetooth", on: actions.bluetoothOn == true, filled: true,
                           spoken: BluetoothTap.spoken(poweredOn: actions.bluetoothOn),
                           help: actions.bluetoothOn == true ? "Turn Bluetooth off" : "Turn Bluetooth on",
                           failTick: actions.failedToggle == .bluetooth ? actions.failureTick : 0) { actions.toggleBluetooth() }
@@ -142,6 +142,8 @@ private struct QuickChip: View {
     let symbol: String
     let label: LocalizedStringKey
     let on: Bool
+    /// On draws a solid accent fill with white text (Control Center style) instead of the light tint.
+    var filled = false
     let spoken: String
     let help: LocalizedStringKey
     /// Changes whenever this toggle's action fails; 0 while it is not the one that failed.
@@ -161,7 +163,7 @@ private struct QuickChip: View {
             }
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(QuickChipStyle(on: on))
+        .buttonStyle(QuickChipStyle(on: on, filled: filled))
         .modifier(ShakeEffect(progress: shake))
         .opacity(dimmed ? 0.35 : 1)
         .help(help)
@@ -183,9 +185,10 @@ private struct QuickChip: View {
     }
 }
 
-/// Quiet chip matching the tile fill; tinted when the toggle is on.
+/// Quiet chip matching the tile fill; tinted when the toggle is on, or solid accent with white text when `filled`.
 private struct QuickChipStyle: ButtonStyle {
     let on: Bool
+    var filled = false
     @Environment(\.isEnabled) private var enabled
     @State private var hovering = false
 
@@ -193,10 +196,10 @@ private struct QuickChipStyle: ButtonStyle {
         configuration.label
             .padding(.horizontal, 10)
             .frame(height: 30)
-            .foregroundStyle(on ? Color.accentColor : Color.primary)
+            .foregroundStyle(on ? (filled ? Color.white : Color.accentColor) : Color.primary)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(on ? AnyShapeStyle(Color.accentColor.opacity(0.18))
+                    .fill(on ? AnyShapeStyle(Color.accentColor.opacity(filled ? (hovering ? 0.9 : 1) : 0.18))
                              : AnyShapeStyle(.quaternary.opacity(hovering ? 0.9 : 0.55)))
             )
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))

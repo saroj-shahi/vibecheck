@@ -88,6 +88,7 @@ Choices that shouldn't be undone without a good reason.
 
 | Decision | Why |
 |---|---|
+| The deck window has no shadow on Liquid Glass (`hasShadow` only for the blur / opaque backgrounds) (2026-11-23, owner confirmed) | `NSGlassEffectView` draws its own edge and depth; the window shadow traced around it showed as a dark square-cornered outline |
 | Deck quick controls gain volume and built-in display brightness sliders, a Bluetooth toggle and a labelled Share Vibe Card button (owner, 2026-11-23); brightness came off "Not planned" | Owner asked for them in the deck. Brightness uses private DisplayServices via `dlsym` (built-in display only, hidden when missing); volume is CoreAudio with listeners, no polling |
 | To-do is a module backed by Apple Reminders (owner, 2026-11-23): a list picked in Settings, its own menu bar item and a deck panel; Reminders full access is asked only when the module is turned on or the panel opens, never at launch or from the label | Tasks sync to the owner's iPhone with no store of our own; the permission prompt only follows a choice the user just made |
 | Agent limit forecast uses the average pace since the window started, not a recent rate | `RateWindow` keeps no history; the average is honest and steady, and the panel says it's "at this pace" |

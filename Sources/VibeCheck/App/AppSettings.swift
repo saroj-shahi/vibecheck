@@ -36,7 +36,7 @@ enum Module: String, CaseIterable, Identifiable {
         case .clock: "clock"
         case .weather: "cloud.sun"
         case .agents: "sparkles"
-        case .todo: "checklist"
+        case .todo: "checkmark.circle"
         }
     }
 
