@@ -5,12 +5,11 @@ Run from the repository root:  python3 scripts/polish_screenshots.py
 Needs Pillow (pip install pillow). It edits files in docs/screenshots/ in place, so run it once on fresh
 captures, not twice on the same files.
 
-What it does:
-- palette.png: replaces the verdict line (which had a redacted app name) with the one from deck.png.
-- memory.png: drops the redacted row from "Who's responsible".
-- network.png: drops the "Listening ports" list (all redacted), keeping the chart and Details.
-- agents.png: removes the redacted account name next to "Claude Code".
-- modules.png: new. The six module detail views on the hero's dark grid background.
+What it does (coordinates are for the 2026-11-23 captures at 2×, deck 390 pt wide):
+- network.png: drops the "Listening ports" list (local services and ports), keeping the chart and Details.
+- agents.png: removes the account name next to "Claude Code" and all but the first "Busiest projects" row
+  (folder names).
+- modules.png: the six module detail views on the hero's dark grid background.
 """
 from pathlib import Path
 
@@ -33,20 +32,6 @@ def stack(parts):
     return out
 
 
-def fix_palette():
-    palette, deck = load("palette.png"), load("deck.png")
-    box = (105, 95, 770, 165)  # the two verdict lines, right of the ring
-    palette.paste(deck.crop(box), box[:2])
-    palette.save(SHOTS / "palette.png", optimize=True)
-
-
-def fix_memory():
-    im = load("memory.png")
-    # Rows are 40 px apart; the third row (y 645..685) was redacted.
-    stack([im.crop((0, 0, im.width, 645)), im.crop((0, 685, im.width, im.height))]).save(
-        SHOTS / "memory.png", optimize=True)
-
-
 def fix_network():
     im = load("network.png")
     # Keep everything down to "No app traffic right now.", then Details and the footer.
@@ -56,12 +41,14 @@ def fix_network():
 
 def fix_agents():
     im = load("agents.png")
-    top, bottom = 452, 506
-    # "· <account>" sat between x 276 and 362. Slide the plan pill and "Working now" left into that gap.
-    moved = im.crop((363, top, 600, bottom))
-    im.paste((41, 41, 41, 255), (276, top, 600, bottom))
+    top, bottom = 528, 580
+    # "· <account>" sits between x 276 and 362. Slide the plan pill and "Working now" left into that gap.
+    moved = im.crop((363, top, 610, bottom))
+    im.paste((41, 41, 41, 255), (276, top, 610, bottom))
     im.paste(moved, (276, top))
-    im.save(SHOTS / "agents.png", optimize=True)
+    # Busiest projects: keep the first row (y 1134..1151), drop the next two (folder names), rows 38 px apart.
+    stack([im.crop((0, 0, im.width, 1160)), im.crop((0, 1238, im.width, im.height))]).save(
+        SHOTS / "agents.png", optimize=True)
 
 
 def with_shadow(canvas, shot, pos, blur=60, offset=28, alpha=150):
@@ -121,9 +108,7 @@ def build_modules():
 
 
 if __name__ == "__main__":
-    fix_palette()
-    fix_memory()
     fix_network()
     fix_agents()
     build_modules()
-    print("updated palette, memory, network, agents; wrote modules.png")
+    print("updated network, agents; wrote modules.png")
