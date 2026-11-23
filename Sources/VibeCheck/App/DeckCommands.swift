@@ -193,7 +193,8 @@ enum DeckCommands {
 
     /// The ⌘↩ list for a row: run it, and open the Settings pane that goes with it (when there is one).
     static func actions(for command: DeckCommand, model: DeckModel) -> [DeckCommand] {
-        var list = [DeckCommand(id: "action.run", title: command.confirm ? command.title : String(localized: "Run"), symbol: "return") {
+        var list = [DeckCommand(id: "action.run", title: command.confirm ? command.title
+                                    : command.id.hasPrefix("clip.") ? String(localized: "Paste") : String(localized: "Run"), symbol: "return") {
             activate(command, model: model)
         }]
         list.append(contentsOf: command.extraActions)
