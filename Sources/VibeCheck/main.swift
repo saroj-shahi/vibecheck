@@ -38,6 +38,12 @@ MainActor.assumeIsolated {
         let c = cpu.sample(), m = MemoryMonitor().sample(), n = net.sample(), d = disk.sample()
         let b = BatteryMonitor.sample()
         print("CPU  total \(Fmt.percent(c?.total ?? -1)) user \(Fmt.percent(c?.user ?? 0)) sys \(Fmt.percent(c?.system ?? 0)) cores \(c?.perCore.count ?? 0) (\(cpu.performanceCores)P+\(cpu.efficiencyCores)E) load \(CPUMonitor.loadAverage())")
+        print("CORE P \(c?.performanceBusy.map(Fmt.percent) ?? "-") E \(c?.efficiencyBusy.map(Fmt.percent) ?? "-") map \(CoreClusters.read().sorted { $0.key < $1.key }.map { "\($0.key)\($0.value)" }.joined(separator: " "))")
+        let powerSampler = PowerSampler()
+        _ = powerSampler.sample(cpuBusy: nil); Thread.sleep(forTimeInterval: 1)
+        let pw = powerSampler.sample(cpuBusy: c?.total)
+        powerSampler.reset(); _ = powerSampler.sample(cpuBusy: nil) // exercise release + re-subscribe
+        print("POWR CPU \(pw?.cpu.map(PowerReport.label) ?? "unavailable") GPU \(pw?.gpu.map(PowerReport.label) ?? "unavailable") ANE \(pw?.ane.map(PowerReport.label) ?? "unavailable")")
         for g in GPUMonitor.sample().gpus { print("GPU  \(g.model) cores \(g.cores ?? 0) device \(Fmt.percent(g.device)) renderer \(g.renderer.map(Fmt.percent) ?? "-") tiler \(g.tiler.map(Fmt.percent) ?? "-") mem \(g.memoryInUse.map(Fmt.bytes) ?? "-")") }
         print("MEM  used \(Fmt.bytes(m.used))/\(Fmt.bytes(m.total)) app \(Fmt.bytes(m.app)) wired \(Fmt.bytes(m.wired)) comp \(Fmt.bytes(m.compressed)) cached \(Fmt.bytes(m.cached)) pressure \(m.pressure.label) swap \(Fmt.bytes(m.swapUsed))")
         print("NET  \(n.interface ?? "-") \(n.ipv4 ?? "-") down \(Fmt.rate(n.download)) up \(Fmt.rate(n.upload)) totals \(Fmt.bytes(Double(n.totalDownloaded)))/\(Fmt.bytes(Double(n.totalUploaded)))")

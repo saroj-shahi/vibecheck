@@ -19,6 +19,13 @@ struct CPUPanel: View {
                     StatRow(label: "User", value: Fmt.percent(cpu.user), color: Palette.user)
                     StatRow(label: "System", value: Fmt.percent(cpu.system), color: Palette.system)
                     StatRow(label: "Idle", value: Fmt.percent(cpu.idle), color: .gray.opacity(0.5))
+                    if let p = cpu.performanceBusy, let e = cpu.efficiencyBusy {
+                        StatRow(label: "Performance cores", value: Fmt.percent(p))
+                        StatRow(label: "Efficiency cores", value: Fmt.percent(e))
+                    }
+                    if let power = stats.power, let line = Self.powerLine(power) {
+                        StatRow(label: "Power", value: line)
+                    }
                 }
                 VStack(alignment: .leading, spacing: 6) {
                     SectionTitle(text: LocalizedStringKey(coreTitle))
@@ -42,6 +49,14 @@ struct CPUPanel: View {
                 }
             }
         }
+    }
+
+    /// "CPU 3.2 W · GPU 0.8 W · Neural Engine 0.0 W", skipping parts that couldn't be read.
+    static func powerLine(_ power: PowerReport) -> String? {
+        let parts = [power.cpu.map { String(localized: "CPU \(PowerReport.label($0))") },
+                     power.gpu.map { String(localized: "GPU \(PowerReport.label($0))") },
+                     power.ane.map { String(localized: "Neural Engine \(PowerReport.label($0))") }].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     private var coreTitle: String {
@@ -86,6 +101,7 @@ struct GPUPanel: View {
                             if let alloc = gpu.memoryAllocated { StatRow(label: "Memory allocated", value: Fmt.bytes(alloc)) }
                         }
                     }
+                    if let watts = stats.power?.gpu { StatRow(label: "Power", value: PowerReport.label(watts)) }
                 }
             }
         }

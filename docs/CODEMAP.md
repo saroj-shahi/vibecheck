@@ -18,6 +18,7 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 | `MenuBarVisibility.swift` | `DeckBackgroundKind` (glass / blur / opaque for Reduce Transparency), launch check that macOS isn't hiding every item |
 | `AppMemoryHistory.swift` | Per-app memory footprint once a minute (libproc, no `ps`; grouped by responsible pid, keyed with start time), ~65 min of samples for the top 15 apps, `growth` for the verdict |
 | `DevServers.swift` | `ListenerDetails` (cwd, start time, exe, footprint via libproc), dev-server classification, project name (nearest `.git` / `package.json` up to home), grouping, uptime text |
+| `SleepDrain.swift` | Overnight drain: battery at sleep vs wake (≥ 2 h, on battery, ≥ 5 points), wake causes from one `pmset -g log` run, a 12 h report shown as one line on the deck home |
 | `Vibe.swift` | Vibe score (vibing / mid / cooked) with per-module enter / exit thresholds (`VibeThresholds`), swap and fast-drain signals, the verdict sentence and its culprit module |
 | `Alerts.swift` | `AlertMetric`, `AlertRule` (sentence alerts), `AlertEngine` (evaluate, notify, history log) |
 | `KeepAwake.swift` | Sessions (`AwakeEnd`, focus sessions, triggers: power / display / downloads / `AwakeSchedule`), IOKit assertion |
@@ -52,7 +53,7 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 
 `CPUMonitor`, `GPUMonitor`, `MemoryMonitor`, `NetworkMonitor` (+ `NetworkAppSampler`: `nettop`), `DiskMonitor`,
 `SensorsMonitor` (HID temps, private API) + `SMC`, `BatteryMonitor`, `DeviceBatteryMonitor` (Bluetooth
-accessories via `system_profiler`), `ProcessSampler` (`ps`), `EnergySampler` (per-pid `ri_energy_nj` → estimated watts), `PortSampler` (`lsof` + `ListenerDetails`), `USBDeviceMonitor` (IOKit),
+accessories via `system_profiler`), `ProcessSampler` (`ps`), `EnergySampler` (per-pid `ri_energy_nj` → estimated watts), `PowerReport` (IOReport "Energy Model" watts via `dlopen`, only while the CPU / GPU panel is open; CPU / ANE hidden when the OS zeroes them), `PortSampler` (`lsof` + `ListenerDetails`), `USBDeviceMonitor` (IOKit),
 `NetworkExtras` (`WiFiReader` CoreWLAN, `PublicIPFetcher` opt-in api.ipify.org, `AppTrafficHistory` 1 h per app),
 `AgentUsageMonitor` (parsers for Claude / Codex / Copilot / OpenCode logs, `RateWindow`, scanner, summaries).
 
@@ -74,7 +75,7 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `EnergySampler` (pe
 | `BatteryPanel.swift` | `BatteryPanel`, `DeviceBatteryRow`, `USBDevicesSection` |
 | `AgentsPanel.swift` | Agents detail: Now card, charts, agent cards, `LimitGauge`, `PaceBar`, `DailyBars` |
 | `AgentLogo.swift` | Agent logos (`AgentLogo`, `AgentLogoTile`, brand colors) from SVG path data, and `SVGPath` (small path-data parser) |
-| `VibeStrip.swift` | `VibeStripView`: 24 h vibe strip + weekly sentence (top of the CPU panel) |
+| `VibeStrip.swift` | `VibeStripView`: 24H / 7D / 30D vibe timeline from the episode log + weekly sentence (top of the CPU panel), day buckets split at midnight |
 | `BatteryHistoryCharts.swift` | `BatteryHistorySection`: multi-day charge chart and health trend (Battery panel) |
 | `RecoveryAndDrain.swift` | `RecoveryCheck` (cooked/mid to vibing, never on launch), `PulseCheckShape`, `CulpritDrain` (post-quit outline drain) |
 | `DeckHintView.swift` | One dismissible what's-new line on the deck home after an update |
