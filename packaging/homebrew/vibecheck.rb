@@ -4,7 +4,7 @@ cask "vibecheck" do
 
   url "https://github.com/saroj-shahi/vibecheck/releases/download/v#{version}/VibeCheck.zip"
   name "VibeCheck"
-  desc "Menu bar system monitor that tells you if your computer is vibing or cooked"
+  desc "Mac health in one ring, live in the menu bar"
   homepage "https://github.com/saroj-shahi/vibecheck"
 
   depends_on macos: :sonoma

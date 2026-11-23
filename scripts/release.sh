@@ -6,6 +6,14 @@
 #                                 .sha256, no DMG. People install from Terminal (scripts/install.sh or the Homebrew
 #                                 cask in packaging/homebrew), and curl downloads aren't quarantined, so Gatekeeper
 #                                 doesn't block it. Prints the cask lines and the tag / gh release commands.
+#   scripts/release.sh --publish  --zip, then publish it: tags v<version>, pushes the tag, creates the GitHub release
+#                                 with VibeCheck.zip and its .sha256, checks the uploaded zip, and updates
+#                                 Casks/vibecheck.rb in saroj-shahi/homebrew-tap from packaging/homebrew/vibecheck.rb.
+#                                 Asks before publishing. Needs `gh` signed in with push access to both repos.
+#                                 The release stays a draft until its zip is checked. Safe to rerun: a leftover draft
+#                                 is replaced; if the release is already public, only the tap is updated (from its
+#                                 VibeCheck.zip.sha256), with no rebuild.
+#                                 Release notes come from VIBECHECK_RELEASE_NOTES (a file) or GitHub's generated notes.
 #   scripts/release.sh            Developer ID release: build, notarize the app, DMG, notarize the DMG, staple, check
 #   scripts/release.sh --share    DMG for colleagues, no Developer ID needed: signed with the Apple Development
 #                                 identity (widgets work), not notarized, with a "How to open" note inside.
@@ -27,12 +35,16 @@ cd "$(dirname "$0")/.."
 
 DRY_RUN=0
 ZIP=0
+PUBLISH=0
 case "${1:-}" in
   "") ;;
   --share|--dry-run) DRY_RUN=1 ;;
   --zip) DRY_RUN=1; ZIP=1 ;;
-  *) echo "usage: scripts/release.sh [--zip | --share]" >&2; exit 2 ;;
+  --publish) DRY_RUN=1; ZIP=1; PUBLISH=1 ;;
+  *) echo "usage: scripts/release.sh [--zip | --publish | --share]" >&2; exit 2 ;;
 esac
+REPO=saroj-shahi/vibecheck
+TAP=saroj-shahi/homebrew-tap
 PROFILE="${VIBECHECK_NOTARY_PROFILE:-vibecheck-notary}"
 APP=build/VibeCheck.app
 OUT=build/release
@@ -42,6 +54,75 @@ DMG="$OUT/VibeCheck-$VERSION.dmg"
 
 step() { printf '\n==> %s\n' "$*"; }
 die() { echo "error: $*" >&2; exit 1; }
+TAG="v$VERSION"
+
+# --publish: fail before the long build, not after it.
+if [ "$PUBLISH" = 1 ]; then
+  command -v gh >/dev/null || die "--publish needs the GitHub CLI (brew install gh)"
+  gh auth status >/dev/null 2>&1 || die "gh isn't signed in; run: gh auth login"
+  [ -z "$(git status --porcelain --untracked-files=no)" ] || die "commit or stash your changes first; the tag must match what was built"
+  [ "$(git rev-parse --abbrev-ref HEAD)" = main ] || die "releases are tagged on main (you're on $(git rev-parse --abbrev-ref HEAD))"
+  git fetch -q origin main
+  [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] || die "push main first; HEAD isn't origin/main"
+  if [ -n "${VIBECHECK_RELEASE_NOTES:-}" ]; then
+    [ -f "$VIBECHECK_RELEASE_NOTES" ] || die "VIBECHECK_RELEASE_NOTES points at a missing file: $VIBECHECK_RELEASE_NOTES"
+  fi
+fi
+
+# Temp folders for --publish, removed however the script ends.
+WORK=""
+cleanup() { [ -z "$WORK" ] || rm -rf "$WORK"; }
+
+confirm() {
+  printf '\n%s [y/N] ' "$1"
+  local answer=""
+  read -r answer || true
+  [ "$answer" = y ] || [ "$answer" = Y ] || die "stopped; nothing more was published"
+}
+
+# Writes packaging/homebrew/vibecheck.rb into the tap as Casks/vibecheck.rb with this version and sha256, and
+# pushes. The repo copy is the source; edit the cask there, never in the tap.
+update_tap() {
+  local sha="$1" tap="$WORK/tap"
+  step "Updating the Homebrew cask in $TAP"
+  gh repo clone "$TAP" "$tap" -- -q
+  sed -e "s|^  version \".*\"|  version \"$VERSION\"|" \
+      -e "s|^  sha256 \".*|  sha256 \"$sha\"|" \
+      packaging/homebrew/vibecheck.rb > "$tap/Casks/vibecheck.rb"
+  grep -q "^  version \"$VERSION\"$" "$tap/Casks/vibecheck.rb" || die "couldn't set version in the cask"
+  grep -q "^  sha256 \"$sha\"$" "$tap/Casks/vibecheck.rb" || die "couldn't set sha256 in the cask"
+  git -C "$tap" add Casks/vibecheck.rb
+  if git -C "$tap" diff --cached --quiet; then
+    echo "The tap already has VibeCheck $VERSION ($sha)."
+  else
+    git -C "$tap" commit -q -m "vibecheck $VERSION"
+    git -C "$tap" push -q
+  fi
+  step "Published VibeCheck $VERSION"
+  echo "Release: https://github.com/$REPO/releases/tag/$TAG"
+  echo "Check it: brew update && brew upgrade --cask saroj-shahi/tap/vibecheck"
+}
+
+RELEASE=none
+if [ "$PUBLISH" = 1 ]; then
+  if view=$(gh release view "$TAG" -R "$REPO" --json isDraft --jq .isDraft 2>&1); then
+    if [ "$view" = true ]; then RELEASE=draft; else RELEASE=public; fi
+  elif [[ "$view" != *"not found"* ]]; then
+    die "couldn't check GitHub for release $TAG: $view"
+  fi
+  if [ "$RELEASE" = public ]; then
+    # Resume a run that published the release but didn't reach the tap. Use the released zip's checksum; a
+    # rebuild would produce a different zip.
+    echo "Release $TAG is already public; only the Homebrew cask will be updated."
+    WORK=$(mktemp -d); trap cleanup EXIT
+    gh release download "$TAG" -R "$REPO" -p VibeCheck.zip.sha256 -D "$WORK"
+    SHA=$(cut -d' ' -f1 "$WORK/VibeCheck.zip.sha256")
+    [[ "$SHA" =~ ^[0-9a-f]{64}$ ]] || die "VibeCheck.zip.sha256 on release $TAG doesn't hold a checksum"
+    confirm "Point $TAP at VibeCheck $VERSION ($SHA)?"
+    update_tap "$SHA"
+    exit 0
+  fi
+fi
 
 # The Team ID baked into the app group entitlement; the signing certificate must belong to the same team or the
 # widget can't read the app's snapshot.
@@ -96,6 +177,38 @@ for binary in "$APP/Contents/MacOS/VibeCheck" "$APP/Contents/PlugIns/VibeCheckWi
   done
 done
 
+# Publishes build/release/VibeCheck.zip as GitHub release $TAG and points the tap's cask at it.
+publish() {
+  confirm "Publish VibeCheck $VERSION: push tag $TAG, create the GitHub release and update $TAP?"
+  WORK=$(mktemp -d); trap cleanup EXIT
+
+  step "Tagging $TAG"
+  git rev-parse -q --verify "refs/tags/$TAG" >/dev/null || git tag "$TAG"
+  [ "$(git rev-parse "$TAG^{commit}")" = "$(git rev-parse HEAD)" ] || die "tag $TAG exists and points elsewhere"
+  git push origin "refs/tags/$TAG"
+
+  if [ "$RELEASE" = draft ]; then
+    step "Removing the draft left by an earlier run"
+    gh release delete "$TAG" -R "$REPO" --yes
+  fi
+
+  step "Creating the GitHub release (draft until checked)"
+  local notes=(--generate-notes)
+  [ -n "${VIBECHECK_RELEASE_NOTES:-}" ] && notes=(--notes-file "$VIBECHECK_RELEASE_NOTES")
+  gh release create "$TAG" -R "$REPO" --draft --verify-tag --title "VibeCheck $VERSION" "${notes[@]}" \
+    "$ZIPFILE" "$ZIPFILE.sha256"
+
+  step "Checking the uploaded zip"
+  gh release download "$TAG" -R "$REPO" -p VibeCheck.zip -D "$WORK"
+  [ "$(shasum -a 256 "$WORK/VibeCheck.zip" | cut -d' ' -f1)" = "$SHA" ] || die "the uploaded zip doesn't match $SHA (the release is still a draft)"
+
+  step "Making the release public"
+  gh release edit "$TAG" -R "$REPO" --draft=false --latest
+
+  update_tap "$SHA"
+  exit 0
+}
+
 if [ "$ZIP" = 1 ]; then
   step "Making the zip"
   ZIPFILE="$OUT/VibeCheck.zip"
@@ -109,6 +222,7 @@ if [ "$ZIP" = 1 ]; then
   rm -rf "$CHECK"
   step "Done: $ZIPFILE"
   cat "$ZIPFILE.sha256"
+  [ "$PUBLISH" = 1 ] && publish
   cat <<EOF
 
 Homebrew cask (saroj-shahi/homebrew-tap, Casks/vibecheck.rb):

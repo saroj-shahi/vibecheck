@@ -17,14 +17,13 @@ brew install --cask saroj-shahi/tap/vibecheck
 
 ## Each release
 
-1. Bump `CFBundleShortVersionString` in `Resources/Info.plist`, run `scripts/release.sh --zip`, then run the
-   `git tag` and `gh release create` lines it prints.
-2. In the tap, set `version` and `sha256` in `Casks/vibecheck.rb` to the two lines the script printed
-   (the sha256 is also in `build/release/VibeCheck.zip.sha256`), commit and push.
-3. Keep this copy in sync so the next tap is easy to recreate.
+Bump `CFBundleShortVersionString` in `Resources/Info.plist`, commit and push to `main`, then run
+`scripts/release.sh --publish`. After the GitHub release it writes this file into the tap as `Casks/vibecheck.rb`
+with the new `version` and `sha256`, and pushes. So edit the cask here, never in the tap; a change here reaches
+the tap with the next release.
 
 The cask removes the quarantine flag after install (`postflight_steps`, Homebrew 7 install-step DSL), because the app isn't notarized.
-`brew uninstall --cask vibecheck` quits and removes the app and keeps settings; `--zap` also deletes them.
+`brew uninstall --cask saroj-shahi/tap/vibecheck` quits and removes the app and keeps settings; `--zap` also deletes them.
 
 Homebrew 7 only loads casks from taps outside its own repos after `brew trust`, so the install instructions
 start with that line. `brew audit --strict` reports that the token clashes with homebrew/core's unrelated
