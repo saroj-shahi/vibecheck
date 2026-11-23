@@ -49,6 +49,10 @@ final class MenuBarGroup {
     var colorful: Bool {
         didSet { writer.save(colorful, "colorfulMenuBar", structural: false) }
     }
+    /// Menu bar ring shows the vibe color even while vibing (off: monochrome until mid / cooked).
+    var alwaysColorRing: Bool {
+        didSet { writer.save(alwaysColorRing, "alwaysColorRing", structural: false) }
+    }
     /// The ring is drawn when it's on, and always in the ring-only style.
     var ringVisible: Bool { showVibeRing || style == .ring }
 
@@ -66,6 +70,7 @@ final class MenuBarGroup {
         notchCollapseOptOut = defaults.bool(forKey: "notchCollapseOptOut")
         showVibeRing = defaults.object(forKey: "showVibeRing") as? Bool ?? true
         colorful = defaults.object(forKey: "colorfulMenuBar") as? Bool ?? true
+        alwaysColorRing = defaults.bool(forKey: "alwaysColorRing")
     }
 }
 
