@@ -60,6 +60,17 @@ for lproj in "$FIRST"/VibeCheck_VibeCheck.bundle/Contents/Resources/*.lproj "$FI
 done
 [ "$LPROJ_FOUND" = 1 ] || { echo "error: compiled strings (*.lproj) missing from the SwiftPM resource bundle" >&2; exit 1; }
 
+# App Shortcut phrases: the system reads <language>.lproj/AppShortcuts.strings from the app's own Resources.
+SHORTCUTS_OUT="$(mktemp -d)"
+xcrun xcstringstool compile Sources/VibeCheck/Resources/AppShortcuts.xcstrings --output-directory "$SHORTCUTS_OUT"
+for lproj in "$SHORTCUTS_OUT"/*.lproj; do
+  [ -f "$lproj/AppShortcuts.strings" ] || continue
+  mkdir -p "$APP/Contents/Resources/$(basename "$lproj")"
+  cp "$lproj/AppShortcuts.strings" "$APP/Contents/Resources/$(basename "$lproj")/"
+done
+ls "$APP"/Contents/Resources/*.lproj/AppShortcuts.strings >/dev/null 2>&1 || { echo "error: AppShortcuts.strings missing" >&2; exit 1; }
+rm -rf "$SHORTCUTS_OUT"
+
 if xcrun --find appintentsmetadataprocessor >/dev/null 2>&1; then
   find "$PWD/Sources/VibeCheck" -name '*.swift' > "$INTENTS/sources.txt"
   echo "$PWD/$INTENTS/VibeCheck.swiftconstvalues" > "$INTENTS/constvals.txt"

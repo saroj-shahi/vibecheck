@@ -12,6 +12,7 @@ let package = Package(
             name: "VibeCheck",
             dependencies: ["VibeCheckShared"],
             path: "Sources/VibeCheck",
+            exclude: ["Resources/AppShortcuts.xcstrings"], // compiled by build.sh straight into the app
             resources: [.process("Resources/Localizable.xcstrings")],
             linkerSettings: [
                 .linkedFramework("IOKit"),

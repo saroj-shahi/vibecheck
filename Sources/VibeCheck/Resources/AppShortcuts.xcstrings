@@ -1,0 +1,61 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Check my Mac's vibe with ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check my Mac's vibe with ${applicationName}"
+          }
+        }
+      }
+    },
+    "How is my Mac doing in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How is my Mac doing in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Keep my Mac awake with ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep my Mac awake with ${applicationName}"
+          }
+        }
+      }
+    },
+    "Let my Mac sleep with ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let my Mac sleep with ${applicationName}"
+          }
+        }
+      }
+    },
+    "Open the ${applicationName} deck": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the ${applicationName} deck"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
