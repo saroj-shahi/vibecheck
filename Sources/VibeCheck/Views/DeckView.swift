@@ -220,7 +220,8 @@ private struct LiveChipsRow: View {
     var body: some View {
         let session = KeepAwake.shared.session
         let micMuted = QuickActions.shared.isMicMuted
-        if session != nil || micMuted || secureInput != nil {
+        let hooks = VibeHooks.shared.hooks
+        if session != nil || micMuted || secureInput != nil || !hooks.isEmpty {
             HStack(spacing: 6) {
                 if let session {
                     TimelineView(.periodic(from: .now, by: 15)) { context in
@@ -243,10 +244,50 @@ private struct LiveChipsRow: View {
                         (NSApp.delegate as? AppDelegate)?.showSettings(.shortcuts)
                     }
                 }
+                ForEach(hooks.prefix(3)) { HookPill(hook: $0) }
+                if hooks.count > 3 {
+                    Text("+\(hooks.count - 3)")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 7)
+                        .frame(height: 28)
+                        .background(Capsule().fill(.quaternary.opacity(0.55)))
+                        .help("\(hooks.count - 3) more from ~/.config/vibecheck/hooks")
+                }
                 Spacer(minLength: 0)
             }
             .transition(.opacity.combined(with: .move(edge: .top)))
         }
+    }
+}
+
+/// A pill for a hook file written by another tool. No ×: VibeCheck doesn't own it.
+private struct HookPill: View {
+    let hook: VibeHook
+
+    var body: some View {
+        let tint: Color = switch hook.state {
+        case .needsInput: .orange
+        case .error: .red
+        default: .secondary
+        }
+        HStack(spacing: 5) {
+            if let icon = hook.icon {
+                Image(systemName: icon).font(.system(size: 11, weight: .semibold)).foregroundStyle(tint)
+            } else {
+                Circle().fill(tint).frame(width: 7, height: 7)
+            }
+            Text(hook.label).font(.system(size: 12, weight: .medium)).lineLimit(1)
+            if !hook.value.isEmpty {
+                Text(hook.value).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
+            }
+        }
+        .padding(.horizontal, 8)
+        .frame(height: 28)
+        .background(Capsule().fill(.quaternary.opacity(0.55)))
+        .overlay(Capsule().strokeBorder(tint.opacity(hook.state == .needsInput || hook.state == .error ? 0.6 : 0), lineWidth: 1))
+        .help("From \(hook.file), updated \(hook.updatedAt.formatted(.relative(presentation: .named)))")
+        .accessibilityElement(children: .combine)
     }
 }
 

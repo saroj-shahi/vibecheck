@@ -272,6 +272,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                 kind: .alert, url: release.pageURL)
         }
         UpdateChecker.shared.start()
+        VibeHooks.shared.start()
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
             MainActor.assumeIsolated { self?.checkMenuBarVisibleAtLaunch() }
         }

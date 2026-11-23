@@ -266,6 +266,10 @@ private struct MenuBarSettings: View {
                     Text("Always color the ring")
                     Text("Shows the vibe color even when everything's vibing.")
                 }
+                Toggle(isOn: $settings.menuBar.pulseOnNeedsInput) {
+                    Text("Pulse the ring when an agent needs you")
+                    Text("Reads hook files in ~/.config/vibecheck/hooks. See examples/hooks for how to write them.")
+                }
             }
 
             AdvancedSection {

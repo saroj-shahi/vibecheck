@@ -27,6 +27,13 @@ struct VibeRing: View {
                     .accessibilityHidden(true)
             }
         }
+        .overlay(alignment: .topTrailing) {
+            // Menu bar only (the deck passes an explicit color mode).
+            if monochromeWhenVibing == nil, AppSettings.shared.menuBar.pulseOnNeedsInput, VibeHooks.shared.needsInput {
+                HookPulseDot(size: size, reduceMotion: reduceMotion)
+                    .accessibilityHidden(true)
+            }
+        }
         .overlay {
             RecoveryCheckOverlay(trigger: checkTrigger, lineWidth: lineWidth, reduceMotion: reduceMotion)
                 .padding(lineWidth + size * 0.12)
@@ -77,6 +84,101 @@ struct VibeRing: View {
             }
             .padding(lineWidth / 2)
         }
+    }
+}
+
+/// An orange dot at the ring's corner that breathes (opacity and scale, 1.6 s) while an agent needs you.
+/// Reduce Motion: the same dot, still. The timer exists only while this view is in a window, and stops
+/// with the tick (display asleep, screen locked); the dot is only in the tree while a hook needs input.
+private struct HookPulseDot: NSViewRepresentable {
+    let size: CGFloat
+    let reduceMotion: Bool
+
+    func makeNSView(context: Context) -> HookPulseView { HookPulseView(reduceMotion: reduceMotion) }
+    func updateNSView(_ view: HookPulseView, context: Context) { view.reduceMotion = reduceMotion }
+    static func dismantleNSView(_ view: HookPulseView, coordinator: ()) { view.stop() }
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: HookPulseView, context: Context) -> CGSize? {
+        CGSize(width: size * 0.42, height: size * 0.42)
+    }
+}
+
+final class HookPulseView: NSView {
+    static let period = 1.6
+    private let dot = CALayer()
+    private var timer: Timer?
+    private var started = Date()
+    nonisolated(unsafe) private var gateObserver: NSObjectProtocol?
+    var reduceMotion: Bool { didSet { if reduceMotion { stop(); render(phase: 0) } else { startIfNeeded() } } }
+
+    init(reduceMotion: Bool) {
+        self.reduceMotion = reduceMotion
+        super.init(frame: .zero)
+        layer = CALayer()
+        wantsLayer = true
+        dot.backgroundColor = NSColor.systemOrange.cgColor
+        dot.actions = ["opacity": NSNull(), "transform": NSNull(), "bounds": NSNull(), "position": NSNull(), "cornerRadius": NSNull()]
+        layer?.addSublayer(dot)
+        setAccessibilityElement(false)
+        render(phase: 0)
+    }
+
+    required init?(coder: NSCoder) { fatalError("not used") }
+
+    override func layout() {
+        super.layout()
+        dot.bounds = CGRect(origin: .zero, size: bounds.size)
+        dot.position = CGPoint(x: bounds.midX, y: bounds.midY)
+        dot.cornerRadius = min(bounds.width, bounds.height) / 2
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if window == nil {
+            stop()
+            if let gateObserver { NotificationCenter.default.removeObserver(gateObserver) }
+            gateObserver = nil
+        } else { startIfNeeded() }
+    }
+
+    deinit {
+        if let gateObserver { NotificationCenter.default.removeObserver(gateObserver) }
+    }
+
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    private func startIfNeeded() {
+        if gateObserver == nil {
+            gateObserver = NotificationCenter.default.addObserver(forName: .vibeCheckTickSuspendedChanged, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    if TickGate.isSuspended { self.stop() } else { self.startIfNeeded() }
+                }
+            }
+        }
+        guard timer == nil, window != nil, !reduceMotion, !TickGate.isSuspended else { return }
+        started = Date()
+        let timer = Timer(timeInterval: 1.0 / 15, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.render(phase: Date().timeIntervalSince(self.started) / Self.period)
+            }
+        }
+        timer.tolerance = 0.02
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
+    }
+
+    /// A smooth breathe: 0 at the start, 1 at the half period.
+    private func render(phase: Double) {
+        let breathe = reduceMotion ? 1 : 0.5 - 0.5 * cos(2 * Double.pi * phase)
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        dot.opacity = Float(0.55 + 0.45 * breathe)
+        dot.transform = CATransform3DMakeScale(0.8 + 0.3 * breathe, 0.8 + 0.3 * breathe, 1)
+        CATransaction.commit()
     }
 }
 

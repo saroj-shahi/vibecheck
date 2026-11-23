@@ -53,6 +53,10 @@ final class MenuBarGroup {
     var alwaysColorRing: Bool {
         didSet { writer.save(alwaysColorRing, "alwaysColorRing", structural: false) }
     }
+    /// The ring pulses while a hook (an agent) is waiting for you.
+    var pulseOnNeedsInput: Bool {
+        didSet { writer.save(pulseOnNeedsInput, "pulseOnAgentNeedsInput", structural: false) }
+    }
     /// The ring is drawn when it's on, and always in the ring-only style.
     var ringVisible: Bool { showVibeRing || style == .ring }
 
@@ -71,6 +75,7 @@ final class MenuBarGroup {
         showVibeRing = defaults.object(forKey: "showVibeRing") as? Bool ?? true
         colorful = defaults.object(forKey: "colorfulMenuBar") as? Bool ?? true
         alwaysColorRing = defaults.bool(forKey: "alwaysColorRing")
+        pulseOnNeedsInput = defaults.bool(forKey: "pulseOnAgentNeedsInput")
     }
 }
 
