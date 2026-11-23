@@ -400,8 +400,8 @@ final class SystemStats {
     }
 
     /// `lsof` for listening TCP ports, at most every 5 s and only while the Network view is open.
-    private func refreshPorts() {
-        guard !fetchingPorts else { return }
+    func refreshPorts() {
+        guard !fetchingPorts, networkAppDemand > 0 else { return }
         fetchingPorts = true
         lastPortFetch = Date()
         Task {

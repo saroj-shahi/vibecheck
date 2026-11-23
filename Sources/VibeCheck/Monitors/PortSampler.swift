@@ -7,6 +7,8 @@ struct ListeningPort: Identifiable, Equatable, Sendable {
     let port: Int
     let address: String   // "127.0.0.1", "::1", "*" or a LAN address
     let user: String
+    /// libproc facts (cwd, start time, executable); nil until `PortSampler.fetch` fills them in.
+    var details: ListenerDetails?
 
     var id: String { "\(pid):\(port)" }
 
@@ -24,7 +26,15 @@ enum PortSampler {
     static func fetch() async -> [ListeningPort] {
         await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .utility).async {
-                continuation.resume(returning: parse(run()))
+                let ports = parse(run())
+                var cache: [Int32: ListenerDetails?] = [:]
+                let enriched = ports.map { port -> ListeningPort in
+                    var port = port
+                    if cache[port.pid] == nil { cache[port.pid] = .some(ListenerDetails.read(pid: port.pid)) }
+                    port.details = cache[port.pid] ?? nil
+                    return port
+                }
+                continuation.resume(returning: enriched)
             }
         }
     }
