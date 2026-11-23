@@ -61,6 +61,16 @@
         }
       }
     },
+    "%@ CPU": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ CPU"
+          }
+        }
+      }
+    },
     "%@ Settings…": {
       "localizations": {
         "en": {
@@ -381,6 +391,16 @@
         }
       }
     },
+    "%@ so far": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ so far"
+          }
+        }
+      }
+    },
     "%@ to full": {
       "localizations": {
         "en": {
@@ -517,6 +537,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@, %2$@, running for %3$@"
+          }
+        }
+      }
+    },
+    "%@, runs out ~%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, runs out ~%2$@"
           }
         }
       }
@@ -1241,6 +1271,7 @@
       }
     },
     "A row for microphone mute. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1460,6 +1491,16 @@
         }
       }
     },
+    "Allow Bluetooth for VibeCheck, then tap again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Bluetooth for VibeCheck, then tap again."
+          }
+        }
+      }
+    },
     "Allow VibeCheck in System Settings → Privacy & Security → Accessibility, then try again. VibeCheck only ignores keys while cleaning mode is on.": {
       "localizations": {
         "en": {
@@ -1487,6 +1528,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Allow VibeCheck to control System Events in System Settings → Privacy & Security → Automation."
+          }
+        }
+      }
+    },
+    "Allow VibeCheck to use Bluetooth in System Settings → Privacy & Security → Bluetooth.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow VibeCheck to use Bluetooth in System Settings → Privacy & Security → Bluetooth."
           }
         }
       }
@@ -1759,6 +1810,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Battery level"
+          }
+        }
+      }
+    },
+    "Bluetooth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth"
+          }
+        }
+      }
+    },
+    "Bluetooth can't be switched from here on this Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth can't be switched from here on this Mac."
+          }
+        }
+      }
+    },
+    "Bluetooth, off": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth, off"
+          }
+        }
+      }
+    },
+    "Bluetooth, on": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth, on"
           }
         }
       }
@@ -3012,6 +3103,16 @@
         }
       }
     },
+    "Display brightness": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display brightness"
+          }
+        }
+      }
+    },
     "Done": {
       "localizations": {
         "en": {
@@ -3269,6 +3370,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ends the keep-awake session so your Mac can sleep as usual."
+          }
+        }
+      }
+    },
+    "Energy leader today": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Energy leader today"
           }
         }
       }
@@ -5261,12 +5372,32 @@
         }
       }
     },
+    "Mute": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mute"
+          }
+        }
+      }
+    },
     "Mute the microphone": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Mute the microphone"
+          }
+        }
+      }
+    },
+    "Muted, %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muted, %@"
           }
         }
       }
@@ -5597,6 +5728,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No sensors available on this Mac."
+          }
+        }
+      }
+    },
+    "No throttling": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No throttling"
           }
         }
       }
@@ -6551,6 +6692,16 @@
         }
       }
     },
+    "Quick toggles: mic mute, Bluetooth, Share Vibe Card, and volume and built-in display brightness sliders. The summary card shows uptime, the top app, today's energy leader and the agent limit closest to running out. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick toggles: mic mute, Bluetooth, Share Vibe Card, and volume and built-in display brightness sliders. The summary card shows uptime, the top app, today's energy leader and the agent limit closest to running out. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time."
+          }
+        }
+      }
+    },
     "Quit": {
       "localizations": {
         "en": {
@@ -7102,6 +7253,16 @@
         }
       }
     },
+    "Share": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share"
+          }
+        }
+      }
+    },
     "Share Vibe Card": {
       "localizations": {
         "en": {
@@ -7303,6 +7464,16 @@
         }
       }
     },
+    "Show the summary card in the deck": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show the summary card in the deck"
+          }
+        }
+      }
+    },
     "Show time until reset": {
       "localizations": {
         "en": {
@@ -7379,6 +7550,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Signal"
+          }
+        }
+      }
+    },
+    "Since %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Since %@"
           }
         }
       }
@@ -7739,6 +7920,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Style"
+          }
+        }
+      }
+    },
+    "Summary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summary"
           }
         }
       }
@@ -8138,6 +8329,16 @@
         }
       }
     },
+    "Tightest limit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tightest limit"
+          }
+        }
+      }
+    },
     "Tiler": {
       "localizations": {
         "en": {
@@ -8309,6 +8510,16 @@
         }
       }
     },
+    "Top app now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top app now"
+          }
+        }
+      }
+    },
     "Top apps by CPU": {
       "localizations": {
         "en": {
@@ -8359,12 +8570,32 @@
         }
       }
     },
+    "Turn Bluetooth off": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn Bluetooth off"
+          }
+        }
+      }
+    },
     "Turn Bluetooth off while the Mac sleeps": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Turn Bluetooth off while the Mac sleeps"
+          }
+        }
+      }
+    },
+    "Turn Bluetooth on": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn Bluetooth on"
           }
         }
       }
@@ -8445,6 +8676,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Unknown"
+          }
+        }
+      }
+    },
+    "Unmute": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unmute"
           }
         }
       }
@@ -8605,6 +8846,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Uploading at %@."
+          }
+        }
+      }
+    },
+    "Uptime": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uptime"
           }
         }
       }
@@ -8948,6 +9199,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vibing"
+          }
+        }
+      }
+    },
+    "Volume": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volume"
           }
         }
       }
@@ -9308,6 +9569,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your %lld W charger can't keep up. The battery is still draining while plugged in."
+          }
+        }
+      }
+    },
+    "Your Bluetooth keyboard or mouse will disconnect. Tap again to turn Bluetooth off.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Bluetooth keyboard or mouse will disconnect. Tap again to turn Bluetooth off."
           }
         }
       }

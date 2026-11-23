@@ -480,6 +480,7 @@ private struct MenuBarPreview: View {
 private struct GeneralSettings: View {
     @Environment(AppSettings.self) private var settings
     @AppStorage("showQuickToggles") private var showQuickToggles = true
+    @AppStorage("showDeckSummary") private var showDeckSummary = true
 
     private var bluetoothFooter: String {
         let snooze = BluetoothSnooze.shared
@@ -499,10 +500,11 @@ private struct GeneralSettings: View {
             }
             Section {
                 Toggle("Show quick toggles in the deck", isOn: $showQuickToggles)
+                Toggle("Show the summary card in the deck", isOn: $showDeckSummary)
             } header: {
                 Text("Deck")
             } footer: {
-                Text("A row for microphone mute. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time.")
+                Text("Quick toggles: mic mute, Bluetooth, Share Vibe Card, and volume and built-in display brightness sliders. The summary card shows uptime, the top app, today's energy leader and the agent limit closest to running out. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time.")
                     .settingsFooter()
             }
             ExplainSettingRow()

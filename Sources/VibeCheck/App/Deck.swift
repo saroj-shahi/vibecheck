@@ -309,6 +309,10 @@ final class DeckController: NSObject {
         model.go(route, animated: false)
         model.keyboardFocusVisible = false
         model.focusIndex = nil
+        // Read the slider services first: their rows appear only when available, and finding that out in
+        // onAppear made the deck grow ~66 pt right after opening.
+        SystemVolume.shared.refresh()
+        DisplayBrightness.shared.refresh()
         // Lay out once so the content height is known before the window appears.
         panel.contentView?.layoutSubtreeIfNeeded()
         let final = targetFrame()

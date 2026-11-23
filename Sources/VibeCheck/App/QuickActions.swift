@@ -1,6 +1,7 @@
 import AppKit
 import CoreAudio
 import Foundation
+import IOBluetooth
 import Observation
 
 /// Outcome of a quick action; `failure` carries a short message for the deck.
@@ -42,15 +43,52 @@ enum QuickActionsText {
 }
 
 /// The quick toggles on the deck home.
-enum QuickToggle: Sendable { case mic }
+enum QuickToggle: Sendable { case mic, bluetooth }
 
-/// Microphone mute and Empty Trash, run on request only.
+/// What tapping the Bluetooth toggle does. Pure, for tests.
+enum BluetoothTap: Equatable, Sendable {
+    case setPower(Bool)
+    /// First use: show the Bluetooth permission prompt.
+    case askPermission
+    /// Access was turned down: point to System Settings.
+    case denied
+    /// The private calls are missing on this macOS.
+    case unavailable
+
+    static func decide(available: Bool, access: BluetoothSnooze.Access, poweredOn: Bool?) -> BluetoothTap {
+        guard available else { return .unavailable }
+        switch access {
+        case .notAsked: return .askPermission
+        case .denied: return .denied
+        case .allowed:
+            guard let poweredOn else { return .unavailable }
+            return .setPower(!poweredOn)
+        }
+    }
+
+    static let askMessage = String(localized: "Allow Bluetooth for VibeCheck, then tap again.")
+    static let deniedMessage = String(localized: "Allow VibeCheck to use Bluetooth in System Settings → Privacy & Security → Bluetooth.")
+    static let unavailableMessage = String(localized: "Bluetooth can't be switched from here on this Mac.")
+
+    /// VoiceOver label for the toggle.
+    static func spoken(poweredOn: Bool?) -> String {
+        switch poweredOn {
+        case true?: String(localized: "Bluetooth, on")
+        case false?: String(localized: "Bluetooth, off")
+        case nil: String(localized: "Bluetooth")
+        }
+    }
+}
+
+/// Microphone mute, Bluetooth power and Empty Trash, run on request only.
 @MainActor
 @Observable
 final class QuickActions {
     static let shared = QuickActions()
 
     private(set) var isMicMuted = false
+    /// Bluetooth controller power; nil when unknown (no access yet, or the private call is missing).
+    private(set) var bluetoothOn: Bool?
     /// Items in ~/.Trash; nil when it can't be read (no access).
     private(set) var trashCount: Int? = 0
     private(set) var failure: String?
@@ -59,6 +97,7 @@ final class QuickActions {
     private(set) var failedToggle: QuickToggle?
     private(set) var failureTick = 0
     private var failureTask: Task<Void, Never>?
+    private var bluetoothReadBack: Task<Void, Never>?
     /// Input volume to restore when the device has no mute switch and was silenced via its volume.
     private var savedVolume: Float32?
 
@@ -66,6 +105,7 @@ final class QuickActions {
 
     func refresh() {
         isMicMuted = Self.readMicMuted()
+        bluetoothOn = BluetoothSnooze.shared.isPoweredOn
         Task {
             let count = await Task.detached { Self.countTrash() }.value
             trashCount = count
@@ -104,6 +144,64 @@ final class QuickActions {
             let code = (error[NSAppleScript.errorNumber] as? Int) ?? 0
             return .failure(QuickActionsText.failureMessage(code: code))
         }.value
+    }
+
+    // MARK: Bluetooth
+
+    /// Set by a first "off" tap while a Bluetooth keyboard or mouse is connected; a second tap before it passes confirms.
+    @ObservationIgnored private var bluetoothOffArmedUntil: Date?
+
+    /// A connected peripheral-class device (keyboard, mouse, trackpad: Bluetooth major class 0x05).
+    private static func bluetoothInputConnected() -> Bool {
+        (IOBluetoothDevice.pairedDevices() ?? []).contains { item in
+            guard let device = item as? IOBluetoothDevice, device.isConnected() else { return false }
+            return device.deviceClassMajor == 0x05
+        }
+    }
+
+    func toggleBluetooth() {
+        let snooze = BluetoothSnooze.shared
+        switch BluetoothTap.decide(available: snooze.isAvailable, access: snooze.access, poweredOn: snooze.isPoweredOn) {
+        case .setPower(let on):
+            // Turning Bluetooth off can strand a Mac whose only keyboard or mouse is Bluetooth, so with one
+            // connected the first tap only warns and a second tap within 5 s does it.
+            if !on, Self.bluetoothInputConnected(), (bluetoothOffArmedUntil ?? .distantPast) < Date() {
+                bluetoothOffArmedUntil = Date().addingTimeInterval(5)
+                show(String(localized: "Your Bluetooth keyboard or mouse will disconnect. Tap again to turn Bluetooth off."), toggle: .bluetooth)
+                return
+            }
+            bluetoothOffArmedUntil = nil
+            guard snooze.setPowered(on) else { show(QuickActionsText.genericFailure, toggle: .bluetooth); return }
+            bluetoothOn = on
+            // The controller takes a moment to settle; read back what it really did. Only the latest tap's
+            // read-back counts, so a quick on-off-on can't end showing an older state.
+            bluetoothReadBack?.cancel()
+            bluetoothReadBack = Task {
+                try? await Task.sleep(for: .seconds(1.5))
+                guard !Task.isCancelled else { return }
+                bluetoothOn = BluetoothSnooze.shared.isPoweredOn
+            }
+        case .askPermission:
+            snooze.requestAccess()
+            show(BluetoothTap.askMessage, toggle: .bluetooth)
+            // Once the user answers the system prompt, show the real state without waiting for a reopen.
+            // Bounded: checks once a second for 30 s at most.
+            bluetoothReadBack?.cancel()
+            bluetoothReadBack = Task {
+                for _ in 0..<30 {
+                    try? await Task.sleep(for: .seconds(1))
+                    guard !Task.isCancelled else { return }
+                    if BluetoothSnooze.shared.access != .notAsked {
+                        bluetoothOn = BluetoothSnooze.shared.isPoweredOn
+                        return
+                    }
+                }
+            }
+        case .denied:
+            show(BluetoothTap.deniedMessage, toggle: .bluetooth)
+        case .unavailable:
+            show(BluetoothTap.unavailableMessage, toggle: .bluetooth)
+        }
     }
 
     // MARK: Microphone

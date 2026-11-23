@@ -42,7 +42,9 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 | `ClaudeProfiles.swift` | Claude Code accounts: `ClaudeProfile` (default `~/.claude` or a `CLAUDE_CONFIG_DIR` folder; log roots, `.claude.json`, discovery of `~/.claude-*`), `ClaudeProfiles` (selected account, added folders; per Mac) |
 | `ClaudeLimits.swift` | Live Claude limits from the user's `claude` CLI (`get_usage` control request); opt-in |
 | `ProcessKiller.swift` | Quit / Force Quit (optionally with subprocesses) with protected processes and pid start-time identity |
-| `QuickActions.swift` | Quick toggles: mic mute (CoreAudio), empty Trash (Finder) |
+| `QuickActions.swift` | Quick toggles: mic mute (CoreAudio), Bluetooth on/off (second tap when a Bluetooth keyboard / mouse is connected), empty Trash (Finder) |
+| `SystemVolume.swift` | Default output volume and mute (CoreAudio, property listeners, follows device changes) for the deck slider |
+| `DisplayBrightness.swift` | Built-in display brightness via private DisplayServices (`dlsym`), hidden when missing / lid closed |
 | `ClipboardHistory.swift` | `ClipItem`, `ClipboardHistory` (off by default: polls `changeCount` every 0.5 s, skips private types / Secure Input / ignored apps, optional `clipboard.json` at 0600; pinned snippets; copy and ⌘V paste), `AccessibilityAccess` (ask once per feature) |
 | `CursorFinder.swift` | "Find my cursor": click-through ring panel at the pointer |
 | `KeyboardCleaner.swift` | Keyboard cleaning mode: `CGEventTap` swallowing keys for 45 s, countdown overlay with Done |
@@ -84,6 +86,7 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `EnergySampler` (pe
 | `AgentsPanel.swift` | Agents detail: Now card, charts, agent cards, `LimitGauge`, `PaceBar`, `DailyBars` |
 | `AgentLogo.swift` | Agent logos (`AgentLogo`, `AgentLogoTile`, brand colors) from SVG path data, and `SVGPath` (small path-data parser) |
 | `VibeStrip.swift` | `VibeStripView`: 24H / 7D / 30D vibe timeline from the episode log + weekly sentence (top of the CPU panel), day buckets split at midnight |
+| `DeckSummaryCard.swift` | Full-width deck card: uptime, top app now, energy leader today, tightest agent limit (pure selection logic + view) |
 | `EnergyLeaderboard.swift` | "Energy used today" top 5 apps with Today / Yesterday (Battery panel) |
 | `TodoPanel.swift` | To-do panel: list switcher, Add task field (Return adds), open tasks, Completed section, access states |
 | `BatteryHistoryCharts.swift` | `BatteryHistorySection`: multi-day charge chart and health trend (Battery panel) |

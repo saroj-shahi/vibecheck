@@ -144,7 +144,6 @@ struct DeckShell: View {
 /// Ring and verdict, with the only two header buttons that need to be one click away: alerts and the cup.
 private struct DeckHeader: View {
     @Environment(SystemStats.self) private var stats
-    @Environment(DeckModel.self) private var model
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -154,10 +153,6 @@ private struct DeckHeader: View {
                     .font(.system(size: 15, weight: .semibold))
                     .contentTransition(.interpolate)
                 Spacer(minLength: 4)
-                DeckIconButton(symbol: "square.and.arrow.up", help: "Share Vibe Card") {
-                    model.requestClose?()
-                    VibeCardWindow.show(stats: stats)
-                }
                 NotificationBellButton()
                 AwakeMenuButton()
             }
@@ -444,6 +439,7 @@ private struct FooterButton: View {
 struct DeckHome: View {
     @Environment(DeckModel.self) private var model
     @AppStorage("showQuickToggles") private var showQuickToggles = true
+    @AppStorage("showDeckSummary") private var showDeckSummary = true
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: Deck.gutter), count: Deck.columns)
 
@@ -457,6 +453,9 @@ struct DeckHome: View {
         ExplainCardView()
         if showQuickToggles {
             QuickTogglesView()
+        }
+        if showDeckSummary {
+            DeckSummaryCard()
         }
         LazyVGrid(columns: columns, spacing: Deck.gutter) {
             ForEach(Array(model.modules.enumerated()), id: \.element) { index, module in
@@ -624,27 +623,39 @@ struct TileContent {
     }
 
     /// Second facts per module, from readings the tick already has (nothing extra is sampled for them).
+    /// The deck home samples processes every 5 s for the verdict, so the top app is there while it's open.
     @MainActor
     static func note(_ module: Module, stats: SystemStats) -> String? {
         switch module {
         case .cpu:
+            if let top = stats.topApps(by: \.cpu, limit: 1).first, top.cpu >= 1 {
+                return appNote(top.name, cpuText(top.cpu))
+            }
             return String(localized: "User \(Fmt.percent(stats.cpu.user)) · Sys \(Fmt.percent(stats.cpu.system))")
         case .gpu:
+            // No per-app GPU readings exist without extra sampling, so the GPU's own memory stays.
             guard let gpu = stats.gpu.gpus.max(by: { $0.device < $1.device }) else { return nil }
             if let inUse = gpu.memoryInUse, inUse > 0 { return String(localized: "\(Fmt.bytes(inUse)) in use") }
             return gpu.cores.map { String(localized: "\(String($0)) cores") }
         case .memory:
+            if let top = stats.topApps(by: \.memory, limit: 1).first, top.memory > 0 {
+                return appNote(top.name, Fmt.bytes(top.memory))
+            }
+            if let top = topMemoryTrack(stats.appMemoryTracks) {
+                return appNote(top.name, Fmt.bytes(top.footprint))
+            }
             let m = stats.memory
             if m.swapUsed >= 1_073_741_824 { return String(localized: "\(Fmt.bytes(m.used)) · swap \(Fmt.bytes(m.swapUsed))") }
             return String(localized: "\(Fmt.bytes(m.used)) of \(Fmt.bytes(m.total))")
         case .network:
-            guard stats.network.interface != nil else { return nil }
-            return "↑ \(Fmt.compactRate(stats.network.upload))"
+            let n = stats.network
+            guard let interface = n.interface else { return nil }
+            return networkNote(upload: n.upload, link: n.interfaces.first { $0.bsdName == interface }?.displayName)
         case .disk:
             return nil
         case .sensors:
-            if let fan = stats.sensors.fans.first, fan.rpm > 0 { return String(localized: "Fan \(String(format: "%.0f", fan.rpm)) rpm") }
-            return stats.sensors.summary.first?.name
+            return sensorNote(fanRPM: stats.sensors.fans.map(\.rpm).max(), thermal: stats.thermalState,
+                              hottestName: stats.sensors.summary.first?.name)
         case .battery:
             let b = stats.battery
             guard b.present, let minutes = b.minutesRemaining, minutes > 0 else { return nil }
@@ -652,12 +663,63 @@ struct TileContent {
             return b.onAC ? nil : String(localized: "\(Fmt.uptime(TimeInterval(minutes * 60))) left")
         case .agents:
             // The limit closest to running out, across every agent.
-            let limits = AgentUsageStore.shared.sample.agents.flatMap(\.limits)
-            guard let tightest = limits.min(by: { $0.leftPercent < $1.leftPercent }) else { return nil }
-            return String(localized: "\(tightest.title): \(Fmt.percent(tightest.leftPercent / 100)) left")
+            guard let tightest = DeckFacts.tightestLimit(AgentUsageStore.shared.sample.agents) else { return nil }
+            return String(localized: "\(tightest.window.title): \(Fmt.percent(tightest.window.leftPercent / 100)) left")
         case .clock, .weather, .todo:
             return nil
         }
+    }
+
+    /// "Chrome 46%": the name gives way so the number always shows in a 114-pt tile.
+    nonisolated static func appNote(_ name: String, _ amount: String, maxName: Int = 11) -> String {
+        "\(DeckFacts.shortName(name, max: maxName)) \(amount)"
+    }
+
+    /// Percent of one core, as `ps` and Activity Monitor show it (can pass 100%).
+    nonisolated static func cpuText(_ percentOfCore: Double) -> String {
+        "\(String(Int(max(0, percentOfCore).rounded())))%"
+    }
+
+    /// The app with the largest recent footprint in the once-a-minute memory history (no `ps` needed).
+    nonisolated static func topMemoryTrack(_ tracks: [AppMemoryKey: AppMemoryTrack], now: Date = Date())
+        -> (name: String, footprint: Double)? {
+        tracks.values.compactMap { track in track.samples.last.map { (track.name, $0) } }
+            .filter { now.timeIntervalSince($0.1.date) <= AppMemoryHistory.interval * 3 && $0.1.footprint > 0 }
+            .max { $0.1.footprint < $1.1.footprint }
+            .map { ($0.0, $0.1.footprint) }
+    }
+
+    /// "↑ 340K · Wi-Fi"; just the upload when the link has no friendly name.
+    nonisolated static func networkNote(upload: Double, link: String?) -> String {
+        let up = "↑ \(Fmt.compactRate(upload))"
+        guard let link, !link.isEmpty else { return up }
+        return "\(up) · \(link)"
+    }
+
+    /// Fan speed when a fan spins, else whether macOS is throttling, else the hottest sensor's short name.
+    nonisolated static func sensorNote(fanRPM: Double?, thermal: ProcessInfo.ThermalState?, hottestName: String?) -> String? {
+        if let fanRPM, fanRPM > 0 { return String(localized: "Fan \(String(format: "%.0f", fanRPM)) rpm") }
+        if let thermal {
+            switch thermal {
+            case .serious, .critical: return String(localized: "Throttling")
+            default: return String(localized: "No throttling")
+            }
+        }
+        return hottestName.map(shortSensorName)
+    }
+
+    /// "CPU / SoC (hottest)" → "CPU / SoC".
+    nonisolated static func shortSensorName(_ name: String) -> String {
+        guard let paren = name.firstIndex(of: "(") else { return name }
+        let trimmed = name[..<paren].trimmingCharacters(in: .whitespaces)
+        return trimmed.isEmpty ? name : trimmed
+    }
+
+    /// "Charging · 28 W" / "On battery · 9.4 W"; the state alone when the draw is unknown or near zero.
+    nonisolated static func batteryDetail(state: String, watts: Double?) -> String {
+        guard let watts, abs(watts) >= 0.5 else { return state }
+        let w = abs(watts)
+        return "\(state) · \(w < 10 ? String(format: "%.1f", w) : String(format: "%.0f", w)) W"
     }
 
     @MainActor
@@ -695,7 +757,8 @@ struct TileContent {
             guard b.present else { return TileContent(value: String(localized: "AC"), detail: String(localized: "No battery"), spoken: String(localized: "on AC power")) }
             let v = Fmt.percent(b.percent)
             let state = b.isCharging ? String(localized: "Charging") : b.onAC ? String(localized: "On power") : String(localized: "On battery")
-            return TileContent(value: v, detail: state, spoken: String(localized: "\(v), \(state.lowercased())"))
+            return TileContent(value: v, detail: batteryDetail(state: state, watts: b.powerWatts),
+                               spoken: String(localized: "\(v), \(state.lowercased())"))
         case .clock:
             let now = ClockTicker.shared.now
             let v = now.formatted(date: .omitted, time: .shortened)

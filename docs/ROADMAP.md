@@ -10,7 +10,7 @@ What's planned for VibeCheck, highest priority first. **P1** soon · **P2** nice
 | # | Item | Priority | Notes |
 |---|---|---|---|
 | 1 | Translations | P2 | None yet |
-| 2 | Private-API recheck after each macOS update: `IOHIDEventSystemClient*`, `responsibility_get_pid_responsible_for_pid`, SMC `PSTR`/`PDTR`/`F0Ac`, `IOBluetoothPreference{Get,Set}ControllerPowerState`, `libIOReport` (`IOReportCopyChannelsInGroup`, `IOReportCreateSubscription`, `IOReportCreateSamples`, `IOReportCreateSamplesDelta`, `IOReportChannelGetChannelName`, `IOReportChannelGetUnitLabel`, `IOReportSimpleGetIntegerValue`), IORegistry `cluster-type` / `logical-cpu-id` under `IODeviceTree:/cpus` | Tech debt | Last checked 2026-11-23 on macOS 27.2.1 (26B131), M5: all working (`--dump` + a `dlsym` probe); IOReport CPU / ANE energy read 0 for non-root (hidden), GPU works |
+| 2 | Private-API recheck after each macOS update: `IOHIDEventSystemClient*`, `responsibility_get_pid_responsible_for_pid`, SMC `PSTR`/`PDTR`/`F0Ac`, `IOBluetoothPreference{Get,Set}ControllerPowerState`, `DisplayServices{Get,Set}Brightness`, `libIOReport` (`IOReportCopyChannelsInGroup`, `IOReportCreateSubscription`, `IOReportCreateSamples`, `IOReportCreateSamplesDelta`, `IOReportChannelGetChannelName`, `IOReportChannelGetUnitLabel`, `IOReportSimpleGetIntegerValue`), IORegistry `cluster-type` / `logical-cpu-id` under `IODeviceTree:/cpus` | Tech debt | Last checked 2026-11-23 on macOS 27.2.1 (26B131), M5: all working (`--dump` + a `dlsym` probe); IOReport CPU / ANE energy read 0 for non-root (hidden), GPU works |
 | 3 | Website / landing page from the brand assets | P3 | Not started |
 
 ## Not planned
@@ -20,4 +20,4 @@ What's planned for VibeCheck, highest priority first. **P1** soon · **P2** nice
 - Anything that needs input monitoring: a mouse jiggler, scroll direction per device, typing stats, key
   remapping.
 - Fan control, a disk cleaner, a calendar in the Clock panel, keep awake with the lid closed, a sandboxed
-  App Store edition, display brightness, iCloud settings sync, and a dark mode toggle.
+  App Store edition, iCloud settings sync, and a dark mode toggle.

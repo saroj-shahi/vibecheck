@@ -42,6 +42,15 @@ final class BluetoothSnooze {
     /// (calling it without access makes macOS abort the process).
     var isPoweredOn: Bool? { access == .allowed ? Controller.isPoweredOn : nil }
 
+    /// Turns the controller on or off on request (the deck's Bluetooth toggle). False when the private
+    /// call is missing or Bluetooth access isn't allowed; never called without access.
+    @discardableResult
+    func setPowered(_ on: Bool) -> Bool {
+        guard access == .allowed, let setPower = Controller.setPower else { return false }
+        setPower(on ? 1 : 0)
+        return true
+    }
+
     enum Access { case allowed, notAsked, denied }
 
     /// Bluetooth privacy permission, read without prompting.

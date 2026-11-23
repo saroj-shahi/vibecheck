@@ -18,7 +18,7 @@
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSAppleEventsUsageDescription</key><string>VibeCheck asks Finder to empty the Trash, only when you choose Empty Trash.</string>
-    <key>NSBluetoothAlwaysUsageDescription</key><string>VibeCheck turns Bluetooth off while your Mac sleeps and back on when it wakes, if you switch that on in Settings.</string>
+    <key>NSBluetoothAlwaysUsageDescription</key><string>VibeCheck turns Bluetooth on or off when you use its Bluetooth button, and while your Mac sleeps if you switch that on in Settings.</string>
     <key>NSLocationUsageDescription</key><string>VibeCheck reads the name of your Wi-Fi network to keep your Mac awake while you're on the network you chose in Settings. Your location is never used or stored.</string>
     <key>NSLocationWhenInUseUsageDescription</key><string>VibeCheck reads the name of your Wi-Fi network to keep your Mac awake while you're on the network you chose in Settings. Your location is never used or stored.</string>
     <key>NSRemindersFullAccessUsageDescription</key><string>VibeCheck shows the Reminders list you pick in Settings as a to-do list, and adds, completes and deletes tasks only when you do.</string>
