@@ -53,6 +53,14 @@ final class SystemStats {
     private(set) var devices: [DeviceBattery] = []
     @ObservationIgnored private var lastDeviceFetch: Date?
     @ObservationIgnored private var fetchingDevices = false
+    @ObservationIgnored private let bluetoothWatch = BluetoothConnectWatch()
+    @ObservationIgnored private var deviceEventTask: Task<Void, Never>?
+    /// Number of open views showing accessory batteries (the Battery panel); the deck bumps it like the other demands.
+    var deviceDemand = 0 {
+        didSet {
+            if deviceDemand > 0, oldValue == 0 { bluetoothWatch.startIfAllowed(); refreshDevices() }
+        }
+    }
     private(set) var uptime: TimeInterval = 0
     private(set) var processes: [ProcessRow] = []
     private(set) var vibe = VibeReport(vibe: .vibing, verdict: String(localized: "Checking the vibes…"))
@@ -275,12 +283,8 @@ final class SystemStats {
             volumes = DiskMonitor.volumes()
             battery = BatteryMonitor.sample()
             if battery.present { batteryHistory.append(battery.percent); batteryLog.record(battery) }
-            // `system_profiler` once a minute is the most expensive sample: only when something shows it.
-            if Self.needsDevices(batteryOn: AppSettings.shared.isEnabled(.battery), rules: AppSettings.shared.alertRules) {
-                refreshDevicesIfDue()
-            } else if !devices.isEmpty {
-                devices = []
-            }
+            // `system_profiler` is the most expensive sample: only when something shows it (see `DeviceRefreshPolicy`).
+            updateDevices()
             uptime = SysctlReader.uptime()
         }
         tickCount += 1
@@ -364,17 +368,53 @@ final class SystemStats {
         batteryOn || rules.contains { $0.enabled && $0.metric == .accessoryBattery }
     }
 
-    /// Bluetooth accessory levels change slowly; check once a minute in the background.
-    private func refreshDevicesIfDue() {
-        guard !fetchingDevices, lastDeviceFetch.map({ Date().timeIntervalSince($0) > 60 }) ?? true else { return }
+    private var accessoryAlertOn: Bool { Self.needsDevices(batteryOn: false, rules: AppSettings.shared.alertRules) }
+
+    /// Per-tick check: applies the refresh policy (events when permitted, else a timer).
+    private func updateDevices() {
+        let events = accessoryAlertOn || deviceDemand > 0 ? bluetoothWatch.startIfAllowed() : bluetoothWatch.isWatching
+        bluetoothWatch.onChange = { [weak self] in self?.bluetoothDeviceChanged() }
+        let mode = DeviceRefreshPolicy.mode(viewOpen: deviceDemand > 0, alertRuleOn: accessoryAlertOn, eventsAvailable: events)
+        if mode == .off {
+            if !devices.isEmpty { devices = [] }
+            return
+        }
+        if DeviceRefreshPolicy.pollDue(mode, lastFetch: lastDeviceFetch, now: Date()) { refreshDevices() }
+    }
+
+    /// A Bluetooth device connected or disconnected: refresh after 3 s, and again 20 s later (levels often appear late).
+    private func bluetoothDeviceChanged() {
+        guard deviceDemand > 0 || accessoryAlertOn else { return }
+        deviceEventTask?.cancel()
+        deviceEventTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(DeviceRefreshPolicy.debounce))
+            guard !Task.isCancelled else { return }
+            self?.refreshDevices()
+            try? await Task.sleep(for: .seconds(DeviceRefreshPolicy.lateRefresh))
+            guard !Task.isCancelled else { return }
+            self?.refreshDevices()
+        }
+    }
+
+    private func refreshDevices() {
+        // A refresh asked for mid-fetch (the 20 s re-read during a slow system_profiler) runs once after it.
+        guard !fetchingDevices else { deviceRefreshPending = true; return }
         fetchingDevices = true
         lastDeviceFetch = Date()
         Task {
             let found = await DeviceBatteryMonitor.fetch()
             self.devices = found
             self.fetchingDevices = false
+            if self.deviceRefreshPending {
+                self.deviceRefreshPending = false
+                self.refreshDevices()
+            }
         }
     }
+    @ObservationIgnored private var deviceRefreshPending = false
+
+    /// Per-app memory tracks, for the memory-growth smart alert.
+    var appMemoryTracks: [AppMemoryKey: AppMemoryTrack] { appMemory.tracks }
 
     /// Wi-Fi details (panel open only, every 5 s) and the opt-in public IP (every 10 min and on network change).
     private func refreshNetworkExtrasIfDue() {

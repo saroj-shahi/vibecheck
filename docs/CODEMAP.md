@@ -19,8 +19,10 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 | `AppMemoryHistory.swift` | Per-app memory footprint once a minute (libproc, no `ps`; grouped by responsible pid, keyed with start time), ~65 min of samples for the top 15 apps, `growth` for the verdict |
 | `DevServers.swift` | `ListenerDetails` (cwd, start time, exe, footprint via libproc), dev-server classification, project name (nearest `.git` / `package.json` up to home), grouping, uptime text |
 | `SleepDrain.swift` | Overnight drain: battery at sleep vs wake (≥ 2 h, on battery, ≥ 5 points), wake causes from one `pmset -g log` run, a 12 h report shown as one line on the deck home |
+| `BluetoothConnectWatch.swift` | IOBluetooth connect / disconnect → accessory battery refresh (3 s debounce + 20 s re-read); `DeviceRefreshPolicy` (event-only, 10 min with an accessory alert, 60 s fallback without Bluetooth permission) |
+| `IntentSnippets.swift` | `VibeSnippetView`: ring + verdict shown by the "How's my Mac's vibe?" intent |
 | `Vibe.swift` | Vibe score (vibing / mid / cooked) with per-module enter / exit thresholds (`VibeThresholds`), swap and fast-drain signals, the verdict sentence and its culprit module |
-| `Alerts.swift` | `AlertMetric`, `AlertRule` (sentence alerts), `AlertEngine` (evaluate, notify, history log) |
+| `Alerts.swift` | `AlertMetric`, `AlertRule` (sentence alerts), `AlertEngine` (evaluate, notify, history log); smart alerts (app memory leak, throttling ≥ 5 min, slow charger ≥ 5 min) with a 2 h per-culprit `AlertRateLimiter` |
 | `KeepAwake.swift` | Sessions (`AwakeEnd`, focus sessions, triggers: power / display / downloads / `AwakeSchedule`), IOKit assertion |
 | `CallGuard.swift` | Call detection (camera/mic in use via CoreMediaIO/CoreAudio), debounce, held alerts, heavy-app warning |
 | `WiFiTrigger.swift` | Keep-awake "while on Wi-Fi X": CoreWLAN SSID, Location permission |

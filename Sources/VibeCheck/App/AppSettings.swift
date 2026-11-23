@@ -223,6 +223,19 @@ final class AppSettings {
     var findCursorHotkey: Bool {
         didSet { save(findCursorHotkey, "findCursorHotkey", structural: true) }
     }
+    /// Built-in smart alerts (off by default).
+    var smartAlertMemoryLeak: Bool {
+        didSet { save(smartAlertMemoryLeak, "smartAlertMemoryLeak", structural: false) }
+    }
+    var smartAlertThrottling: Bool {
+        didSet { save(smartAlertThrottling, "smartAlertThrottling", structural: false) }
+    }
+    var smartAlertSlowCharger: Bool {
+        didSet { save(smartAlertSlowCharger, "smartAlertSlowCharger", structural: false) }
+    }
+    var smartAlertToggles: SmartAlertToggles {
+        SmartAlertToggles(memoryLeak: smartAlertMemoryLeak, throttling: smartAlertThrottling, slowCharger: smartAlertSlowCharger)
+    }
     var alertRules: [AlertRule] {
         didSet {
             if let data = try? JSONEncoder().encode(alertRules) { defaults.set(data, forKey: "alertRules") }
@@ -270,6 +283,9 @@ final class AppSettings {
         clock = ClockGroup(defaults: defaults)
         weather = WeatherGroup(defaults: defaults)
         keepAwake = KeepAwakeGroup(defaults: defaults)
+        smartAlertMemoryLeak = defaults.bool(forKey: "smartAlertMemoryLeak")
+        smartAlertThrottling = defaults.bool(forKey: "smartAlertThrottling")
+        smartAlertSlowCharger = defaults.bool(forKey: "smartAlertSlowCharger")
         callGuardEnabled = defaults.object(forKey: "callGuardEnabled") as? Bool ?? true
         checkForUpdates = defaults.object(forKey: "checkForUpdates") as? Bool ?? true
         hotkeysEnabled = defaults.object(forKey: "hotkeysEnabled") as? Bool ?? true
