@@ -108,6 +108,8 @@ final class SystemStats {
     /// for its verdict, detail views list processes and refresh every tick.
     var processInterval: TimeInterval = 0
     @ObservationIgnored private var lastProcessFetch = Date.distantPast
+    /// Previous energy reading per pid, for the watts estimate.
+    @ObservationIgnored private var energyReadings: [Int32: EnergySampler.Reading] = [:]
     @ObservationIgnored private var lastSensorRead = Date.distantPast
 
     /// Number of open views listing every temperature sensor; otherwise only the summary sensors are read.
@@ -415,7 +417,14 @@ final class SystemStats {
         lastProcessFetch = Date()
         Task {
             let rows = await ProcessSampler.fetch()
-            self.processes = rows
+            let readings = await Task.detached { EnergySampler.read(pids: rows.map(\.id)) }.value
+            let watts = EnergySampler.watts(previous: self.energyReadings, current: readings)
+            self.energyReadings = readings
+            self.processes = rows.map { row in
+                var row = row
+                row.watts = watts[row.id]
+                return row
+            }
             self.fetchingProcesses = false
         }
     }
@@ -448,7 +457,8 @@ final class SystemStats {
             .prefix(limit)
             .map { app in
                 guard let name = NSRunningApplication(processIdentifier: app.id)?.localizedName else { return app }
-                return AppUsage(id: app.id, name: name, cpu: app.cpu, memory: app.memory, processCount: app.processCount)
+                return AppUsage(id: app.id, name: name, cpu: app.cpu, memory: app.memory, processCount: app.processCount,
+                                  watts: app.watts)
             }
     }
 
@@ -458,6 +468,12 @@ final class SystemStats {
         rows.filter { $0.responsible == owner }.sorted { $0[keyPath: key] > $1[keyPath: key] }
     }
 
+    /// Sum of the known values; nil when there are none (never a made-up zero).
+    nonisolated static func sumWatts(_ values: [Double?]) -> Double? {
+        let known = values.compactMap { $0 }
+        return known.isEmpty ? nil : known.reduce(0, +)
+    }
+
     nonisolated static func groupByApp(_ rows: [ProcessRow], appName: (Int32) -> String?) -> [AppUsage] {
         let namesByPID = Dictionary(rows.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
         return Dictionary(grouping: rows, by: \.responsible).map { owner, members in
@@ -465,7 +481,8 @@ final class SystemStats {
                      name: appName(owner) ?? namesByPID[owner] ?? members[0].name,
                      cpu: members.reduce(0) { $0 + $1.cpu },
                      memory: members.reduce(0) { $0 + $1.memory },
-                     processCount: members.count)
+                     processCount: members.count,
+                     watts: sumWatts(members.map(\.watts)))
         }
     }
 }

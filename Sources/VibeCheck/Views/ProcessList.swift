@@ -34,7 +34,7 @@ struct ProcessList: View {
                     let expandable = app.processCount > 1
                     let expanded = expandable && expandedApp == app.id
                     row(pid: app.id, name: app.name, detail: expandable ? "\(app.processCount)" : nil,
-                        value: value(cpu: app.cpu, memory: app.memory),
+                        value: value(cpu: app.cpu, memory: app.memory), watts: app.watts,
                         icon: NSRunningApplication(processIdentifier: app.id)?.icon,
                         expansion: expandable ? expanded : nil)
                     if expanded {
@@ -44,7 +44,8 @@ struct ProcessList: View {
                             : SystemStats.members(of: app.id, in: stats.processes, by: \.memory)).filter { $0.id != app.id }
                         ForEach(members.prefix(Self.memberCap)) { member in
                             row(pid: member.id, name: member.name, detail: "\(member.id)",
-                                value: value(cpu: member.cpu, memory: member.memory), icon: nil, isMember: true)
+                                value: value(cpu: member.cpu, memory: member.memory), watts: member.watts,
+                                icon: nil, isMember: true)
                         }
                         if members.count > Self.memberCap {
                             Text("+\(members.count - Self.memberCap) more")
@@ -88,7 +89,7 @@ struct ProcessList: View {
     }
 
     @ViewBuilder
-    private func row(pid: Int32, name: String, detail: String?, value: String, icon: NSImage?,
+    private func row(pid: Int32, name: String, detail: String?, value: String, watts: Double? = nil, icon: NSImage?,
                      expansion: Bool? = nil, isMember: Bool = false) -> some View {
         if let confirming, confirming.target.pid == pid, Date().timeIntervalSince(confirming.asked) < 20,
            ProcessKiller.identity(of: pid) == confirming.target {
@@ -124,6 +125,10 @@ struct ProcessList: View {
                 if let notice, notice.pid == pid {
                     Text(notice.text).font(.caption).foregroundStyle(.orange).lineLimit(1)
                 } else {
+                    if metric == .cpu, let label = EnergySampler.label(watts) {
+                        Text(label).font(.caption).monospacedDigit().foregroundStyle(.tertiary)
+                            .help("Estimated from the energy macOS counts for this app")
+                    }
                     Text(value).monospacedDigit().foregroundStyle(.secondary)
                 }
             }
