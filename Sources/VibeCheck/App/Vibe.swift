@@ -41,6 +41,32 @@ struct VibeInput: Sendable {
     var startupDiskFree: Double? = nil     // fraction free, 0...1
     var batteryOnBattery: Double? = nil    // charge 0...1, only when running on battery
     var thermalState: ProcessInfo.ThermalState = .nominal
+    /// Bytes of swap added over the last ~60 s (0 when shrinking or unknown).
+    var swapGrowth: Double = 0
+    /// macOS's estimate of minutes to empty, only when running on battery.
+    var batteryMinutesLeft: Int? = nil
+    /// The level each module had on the previous sample. A level is kept until the value falls below a
+    /// lower "exit" threshold, so a value hovering at a threshold can't flip the verdict back and forth.
+    var held: [Module: Vibe] = [:]
+}
+
+/// Enter and exit thresholds for one numeric signal (higher is worse).
+struct VibeThresholds: Sendable {
+    var midEnter: Double, midExit: Double, cookedEnter: Double, cookedExit: Double
+
+    func level(_ value: Double, held: Vibe?) -> Vibe? {
+        let held = held ?? .vibing
+        if value >= cookedEnter || (held == .cooked && value >= cookedExit) { return .cooked }
+        if value >= midEnter || (held >= .mid && value >= midExit) { return .mid }
+        return nil
+    }
+
+    static let cpu = VibeThresholds(midEnter: 0.60, midExit: 0.50, cookedEnter: 0.85, cookedExit: 0.75)
+    static let temperature = VibeThresholds(midEnter: 80, midExit: 76, cookedEnter: 90, cookedExit: 86)
+    /// Swap growth that, with memory already tight, means the Mac is paging hard: 256 MB a minute.
+    static let swapGrowthPerMinute: Double = 256 * 1_048_576
+    /// On battery with charge to spare, fewer minutes left than this means something is draining it fast.
+    static let fastDrainMinutes = 60
 }
 
 struct VibeReport: Equatable, Sendable {
@@ -58,18 +84,26 @@ enum VibeScore {
     static func reasons(_ input: VibeInput) -> [(Vibe, String, Module, String)] {
         var found: [(Vibe, String, Module, String)] = []
         let cpu = Int((input.cpuRecent * 100).rounded())
-        if input.cpuRecent >= 0.85 { found.append((.cooked, String(localized: "CPU has been pinned at \(cpu)%", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .cpu, String(localized: "CPU \(cpu)%", comment: "Short menu bar badge"))) }
-        else if input.cpuRecent >= 0.6 { found.append((.mid, String(localized: "CPU has been busy at \(cpu)%", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .cpu, String(localized: "CPU \(cpu)%", comment: "Short menu bar badge"))) }
+        switch VibeThresholds.cpu.level(input.cpuRecent, held: input.held[.cpu]) {
+        case .cooked: found.append((.cooked, String(localized: "CPU has been pinned at \(cpu)%", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .cpu, String(localized: "CPU \(cpu)%", comment: "Short menu bar badge")))
+        case .mid: found.append((.mid, String(localized: "CPU has been busy at \(cpu)%", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .cpu, String(localized: "CPU \(cpu)%", comment: "Short menu bar badge")))
+        default: break
+        }
 
         switch input.memoryPressure {
         case .critical: found.append((.cooked, String(localized: "memory pressure is critical", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .memory, String(localized: "Memory", comment: "Short menu bar badge")))
+        case .warning where input.swapGrowth >= VibeThresholds.swapGrowthPerMinute:
+            found.append((.cooked, String(localized: "memory is tight and macOS is swapping to disk", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .memory, String(localized: "Swapping", comment: "Short menu bar badge")))
         case .warning: found.append((.mid, String(localized: "memory is getting tight", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .memory, String(localized: "Memory", comment: "Short menu bar badge")))
         case .normal: break
         }
 
         if let t = input.hottest {
-            if t >= 90 { found.append((.cooked, String(localized: "it's running hot at \(Int(t)) °C", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .sensors, String(localized: "\(Int(t)) °C", comment: "Short menu bar badge"))) }
-            else if t >= 80 { found.append((.mid, String(localized: "it's warm at \(Int(t)) °C", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .sensors, String(localized: "\(Int(t)) °C", comment: "Short menu bar badge"))) }
+            switch VibeThresholds.temperature.level(t, held: input.held[.sensors]) {
+            case .cooked: found.append((.cooked, String(localized: "it's running hot at \(Int(t)) °C", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .sensors, String(localized: "\(Int(t)) °C", comment: "Short menu bar badge")))
+            case .mid: found.append((.mid, String(localized: "it's warm at \(Int(t)) °C", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .sensors, String(localized: "\(Int(t)) °C", comment: "Short menu bar badge")))
+            default: break
+            }
         }
 
         if let free = input.startupDiskFree {
@@ -82,6 +116,9 @@ enum VibeScore {
             let pct = Int((battery * 100).rounded())
             if battery < 0.10 { found.append((.cooked, String(localized: "battery is at \(pct)%", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .battery, String(localized: "Battery \(pct)%", comment: "Short menu bar badge"))) }
             else if battery < 0.20 { found.append((.mid, String(localized: "battery is at \(pct)%", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .battery, String(localized: "Battery \(pct)%", comment: "Short menu bar badge"))) }
+            else if let minutes = input.batteryMinutesLeft, minutes > 0, minutes < VibeThresholds.fastDrainMinutes {
+                found.append((.mid, String(localized: "battery is draining fast, about \(minutes) min left", comment: "Vibe reason, fits 'Your Mac is cooked: …'"), .battery, String(localized: "~\(minutes) min left", comment: "Short menu bar badge")))
+            }
         }
 
         switch input.thermalState {
@@ -94,6 +131,11 @@ enum VibeScore {
 
     static func evaluate(_ input: VibeInput) -> Vibe {
         reasons(input).map(\.0).max() ?? .vibing
+    }
+
+    /// Each module's worst level in this sample: feed it back as `VibeInput.held` next time.
+    static func held(_ input: VibeInput) -> [Module: Vibe] {
+        reasons(input).reduce(into: [:]) { result, reason in result[reason.2] = max(result[reason.2] ?? .vibing, reason.0) }
     }
 
     /// The module whose problem sets the verdict at this level; nil while vibing or settling down.

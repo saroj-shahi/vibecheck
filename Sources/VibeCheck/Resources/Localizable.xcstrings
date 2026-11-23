@@ -6464,6 +6464,17 @@
         }
       }
     },
+    "Swapping": {
+      "comment": "Short menu bar badge",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swapping"
+          }
+        }
+      }
+    },
     "Switch to %@ mode": {
       "extractionState": "stale",
       "localizations": {
@@ -7943,6 +7954,17 @@
         }
       }
     },
+    "battery is draining fast, about %lld min left": {
+      "comment": "Vibe reason, fits 'Your Mac is cooked: …'",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "battery is draining fast, about %lld min left"
+          }
+        }
+      }
+    },
     "below": {
       "comment": "Alert comparison, as in 'Battery level has been below 15%'",
       "localizations": {
@@ -8150,6 +8172,17 @@
         }
       }
     },
+    "memory is tight and macOS is swapping to disk": {
+      "comment": "Vibe reason, fits 'Your Mac is cooked: …'",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "memory is tight and macOS is swapping to disk"
+          }
+        }
+      }
+    },
     "memory pressure is critical": {
       "comment": "Vibe reason, fits 'Your Mac is cooked: …'",
       "localizations": {
@@ -8318,6 +8351,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "unavailable"
+          }
+        }
+      }
+    },
+    "~%lld min left": {
+      "comment": "Short menu bar badge",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "~%lld min left"
           }
         }
       }
