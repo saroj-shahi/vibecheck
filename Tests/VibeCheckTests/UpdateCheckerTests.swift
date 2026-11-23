@@ -53,7 +53,7 @@ import Testing
 
     @Test func updateCommandsAreTerminalOnly() {
         let commands = UpdateChecker.updateCommands.map(\.command)
-        #expect(commands == ["brew upgrade --cask vibecheck",
+        #expect(commands == ["brew upgrade --cask saroj-shahi/tap/vibecheck",
                              "curl -fsSL https://raw.githubusercontent.com/saroj-shahi/vibecheck/main/scripts/install.sh | bash"])
     }
 

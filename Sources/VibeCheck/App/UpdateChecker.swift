@@ -120,7 +120,7 @@ final class UpdateChecker {
     // MARK: Updating
 
     /// VibeCheck isn't notarized, so it updates the way it was installed: from Terminal.
-    nonisolated static let brewCommand = "brew upgrade --cask vibecheck"
+    nonisolated static let brewCommand = "brew upgrade --cask saroj-shahi/tap/vibecheck"
     nonisolated static let curlCommand =
         "curl -fsSL https://raw.githubusercontent.com/saroj-shahi/vibecheck/main/scripts/install.sh | bash"
 

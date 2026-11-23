@@ -5,6 +5,8 @@
   </picture>
 </p>
 
+<p align="center"><strong>Mac health in one ring</strong></p>
+
 <p align="center"><img src="docs/screenshots/hero.png" alt="Your Mac's mood, in one little ring. Is your Mac vibing or cooked? One glance tells you. Shown beside the VibeCheck deck with live tiles for memory, network, CPU, GPU, sensors, battery, weather and AI agents." width="100%"></p>
 
 <p align="center">
@@ -105,10 +107,10 @@ and puts VibeCheck in Applications. It's short, so you can [read it first](scrip
 Then look for the ring in your menu bar (there's no Dock icon). Optional: turn on **Launch at login** in
 Settings → General.
 
-**Update:** run `brew upgrade --cask vibecheck`, or run the curl line again. VibeCheck tells you when a new
+**Update:** run `brew upgrade --cask saroj-shahi/tap/vibecheck`, or run the curl line again. VibeCheck tells you when a new
 version is out.
 
-**Uninstall:** run `brew uninstall --cask vibecheck` (add `--zap` to remove settings too), or
+**Uninstall:** run `brew uninstall --cask saroj-shahi/tap/vibecheck` (add `--zap` to remove settings too), or
 `curl -fsSL https://raw.githubusercontent.com/saroj-shahi/vibecheck/main/scripts/install.sh | bash -s -- --uninstall`.
 
 ## Getting started
@@ -291,7 +293,7 @@ deck says so.
 ### Updates
 
 VibeCheck checks this repository's latest release at most once a day and sends one notification per new
-version, with the command to update (`brew upgrade --cask vibecheck` or the install line). Check now from
+version, with the command to update (`brew upgrade --cask saroj-shahi/tap/vibecheck` or the install line). Check now from
 Settings → About or ⌘K → "Check for Updates", or turn the check off there.
 
 ## FAQ
@@ -334,9 +336,11 @@ build/VibeCheck.app/Contents/MacOS/VibeCheck --deck-demo   # open the deck and l
 /Applications/VibeCheck.app/Contents/MacOS/VibeCheck --login-item on   # launch at login (or off / status)
 ```
 
-**Making a release:** bump the version in `Resources/Info.plist`, then run `scripts/release.sh --zip`. It builds
-`build/release/VibeCheck.zip` and its `.sha256`, and prints the tag, `gh release create` and Homebrew cask
-lines. Tags are `v<version>`, and every release must carry `VibeCheck.zip` and `VibeCheck.zip.sha256`: the
+**Making a release:** bump the version in `Resources/Info.plist`, commit and push to `main`, then run
+`scripts/release.sh --publish`. It builds `build/release/VibeCheck.zip` and its `.sha256`, asks once, then tags
+the commit, creates the GitHub release, checks the uploaded zip and updates the cask in `saroj-shahi/homebrew-tap`
+(release notes from `VIBECHECK_RELEASE_NOTES=<file>`, or GitHub's generated ones). `--zip` builds without
+publishing. Tags are `v<version>`, and every release must carry `VibeCheck.zip` and `VibeCheck.zip.sha256`: the
 install script, the cask and the in-app update check all read those. The DMG modes (`--share`, and plain
 `scripts/release.sh` for a notarized build with a Developer ID) are kept for later.
 

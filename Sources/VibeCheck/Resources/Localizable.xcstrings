@@ -3517,6 +3517,7 @@
       }
     },
     "Is your Mac vibing or cooked?": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4085,6 +4086,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mac Vibe"
+          }
+        }
+      }
+    },
+    "Mac health in one ring": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac health in one ring"
           }
         }
       }

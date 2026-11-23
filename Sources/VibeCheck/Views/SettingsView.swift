@@ -599,7 +599,7 @@ private struct AboutSettings: View {
                         .frame(width: 96, height: 96)
                         .accessibilityHidden(true)
                     Text("VibeCheck").font(.system(size: 22, weight: .bold, design: .rounded))
-                    Text("Is your Mac vibing or cooked?").foregroundStyle(.secondary)
+                    Text("Mac health in one ring").foregroundStyle(.secondary)
                     Text("Version \(version)").font(.caption).foregroundStyle(.tertiary)
                     Link("Free software under GPL-3.0, no warranty", destination: Self.licenseURL).font(.caption)
                     Text(verbatim: "© 2026 Saroj Shahi").font(.caption).foregroundStyle(.tertiary)
