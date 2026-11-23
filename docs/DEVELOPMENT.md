@@ -119,6 +119,7 @@ Choices that shouldn't be undone without a good reason.
 | Reduce Transparency gives the deck an opaque `windowBackgroundColor` background, hairline kept | Accessibility; glass behind dense rows reads poorly with transparency reduced |
 | Launch check: if macOS hides every item ("Allow in the Menu Bar" off) at 3 s and again at 13 s, one `NSAlert` ever, opening System Settings (undocumented `com.apple.ControlCenter-Settings.extension` pane id); skipped when the menu bar is auto-hidden | Otherwise the app looks like it never launched. The notch case stays with `NotchHideWatch` |
 | `ps` / `nettop` only run while a view needs them | CPU budget |
+| Per-app memory for the verdict comes from a libproc scan once a minute (~3–4 ms off the main thread), not `ps`, and runs while the deck is closed (2026-11-23, VC-202) | The verdict needs growth over an hour even when no view is open; launching `ps` every minute would break the rule above. Growth is only claimed with 20+ min of history and at least 500 MB |
 | Charts resample every range to 120 buckets | Lets Live/1H/24H morph with one animatable shape |
 | Open-Meteo + city search, no Location permission | Free, no API key, privacy |
 | Combined item is the default for new installs; existing choices kept | Fits notched MacBooks; never override a user's choice |
