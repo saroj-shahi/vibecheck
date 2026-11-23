@@ -10,6 +10,7 @@ cask "vibecheck" do
   depends_on macos: :sonoma
 
   app "VibeCheck.app"
+  binary "#{appdir}/VibeCheck.app/Contents/Helpers/vibecheck"
 
   # Not notarized (no paid Developer ID): clear the quarantine flag Homebrew sets, or Gatekeeper blocks the app.
   postflight_steps do

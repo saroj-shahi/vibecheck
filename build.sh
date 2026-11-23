@@ -32,7 +32,7 @@ build_release() {
       -Xswiftc -emit-const-values-path -Xswiftc "$PWD/$INTENTS/VibeCheck.swiftconstvalues" \
       -Xswiftc -Xfrontend -Xswiftc -const-gather-protocols-file -Xswiftc -Xfrontend -Xswiftc "$PWD/$INTENTS/protocols.json"
     mkdir -p "$(products "$arch")"
-    cp "$(bin_path "$arch")/VibeCheck" "$(bin_path "$arch")/VibeCheckWidget" "$(products "$arch")/"
+    cp "$(bin_path "$arch")/VibeCheck" "$(bin_path "$arch")/VibeCheckWidget" "$(bin_path "$arch")/VibeCheckCLI" "$(products "$arch")/"
   done
 }
 build_release
@@ -47,6 +47,10 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 install_binary VibeCheck "$APP/Contents/MacOS/VibeCheck"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+# The `vibecheck` command line tool (Homebrew links it onto PATH). Named VibeCheckCLI while building because
+# "vibecheck" would collide with the app binary on a case-insensitive disk.
+mkdir -p "$APP/Contents/Helpers"
+install_binary VibeCheckCLI "$APP/Contents/Helpers/vibecheck"
 
 # Strings: compile Sources/VibeCheck/Resources/Localizable.xcstrings into <language>.lproj folders inside the
 # SwiftPM resource bundle (`swift build` only copies the catalog). SwiftUI's Text("…") and String(localized:) look
@@ -118,6 +122,8 @@ if [[ "$IDENTITY" == "Developer ID Application:"* || "${VIBECHECK_HARDENED:-0}" 
   SIGN_FLAGS=(--options runtime --timestamp)
 fi
 if printf '%s\n' "$IDENTITIES" | grep -qF "\"$IDENTITY\""; then
+  # Inside-out: the helper is signed before the app's final signature seals it (hardened runtime when the app has it).
+  codesign --force "${SIGN_FLAGS[@]+"${SIGN_FLAGS[@]}"}" --sign "$IDENTITY" --identifier io.github.saroj-shahi.vibecheck.cli "$APP/Contents/Helpers/vibecheck"
   # Widgets: the extension must be sandboxed and shares the app group "<Team ID>.io.github.saroj-shahi.vibecheck" with the
   # app, so it needs a Team ID; with other identities the app ships without widgets.
   if [[ "$IDENTITY" == "Apple Development:"* || "$IDENTITY" == "Developer ID Application:"* ]]; then
@@ -138,9 +144,12 @@ if printf '%s\n' "$IDENTITIES" | grep -qF "\"$IDENTITY\""; then
   fi
   echo "Signed with \"$IDENTITY\"${SIGN_FLAGS[*]+ (${SIGN_FLAGS[*]})}"
 else
+  codesign --force --sign - "$APP/Contents/Helpers/vibecheck"
   codesign --force --sign - "$APP"
   echo "Signed ad hoc (no \"$IDENTITY\" certificate)"
 fi
+codesign --verify --deep --strict "$APP"
+echo "Verified the signature"
 echo "Built $APP ($(lipo -archs "$APP/Contents/MacOS/VibeCheck"))"
 
 if [ "${1:-}" = "--install" ]; then
