@@ -16,6 +16,7 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 | `SystemStats.swift` | The tick: samples every monitor, histories, demand counters (`processDemand`, `networkAppDemand`, `sensorDemand`), vibe input, listening ports |
 | `TickPolicy.swift` | `TickPolicy` (pause reasons + Low Power + keep awake → tick interval or none), `TickGate` (ring animation follows the pause) |
 | `MenuBarVisibility.swift` | `DeckBackgroundKind` (glass / blur / opaque for Reduce Transparency), launch check that macOS isn't hiding every item |
+| `AppMemoryHistory.swift` | Per-app memory footprint once a minute (libproc, no `ps`; grouped by responsible pid, keyed with start time), ~65 min of samples for the top 15 apps, `growth` for the verdict |
 | `Vibe.swift` | Vibe score (vibing / mid / cooked) with per-module enter / exit thresholds (`VibeThresholds`), swap and fast-drain signals, the verdict sentence and its culprit module |
 | `Alerts.swift` | `AlertMetric`, `AlertRule` (sentence alerts), `AlertEngine` (evaluate, notify, history log) |
 | `KeepAwake.swift` | Sessions (`AwakeEnd`, focus sessions, triggers: power / display / downloads / `AwakeSchedule`), IOKit assertion |
@@ -63,7 +64,7 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `PortSampler` (`lso
 | `DeckView.swift` | Deck shell (header, drawn search field, live chips, footer), home (quick toggles, tiles, culprit outline), tiles' spoken labels, glass hairline |
 | `CommandPalette.swift` | ⌘K palette results, ⌘↩ action card, `KeyCap`, `Caret` |
 | `Panels.swift` | Shared panel pieces: `Panel`, `PanelHeader` (pinned by `DeckRoot`), `StatRow`, `SectionTitle`, `DetailsDisclosure`, and `ModulePanel` (module to panel switch) |
-| `ProcessList.swift` | `ProcessList` (CPU/memory top processes), quit/force-quit menu items, `ForceQuitConfirmRow` |
+| `ProcessList.swift` | `ProcessList` (CPU/memory top processes; app rows expand to their processes, 8 + "+N more"), quit/force-quit menu items, `ForceQuitConfirmRow` |
 | `CPUGPUPanels.swift` | `CPUPanel`, `GPUPanel` |
 | `MemoryPanel.swift` | `MemoryPanel` |
 | `NetworkPanel.swift` | `NetworkPanel`, `ListeningPortsSection` |

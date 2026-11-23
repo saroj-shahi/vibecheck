@@ -150,10 +150,24 @@ enum VibeScore {
         return reasons(input).first { $0.0 >= vibe }?.3
     }
 
+    /// The memory culprit by app: growth over the last hour when it's big, else who uses the most.
+    nonisolated static func memoryLine(_ app: (name: String, footprint: Double, processCount: Int, growth: Double?, minutes: Int?)) -> String {
+        if let growth = app.growth, growth >= 500_000_000, let minutes = app.minutes {
+            let span = minutes >= 55 ? String(localized: "hour") : String(localized: "\(minutes) min")
+            let label = app.processCount > 1 ? String(localized: "\(app.name) (\(app.processCount) processes)") : app.name
+            return String(localized: "\(label) grew \(Fmt.bytes(growth)) in the last \(span).")
+        }
+        return String(localized: "\(app.name) is using the most memory, \(Fmt.bytes(app.footprint)).")
+    }
+
     /// One friendly sentence for the deck header.
-    static func verdict(for vibe: Vibe, input: VibeInput, topApp: (name: String, cpu: Double)?) -> String {
-        let loudest = topApp.flatMap { app in
+    static func verdict(for vibe: Vibe, input: VibeInput, topApp: (name: String, cpu: Double)?,
+                        memoryApp: (name: String, footprint: Double, processCount: Int, growth: Double?, minutes: Int?)? = nil) -> String {
+        var loudest = topApp.flatMap { app in
             app.cpu >= 5 ? String(localized: "\(app.name) is the loudest at \(Int(app.cpu.rounded()))% CPU.") : nil
+        }
+        if vibe != .vibing, culprit(for: vibe, input: input) == .memory, let mem = memoryApp {
+            loudest = memoryLine(mem)
         }
         guard vibe != .vibing else {
             return String(localized: "Your Mac is vibing.") + " " + (loudest ?? String(localized: "Nothing's working hard."))

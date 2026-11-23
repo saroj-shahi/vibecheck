@@ -51,6 +51,16 @@
         }
       }
     },
+    "%@ (%lld processes)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ (%2$lld processes)"
+          }
+        }
+      }
+    },
     "%@ Settings…": {
       "localizations": {
         "en": {
@@ -117,6 +127,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ full, %2$@ free"
+          }
+        }
+      }
+    },
+    "%@ grew %@ in the last %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ grew %2$@ in the last %3$@."
           }
         }
       }
@@ -207,6 +227,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ is the loudest at %2$lld%% CPU."
+          }
+        }
+      }
+    },
+    "%@ is using the most memory, %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ is using the most memory, %2$@."
           }
         }
       }
@@ -654,7 +684,6 @@
       }
     },
     "%lld min": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3316,6 +3345,16 @@
         }
       }
     },
+    "Hide processes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide processes"
+          }
+        }
+      }
+    },
     "Hold alerts": {
       "localizations": {
         "en": {
@@ -5212,6 +5251,16 @@
         }
       }
     },
+    "PID %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PID %@"
+          }
+        }
+      }
+    },
     "Part of macOS": {
       "localizations": {
         "en": {
@@ -6050,6 +6099,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Show keep awake as its own item"
+          }
+        }
+      }
+    },
+    "Show processes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show processes"
           }
         }
       }
@@ -8033,6 +8092,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "hottest %@ Celsius"
+          }
+        }
+      }
+    },
+    "hour": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hour"
           }
         }
       }

@@ -55,6 +55,8 @@ final class SystemStats {
     private(set) var processes: [ProcessRow] = []
     private(set) var vibe = VibeReport(vibe: .vibing, verdict: String(localized: "Checking the vibes…"))
     @ObservationIgnored private var vibeTracker = VibeTracker()
+    @ObservationIgnored private var appMemory = AppMemoryHistory()
+    @ObservationIgnored private var scanningAppMemory = false
     /// Per-module levels from the previous sample (vibe hysteresis).
     @ObservationIgnored private var vibeHeld: [Module: Vibe] = [:]
     /// Recent swap use, to tell active swapping from swap left over from earlier.
@@ -270,6 +272,7 @@ final class SystemStats {
         if let hottest = sensors.hottest { values[.temperature] = hottest }
         if battery.present { values[.battery] = battery.percent }
         history.record(values)
+        refreshAppMemoryIfDue()
         updateVibe()
         onTick?()
 
@@ -307,6 +310,19 @@ final class SystemStats {
         swapSamples.removeAll { now.timeIntervalSince($0.date) > 60 }
     }
 
+    /// Once a minute (also with the deck closed), off the main thread; pauses with the tick.
+    private func refreshAppMemoryIfDue() {
+        guard !scanningAppMemory, appMemory.isDue() else { return }
+        scanningAppMemory = true
+        Task.detached(priority: .utility) {
+            let groups = AppMemoryHistory.scan()
+            await MainActor.run {
+                self.appMemory.record(groups, resolveName: { AppMemoryHistory.displayName($0) })
+                self.scanningAppMemory = false
+            }
+        }
+    }
+
     private func updateVibe() {
         recordSwap()
         let input = vibeInput
@@ -314,7 +330,7 @@ final class SystemStats {
         let level = vibeTracker.update(VibeScore.evaluate(input))
         // Only while a view wants processes (the list is empty otherwise).
         let top = processDemand == 0 || processes.isEmpty ? nil : topApps(by: \.cpu, limit: 1).first.map { ($0.name, $0.cpu) }
-        let report = VibeReport(vibe: level, verdict: VibeScore.verdict(for: level, input: input, topApp: top),
+        let report = VibeReport(vibe: level, verdict: VibeScore.verdict(for: level, input: input, topApp: top, memoryApp: appMemory.top()),
                                 culprit: VibeScore.culprit(for: level, input: input),
                                 badge: VibeScore.badge(for: level, input: input))
         if report != vibe { vibe = report }
@@ -436,6 +452,12 @@ final class SystemStats {
             }
     }
 
+    /// The processes inside one app (by responsible pid), biggest first by `key`; the app's own process included.
+    nonisolated static func members(of owner: Int32, in rows: [ProcessRow],
+                                    by key: KeyPath<ProcessRow, Double>) -> [ProcessRow] {
+        rows.filter { $0.responsible == owner }.sorted { $0[keyPath: key] > $1[keyPath: key] }
+    }
+
     nonisolated static func groupByApp(_ rows: [ProcessRow], appName: (Int32) -> String?) -> [AppUsage] {
         let namesByPID = Dictionary(rows.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
         return Dictionary(grouping: rows, by: \.responsible).map { owner, members in
@@ -447,9 +469,3 @@ final class SystemStats {
         }
     }
 }
-    /// The processes inside one app (by responsible pid), biggest first by `key`; the app's own process included.
-    nonisolated static func members(of owner: Int32, in rows: [ProcessRow],
-                                    by key: KeyPath<ProcessRow, Double>) -> [ProcessRow] {
-        rows.filter { $0.responsible == owner }.sorted { $0[keyPath: key] > $1[keyPath: key] }
-    }
-
