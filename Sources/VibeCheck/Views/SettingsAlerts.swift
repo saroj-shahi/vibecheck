@@ -37,6 +37,16 @@ struct AlertSettings: View {
                 Text("Click a highlighted word to change it; drag a number sideways to adjust it (hold ⌥ for fine steps). Each alert fires once, then waits until things recover and at least 5 minutes pass.")
                     .settingsFooter()
             }
+            Section {
+                Toggle("An app's memory keeps climbing", isOn: $settings.smartAlertMemoryLeak)
+                Toggle("macOS is throttling your Mac", isOn: $settings.smartAlertThrottling)
+                Toggle("The charger can't keep up", isOn: $settings.smartAlertSlowCharger)
+            } header: {
+                Text("Smart alerts")
+            } footer: {
+                Text("Built-in checks, off by default. Each one waits for the problem to last (an app grows 1 GB or more over 45 minutes and keeps climbing; throttling or a slow charger for 5 minutes) and sends at most one alert per app or problem every 2 hours.")
+                    .settingsFooter()
+            }
             AdvancedSection {
                 HStack {
                     Button("Restore Default Alerts") {

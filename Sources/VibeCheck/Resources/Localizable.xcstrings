@@ -171,6 +171,16 @@
         }
       }
     },
+    "%@ has grown %@ in the last %@ and is still climbing.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ has grown %2$@ in the last %3$@ and is still climbing."
+          }
+        }
+      }
+    },
     "%@ in use": {
       "localizations": {
         "en": {
@@ -1382,6 +1392,16 @@
         }
       }
     },
+    "An app's memory keeps climbing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An app's memory keeps climbing"
+          }
+        }
+      }
+    },
     "App memory": {
       "localizations": {
         "en": {
@@ -1418,6 +1438,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Asks your Claude Code for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access; Claude Code signs in itself."
+          }
+        }
+      }
+    },
+    "Asks your forgotten local dev servers to quit, after you confirm.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asks your forgotten local dev servers to quit, after you confirm."
           }
         }
       }
@@ -1563,12 +1593,42 @@
         }
       }
     },
+    "Built-in checks, off by default. Each one waits for the problem to last (an app grows 1 GB or more over 45 minutes and keeps climbing; throttling or a slow charger for 5 minutes) and sends at most one alert per app or problem every 2 hours.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Built-in checks, off by default. Each one waits for the problem to last (an app grows 1 GB or more over 45 minutes and keeps climbing; throttling or a slow charger for 5 minutes) and sends at most one alert per app or problem every 2 hours."
+          }
+        }
+      }
+    },
+    "Busiest Apps": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Busiest Apps"
+          }
+        }
+      }
+    },
     "Busiest projects today": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Busiest projects today"
+          }
+        }
+      }
+    },
+    "Busy app": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Busy app"
           }
         }
       }
@@ -1589,6 +1649,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "CPU"
+          }
+        }
+      }
+    },
+    "CPU %": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU %"
           }
         }
       }
@@ -2305,6 +2375,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Couldn't start."
+          }
+        }
+      }
+    },
+    "Couldn't stop %@: %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't stop %1$@: %2$@."
+          }
+        }
+      }
+    },
+    "Count": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Count"
           }
         }
       }
@@ -4079,6 +4169,16 @@
         }
       }
     },
+    "Leave empty to follow what's slowing your Mac down.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave empty to follow what's slowing your Mac down."
+          }
+        }
+      }
+    },
     "Leave empty to stay awake until you stop it.": {
       "localizations": {
         "en": {
@@ -4139,12 +4239,32 @@
         }
       }
     },
+    "List Busiest Apps": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List Busiest Apps"
+          }
+        }
+      }
+    },
     "Listening ports": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Listening ports"
+          }
+        }
+      }
+    },
+    "Lists the apps using the most CPU or memory right now, with their helper processes added in.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lists the apps using the most CPU or memory right now, with their helper processes added in."
           }
         }
       }
@@ -4320,6 +4440,16 @@
         }
       }
     },
+    "Measure": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measure"
+          }
+        }
+      }
+    },
     "Memory": {
       "comment": "Short menu bar badge",
       "localizations": {
@@ -4337,6 +4467,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Memory allocated"
+          }
+        }
+      }
+    },
+    "Memory bytes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memory bytes"
           }
         }
       }
@@ -4792,6 +4932,16 @@
         }
       }
     },
+    "No dev servers are running.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No dev servers are running."
+          }
+        }
+      }
+    },
     "No internal battery": {
       "localizations": {
         "en": {
@@ -4968,6 +5118,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Not set"
+          }
+        }
+      }
+    },
+    "Nothing is busy right now.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing is busy right now."
           }
         }
       }
@@ -6394,6 +6554,26 @@
         }
       }
     },
+    "Slow charger": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slow charger"
+          }
+        }
+      }
+    },
+    "Smart alerts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smart alerts"
+          }
+        }
+      }
+    },
     "Snippets come first in ⌘K's clipboard results and are kept even with history off. Pin a text copy with ⌘↩ in ⌘K.": {
       "localizations": {
         "en": {
@@ -6634,6 +6814,36 @@
         }
       }
     },
+    "Stop %lld dev servers: %@?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop %1$lld dev servers: %2$@?"
+          }
+        }
+      }
+    },
+    "Stop 1 dev server: %@?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop 1 dev server: %@?"
+          }
+        }
+      }
+    },
+    "Stop Dev Servers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop Dev Servers"
+          }
+        }
+      }
+    },
     "Stop Keeping Awake": {
       "localizations": {
         "en": {
@@ -6650,6 +6860,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stop keeping awake"
+          }
+        }
+      }
+    },
+    "Stopped %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stopped %@."
           }
         }
       }
@@ -6904,6 +7124,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "The battery got low."
+          }
+        }
+      }
+    },
+    "The charger can't keep up": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The charger can't keep up"
           }
         }
       }
@@ -8062,6 +8292,16 @@
         }
       }
     },
+    "Your %lld W charger can't keep up. The battery is still draining while plugged in.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your %lld W charger can't keep up. The battery is still draining while plugged in."
+          }
+        }
+      }
+    },
     "Your Mac got cooked %@ this week.": {
       "localizations": {
         "en": {
@@ -8379,6 +8619,16 @@
         }
       }
     },
+    "macOS has been throttling your Mac for %lld min to cool it down.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS has been throttling your Mac for %lld min to cool it down."
+          }
+        }
+      }
+    },
     "macOS is blocking VibeCheck from reading the clipboard, so nothing is recorded. Allow it in System Settings → Privacy & Security → Paste from Other Apps.": {
       "localizations": {
         "en": {
@@ -8417,6 +8667,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "macOS is throttling to cool down"
+          }
+        }
+      }
+    },
+    "macOS is throttling your Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS is throttling your Mac"
           }
         }
       }

@@ -119,6 +119,129 @@ struct AlertRule: Codable, Identifiable, Equatable {
     }
 }
 
+// MARK: - Smart alerts
+
+enum SmartAlertKind: String, CaseIterable, Sendable {
+    case memoryLeak, throttling, slowCharger
+
+    var title: String {
+        switch self {
+        case .memoryLeak: String(localized: "App memory")
+        case .throttling: String(localized: "Throttling")
+        case .slowCharger: String(localized: "Slow charger")
+        }
+    }
+}
+
+struct SmartAlertToggles: Equatable, Sendable {
+    var memoryLeak = false, throttling = false, slowCharger = false
+}
+
+struct SmartAlert: Equatable, Sendable {
+    let kind: SmartAlertKind
+    let culprit: String?     // the app, or nil for "system"
+    let title: String
+    let body: String
+}
+
+/// At most one alert per (kind, culprit app or "system") per 2 hours.
+struct AlertRateLimiter: Sendable {
+    static let interval: TimeInterval = 2 * 3600
+    private var last: [String: Date] = [:]
+
+    /// True (and remembered) when this alert may be sent now.
+    mutating func allow(_ kind: SmartAlertKind, culprit: String?, now: Date) -> Bool {
+        let key = "\(kind.rawValue)|\(culprit ?? "system")"
+        if let previous = last[key], now.timeIntervalSince(previous) < Self.interval, now >= previous { return false }
+        last[key] = now
+        return true
+    }
+}
+
+/// How long a condition has held without a break.
+struct ConditionTimer: Sendable {
+    private var since: Date?
+    private var lastSeen: Date?
+    /// A longer gap between checks (sleep, lock, a paused tick) means nobody saw the condition hold.
+    static let maxGap: TimeInterval = 75 // ticks are at most 30 s apart while awake
+
+    /// Seconds the condition has held, or nil when it doesn't hold now (which also resets it).
+    mutating func update(_ active: Bool, now: Date) -> TimeInterval? {
+        defer { lastSeen = now }
+        guard active else { since = nil; return nil }
+        if let lastSeen, now.timeIntervalSince(lastSeen) > Self.maxGap { since = nil }
+        if since == nil { since = now }
+        return now.timeIntervalSince(since ?? now)
+    }
+}
+
+struct SmartAlertInput {
+    var memoryTracks: [AppMemoryKey: AppMemoryTrack] = [:]
+    var thermalSerious = false
+    /// The charger's rated watts while it is too slow to keep up (nil otherwise).
+    var slowChargerWatts: Int?
+}
+
+struct SmartAlertState: Sendable {
+    static let sustained: TimeInterval = 300
+    static let leakBytes = 1_000_000_000.0
+    static let leakMinutes = 45
+
+    private var throttle = ConditionTimer()
+    private var charger = ConditionTimer()
+    private var limiter = AlertRateLimiter()
+
+    /// Apps that grew at least 1 GB over at least 45 minutes and are still climbing.
+    nonisolated static func leaks(in tracks: [AppMemoryKey: AppMemoryTrack], now: Date) -> [(name: String, bytes: Double, minutes: Int)] {
+        tracks.values.compactMap { track in
+            guard let last = track.samples.last, now.timeIntervalSince(last.date) <= AppMemoryHistory.interval * 3,
+                  let g = AppMemoryHistory.growth(track.samples, now: now),
+                  g.bytes >= leakBytes, g.minutes >= leakMinutes, isStillClimbing(track.samples) else { return nil }
+            return (track.name, g.bytes, g.minutes)
+        }.sorted { $0.bytes > $1.bytes }
+    }
+
+    /// The last three ten-minute steps are each non-decreasing (needs a sample near each of the four points).
+    nonisolated static func isStillClimbing(_ samples: [AppMemorySample]) -> Bool {
+        guard let last = samples.last else { return false }
+        var previous: Double?
+        for step in 0...3 {
+            let target = last.date.addingTimeInterval(-Double(step) * 600)
+            guard let near = samples.min(by: { abs($0.date.timeIntervalSince(target)) < abs($1.date.timeIntervalSince(target)) }),
+                  abs(near.date.timeIntervalSince(target)) <= 120 else { return false }
+            // Going back in time, each reading must not be above the later one.
+            if let previous, near.footprint > previous { return false }
+            previous = near.footprint
+        }
+        return true
+    }
+
+    /// Alerts that are due now. Timers of switched-off alerts are reset.
+    mutating func evaluate(_ input: SmartAlertInput, enabled: SmartAlertToggles, now: Date) -> [SmartAlert] {
+        var result: [SmartAlert] = []
+        let title = { (kind: SmartAlertKind) in String(localized: "VibeCheck · \(kind.title)") }
+
+        if enabled.memoryLeak {
+            for leak in Self.leaks(in: input.memoryTracks, now: now) where limiter.allow(.memoryLeak, culprit: leak.name, now: now) {
+                let span = leak.minutes >= 55 ? String(localized: "hour") : String(localized: "\(leak.minutes) min")
+                result.append(SmartAlert(kind: .memoryLeak, culprit: leak.name, title: title(.memoryLeak),
+                                         body: String(localized: "\(leak.name) has grown \(Fmt.bytes(leak.bytes)) in the last \(span) and is still climbing.")))
+            }
+        }
+        let hot = throttle.update(enabled.throttling && input.thermalSerious, now: now)
+        if let hot, hot >= Self.sustained, limiter.allow(.throttling, culprit: nil, now: now) {
+            result.append(SmartAlert(kind: .throttling, culprit: nil, title: title(.throttling),
+                                     body: String(localized: "macOS has been throttling your Mac for \(Int(hot / 60)) min to cool it down.")))
+        }
+        let slow = charger.update(enabled.slowCharger && input.slowChargerWatts != nil, now: now)
+        if let slow, slow >= Self.sustained, let watts = input.slowChargerWatts, limiter.allow(.slowCharger, culprit: nil, now: now) {
+            result.append(SmartAlert(kind: .slowCharger, culprit: nil, title: title(.slowCharger),
+                                     body: String(localized: "Your \(watts) W charger can't keep up. The battery is still draining while plugged in.")))
+        }
+        return result
+    }
+}
+
 /// Checks every enabled rule each tick and posts a notification when one has held long enough.
 /// A rule fires once, then re-arms after the condition clears (with a cooldown to avoid flapping).
 @MainActor
@@ -127,6 +250,7 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
     private var fired: Set<UUID> = []
     private var lastFired: [UUID: Date] = [:]
     private var askedPermission = false
+    private var smart = SmartAlertState()
     private let cooldown: TimeInterval = 300
     /// Notifications need a real app bundle; the debug binary and tests just log instead.
     private let canNotify = Bundle.main.bundleIdentifier != nil
@@ -205,6 +329,25 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
     func evaluate(_ rules: [AlertRule], stats: SystemStats, now: Date = Date()) {
         evaluate(rules, now: now, detail: { $0 == .accessoryBattery ? Self.lowestAccessory(in: stats.devices)?.name : nil },
                  value: { Self.value(for: $0, in: stats) })
+        evaluateSmart(SmartAlertInput(memoryTracks: stats.appMemoryTracks,
+                                      thermalSerious: ProcessInfo.processInfo.thermalState.rawValue >= ProcessInfo.ThermalState.serious.rawValue,
+                                      slowChargerWatts: BatteryMonitor.isChargingSlowly(stats.battery) ? stats.battery.chargerWatts : nil),
+                      enabled: AppSettings.shared.smartAlertToggles, now: now)
+    }
+
+    /// The built-in smart alerts. Delivery matches the sentence rules: held during calls, logged to history.
+    func evaluateSmart(_ input: SmartAlertInput, enabled: SmartAlertToggles, now: Date = Date()) {
+        if enabled != SmartAlertToggles() { requestPermissionIfNeeded() }
+        flushHeld()
+        let calling = inCall()
+        for alert in smart.evaluate(input, enabled: enabled, now: now) {
+            if calling {
+                held.append((alert.title, alert.body, now))
+                continue
+            }
+            post(title: alert.title, body: alert.body)
+            log?.record(.alert, title: alert.title, body: alert.body, at: now)
+        }
     }
 
     /// `detail` optionally names the source of a metric's reading (the accessory) for the notification text.
