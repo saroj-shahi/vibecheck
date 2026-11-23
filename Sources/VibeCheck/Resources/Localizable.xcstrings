@@ -4951,6 +4951,16 @@
         }
       }
     },
+    "New in 1.6: dev servers, a 30-day vibe timeline and Vibe Card. Press ⌘K to find them.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New in 1.6: dev servers, a 30-day vibe timeline and Vibe Card. Press ⌘K to find them."
+          }
+        }
+      }
+    },
     "New snippet": {
       "localizations": {
         "en": {
@@ -7629,6 +7639,7 @@
       }
     },
     "Tip: hold the cup to set a keep-awake time. Press ⌘K to search commands.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {

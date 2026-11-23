@@ -587,7 +587,7 @@ private struct AboutSettings: View {
     }
 
     private var version: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.5"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.6"
     }
 
     @ViewBuilder private var updateStatus: some View {

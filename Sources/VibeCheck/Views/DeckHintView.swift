@@ -3,7 +3,7 @@ import SwiftUI
 /// One dismissible line on the deck home, shown once per app version (stored by CFBundleShortVersionString).
 enum DeckHint {
     static let seenKey = "deckHintSeenVersion"
-    static var text: String { String(localized: "Tip: hold the cup to set a keep-awake time. Press ⌘K to search commands.") }
+    static var text: String { String(localized: "New in 1.6: dev servers, a 30-day vibe timeline and Vibe Card. Press ⌘K to find them.") }
 
     static var currentVersion: String? {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
