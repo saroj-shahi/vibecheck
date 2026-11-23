@@ -223,6 +223,10 @@ final class AppSettings {
     var findCursorHotkey: Bool {
         didSet { save(findCursorHotkey, "findCursorHotkey", structural: true) }
     }
+    /// Opt-in: "Explain my Mac" in ⌘K, using Apple's on-device model (see `OnDeviceExplainer`).
+    var onDeviceExplanations: Bool {
+        didSet { save(onDeviceExplanations, "onDeviceExplanations", structural: false) }
+    }
     /// Built-in smart alerts (off by default).
     var smartAlertMemoryLeak: Bool {
         didSet { save(smartAlertMemoryLeak, "smartAlertMemoryLeak", structural: false) }
@@ -283,6 +287,7 @@ final class AppSettings {
         clock = ClockGroup(defaults: defaults)
         weather = WeatherGroup(defaults: defaults)
         keepAwake = KeepAwakeGroup(defaults: defaults)
+        onDeviceExplanations = defaults.bool(forKey: "onDeviceExplanations")
         smartAlertMemoryLeak = defaults.bool(forKey: "smartAlertMemoryLeak")
         smartAlertThrottling = defaults.bool(forKey: "smartAlertThrottling")
         smartAlertSlowCharger = defaults.bool(forKey: "smartAlertSlowCharger")

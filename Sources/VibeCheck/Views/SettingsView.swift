@@ -501,6 +501,7 @@ private struct GeneralSettings: View {
                 Text("A row for microphone mute. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time.")
                     .settingsFooter()
             }
+            ExplainSettingRow()
             AdvancedSection {
                 Picker("Update every", selection: $settings.refreshInterval) {
                     Text("1 second").tag(1.0)
@@ -514,6 +515,31 @@ private struct GeneralSettings: View {
             }
         }
         .settingsForm()
+    }
+}
+
+/// "On-device explanations": shown only when the system model is usable, or disabled with a reason when fixable.
+private struct ExplainSettingRow: View {
+    @Environment(AppSettings.self) private var settings
+
+    var body: some View {
+        @Bindable var settings = settings
+        switch OnDeviceExplainer.toggleState(for: OnDeviceExplainer.availability()) {
+        case .hidden:
+            EmptyView()
+        case .enabled:
+            Section {
+                Toggle("On-device explanations", isOn: $settings.onDeviceExplanations)
+            } footer: {
+                Text("Uses Apple's on-device model. Nothing leaves your Mac.").settingsFooter()
+            }
+        case .disabled(let reason):
+            Section {
+                Toggle("On-device explanations", isOn: .constant(false)).disabled(true)
+            } footer: {
+                Text(reason).settingsFooter()
+            }
+        }
     }
 }
 

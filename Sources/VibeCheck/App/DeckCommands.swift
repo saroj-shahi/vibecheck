@@ -87,6 +87,14 @@ enum DeckCommands {
             })
         }
 
+        if settings.onDeviceExplanations, OnDeviceExplainer.availability() == .available {
+            list.append(DeckCommand(id: "explain.mac", title: String(localized: "Explain my Mac"), symbol: "sparkles",
+                                    keywords: "why slow vibe explain apple intelligence what is wrong") {
+                model.go(.home)
+                model.closePalette()
+                ExplainCard.shared.start(stats: stats)
+            })
+        }
         list.append(contentsOf: processCommands(stats: stats, model: model))
         list.append(DeckCommand(id: "cursor.find", title: String(localized: "Find my cursor"), symbol: "cursorarrow.rays",
                                 keywords: "mouse pointer locate where highlight", settingsSection: .shortcuts) {

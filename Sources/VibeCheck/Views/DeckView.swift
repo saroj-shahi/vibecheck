@@ -408,6 +408,7 @@ struct DeckHome: View {
         } else {
             DeckHintView()
         }
+        ExplainCardView()
         if showQuickToggles {
             QuickTogglesView()
         }
