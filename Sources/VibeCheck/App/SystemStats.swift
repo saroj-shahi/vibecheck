@@ -447,3 +447,9 @@ final class SystemStats {
         }
     }
 }
+    /// The processes inside one app (by responsible pid), biggest first by `key`; the app's own process included.
+    nonisolated static func members(of owner: Int32, in rows: [ProcessRow],
+                                    by key: KeyPath<ProcessRow, Double>) -> [ProcessRow] {
+        rows.filter { $0.responsible == owner }.sorted { $0[keyPath: key] > $1[keyPath: key] }
+    }
+

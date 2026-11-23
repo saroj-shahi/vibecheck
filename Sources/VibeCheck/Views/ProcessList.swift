@@ -10,6 +10,10 @@ struct ProcessList: View {
     /// Short result shown in a row after a failed quit.
     @State private var notice: (pid: Int32, text: String)?
     @State private var noticeClear: Task<Void, Never>?
+    /// The app (responsible pid) whose processes are shown; one at a time.
+    @State private var expandedApp: Int32?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private static let memberCap = 8
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -27,9 +31,27 @@ struct ProcessList: View {
             } else if byApp {
                 let apps = metric == .cpu ? stats.topApps(by: \.cpu) : stats.topApps(by: \.memory)
                 ForEach(apps) { app in
-                    row(pid: app.id, name: app.name, detail: app.processCount > 1 ? "\(app.processCount)" : nil,
+                    let expandable = app.processCount > 1
+                    let expanded = expandable && expandedApp == app.id
+                    row(pid: app.id, name: app.name, detail: expandable ? "\(app.processCount)" : nil,
                         value: value(cpu: app.cpu, memory: app.memory),
-                        icon: NSRunningApplication(processIdentifier: app.id)?.icon)
+                        icon: NSRunningApplication(processIdentifier: app.id)?.icon,
+                        expansion: expandable ? expanded : nil)
+                    if expanded {
+                        // The app's own process is the row above; list only what's inside it.
+                        let members = (metric == .cpu
+                            ? SystemStats.members(of: app.id, in: stats.processes, by: \.cpu)
+                            : SystemStats.members(of: app.id, in: stats.processes, by: \.memory)).filter { $0.id != app.id }
+                        ForEach(members.prefix(Self.memberCap)) { member in
+                            row(pid: member.id, name: member.name, detail: "\(member.id)",
+                                value: value(cpu: member.cpu, memory: member.memory), icon: nil, isMember: true)
+                        }
+                        if members.count > Self.memberCap {
+                            Text("+\(members.count - Self.memberCap) more")
+                                .font(.caption).foregroundStyle(.tertiary)
+                                .padding(.leading, 38)
+                        }
+                    }
                 }
             } else {
                 let rows = metric == .cpu ? stats.topProcesses(by: \.cpu) : stats.topProcesses(by: \.memory)
@@ -39,7 +61,26 @@ struct ProcessList: View {
                 }
             }
         }
-        .onChange(of: byApp) { confirming = nil; notice = nil }
+        .onChange(of: byApp) { confirming = nil; notice = nil; expandedApp = nil }
+        .onChange(of: listedAppIDs) { collapseIfGone() }
+    }
+
+    /// Which apps are listed now; any change may mean the open one dropped out.
+    private var listedAppIDs: [Int32] {
+        guard byApp, expandedApp != nil else { return [] }
+        return (metric == .cpu ? stats.topApps(by: \.cpu) : stats.topApps(by: \.memory)).map(\.id)
+    }
+
+    /// Collapses the open app once it's no longer one of the listed apps.
+    private func collapseIfGone() {
+        guard let expandedApp else { return }
+        let apps = metric == .cpu ? stats.topApps(by: \.cpu) : stats.topApps(by: \.memory)
+        if !byApp || !apps.contains(where: { $0.id == expandedApp && $0.processCount > 1 }) { self.expandedApp = nil }
+    }
+
+    private func toggle(_ pid: Int32) {
+        let change = { expandedApp = expandedApp == pid ? nil : pid }
+        if reduceMotion { change() } else { withAnimation(.easeOut(duration: 0.12)) { change() } }
     }
 
     private func value(cpu: Double, memory: Double) -> String {
@@ -47,13 +88,22 @@ struct ProcessList: View {
     }
 
     @ViewBuilder
-    private func row(pid: Int32, name: String, detail: String?, value: String, icon: NSImage?) -> some View {
+    private func row(pid: Int32, name: String, detail: String?, value: String, icon: NSImage?,
+                     expansion: Bool? = nil, isMember: Bool = false) -> some View {
         if let confirming, confirming.target.pid == pid, Date().timeIntervalSince(confirming.asked) < 20,
            ProcessKiller.identity(of: pid) == confirming.target {
             confirmRow(confirming, name: name)
         } else {
             HStack(spacing: 6) {
-                if byApp {
+                if let expansion {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .semibold)).foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(expansion ? 90 : 0))
+                        .frame(width: 10)
+                } else if byApp && !isMember {
+                    Color.clear.frame(width: 10, height: 1)
+                }
+                if byApp && !isMember {
                     Group {
                         if let icon { Image(nsImage: icon).resizable() }
                         else { Image(systemName: "gearshape").foregroundStyle(.tertiary) }
@@ -61,7 +111,9 @@ struct ProcessList: View {
                     .frame(width: 16, height: 16)
                 }
                 Text(name).lineLimit(1).truncationMode(.middle)
-                if let detail {
+                if let detail, isMember {
+                    Text("PID \(detail)").font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+                } else if let detail {
                     Text(detail)
                         .font(.caption2).foregroundStyle(.secondary)
                         .padding(.horizontal, 4)
@@ -75,8 +127,11 @@ struct ProcessList: View {
                     Text(value).monospacedDigit().foregroundStyle(.secondary)
                 }
             }
-            .font(.callout)
+            .font(isMember ? .caption : .callout)
+            .padding(.leading, isMember ? 28 : 0)
             .contentShape(Rectangle())
+            .onTapGesture { if expansion != nil { toggle(pid) } }
+            .accessibilityHint(expansion == nil ? "" : (expansion == true ? "Hide processes" : "Show processes"))
             .contextMenu { menu(pid: pid, name: name) }
             .modifier(QuitAccessibility(pid: pid, actions: { menu(pid: pid, name: name) }))
         }
