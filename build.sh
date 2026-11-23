@@ -28,9 +28,13 @@ build_release() {
   local arch
   for arch in "${ARCHS[@]}"; do
     # The const values don't depend on the architecture, so each build may overwrite the same file.
-    swift build -c release --arch "$arch" \
+    # Every module compiled with these flags writes to that one path and the last one wins, so only the app's
+    # product gets them; the widget and the CLI build separately without (else the CLI can overwrite them with []).
+    swift build -c release --arch "$arch" --product VibeCheck \
       -Xswiftc -emit-const-values-path -Xswiftc "$PWD/$INTENTS/VibeCheck.swiftconstvalues" \
       -Xswiftc -Xfrontend -Xswiftc -const-gather-protocols-file -Xswiftc -Xfrontend -Xswiftc "$PWD/$INTENTS/protocols.json"
+    swift build -c release --arch "$arch" --product VibeCheckWidget
+    swift build -c release --arch "$arch" --product VibeCheckCLI
     mkdir -p "$(products "$arch")"
     cp "$(bin_path "$arch")/VibeCheck" "$(bin_path "$arch")/VibeCheckWidget" "$(bin_path "$arch")/VibeCheckCLI" "$(products "$arch")/"
   done
