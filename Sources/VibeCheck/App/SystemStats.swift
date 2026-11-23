@@ -55,6 +55,10 @@ final class SystemStats {
     private(set) var processes: [ProcessRow] = []
     private(set) var vibe = VibeReport(vibe: .vibing, verdict: String(localized: "Checking the vibes…"))
     @ObservationIgnored private var vibeTracker = VibeTracker()
+    /// Per-module levels from the previous sample (vibe hysteresis).
+    @ObservationIgnored private var vibeHeld: [Module: Vibe] = [:]
+    /// Recent swap use, to tell active swapping from swap left over from earlier.
+    @ObservationIgnored private var swapSamples: [(date: Date, used: Double)] = []
     @ObservationIgnored var refreshInterval: TimeInterval = 2
     private(set) var networkApps: [AppNetworkUsage] = []
     @ObservationIgnored private var fetchingNetworkApps = false
@@ -286,11 +290,27 @@ final class SystemStats {
             hottest: sensors.hottest,
             startupDiskFree: startup.map { 1 - $0.usage },
             batteryOnBattery: battery.present && !battery.onAC ? battery.percent : nil,
-            thermalState: thermalState)
+            thermalState: thermalState,
+            swapGrowth: Self.swapGrowth(swapSamples),
+            batteryMinutesLeft: battery.present && !battery.onAC && !battery.isCharging ? battery.minutesRemaining : nil,
+            held: vibeHeld)
+    }
+
+    /// Swap added between the oldest and newest sample (the last ~60 s); 0 when flat or shrinking.
+    nonisolated static func swapGrowth(_ samples: [(date: Date, used: Double)]) -> Double {
+        guard let first = samples.first, let last = samples.last else { return 0 }
+        return max(0, last.used - first.used)
+    }
+
+    private func recordSwap(now: Date = Date()) {
+        swapSamples.append((now, memory.swapUsed))
+        swapSamples.removeAll { now.timeIntervalSince($0.date) > 60 }
     }
 
     private func updateVibe() {
+        recordSwap()
         let input = vibeInput
+        vibeHeld = VibeScore.held(input)
         let level = vibeTracker.update(VibeScore.evaluate(input))
         // Only while a view wants processes (the list is empty otherwise).
         let top = processDemand == 0 || processes.isEmpty ? nil : topApps(by: \.cpu, limit: 1).first.map { ($0.name, $0.cpu) }

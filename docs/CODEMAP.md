@@ -16,7 +16,7 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 | `SystemStats.swift` | The tick: samples every monitor, histories, demand counters (`processDemand`, `networkAppDemand`, `sensorDemand`), vibe input, listening ports |
 | `TickPolicy.swift` | `TickPolicy` (pause reasons + Low Power + keep awake → tick interval or none), `TickGate` (ring animation follows the pause) |
 | `MenuBarVisibility.swift` | `DeckBackgroundKind` (glass / blur / opaque for Reduce Transparency), launch check that macOS isn't hiding every item |
-| `Vibe.swift` | Vibe score (vibing / mid / cooked), the verdict sentence and its culprit module |
+| `Vibe.swift` | Vibe score (vibing / mid / cooked) with per-module enter / exit thresholds (`VibeThresholds`), swap and fast-drain signals, the verdict sentence and its culprit module |
 | `Alerts.swift` | `AlertMetric`, `AlertRule` (sentence alerts), `AlertEngine` (evaluate, notify, history log) |
 | `KeepAwake.swift` | Sessions (`AwakeEnd`, focus sessions, triggers: power / display / downloads / `AwakeSchedule`), IOKit assertion |
 | `CallGuard.swift` | Call detection (camera/mic in use via CoreMediaIO/CoreAudio), debounce, held alerts, heavy-app warning |
