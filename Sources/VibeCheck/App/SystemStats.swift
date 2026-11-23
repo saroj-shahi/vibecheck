@@ -113,16 +113,102 @@ final class SystemStats {
     private var tickCount = 0
     private var fetchingProcesses = false
 
+    @ObservationIgnored private var baseInterval: TimeInterval = 2
+    @ObservationIgnored private var suspendReasons: Set<TickSuspendReason> = []
+    @ObservationIgnored private var observersInstalled = false
+
     func start(interval: TimeInterval) {
-        refreshInterval = interval
-        timer?.invalidate()
+        // Called on every settings change; only a new interval (or no timer yet) needs a new timer.
+        let unchanged = interval == baseInterval && observersInstalled
+        baseInterval = interval
+        installObserversIfNeeded()
         if tickCount == 0 { tick() }
+        if unchanged, timer != nil || !suspendReasons.isEmpty { return }
+        reschedule()
+    }
+
+    /// Someone is clicking VibeCheck, so nothing can be asleep or locked: a safety net for a missed
+    /// wake / unlock notification, which would otherwise leave the tick stopped.
+    func userIsHere() {
+        guard !suspendReasons.isEmpty else { return }
+        suspendReasons.removeAll()
+        resumed()
+    }
+
+    /// Lock and console state from the window server, not from notification pairing (distributed
+    /// notifications can be dropped). Run on every wake, unlock and session switch back.
+    private func resyncSession() {
+        let dict = CGSessionCopyCurrentDictionary() as? [String: Any] ?? [:]
+        let wasSuspended = !suspendReasons.isEmpty
+        if dict["CGSSessionScreenIsLocked"] as? Bool ?? false { suspendReasons.insert(.screenLocked) }
+        else { suspendReasons.remove(.screenLocked) }
+        if dict[kCGSessionOnConsoleKey as String] as? Bool ?? true { suspendReasons.remove(.sessionInactive) }
+        else { suspendReasons.insert(.sessionInactive) }
+        reschedule()
+        if wasSuspended, suspendReasons.isEmpty { resumed() }
+    }
+
+    /// Back from a pause: forget the pre-pause app traffic timestamp and take fresh numbers now.
+    private func resumed() {
+        lastNetworkAppSample = nil
+        reschedule()
+        tick()
+    }
+
+    /// (Re)creates the timer for the current reasons, Low Power Mode and keep-awake state.
+    private func reschedule() {
+        timer?.invalidate()
+        timer = nil
+        let interval = TickPolicy.interval(base: baseInterval, reasons: suspendReasons,
+                                           lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled,
+                                           keepAwakeSession: KeepAwake.shared.isActive)
+        TickGate.set(interval == nil)
+        guard let interval else { return }
+        refreshInterval = interval
         let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
         }
         timer.tolerance = interval * 0.1
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
+    }
+
+    private func setReason(_ reason: TickSuspendReason, _ on: Bool) {
+        let wasSuspended = !suspendReasons.isEmpty
+        if on { suspendReasons.insert(reason) } else { suspendReasons.remove(reason) }
+        if !on { resyncSession(); return } // also clears a lock / switch whose own "off" was missed
+        reschedule()
+        if wasSuspended, suspendReasons.isEmpty { resumed() }
+    }
+
+    private func installObserversIfNeeded() {
+        guard !observersInstalled else { return }
+        observersInstalled = true
+        let workspace = NSWorkspace.shared.notificationCenter
+        let distributed = DistributedNotificationCenter.default()
+        let pairs: [(NotificationCenter, Notification.Name, TickSuspendReason, Bool)] = [
+            (workspace, NSWorkspace.screensDidSleepNotification, .displayAsleep, true),
+            (workspace, NSWorkspace.screensDidWakeNotification, .displayAsleep, false),
+            (workspace, NSWorkspace.sessionDidResignActiveNotification, .sessionInactive, true),
+            (workspace, NSWorkspace.sessionDidBecomeActiveNotification, .sessionInactive, false),
+            (distributed, Notification.Name("com.apple.screenIsLocked"), .screenLocked, true),
+            (distributed, Notification.Name("com.apple.screenIsUnlocked"), .screenLocked, false),
+        ]
+        for (center, name, reason, on) in pairs {
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.setReason(reason, on) }
+            }
+        }
+        workspace.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.resyncSession() }
+        }
+        // Low Power Mode changes the pace; a keep-awake session starting or ending changes whether a pause may fully stop.
+        NotificationCenter.default.addObserver(forName: .NSProcessInfoPowerStateDidChange, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.reschedule() }
+        }
+        NotificationCenter.default.addObserver(forName: .vibeCheckKeepAwakeChanged, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.reschedule() }
+        }
     }
 
     private func tick() {
@@ -267,9 +353,10 @@ final class SystemStats {
             self.networkApps = NetworkAppSampler.groupByApp(rows) { NSRunningApplication(processIdentifier: $0)?.localizedName }
             let now = Date()
             // History only grows while the panel is open (that's when nettop runs).
-            let seconds = min(self.lastNetworkAppSample.map { now.timeIntervalSince($0) } ?? 1, 5)
+            let gap = self.lastNetworkAppSample.map { now.timeIntervalSince($0) } ?? 1
             self.lastNetworkAppSample = now
-            self.appTraffic.record(self.networkApps, seconds: seconds, now: now)
+            // After a pause the gap says nothing about the rate; skip that one sample rather than guess.
+            if gap <= 10 { self.appTraffic.record(self.networkApps, seconds: min(gap, 5), now: now) }
             self.fetchingNetworkApps = false
         }
     }

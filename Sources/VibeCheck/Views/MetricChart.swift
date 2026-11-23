@@ -194,7 +194,7 @@ struct MetricChart: View {
     @State private var hoverBucket: Int?
 
     private var range: HistoryRange { HistoryRange(rawValue: rangeRaw) ?? .live }
-    private var liveSpan: TimeInterval { Double(SystemStats.historyLength) * settings.refreshInterval }
+    private var liveSpan: TimeInterval { Double(SystemStats.historyLength) * stats.refreshInterval }
 
     var body: some View {
         let data = resampled()

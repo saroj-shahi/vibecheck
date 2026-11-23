@@ -291,6 +291,7 @@ final class DeckController: NSObject {
             context.duration = Deck.reduceMotion ? 0 : 0.12
             panel.animator().alphaValue = 0
         }, completionHandler: {
+        stats.userIsHere()
             MainActor.assumeIsolated {
                 guard self.generation == closing else { return }
                 panel.orderOut(nil)

@@ -198,7 +198,21 @@ final class WobbleRingView: NSView {
     }
 
     private func startIfNeeded() {
-        guard timer == nil, window != nil, frames.count > 1 else { return }
+        observeGate()
+        guard timer == nil, window != nil, frames.count > 1, !TickGate.isSuspended else { return }
+    @ObservationIgnored private var gateObserver: NSObjectProtocol?
+
+    /// Follows the tick: nobody is looking while the display sleeps or the Mac is locked.
+    private func observeGate() {
+        guard gateObserver == nil else { return }
+        gateObserver = NotificationCenter.default.addObserver(forName: .vibeCheckTickSuspendedChanged, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                if TickGate.isSuspended { self.stop() } else { self.startIfNeeded() }
+            }
+        }
+    }
+
         let timer = Timer(timeInterval: 1 / Self.framesPerSecond, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.advance() }
         }
