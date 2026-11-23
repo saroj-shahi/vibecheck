@@ -318,18 +318,30 @@ final class DeckController: NSObject {
         // so the frame must be applied after it is on screen.
         panel.alphaValue = 0
         panel.makeKeyAndOrderFront(nil)
+        // The window shadow is traced from the drawn pixels once and then kept. Taken while the window was
+        // still invisible or mid-fade, it showed as a square dark outline around the rounded glass, so it is
+        // recomputed once the deck has its final frame and is fully drawn (and once more on the next pass,
+        // after the glass has rendered its rounded edge).
+        let panel = self.panel
+        let refreshShadow: @MainActor @Sendable () -> Void = {
+            panel.invalidateShadow()
+            DispatchQueue.main.async { MainActor.assumeIsolated { panel.invalidateShadow() } }
+        }
         if Deck.reduceMotion {
             panel.setFrame(final, display: true)
             panel.alphaValue = 1
+            refreshShadow()
         } else {
             // Drop in from 6 pt above with a quick fade (≈ spring response 0.28, damping 0.9).
             panel.setFrame(final.offsetBy(dx: 0, dy: 6), display: true)
-            NSAnimationContext.runAnimationGroup { context in
+            NSAnimationContext.runAnimationGroup({ context in
                 context.duration = 0.22
                 context.timingFunction = Deck.resizeCurve
                 panel.animator().setFrame(final, display: true)
                 panel.animator().alphaValue = 1
-            }
+            }, completionHandler: {
+                MainActor.assumeIsolated { refreshShadow() }
+            })
         }
         installMonitors()
         updateSamplerDemand()
