@@ -59,6 +59,19 @@ final class DeckModel {
     /// A command that asked for a second ↩ (Quit); cleared by any other key or selection change.
     var paletteConfirmID: String?
     var paletteOpen: Bool { paletteQuery != nil }
+    /// A short line in the footer ("Copied. Press ⌘V to paste."), then the deck closes.
+    private(set) var notice: String?
+
+    func clearNotice() { notice = nil }
+
+    func showNotice(_ text: String) {
+        notice = text
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { [weak self] in
+            guard let self, self.notice == text else { return }
+            self.notice = nil
+            self.requestClose?()
+        }
+    }
 
     func openPalette(_ query: String = "") {
         withAnimation(Deck.reduceMotion ? nil : .easeOut(duration: 0.15)) { paletteQuery = query }
@@ -270,6 +283,7 @@ final class DeckController: NSObject {
         guard isVisible else { return }
         removeMonitors()
         model.closePalette()
+        model.clearNotice()
         generation += 1
         let closing = generation
         let panel = self.panel

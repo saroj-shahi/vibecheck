@@ -4,13 +4,13 @@ import UniformTypeIdentifiers
 
 /// A page of the Settings window. App-wide pages first, then one page per module.
 enum SettingsSection: Hashable, Identifiable {
-    case general, menuBar, keepAwake, alerts, shortcuts, backup, about, support
+    case general, menuBar, keepAwake, clipboard, alerts, shortcuts, backup, about, support
     case module(Module)
 
     /// The sidebar, top to bottom: app pages, then monitors, then extras (like
     /// System Settings: general things first, then one row per thing you can configure).
     static let groups: [SettingsGroup] = [
-        SettingsGroup(title: nil, sections: [.general, .menuBar, .keepAwake, .alerts, .shortcuts, .backup, .about, .support]),
+        SettingsGroup(title: nil, sections: [.general, .menuBar, .keepAwake, .clipboard, .alerts, .shortcuts, .backup, .about, .support]),
         SettingsGroup(title: String(localized: "Monitors"), sections: Module.allCases.filter { !$0.isExtra }.map { .module($0) }),
         SettingsGroup(title: String(localized: "Extras"), sections: Module.allCases.filter(\.isExtra).map { .module($0) }),
     ]
@@ -22,6 +22,7 @@ enum SettingsSection: Hashable, Identifiable {
         case .general: "general"
         case .menuBar: "menuBar"
         case .keepAwake: "keepAwake"
+        case .clipboard: "clipboard"
         case .alerts: "alerts"
         case .shortcuts: "shortcuts"
         case .backup: "backup"
@@ -36,6 +37,7 @@ enum SettingsSection: Hashable, Identifiable {
         case .general: String(localized: "General")
         case .menuBar: String(localized: "Menu Bar")
         case .keepAwake: String(localized: "Keep Awake")
+        case .clipboard: String(localized: "Clipboard")
         case .alerts: String(localized: "Alerts")
         case .shortcuts: String(localized: "Shortcuts")
         case .backup: String(localized: "Backup")
@@ -50,6 +52,7 @@ enum SettingsSection: Hashable, Identifiable {
         case .general: "gearshape.fill"
         case .menuBar: "menubar.rectangle"
         case .keepAwake: "cup.and.saucer.fill"
+        case .clipboard: "doc.on.clipboard.fill"
         case .alerts: "bell.badge.fill"
         case .shortcuts: "command"
         case .backup: "externaldrive.fill.badge.timemachine"
@@ -65,6 +68,7 @@ enum SettingsSection: Hashable, Identifiable {
         case .general: .gray
         case .menuBar: .blue
         case .keepAwake: .brown
+        case .clipboard: .orange
         case .alerts: .red
         case .shortcuts: .indigo
         case .backup: .teal
@@ -80,6 +84,7 @@ enum SettingsSection: Hashable, Identifiable {
         case .general: "update interval refresh launch login startup quick toggles mute trash bluetooth sleep advanced sampling"
         case .menuBar: "style combined separate items spacing ring notch colorful order reorder preview advanced graphs camera"
         case .keepAwake: "caffeinate sleep display focus timer schedule power downloads agents"
+        case .clipboard: "paste copy history snippets pinned ignore password clear"
         case .alerts: "notifications warnings thresholds advanced restore defaults test"
         case .shortcuts: "hotkeys keyboard global modifier secure input advanced"
         case .backup: "export import reset defaults restore"
@@ -192,6 +197,7 @@ struct SettingsView: View {
         case .general: GeneralSettings()
         case .menuBar: MenuBarSettings()
         case .keepAwake: KeepAwakeSettings()
+        case .clipboard: ClipboardSettings()
         case .alerts: AlertSettings(onTestNotification: onTestNotification)
         case .shortcuts: ShortcutSettings()
         case .backup: BackupSettings()
@@ -699,6 +705,11 @@ private struct ShortcutSettings: View {
                     }
                 }
             }
+            Section {
+                Toggle("\(settings.hotkeyModifier.symbols)V opens clipboard history", isOn: $settings.clipboardHotkey)
+                Toggle("\(settings.hotkeyModifier.symbols)F finds your cursor", isOn: $settings.findCursorHotkey)
+            }
+            .disabled(!settings.hotkeysEnabled)
             Section {
                 Text("Press a shortcut from any app to open that panel; press it again to close. Shortcuts for items that are switched off just beep. \(settings.hotkeyModifier.symbols)A starts or stops keeping your Mac awake (see Keep Awake).")
                     .settingsFooter()

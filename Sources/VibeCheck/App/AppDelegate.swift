@@ -294,7 +294,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                object: nil, queue: .main) { _ in
             MainActor.assumeIsolated { KeepAwake.shared.check() }
         }
-        HotkeyManager.shared.onKeepAwake = { KeepAwake.shared.toggle() }
+        HotkeyManager.shared.onExtra = { [weak self] extra in
+            switch extra {
+            case .keepAwake: KeepAwake.shared.toggle()
+            case .clipboard: self?.openClipboard()
+            case .findCursor: CursorFinder.flash()
+            }
+        }
+        ClipboardHistory.shared.start()
         if settings.keepAwake.atLaunch { KeepAwake.shared.start(minutes: settings.keepAwake.defaultMinutes) }
         KeepAwake.shared.check() // triggers (plugged in, external display) apply right away
         stats.start(interval: settings.refreshInterval)
@@ -332,6 +339,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        KeyboardCleaner.shared.stop()
         KeepAwake.shared.stop()
         stats.history.save()
         stats.vibeReplay.save()
@@ -544,7 +552,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func configureHotkeys() {
         if settings.hotkeysEnabled {
-            HotkeyManager.shared.register(modifier: settings.hotkeyModifier, keepAwake: settings.keepAwake.hotkey)
+            var extras: Set<HotkeyManager.Extra> = []
+            if settings.keepAwake.hotkey { extras.insert(.keepAwake) }
+            if settings.clipboardHotkey { extras.insert(.clipboard) }
+            if settings.findCursorHotkey { extras.insert(.findCursor) }
+            HotkeyManager.shared.register(modifier: settings.hotkeyModifier, extras: extras)
         } else {
             HotkeyManager.shared.unregisterAll()
         }
@@ -564,6 +576,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let route: DeckRoute = target.map { .module($0) } ?? .home
         guard let button = (combinedItem ?? target.flatMap { items[$0] } ?? vibeItem ?? items.values.first)?.button else { return }
         deck.open(from: button, route: route)
+    }
+
+    /// Global shortcut: the palette in clipboard mode (snippets and history), or close it if already showing.
+    private func openClipboard() {
+        if deck.isVisible, deck.model.paletteQuery == "clip " { deck.close(); return }
+        openDeck(nil)
+        deck.model.openPalette("clip ")
     }
 
     func showSettings(_ section: SettingsSection? = nil) {
