@@ -40,6 +40,7 @@ struct BatteryPanel: View {
                 CapacityBar(fraction: b.percent, color: b.percent < 0.2 ? .red : .green)
                 MetricChart(lines: [.init(key: .battery, color: .green)], maxValue: 1, height: 64, format: Fmt.percent)
                 BatteryHistorySection()
+                EnergyLeaderboard()
             }
 
             if !stats.devices.isEmpty {

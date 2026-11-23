@@ -9,6 +9,8 @@ struct ItemOptions: Codable, Equatable {
     var agentValue: AgentValue = .tokensToday
     var agentWindows: AgentWindows = .both
     var agentShowReset = true
+    /// Show when the limit runs out (at the current pace) in place of the reset countdown, while it would run out.
+    var agentShowRunOut = false
 
     // Memory
     var memoryValue: MemoryValue = .percent
@@ -35,6 +37,7 @@ struct ItemOptions: Codable, Equatable {
         agentValue = (try? c.decodeIfPresent(AgentValue.self, forKey: .agentValue)) ?? d.agentValue
         agentWindows = (try? c.decodeIfPresent(AgentWindows.self, forKey: .agentWindows)) ?? d.agentWindows
         agentShowReset = try c.decodeIfPresent(Bool.self, forKey: .agentShowReset) ?? d.agentShowReset
+        agentShowRunOut = try c.decodeIfPresent(Bool.self, forKey: .agentShowRunOut) ?? d.agentShowRunOut
         memoryValue = (try? c.decodeIfPresent(MemoryValue.self, forKey: .memoryValue)) ?? d.memoryValue
         networkDirections = (try? c.decodeIfPresent(Directions.self, forKey: .networkDirections)) ?? d.networkDirections
         diskValue = (try? c.decodeIfPresent(DiskValue.self, forKey: .diskValue)) ?? d.diskValue

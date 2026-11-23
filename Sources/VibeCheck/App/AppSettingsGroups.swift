@@ -146,6 +146,25 @@ final class WeatherGroup {
     }
 }
 
+/// The To-do module: which Reminders list it shows ("" = the default list for new reminders).
+@Observable
+@MainActor
+final class TodoGroup {
+    @ObservationIgnored private let writer: SettingsWriter
+
+    var listID: String {
+        didSet {
+            writer.save(listID, "todoListID", structural: false)
+            RemindersStore.shared.reload()
+        }
+    }
+
+    init(defaults: UserDefaults) {
+        writer = SettingsWriter(defaults: defaults)
+        listID = defaults.string(forKey: "todoListID") ?? ""
+    }
+}
+
 /// Keep Awake sessions, triggers and schedule, plus the related agent / Bluetooth switches.
 @Observable
 @MainActor

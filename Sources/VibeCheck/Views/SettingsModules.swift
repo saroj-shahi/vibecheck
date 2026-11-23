@@ -4,8 +4,8 @@ import SwiftUI
 // MARK: - One page per module
 
 extension Module {
-    /// Clock and Weather sit under "Extras" in the Settings sidebar; the rest are monitors.
-    var isExtra: Bool { self == .clock || self == .weather }
+    /// Clock, Weather and To-do sit under "Extras" in the Settings sidebar; the rest are monitors.
+    var isExtra: Bool { self == .clock || self == .weather || self == .todo }
 
     /// One line under the module's name at the top of its Settings page.
     var settingsSummary: String {
@@ -20,6 +20,7 @@ extension Module {
         case .agents: String(localized: "Tokens and plan limits for Claude Code, Codex, Copilot and OpenCode.")
         case .clock: "A menu bar clock, with world clocks in the deck."
         case .weather: String(localized: "Today's forecast for one city, from Open-Meteo.")
+        case .todo: String(localized: "A simple to-do list, kept in Apple Reminders.")
         }
     }
 
@@ -36,6 +37,7 @@ extension Module {
         case .agents: "ai claude codex copilot opencode tokens limits usage"
         case .clock: "time world time zone seconds"
         case .weather: "forecast city temperature units"
+        case .todo: "todo to-do tasks reminders checklist list"
         }
     }
 }
@@ -59,6 +61,7 @@ struct ModuleSettings: View {
             case .network: PublicIPSection()
             case .clock: ClockSections()
             case .weather: WeatherSections()
+            case .todo: TodoSections()
             default: EmptyView()
             }
             if !metrics.isEmpty { ModuleAlertsSection(module: module, metrics: metrics) }
@@ -176,6 +179,9 @@ private struct ModuleOptionRows: View {
         if options.agentValue.isLimits {
             picker("Limits", binding(\.agentWindows))
             Toggle("Show time until reset", isOn: binding(\.agentShowReset))
+            if options.agentShowReset {
+                Toggle("Show run-out time when close", isOn: binding(\.agentShowRunOut))
+            }
         }
     }
 }
@@ -398,6 +404,58 @@ private struct ClockSections: View {
         return Array((TimeZone.knownTimeZoneIdentifiers + ["UTC"])
             .filter { $0.localizedCaseInsensitiveContains(normalized) || $0.localizedCaseInsensitiveContains(query) }
             .prefix(8))
+    }
+}
+
+// MARK: - To-do
+
+private struct TodoSections: View {
+    @Environment(AppSettings.self) private var settings
+    private var store: RemindersStore { .shared }
+
+    var body: some View {
+        Section {
+            switch store.access {
+            case .granted:
+                Picker("List", selection: Binding(get: { settings.todo.listID }, set: { settings.todo.listID = $0 })) {
+                    Text(defaultTitle).tag("")
+                    ForEach(store.lists) { Text($0.title).tag($0.id) }
+                    // A saved list that's gone (deleted, or from another Mac) still needs a tag; it falls back to the default.
+                    if !settings.todo.listID.isEmpty, !store.lists.contains(where: { $0.id == settings.todo.listID }) {
+                        Text(defaultTitle).tag(settings.todo.listID)
+                    }
+                }
+            case .notAsked:
+                LabeledContent("Reminders") {
+                    Button("Allow Access…") { store.activate(requestAccess: true) }
+                }
+            case .restricted:
+                LabeledContent("Reminders") { Text("Restricted on this Mac").foregroundStyle(.secondary) }
+            case .denied, .writeOnly:
+                LabeledContent("Reminders") {
+                    Button("Open Privacy Settings…") { RemindersStore.openPrivacySettings() }
+                }
+            }
+        } header: {
+            Text("Reminders")
+        } footer: {
+            Text(footer).settingsFooter()
+        }
+        .onAppear { if settings.isEnabled(.todo) { store.activate(requestAccess: false) } }
+    }
+
+    private var defaultTitle: String {
+        let name = store.lists.first { $0.id == store.defaultListID }?.title
+        return name.map { String(localized: "Default (\($0))") } ?? String(localized: "Default list")
+    }
+
+    private var footer: String {
+        switch store.access {
+        case .denied, .writeOnly:
+            String(localized: "VibeCheck isn't allowed to read Reminders. Turn it on in System Settings › Privacy & Security › Reminders.")
+        default:
+            String(localized: "Tasks live in Apple Reminders, so they sync with your iPhone through iCloud. VibeCheck shows one list and only changes it when you add, tick off or delete a task.")
+        }
     }
 }
 

@@ -37,4 +37,21 @@ struct LimitPaceTests {
         #expect(window(used: 0).cardTitle == "Current session")
         #expect(w.cardTitle == "Weekly limit")
     }
+
+    @Test func runsOutForecast() {
+        // 2.5 h in, 60% used: 24%/h, 40% left -> 1h40m, and the window has 2.5 h left.
+        let now = at(hoursBeforeReset: 2.5)
+        let ahead = window(used: 60).runsOutAt(now: now)
+        #expect(ahead != nil)
+        #expect(abs(ahead!.timeIntervalSince(now) - 40.0 / 24 * 3600) < 1)
+        // Behind pace: lasts until reset.
+        #expect(window(used: 30).runsOutAt(now: now) == nil)
+        // Too early: no burn rate yet.
+        #expect(window(used: 20).runsOutAt(now: at(hoursBeforeReset: 4.95)) == nil)
+        // Past the reset.
+        #expect(window(used: 90).runsOutAt(now: resets.addingTimeInterval(60)) == nil)
+        // Nothing used, or everything used.
+        #expect(window(used: 0).runsOutAt(now: now) == nil)
+        #expect(window(used: 100).runsOutAt(now: now) == nil)
+    }
 }

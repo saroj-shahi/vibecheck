@@ -4,7 +4,7 @@ import ServiceManagement
 import SwiftUI
 
 enum Module: String, CaseIterable, Identifiable {
-    case cpu, gpu, memory, network, disk, sensors, battery, clock, weather, agents
+    case cpu, gpu, memory, network, disk, sensors, battery, clock, weather, agents, todo
 
     var id: String { rawValue }
 
@@ -20,6 +20,7 @@ enum Module: String, CaseIterable, Identifiable {
         case .clock: String(localized: "Clock")
         case .weather: String(localized: "Weather")
         case .agents: String(localized: "Agents")
+        case .todo: String(localized: "To-do")
         }
     }
 
@@ -35,6 +36,7 @@ enum Module: String, CaseIterable, Identifiable {
         case .clock: "clock"
         case .weather: "cloud.sun"
         case .agents: "sparkles"
+        case .todo: "checklist"
         }
     }
 
@@ -50,12 +52,13 @@ enum Module: String, CaseIterable, Identifiable {
         case .clock: .indigo
         case .weather: .cyan
         case .agents: Palette.agents
+        case .todo: .orange
         }
     }
 
     var labelStyles: [LabelStyle] {
         switch self {
-        case .sensors, .battery, .weather: [.standard, .valueOnly]
+        case .sensors, .battery, .weather, .todo: [.standard, .valueOnly]
         case .agents: [.standard, .valueOnly]
         case .clock: [.standard, .iconAndValue]
         case .network: [.standard, .iconAndValue, .iconValueArrows, .valueOnly]
@@ -63,7 +66,7 @@ enum Module: String, CaseIterable, Identifiable {
         }
     }
 
-    var enabledByDefault: Bool { ![.battery, .clock, .weather].contains(self) }
+    var enabledByDefault: Bool { ![.battery, .clock, .weather, .todo].contains(self) }
 
     /// Tiles a brand-new install starts with (six, in the fixed module order). Existing installs keep their saved set.
     var enabledForNewInstall: Bool { [.cpu, .memory, .network, .sensors, .battery, .agents].contains(self) }
@@ -130,7 +133,7 @@ enum LabelStyle: String, CaseIterable, Identifiable {
             case .memory: String(localized: "Gauge + value")
             case .network: String(localized: "Rates + arrows")
             case .disk: String(localized: "Rates + R/W")
-            case .sensors, .battery, .weather, .agents: String(localized: "Icon + value")
+            case .sensors, .battery, .weather, .agents, .todo: String(localized: "Icon + value")
             case .clock: String(localized: "Time only")
             }
         case .iconAndValue: module == .clock ? String(localized: "Icon + time") : String(localized: "Icon + value")
@@ -188,6 +191,7 @@ final class AppSettings {
     var menuBar: MenuBarGroup
     var clock: ClockGroup
     var weather: WeatherGroup
+    var todo: TodoGroup
     var keepAwake: KeepAwakeGroup
     /// Keep Awake's call guard: held with the keep-awake switches but it lives at the top level.
     /// Looks for a newer release on GitHub about once a day (see `UpdateChecker`).
@@ -286,6 +290,7 @@ final class AppSettings {
         menuBar = MenuBarGroup(defaults: defaults, isNewInstall: stored == nil)
         clock = ClockGroup(defaults: defaults)
         weather = WeatherGroup(defaults: defaults)
+        todo = TodoGroup(defaults: defaults)
         keepAwake = KeepAwakeGroup(defaults: defaults)
         onDeviceExplanations = defaults.bool(forKey: "onDeviceExplanations")
         smartAlertMemoryLeak = defaults.bool(forKey: "smartAlertMemoryLeak")
@@ -404,6 +409,8 @@ final class AppSettings {
         defaults.set(enabledModules.map(\.rawValue), forKey: "enabledModules")
         NotificationCenter.default.post(name: .vibeCheckSettingsChanged, object: nil)
         if module == .weather { WeatherStore.shared.refresh() }
+        // Reminders access is asked for here (the owner turned the module on), never at launch.
+        if module == .todo && enabled { RemindersStore.shared.activate(requestAccess: true) }
         if module == .agents { AgentUsageStore.shared.refresh() }
     }
 }

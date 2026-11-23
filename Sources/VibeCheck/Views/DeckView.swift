@@ -144,6 +144,7 @@ struct DeckShell: View {
 /// Ring and verdict, with the only two header buttons that need to be one click away: alerts and the cup.
 private struct DeckHeader: View {
     @Environment(SystemStats.self) private var stats
+    @Environment(DeckModel.self) private var model
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -153,6 +154,10 @@ private struct DeckHeader: View {
                     .font(.system(size: 15, weight: .semibold))
                     .contentTransition(.interpolate)
                 Spacer(minLength: 4)
+                DeckIconButton(symbol: "square.and.arrow.up", help: "Share Vibe Card") {
+                    model.requestClose?()
+                    VibeCardWindow.show(stats: stats)
+                }
                 NotificationBellButton()
                 AwakeMenuButton()
             }
@@ -551,9 +556,19 @@ struct ModuleTile: View {
                     }
                 }
                 .frame(height: 16)
+                // A second fact under the chart (top app, memory in GB, time left…), so a glance says more
+                // than one number. Always takes its line, so the grid's rows stay the same height.
+                Text(content.note ?? " ")
+                    .font(.system(size: 10).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .minimumScaleFactor(0.85)
+                    .contentTransition(.opacity)
+                    .accessibilityHidden(true)
             }
             .padding(10)
-            .frame(maxWidth: .infinity, minHeight: 76, maxHeight: 76, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: 90, maxHeight: 90, alignment: .topLeading)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(.quaternary.opacity(hovering ? 0.9 : 0.55))
@@ -575,8 +590,8 @@ struct ModuleTile: View {
         .onChange(of: stats.vibe.culprit) { _, _ in drain.clear() }
         .onChange(of: stats.vibe.vibe) { _, _ in drain.clear() }
         .onHover { hovering in withAnimation(.easeOut(duration: hovering ? 0.15 : 0.12)) { self.hovering = hovering } }
-        .accessibilityLabel(culprit.map { String(localized: "\(module.title), \(content.spoken), making your Mac \($0.title.lowercased())") }
-                            ?? String(localized: "\(module.title), \(content.spoken)"))
+        .accessibilityLabel((culprit.map { String(localized: "\(module.title), \(content.spoken), making your Mac \($0.title.lowercased())") }
+                             ?? String(localized: "\(module.title), \(content.spoken)")) + (content.note.map { ", \($0)" } ?? ""))
         .accessibilityHint("Shows \(module.title) details")
         .help("\(module.title) — click for details")
     }
@@ -598,9 +613,55 @@ struct TileContent {
     var spark: [Double]?
     var sparkMax: Double?
     var spoken: String
+    /// The tile's bottom line; nil leaves it blank.
+    var note: String?
 
     @MainActor
     static func make(_ module: Module, stats: SystemStats, settings: AppSettings) -> TileContent {
+        var content = base(module, stats: stats, settings: settings)
+        if content.note == nil { content.note = note(module, stats: stats) }
+        return content
+    }
+
+    /// Second facts per module, from readings the tick already has (nothing extra is sampled for them).
+    @MainActor
+    static func note(_ module: Module, stats: SystemStats) -> String? {
+        switch module {
+        case .cpu:
+            return String(localized: "User \(Fmt.percent(stats.cpu.user)) · Sys \(Fmt.percent(stats.cpu.system))")
+        case .gpu:
+            guard let gpu = stats.gpu.gpus.max(by: { $0.device < $1.device }) else { return nil }
+            if let inUse = gpu.memoryInUse, inUse > 0 { return String(localized: "\(Fmt.bytes(inUse)) in use") }
+            return gpu.cores.map { String(localized: "\(String($0)) cores") }
+        case .memory:
+            let m = stats.memory
+            if m.swapUsed >= 1_073_741_824 { return String(localized: "\(Fmt.bytes(m.used)) · swap \(Fmt.bytes(m.swapUsed))") }
+            return String(localized: "\(Fmt.bytes(m.used)) of \(Fmt.bytes(m.total))")
+        case .network:
+            guard stats.network.interface != nil else { return nil }
+            return "↑ \(Fmt.compactRate(stats.network.upload))"
+        case .disk:
+            return nil
+        case .sensors:
+            if let fan = stats.sensors.fans.first, fan.rpm > 0 { return String(localized: "Fan \(String(format: "%.0f", fan.rpm)) rpm") }
+            return stats.sensors.summary.first?.name
+        case .battery:
+            let b = stats.battery
+            guard b.present, let minutes = b.minutesRemaining, minutes > 0 else { return nil }
+            if b.isCharging { return String(localized: "\(Fmt.uptime(TimeInterval(minutes * 60))) to full") }
+            return b.onAC ? nil : String(localized: "\(Fmt.uptime(TimeInterval(minutes * 60))) left")
+        case .agents:
+            // The limit closest to running out, across every agent.
+            let limits = AgentUsageStore.shared.sample.agents.flatMap(\.limits)
+            guard let tightest = limits.min(by: { $0.leftPercent < $1.leftPercent }) else { return nil }
+            return String(localized: "\(tightest.title): \(Fmt.percent(tightest.leftPercent / 100)) left")
+        case .clock, .weather, .todo:
+            return nil
+        }
+    }
+
+    @MainActor
+    private static func base(_ module: Module, stats: SystemStats, settings: AppSettings) -> TileContent {
         func recent(_ key: HistoryKey) -> [Double] { Array(stats.live(key).suffix(30)) }
         switch module {
         case .cpu:
@@ -654,6 +715,24 @@ struct TileContent {
             guard !sample.agents.isEmpty else { return TileContent(value: "—", detail: String(localized: "No agent logs"), spoken: String(localized: "no agent logs found")) }
             let v = Fmt.tokens(sample.today.total)
             return TileContent(value: v, spark: sample.hourly, spoken: String(localized: "\(v) tokens today"))
+        case .todo:
+            let store = RemindersStore.shared
+            store.ensureStarted()   // never prompts; the panel asks when it opens
+            switch store.access {
+            case .granted where store.loaded:
+                let count = store.open.count
+                let due = store.dueNowCount
+                let detail = count == 0 ? String(localized: "All done")
+                    : due > 0 ? String(localized: "\(due) due") : (store.selectedList?.title ?? String(localized: "Open"))
+                return TileContent(value: "\(count)", detail: detail,
+                                   spoken: due > 0 ? String(localized: "\(count) open, \(due) due") : String(localized: "\(count) open"))
+            case .granted:
+                return TileContent(value: "—", detail: String(localized: "Loading…"), spoken: String(localized: "loading"))
+            case .notAsked:
+                return TileContent(value: "—", detail: String(localized: "Connect Reminders"), spoken: String(localized: "not connected to Reminders"))
+            default:
+                return TileContent(value: "—", detail: String(localized: "No access"), spoken: String(localized: "no access to Reminders"))
+            }
         }
     }
 }

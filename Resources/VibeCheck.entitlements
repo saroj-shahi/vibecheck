@@ -8,6 +8,9 @@
 	<!-- Hardened runtime: the "while on Wi-Fi X" trigger needs Location to read the network name. -->
 	<key>com.apple.security.personal-information.location</key>
 	<true/>
+	<!-- Hardened runtime: the To-do module reads and edits the Reminders list chosen in Settings. -->
+	<key>com.apple.security.personal-information.calendars</key>
+	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>77HKFF78Z8.io.github.saroj-shahi.vibecheck</string>

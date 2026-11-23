@@ -16,6 +16,10 @@ import Foundation
 /// - `thermalState`: "nominal" | "fair" | "serious" | "critical"
 /// - `battery`: { percent (0...1), onAC, minutesLeft? }, nil on desktops
 /// - `topMemory`: up to 5 apps { name, bytes, processes, growthBytes?, growthMinutes? }
+/// - `limits`: optional, [{ agent, name, usedPercent, resetsAt, runsOutAt? }] with the run-out forecast at the
+///   average pace since the window started; omitted when no agent reports limits
+/// - `energyToday`: optional, up to 5 apps { name, wattHours, share (0...1) } by energy used since midnight
+///   (estimated by macOS per process, on battery or plugged in); omitted until something has been counted
 /// - `topCPU` / `topCPUAt`: up to 5 apps { name, cpu (percent of one core), processes } and when they were
 ///   read; present only while the deck (or another view) has process sampling on, otherwise omitted
 public struct StatusSnapshot: Codable, Equatable, Sendable {
@@ -51,6 +55,29 @@ public struct StatusSnapshot: Codable, Equatable, Sendable {
         }
     }
 
+    /// One provider limit with its forecast (`runsOutAt` is nil when it would last until `resetsAt`).
+    public struct Limit: Codable, Equatable, Sendable {
+        public var agent: String
+        public var name: String
+        public var usedPercent: Double
+        public var resetsAt: Date
+        public var runsOutAt: Date?
+        public init(agent: String, name: String, usedPercent: Double, resetsAt: Date, runsOutAt: Date? = nil) {
+            self.agent = agent; self.name = name; self.usedPercent = usedPercent
+            self.resetsAt = resetsAt; self.runsOutAt = runsOutAt
+        }
+    }
+
+    /// One app's estimated energy since local midnight.
+    public struct EnergyApp: Codable, Equatable, Sendable {
+        public var name: String
+        public var wattHours: Double
+        public var share: Double
+        public init(name: String, wattHours: Double, share: Double) {
+            self.name = name; self.wattHours = wattHours; self.share = share
+        }
+    }
+
     public var schema: Int
     public var updatedAt: Date
     public var pid: Int32?
@@ -65,15 +92,21 @@ public struct StatusSnapshot: Codable, Equatable, Sendable {
     public var topMemory: [MemoryApp]
     public var topCPU: [CPUApp]?
     public var topCPUAt: Date?
+    /// Provider limits (from agent logs) with the run-out forecast; omitted when none are known.
+    public var limits: [Limit]?
+    /// Top apps by energy used today; omitted when nothing has been counted yet.
+    public var energyToday: [EnergyApp]?
 
     public init(schema: Int = StatusSnapshot.currentSchema, updatedAt: Date, pid: Int32? = nil, vibe: String, verdict: String,
                 culprit: String? = nil, cpu: Double, memoryPressure: String, swapUsedBytes: Double,
                 thermalState: String, battery: Battery? = nil, topMemory: [MemoryApp] = [],
-                topCPU: [CPUApp]? = nil, topCPUAt: Date? = nil) {
+                topCPU: [CPUApp]? = nil, topCPUAt: Date? = nil, limits: [Limit]? = nil,
+                energyToday: [EnergyApp]? = nil) {
         self.schema = schema; self.updatedAt = updatedAt; self.pid = pid; self.vibe = vibe; self.verdict = verdict
         self.culprit = culprit; self.cpu = cpu; self.memoryPressure = memoryPressure
         self.swapUsedBytes = swapUsedBytes; self.thermalState = thermalState; self.battery = battery
-        self.topMemory = topMemory; self.topCPU = topCPU; self.topCPUAt = topCPUAt
+        self.topMemory = topMemory; self.topCPU = topCPU; self.topCPUAt = topCPUAt; self.limits = limits
+        self.energyToday = energyToday
     }
 
     // MARK: Coding

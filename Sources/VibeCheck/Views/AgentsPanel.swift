@@ -149,11 +149,28 @@ struct LimitGauge: View {
                         .help(ahead ? "At this pace it runs out before it resets" : "Average since this window started")
                 }
             }
+            if let line = forecastText {
+                Text(line).font(.caption)
+                    .foregroundStyle(runOut != nil ? AnyShapeStyle(color) : AnyShapeStyle(.secondary))
+                    .lineLimit(1)
+                    .help("Based on the average pace since this window started")
+            }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(ahead
             ? String(localized: "\(limit.cardTitle): \(Int(limit.leftPercent.rounded())) percent left, resets in \(limit.countdown(now: now)), runs out before reset at this pace")
             : String(localized: "\(limit.cardTitle): \(Int(limit.leftPercent.rounded())) percent left, resets in \(limit.countdown(now: now))"))
+    }
+
+    private var runOut: Date? { limit.runsOutAt(now: now) }
+
+    /// "At this pace: runs out ~3:40 PM", or "On pace to last until reset". Nothing when there's no pace yet.
+    private var forecastText: String? {
+        if let date = runOut {
+            return String(localized: "At this pace: runs out ~\(limit.runOutTimeText(date, now: now))")
+        }
+        return limit.burnPerHour(now: now) != nil && limit.leftPercent > 0
+            ? String(localized: "On pace to last until reset") : nil
     }
 
     private var resetText: String {

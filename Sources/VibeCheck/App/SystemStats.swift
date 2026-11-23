@@ -98,6 +98,8 @@ final class SystemStats {
     let history = HistoryStore()
     let vibeReplay = VibeReplayStore()
     let batteryLog = BatteryLogStore()
+    /// Energy per app per day; sampled once a minute with libproc, saved every 5 min and on quit.
+    let energyLog = EnergyLog(savesOnQuit: true)
     /// Called after every sample; the app delegate hooks alerts in here.
     var onTick: (() -> Void)?
 
@@ -299,6 +301,7 @@ final class SystemStats {
         if battery.present { values[.battery] = battery.percent }
         history.record(values)
         refreshAppMemoryIfDue()
+        energyLog.sampleIfDue()
         updateVibe()
         onTick?()
 

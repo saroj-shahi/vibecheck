@@ -173,6 +173,7 @@ struct ModulePanel: View {
         case .clock: ClockPanel()
         case .weather: WeatherPanel()
         case .agents: AgentsPanel()
+        case .todo: TodoPanel()
         }
     }
 }

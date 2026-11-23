@@ -41,6 +41,7 @@ struct MenuBarLabel: View {
             case .clock: clock
             case .weather: weather
             case .agents: agents
+            case .todo: todo
             }
         }
         .frame(height: 22)
@@ -242,6 +243,21 @@ struct MenuBarLabel: View {
         }
     }
 
+    /// Checklist icon and the open count ("99+" at most, so the measured width holds). The icon takes the
+    /// accent while something is overdue or due today. Never asks for Reminders access itself.
+    private var todo: some View {
+        let store = RemindersStore.shared
+        let ready = store.access == .granted && store.loaded
+        return HStack(spacing: gap) {
+            if style != .valueOnly {
+                Image(systemName: Module.todo.symbol).font(iconFont)
+                    .foregroundStyle(ready && store.dueNowCount > 0 ? tint(Module.todo.accent) : .primary)
+            }
+            value(ready ? TodoLogic.countLabel(store.open.count) : "–", width: 24)
+        }
+        .task { store.ensureStarted() }
+    }
+
     /// Limits keep one width in every state (loading, estimate, limits): the status item's length is only
     /// measured when it's created or settings change, so it must not grow later.
     static let limitsWidth: CGFloat = 104
@@ -266,7 +282,7 @@ struct MenuBarLabel: View {
         switch sample.menuBarContent(options) {
         case .limits(let limits, let used):
             AgentLimitsLabel(limits: limits, tint: tint(agent.brandColor), agent: agent, used: used,
-                             showReset: options.agentShowReset, showIcon: showIcon)
+                             showReset: options.agentShowReset, showRunOut: options.agentShowRunOut, showIcon: showIcon)
         case .claudeEstimate(let block, let today) where options.agentShowReset:
             ClaudeEstimateLabel(block: block, today: today, tint: tint(AgentKind.claude.brandColor), showIcon: showIcon)
         case .claudeEstimate(_, let today):
@@ -374,6 +390,8 @@ struct AgentLimitsLabel: View {
     /// Show "% used" instead of "% left".
     var used = false
     var showReset = true
+    /// Swap the countdown for the run-out time (same slot, so the width never changes) while the limit would run out.
+    var showRunOut = false
     var showIcon = true
 
     var body: some View {
@@ -388,8 +406,13 @@ struct AgentLimitsLabel: View {
                                 .foregroundStyle(limit.isAheadOfPace(now: context.date)
                                                  ? AnyShapeStyle(limit.gaugeColor(now: context.date)) : AnyShapeStyle(.primary))
                             if showReset {
-                                Image(systemName: "arrow.clockwise").font(.system(size: 7, weight: .bold))
-                                Text(limit.countdown(now: context.date)).frame(width: 44, alignment: .leading)
+                                if showRunOut, let out = limit.runsOutAt(now: context.date) {
+                                    Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 7, weight: .bold))
+                                    Text(limit.runOutShortText(out, now: context.date)).frame(width: 44, alignment: .leading)
+                                } else {
+                                    Image(systemName: "arrow.clockwise").font(.system(size: 7, weight: .bold))
+                                    Text(limit.countdown(now: context.date)).frame(width: 44, alignment: .leading)
+                                }
                             }
                         }
                     }

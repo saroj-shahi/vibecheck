@@ -60,6 +60,12 @@ final class StatusPublisher {
         if stats.processDemand > 0, !stats.processes.isEmpty {
             topCPU = stats.topApps(by: \.cpu, limit: 5).map { .init(name: $0.name, cpu: $0.cpu, processes: $0.processCount) }
         }
+        let limits = AgentUsageStore.shared.sample.agents.flatMap { summary in
+            summary.limits.map { StatusSnapshot.Limit(agent: summary.agent.rawValue, name: $0.title, usedPercent: $0.usedPercent,
+                                                      resetsAt: $0.resetsAt, runsOutAt: $0.runsOutAt(now: now)) }
+        }
+        let energy = stats.energyLog.leaderboard(.today, limit: 5, now: now).rows
+            .map { StatusSnapshot.EnergyApp(name: $0.name, wattHours: $0.wattHours, share: $0.share) }
         let b = stats.battery
         return StatusSnapshot(
             updatedAt: now, pid: ProcessInfo.processInfo.processIdentifier,
@@ -68,7 +74,8 @@ final class StatusPublisher {
             memoryPressure: ["normal", "warning", "critical"][stats.memory.pressure == .normal ? 0 : stats.memory.pressure == .warning ? 1 : 2],
             swapUsedBytes: stats.memory.swapUsed, thermalState: thermalName(stats.thermalState),
             battery: b.present ? .init(percent: b.percent, onAC: b.onAC, minutesLeft: b.onAC ? nil : b.minutesRemaining) : nil,
-            topMemory: Array(tracks), topCPU: topCPU, topCPUAt: topCPU == nil ? nil : now)
+            topMemory: Array(tracks), topCPU: topCPU, topCPUAt: topCPU == nil ? nil : now,
+            limits: limits.isEmpty ? nil : limits, energyToday: energy.isEmpty ? nil : energy)
     }
 
     nonisolated static func thermalName(_ state: ProcessInfo.ThermalState) -> String {

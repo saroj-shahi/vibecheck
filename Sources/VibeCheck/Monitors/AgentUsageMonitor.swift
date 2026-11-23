@@ -150,6 +150,31 @@ extension RateWindow {
         return usedPercent / hours
     }
 
+    /// When the limit runs out if use continues at the average pace since the window started (the samples
+    /// aren't kept per window, so a recent-rate estimate isn't possible here). Nil without a burn rate, when
+    /// it's already used up, or when it would last until `resetsAt`.
+    func runsOutAt(now: Date) -> Date? {
+        guard let perHour = burnPerHour(now: now), perHour > 0, leftPercent > 0 else { return nil }
+        let date = now.addingTimeInterval(leftPercent / perHour * 3600)
+        return date < resetsAt ? date : nil
+    }
+
+    /// "3:40 PM" when under a day away, otherwise "Thu 3:40 PM".
+    func runOutTimeText(_ date: Date, now: Date) -> String {
+        date.timeIntervalSince(now) < 86_400
+            ? date.formatted(date: .omitted, time: .shortened)
+            : date.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+    }
+
+    /// Compact form for the menu bar slot: "3:40p" or "Thu".
+    func runOutShortText(_ date: Date, now: Date) -> String {
+        if date.timeIntervalSince(now) >= 86_400 { return date.formatted(.dateTime.weekday(.abbreviated)) }
+        let c = Calendar.current.dateComponents([.hour, .minute], from: date)
+        let hour = c.hour ?? 0
+        let h = hour % 12 == 0 ? 12 : hour % 12
+        return String(format: "%d:%02d%@", h, c.minute ?? 0, hour < 12 ? "a" : "p")
+    }
+
     /// Using the limit faster than time passes (with a little slack), so it runs out before it resets.
     func isAheadOfPace(now: Date) -> Bool {
         usedPercent / 100 > elapsedFraction(now: now) + 0.05

@@ -21,6 +21,8 @@
     <key>NSBluetoothAlwaysUsageDescription</key><string>VibeCheck turns Bluetooth off while your Mac sleeps and back on when it wakes, if you switch that on in Settings.</string>
     <key>NSLocationUsageDescription</key><string>VibeCheck reads the name of your Wi-Fi network to keep your Mac awake while you're on the network you chose in Settings. Your location is never used or stored.</string>
     <key>NSLocationWhenInUseUsageDescription</key><string>VibeCheck reads the name of your Wi-Fi network to keep your Mac awake while you're on the network you chose in Settings. Your location is never used or stored.</string>
+    <key>NSRemindersFullAccessUsageDescription</key><string>VibeCheck shows the Reminders list you pick in Settings as a to-do list, and adds, completes and deletes tasks only when you do.</string>
+    <key>NSRemindersUsageDescription</key><string>VibeCheck shows the Reminders list you pick in Settings as a to-do list, and adds, completes and deletes tasks only when you do.</string>
     <key>NSHumanReadableCopyright</key><string>VibeCheck — Mac health in one ring</string>
 </dict>
 </plist>

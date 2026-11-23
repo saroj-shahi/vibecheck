@@ -6,7 +6,7 @@ enum SettingsBackup {
     static let keys = [
         "enabledModules", "knownModules", "refreshInterval", "menuBarStyle", "menuBarSpacing", "labelStyles",
         "colorfulMenuBar", "alwaysColorRing", "pulseOnAgentNeedsInput", "showVibeRing", "autoFitNotch", "notchMaxStats", "moduleOrder", "hotkeysEnabled", "hotkeyModifier", "alertRules", "smartAlertMemoryLeak", "smartAlertThrottling", "smartAlertSlowCharger", "onDeviceExplanations","clockFormat", "clockShowSeconds",
-        "worldClocks", "weatherLocation", "temperatureUnit", "chartRange", "groupProcessesByApp",
+        "worldClocks", "weatherLocation", "temperatureUnit", "todoListID", "chartRange", "groupProcessesByApp",
         "keepAwakeDefaultMinutes", "keepAwakeDisplayOn", "keepAwakeBatteryFloor", "keepAwakeAtLaunch", "keepAwakeShowInMenuBar",
         "keepAwakeUntilMinute", "keepAwakeNotify", "keepAwakeHotkey", "keepAwakeOnPower", "keepAwakeWithDisplay",
         "showPublicIP", "keepAwakeWhileDownloading", "keepAwakeDownloadsFolder",

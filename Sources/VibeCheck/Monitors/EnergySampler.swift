@@ -52,6 +52,13 @@ enum EnergySampler {
         return result
     }
 
+    /// `proc_name` of a pid, for apps LaunchServices doesn't know.
+    nonisolated static func processName(_ pid: Int32) -> String? {
+        var buffer = [CChar](repeating: 0, count: 256)
+        guard proc_name(pid, &buffer, UInt32(buffer.count)) > 0 else { return nil }
+        return String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+    }
+
     /// "~1.2 W" under 10 W, "~12 W" above; nil under 0.1 W (not worth a column).
     nonisolated static func label(_ watts: Double?) -> String? {
         guard let watts, watts >= 0.1 else { return nil }

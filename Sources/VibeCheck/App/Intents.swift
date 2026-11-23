@@ -124,12 +124,13 @@ struct GetStatIntent: AppIntent {
 // MARK: - Deck
 
 enum DeckModuleOption: String, AppEnum {
-    case cpu, gpu, memory, network, disk, sensors, battery, weather, clock, agents
+    case cpu, gpu, memory, network, disk, sensors, battery, weather, clock, agents, todo
 
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "Module"
     static let caseDisplayRepresentations: [DeckModuleOption: DisplayRepresentation] = [
         .cpu: "CPU", .gpu: "GPU", .memory: "Memory", .network: "Network", .disk: "Disk",
         .sensors: "Sensors", .battery: "Battery", .weather: "Weather", .clock: "Clock", .agents: "Agents",
+        .todo: "To-do",
     ]
 
     var module: Module { Module(rawValue: rawValue)! }

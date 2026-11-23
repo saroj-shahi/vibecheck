@@ -9,7 +9,7 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 |---|---|
 | `AppDelegate.swift` | `StatusItemController` (one menu bar item: kinds `.single(Module)`, `.combined`, `.vibe`, `.keepAwake`), `AppDelegate` (launch, `syncItems` / reorder rebuild by `statusItemGeneration`, deck/Settings opening, shortcuts) |
 | `AppDelegate+DeckDemo.swift` | `--deck-demo` launch mode (logs item, deck and Settings frames); kept in release builds for QA |
-| `AppSettings.swift` | `Module` enum (10 modules, order, symbols, label styles), `LabelStyle`, `Palette`, `AppSettings` (module-level settings, refresh, hotkeys, alerts; defaults domain `io.github.saroj-shahi.vibecheck`; groups below), `autosaveName` |
+| `AppSettings.swift` | `Module` enum (11 modules incl. `.todo`, order, symbols, label styles), `LabelStyle`, `Palette`, `AppSettings` (module-level settings, refresh, hotkeys, alerts; defaults domain `io.github.saroj-shahi.vibecheck`; groups below), `autosaveName` |
 | `BundleIDMigration.swift` | One-time copy of settings from the pre-1.6 defaults domain `local.vibecheck.app`, run in `main.swift` before anything reads settings |
 | `AppSettingsGroups.swift` | `SettingsWriter` (shared save helper) and the setting groups `settings.menuBar`, `.clock`, `.weather`, `.keepAwake` (same flat defaults keys as before the split) |
 | `ItemOptions.swift` | Per-item menu bar options (Agents: which agents, % left/used/tokens, windows, reset; Memory, Network, Disk, Battery, Sensors) + `AgentUsageSample.menuBarContent` |
@@ -33,6 +33,8 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 | `FocusFilter.swift` | `VibeCheckFocusFilter` (`SetFocusFilterIntent`: hold alerts, keep display awake), `FocusFilterStore` (persisted per Mac) |
 | `RingDrop.swift` | `RingDropView` over the ring item's button: file / folder / app drops start keep awake (`.whileChanging` / `.whileRunning`), dilate while hovering |
 | `VibeReplay.swift` | `VibeReplayStore`: 30-day log of mid / cooked episodes (culprit, worst level), `weeklySummary`, strip `segments` |
+| `EnergyLog.swift` | `EnergyLog`: per-app energy today / yesterday from `ri_energy_nj` deltas (libproc scan at most once a minute, grouped by responsible pid), `energy.json` at 0600 saved at most every 5 min and on quit; `leaderboard` for the Battery panel and `status.json` |
+| `Reminders.swift` | To-do module: `RemindersStore` (EventKit, Reminders list chosen in Settings, full access asked only when the module is turned on or its panel opens, refresh on `.EKEventStoreChanged`), `TodoItem`, `TodoLogic` (pure sorting and counts) |
 | `BatteryLog.swift` | `BatteryLogStore`: 90-day charge samples (every 15 min or 3% change) and daily health trend |
 | `KeepAwakeMenu.swift` | Native keep-awake menu: the menu bar item's right-click and the deck's cup |
 | `Deck.swift` | `DeckPanel` (borderless non-activating NSPanel), `DeckController` (open/close, frame, keys, outside clicks) |
@@ -82,6 +84,8 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `EnergySampler` (pe
 | `AgentsPanel.swift` | Agents detail: Now card, charts, agent cards, `LimitGauge`, `PaceBar`, `DailyBars` |
 | `AgentLogo.swift` | Agent logos (`AgentLogo`, `AgentLogoTile`, brand colors) from SVG path data, and `SVGPath` (small path-data parser) |
 | `VibeStrip.swift` | `VibeStripView`: 24H / 7D / 30D vibe timeline from the episode log + weekly sentence (top of the CPU panel), day buckets split at midnight |
+| `EnergyLeaderboard.swift` | "Energy used today" top 5 apps with Today / Yesterday (Battery panel) |
+| `TodoPanel.swift` | To-do panel: list switcher, Add task field (Return adds), open tasks, Completed section, access states |
 | `BatteryHistoryCharts.swift` | `BatteryHistorySection`: multi-day charge chart and health trend (Battery panel) |
 | `RecoveryAndDrain.swift` | `RecoveryCheck` (cooked/mid to vibing, never on launch), `PulseCheckShape`, `CulpritDrain` (post-quit outline drain) |
 | `DeckHintView.swift` | One dismissible what's-new line on the deck home after an update |
@@ -115,6 +119,10 @@ pass explicit empty locations (`claudeRoots`, `opencodeDB`, `claudeConfig`, …)
 ## packaging/
 
 `homebrew/vibecheck.rb` (the Homebrew cask, to copy into the `saroj-shahi/homebrew-tap` repo as `Casks/vibecheck.rb`), `homebrew/README.md` (creating the tap and bumping the cask each release).
+
+## integrations/
+
+`raycast/`: Raycast extension (TypeScript): Mac Vibe, Vibe in Menu Bar and Culprits commands, all reading `vibecheck status --json` from the bundled helper. Not built by `build.sh`; `npm install && npm run build` in that folder.
 
 ## examples/
 

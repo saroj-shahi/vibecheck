@@ -42,6 +42,16 @@ enum DeckCommands {
             })
         }
 
+        // To-do on: opens its panel with the "Add task" field focused (the panel asks for Reminders access if needed).
+        if model.modules.contains(.todo) {
+            list.append(DeckCommand(id: "todo.add", title: String(localized: "Add task…"), symbol: "plus.circle",
+                                    keywords: "todo to-do reminder reminders task new checklist",
+                                    settingsSection: .module(.todo)) {
+                RemindersStore.shared.wantsAddFocus = true
+                model.go(.module(.todo))
+            })
+        }
+
         // One row whose title follows the state, so rows never appear or vanish under the selection.
         let awake = KeepAwake.shared
         let length = settings.keepAwake.defaultMinutes

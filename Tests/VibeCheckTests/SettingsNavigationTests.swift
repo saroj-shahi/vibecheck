@@ -16,7 +16,7 @@ struct SettingsNavigationTests {
         let groups = SettingsSection.groups
         #expect(groups.map(\.title) == [nil, "Monitors", "Extras"])
         #expect(groups[0].sections.first == .general)
-        #expect(groups[2].sections == [.module(.clock), .module(.weather)])
+        #expect(groups[2].sections == [.module(.clock), .module(.weather), .module(.todo)])
         #expect(!groups[1].sections.contains(.module(.clock)))
     }
 

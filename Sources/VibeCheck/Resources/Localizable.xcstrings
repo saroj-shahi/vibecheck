@@ -101,6 +101,16 @@
         }
       }
     },
+    "%@ cores": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ cores"
+          }
+        }
+      }
+    },
     "%@ free": {
       "localizations": {
         "en": {
@@ -251,6 +261,16 @@
         }
       }
     },
+    "%@ left": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        }
+      }
+    },
     "%@ made your Mac mid %@ this week.": {
       "localizations": {
         "en": {
@@ -361,6 +381,16 @@
         }
       }
     },
+    "%@ to full": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ to full"
+          }
+        }
+      }
+    },
     "%@ tokens today": {
       "localizations": {
         "en": {
@@ -407,6 +437,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ · %2$@ · %3$@ written"
+          }
+        }
+      }
+    },
+    "%@ · swap %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · swap %2$@"
           }
         }
       }
@@ -547,6 +587,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@: %2$@ in, %3$@ out since boot"
+          }
+        }
+      }
+    },
+    "%@: %@ left": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$@ left"
           }
         }
       }
@@ -692,6 +742,16 @@
         }
       }
     },
+    "%lld due": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld due"
+          }
+        }
+      }
+    },
     "%lld files": {
       "localizations": {
         "en": {
@@ -779,6 +839,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld new notifications"
+          }
+        }
+      }
+    },
+    "%lld open": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld open"
+          }
+        }
+      }
+    },
+    "%lld open, %lld due": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld open, %2$lld due"
           }
         }
       }
@@ -1170,6 +1250,16 @@
         }
       }
     },
+    "A simple to-do list, kept in Apple Reminders.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A simple to-do list, kept in Apple Reminders."
+          }
+        }
+      }
+    },
     "AC": {
       "localizations": {
         "en": {
@@ -1250,6 +1340,26 @@
         }
       }
     },
+    "Add task": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add task"
+          }
+        }
+      }
+    },
+    "Add task…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add task…"
+          }
+        }
+      }
+    },
     "Advanced": {
       "localizations": {
         "en": {
@@ -1310,12 +1420,42 @@
         }
       }
     },
+    "All done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All done"
+          }
+        }
+      }
+    },
     "All sensors (%lld)": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "All sensors (%lld)"
+          }
+        }
+      }
+    },
+    "Allow Access to Reminders": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Access to Reminders"
+          }
+        }
+      }
+    },
+    "Allow Access…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Access…"
           }
         }
       }
@@ -1502,6 +1642,16 @@
         }
       }
     },
+    "At this pace: runs out ~%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At this pace: runs out ~%@"
+          }
+        }
+      }
+    },
     "Automatically keep awake": {
       "localizations": {
         "en": {
@@ -1558,6 +1708,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Backup"
+          }
+        }
+      }
+    },
+    "Based on the average pace since this window started": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Based on the average pace since this window started"
           }
         }
       }
@@ -2298,6 +2458,16 @@
         }
       }
     },
+    "Completed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed"
+          }
+        }
+      }
+    },
     "Completions": {
       "localizations": {
         "en": {
@@ -2324,6 +2494,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Condition"
+          }
+        }
+      }
+    },
+    "Connect Reminders": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Reminders"
           }
         }
       }
@@ -2409,12 +2589,32 @@
         }
       }
     },
+    "Couldn't add that to Reminders.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't add that to Reminders."
+          }
+        }
+      }
+    },
     "Couldn't change the microphone.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Couldn't change the microphone."
+          }
+        }
+      }
+    },
+    "Couldn't delete that reminder.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't delete that reminder."
           }
         }
       }
@@ -2489,12 +2689,32 @@
         }
       }
     },
+    "Couldn't update that reminder.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't update that reminder."
+          }
+        }
+      }
+    },
     "Count": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Count"
+          }
+        }
+      }
+    },
+    "Counts all time since VibeCheck started watching, on battery or plugged in. Total %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Counts all time since VibeCheck started watching, on battery or plugged in. Total %@."
           }
         }
       }
@@ -2571,6 +2791,16 @@
         }
       }
     },
+    "Day": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Day"
+          }
+        }
+      }
+    },
     "Days": {
       "localizations": {
         "en": {
@@ -2591,12 +2821,52 @@
         }
       }
     },
+    "Default (%@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default (%@)"
+          }
+        }
+      }
+    },
     "Default account": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Default account"
+          }
+        }
+      }
+    },
+    "Default list": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default list"
+          }
+        }
+      }
+    },
+    "Delete": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        }
+      }
+    },
+    "Delete %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete %@"
           }
         }
       }
@@ -2617,6 +2887,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Delete from history"
+          }
+        }
+      }
+    },
+    "Delete this reminder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this reminder"
+          }
+        }
+      }
+    },
+    "Delete…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete…"
           }
         }
       }
@@ -2979,6 +3269,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ends the keep-awake session so your Mac can sleep as usual."
+          }
+        }
+      }
+    },
+    "Energy used today": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Energy used today"
+          }
+        }
+      }
+    },
+    "Energy used yesterday": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Energy used yesterday"
           }
         }
       }
@@ -4398,12 +4708,32 @@
         }
       }
     },
+    "List": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List"
+          }
+        }
+      }
+    },
     "List Busiest Apps": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "List Busiest Apps"
+          }
+        }
+      }
+    },
+    "List: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List: %@"
           }
         }
       }
@@ -4585,6 +4915,66 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mac health in one ring"
+          }
+        }
+      }
+    },
+    "Mark %@ as done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark %@ as done"
+          }
+        }
+      }
+    },
+    "Mark %@ as not done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark %@ as not done"
+          }
+        }
+      }
+    },
+    "Mark as Done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as Done"
+          }
+        }
+      }
+    },
+    "Mark as Not Done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as Not Done"
+          }
+        }
+      }
+    },
+    "Mark as done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as done"
+          }
+        }
+      }
+    },
+    "Mark as not done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as not done"
           }
         }
       }
@@ -5001,12 +5391,32 @@
         }
       }
     },
+    "No Reminders lists yet. Make one in the Reminders app.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Reminders lists yet. Make one in the Reminders app."
+          }
+        }
+      }
+    },
     "No USB devices connected.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "No USB devices connected."
+          }
+        }
+      }
+    },
+    "No access": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No access"
           }
         }
       }
@@ -5341,6 +5751,26 @@
         }
       }
     },
+    "Nothing recorded for yesterday.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing recorded for yesterday."
+          }
+        }
+      }
+    },
+    "Nothing to do.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing to do."
+          }
+        }
+      }
+    },
     "Nothing yet. Alerts and keep-awake endings show up here.": {
       "localizations": {
         "en": {
@@ -5541,6 +5971,16 @@
         }
       }
     },
+    "On pace to last until reset": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On pace to last until reset"
+          }
+        }
+      }
+    },
     "On power": {
       "localizations": {
         "en": {
@@ -5577,6 +6017,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Online"
+          }
+        }
+      }
+    },
+    "Open": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
           }
         }
       }
@@ -5627,6 +6077,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open Privacy & Security"
+          }
+        }
+      }
+    },
+    "Open Privacy Settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Privacy Settings"
+          }
+        }
+      }
+    },
+    "Open Privacy Settings…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Privacy Settings…"
+          }
+        }
+      }
+    },
+    "Open Reminders": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Reminders"
           }
         }
       }
@@ -5877,6 +6357,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Performance cores"
+          }
+        }
+      }
+    },
+    "Pick a Reminders list in Settings first.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a Reminders list in Settings first."
           }
         }
       }
@@ -6282,6 +6772,26 @@
         }
       }
     },
+    "Reminders": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders"
+          }
+        }
+      }
+    },
+    "Reminders access is restricted on this Mac, so the to-do list can't be shown.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders access is restricted on this Mac, so the to-do list can't be shown."
+          }
+        }
+      }
+    },
     "Remove %@": {
       "localizations": {
         "en": {
@@ -6368,6 +6878,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Restore Default Alerts"
+          }
+        }
+      }
+    },
+    "Restricted on this Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restricted on this Mac"
           }
         }
       }
@@ -6763,6 +7283,16 @@
         }
       }
     },
+    "Show run-out time when close": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show run-out time when close"
+          }
+        }
+      }
+    },
     "Show seconds": {
       "localizations": {
         "en": {
@@ -7083,6 +7613,16 @@
         }
       }
     },
+    "Still collecting. Check back in a few minutes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Still collecting. Check back in a few minutes."
+          }
+        }
+      }
+    },
     "Still running. Force stop?": {
       "localizations": {
         "en": {
@@ -7244,6 +7784,16 @@
         }
       }
     },
+    "Switch list": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch list"
+          }
+        }
+      }
+    },
     "Switch to %@ mode": {
       "extractionState": "stale",
       "localizations": {
@@ -7323,6 +7873,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Take a break. Your Mac can sleep again."
+          }
+        }
+      }
+    },
+    "Tasks live in Apple Reminders, so they sync with your iPhone through iCloud. VibeCheck shows one list and only changes it when you add, tick off or delete a task.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tasks live in Apple Reminders, so they sync with your iPhone through iCloud. VibeCheck shows one list and only changes it when you add, tick off or delete a task."
           }
         }
       }
@@ -7659,6 +8219,16 @@
         }
       }
     },
+    "To-do": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To-do"
+          }
+        }
+      }
+    },
     "Today": {
       "localizations": {
         "en": {
@@ -7725,6 +8295,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tokens today"
+          }
+        }
+      }
+    },
+    "Tomorrow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tomorrow"
           }
         }
       }
@@ -7905,6 +8485,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Until off"
+          }
+        }
+      }
+    },
+    "Untitled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untitled"
           }
         }
       }
@@ -8219,6 +8809,16 @@
         }
       }
     },
+    "VibeCheck can't read Reminders. Turn VibeCheck on in System Settings › Privacy & Security › Reminders.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCheck can't read Reminders. Turn VibeCheck on in System Settings › Privacy & Security › Reminders."
+          }
+        }
+      }
+    },
     "VibeCheck is free, with no ads, accounts or tracking, and it stays that way. If it saves you a few minutes of squinting at Activity Monitor, a coffee says thanks.": {
       "localizations": {
         "en": {
@@ -8235,6 +8835,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "VibeCheck is running but you can't see it"
+          }
+        }
+      }
+    },
+    "VibeCheck isn't allowed to read Reminders. Turn it on in System Settings › Privacy & Security › Reminders.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCheck isn't allowed to read Reminders. Turn it on in System Settings › Privacy & Security › Reminders."
           }
         }
       }
@@ -8265,6 +8875,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "VibeCheck isn't running"
+          }
+        }
+      }
+    },
+    "VibeCheck keeps your to-dos in Apple Reminders, so they sync with your other devices.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCheck keeps your to-dos in Apple Reminders, so they sync with your other devices."
           }
         }
       }
@@ -8638,6 +9258,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Write %@"
+          }
+        }
+      }
+    },
+    "Yesterday": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yesterday"
           }
         }
       }
@@ -9124,12 +9754,32 @@
         }
       }
     },
+    "no access to Reminders": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "no access to Reminders"
+          }
+        }
+      }
+    },
     "no agent logs found": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "no agent logs found"
+          }
+        }
+      }
+    },
+    "not connected to Reminders": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "not connected to Reminders"
           }
         }
       }
@@ -9205,12 +9855,32 @@
         }
       }
     },
+    "open": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "open"
+          }
+        }
+      }
+    },
     "open to network": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "open to network"
+          }
+        }
+      }
+    },
+    "open · %lld due": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "open · %lld due"
           }
         }
       }
