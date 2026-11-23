@@ -7,6 +7,8 @@ struct ProcessRow: Identifiable, Sendable {
     let memory: Double  // resident bytes
     /// The process macOS holds responsible (e.g. Chrome for its helpers); equals `id` for apps themselves.
     let responsible: Int32
+    /// Estimated power draw, when two readings far enough apart exist.
+    var watts: Double? = nil
 }
 
 /// Every process that belongs to one app, summed.
@@ -16,6 +18,8 @@ struct AppUsage: Identifiable {
     let cpu: Double
     let memory: Double
     let processCount: Int
+    /// Sum of the members' known watts; nil when none of them has a reading.
+    var watts: Double? = nil
 }
 
 enum ProcessSampler {
