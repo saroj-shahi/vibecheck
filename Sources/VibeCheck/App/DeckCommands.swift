@@ -12,6 +12,8 @@ struct DeckCommand: Identifiable {
     var confirm = false
     /// The Settings pane that goes with this command, offered in its ⌘↩ actions.
     var settingsSection: SettingsSection?
+    /// More ⌘↩ actions after Run (clipboard rows: pin, delete).
+    var extraActions: [DeckCommand] = []
     let run: @MainActor () -> Void
 }
 
@@ -86,6 +88,17 @@ enum DeckCommands {
         }
 
         list.append(contentsOf: processCommands(stats: stats, model: model))
+        list.append(DeckCommand(id: "cursor.find", title: String(localized: "Find my cursor"), symbol: "cursorarrow.rays",
+                                keywords: "mouse pointer locate where highlight", settingsSection: .shortcuts) {
+            close()
+            CursorFinder.flash()
+        })
+        list.append(DeckCommand(id: "keyboard.clean", title: String(localized: "Clean keyboard"), symbol: "keyboard",
+                                keywords: "wipe disable lock keys clean") {
+            close()
+            KeyboardCleaner.shared.start()
+        })
+        list.append(contentsOf: clipboardCommands(model: model))
 
         for section in SettingsSection.allCases {
             list.append(DeckCommand(id: "settings.\(section.id)", title: String(localized: "\(section.title) settings"),
@@ -130,11 +143,60 @@ enum DeckCommands {
         return list
     }
 
+    /// Pinned snippets, then clipboard history (newest first), then "Clear clipboard history". Rows are found
+    /// by their contents; typing "clip" shows only these (see `filter`).
+    static func clipboardCommands(model: DeckModel) -> [DeckCommand] {
+        let clip = ClipboardHistory.shared
+        let keywords = "clip clipboard paste copied history"
+        func paste(_ copy: () -> Void) {
+            copy()
+            if ClipboardHistory.pasteCopied() { model.requestClose?() } else { model.showNotice(String(localized: "Copied. Press ⌘V to paste.")) }
+        }
+        var list: [DeckCommand] = clip.snippets.enumerated().map { index, text in
+            DeckCommand(id: "clip.snippet.\(index)", title: ClipItem.preview(text), symbol: "pin.fill",
+                        keywords: "\(keywords) snippet pinned \(text.prefix(300))", settingsSection: .clipboard,
+                        extraActions: [DeckCommand(id: "action.unpin", title: String(localized: "Unpin"), symbol: "pin.slash") {
+                            clip.unpin(text)
+                        }]) {
+                model.closePalette()
+                paste { clip.copy(snippet: text) }
+            }
+        }
+        for item in clip.items {
+            var actions: [DeckCommand] = []
+            if case .files = item.content {
+                actions.append(DeckCommand(id: "action.astext", title: String(localized: "Paste as plain text"), symbol: "text.alignleft") {
+                    paste { clip.copy(item, asText: true) }
+                })
+            }
+            if case .text(let text) = item.content {
+                actions.append(DeckCommand(id: "action.pin", title: String(localized: "Pin"), symbol: "pin") { clip.pin(text) })
+            }
+            actions.append(DeckCommand(id: "action.delete", title: String(localized: "Delete from history"), symbol: "trash") { clip.delete(item) })
+            let searchable = if case .text(let text) = item.content { String(text.prefix(300)) } else { item.title }
+            list.append(DeckCommand(id: "clip.\(item.id.uuidString)", title: item.title, symbol: item.symbol,
+                                    keywords: "\(keywords) \(item.appName ?? "") \(searchable)", settingsSection: .clipboard,
+                                    extraActions: actions) {
+                model.closePalette()
+                paste { clip.copy(item) }
+            })
+        }
+        if !clip.items.isEmpty {
+            list.append(DeckCommand(id: "clip.clear", title: String(localized: "Clear clipboard history"), symbol: "clear",
+                                    keywords: keywords, confirm: true, settingsSection: .clipboard) {
+                clip.clear()
+                model.closePalette()
+            })
+        }
+        return list
+    }
+
     /// The ⌘↩ list for a row: run it, and open the Settings pane that goes with it (when there is one).
     static func actions(for command: DeckCommand, model: DeckModel) -> [DeckCommand] {
         var list = [DeckCommand(id: "action.run", title: command.confirm ? command.title : String(localized: "Run"), symbol: "return") {
             activate(command, model: model)
         }]
+        list.append(contentsOf: command.extraActions)
         if let section = command.settingsSection {
             list.append(DeckCommand(id: "action.settings", title: String(localized: "Open \(section.title) settings"), symbol: section.symbol) {
                 model.requestClose?()
@@ -150,8 +212,8 @@ enum DeckCommands {
             model.paletteConfirmID = command.id
         } else {
             model.paletteConfirmID = nil
-            // Process ids carry a pid, which gets reused: don't rank them.
-            if !command.id.hasPrefix("process.") { RecentCommands.record(command.id) }
+            // Process ids carry a pid, which gets reused, and clipboard rows come and go: don't rank them.
+            if !command.id.hasPrefix("process.") && !command.id.hasPrefix("clip.") { RecentCommands.record(command.id) }
             command.run()
         }
     }
@@ -160,7 +222,13 @@ enum DeckCommands {
     /// then the original order.
     nonisolated static func filter(_ commands: [DeckCommand], query: String,
                                    recent: [String] = RecentCommands.load()) -> [DeckCommand] {
-        let q = query.trimmingCharacters(in: .whitespaces).lowercased()
+        var q = query.trimmingCharacters(in: .whitespaces).lowercased()
+        var commands = commands
+        // "clip" (or "clip …") narrows to the clipboard rows and searches them with the rest.
+        if q == "clip" || q.hasPrefix("clip ") {
+            commands = commands.filter { $0.id.hasPrefix("clip.") }
+            q = String(q.dropFirst(4)).trimmingCharacters(in: .whitespaces)
+        }
         func rank(_ id: String) -> Int { recent.firstIndex(of: id) ?? Int.max }
         let scored: [(Int, Int, DeckCommand)] = commands.enumerated().compactMap { index, command in
             let value = q.isEmpty ? Optional(0) : score(q, title: command.title, keywords: command.keywords)

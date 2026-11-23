@@ -7,9 +7,15 @@ import Foundation
 final class HotkeyManager {
     static let shared = HotkeyManager()
 
+    /// Shortcuts beside the module ones: modifier + A / V / F.
+    enum Extra: UInt32, CaseIterable {
+        case keepAwake = 100, clipboard, findCursor
+        var keyCode: Int { [.keepAwake: kVK_ANSI_A, .clipboard: kVK_ANSI_V, .findCursor: kVK_ANSI_F][self]! }
+        var key: String { [.keepAwake: "A", .clipboard: "V", .findCursor: "F"][self]! }
+    }
+
     var onTrigger: ((Module) -> Void)?
-    var onKeepAwake: (() -> Void)?
-    private static let keepAwakeID: UInt32 = 100
+    var onExtra: ((Extra) -> Void)?
 
     private var refs: [EventHotKeyRef] = []
     private var handlerInstalled = false
@@ -17,7 +23,7 @@ final class HotkeyManager {
     private static let keyCodes = [kVK_ANSI_1, kVK_ANSI_2, kVK_ANSI_3, kVK_ANSI_4, kVK_ANSI_5,
                                    kVK_ANSI_6, kVK_ANSI_7, kVK_ANSI_8, kVK_ANSI_9, kVK_ANSI_0]
 
-    func register(modifier: HotkeyModifier, keepAwake: Bool = false) {
+    func register(modifier: HotkeyModifier, extras: Set<Extra> = []) {
         unregisterAll()
         installHandlerIfNeeded()
         let flags: Int
@@ -34,13 +40,13 @@ final class HotkeyManager {
             if status == noErr, let ref { refs.append(ref) }
             else { NSLog("VibeCheck: shortcut \(modifier.symbols)\(Module.allCases[index].shortcutKey ?? "?") unavailable (\(status))") }
         }
-        if keepAwake {
+        for extra in Extra.allCases where extras.contains(extra) {
             var ref: EventHotKeyRef?
-            let status = RegisterEventHotKey(UInt32(kVK_ANSI_A), UInt32(flags),
-                                             EventHotKeyID(signature: Self.signature, id: Self.keepAwakeID),
+            let status = RegisterEventHotKey(UInt32(extra.keyCode), UInt32(flags),
+                                             EventHotKeyID(signature: Self.signature, id: extra.rawValue),
                                              GetApplicationEventTarget(), 0, &ref)
             if status == noErr, let ref { refs.append(ref) }
-            else { NSLog("VibeCheck: shortcut \(modifier.symbols)A unavailable (\(status))") }
+            else { NSLog("VibeCheck: shortcut \(modifier.symbols)\(extra.key) unavailable (\(status))") }
         }
     }
 
@@ -50,7 +56,7 @@ final class HotkeyManager {
     }
 
     fileprivate func fire(_ index: Int) {
-        if index == Int(Self.keepAwakeID) { onKeepAwake?(); return }
+        if let extra = Extra(rawValue: UInt32(index)) { onExtra?(extra); return }
         guard Module.allCases.indices.contains(index) else { return }
         onTrigger?(Module.allCases[index])
     }

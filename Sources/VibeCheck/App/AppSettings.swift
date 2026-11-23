@@ -215,6 +215,14 @@ final class AppSettings {
     var hotkeyModifier: HotkeyModifier {
         didSet { save(hotkeyModifier.rawValue, "hotkeyModifier", structural: true) }
     }
+    /// Modifier + V opens the palette in clipboard mode; modifier + F finds the cursor. Off by default
+    /// (⌥⌘V and ⌥⌘F mean something in many apps).
+    var clipboardHotkey: Bool {
+        didSet { save(clipboardHotkey, "clipboardHotkey", structural: true) }
+    }
+    var findCursorHotkey: Bool {
+        didSet { save(findCursorHotkey, "findCursorHotkey", structural: true) }
+    }
     var alertRules: [AlertRule] {
         didSet {
             if let data = try? JSONEncoder().encode(alertRules) { defaults.set(data, forKey: "alertRules") }
@@ -266,6 +274,8 @@ final class AppSettings {
         checkForUpdates = defaults.object(forKey: "checkForUpdates") as? Bool ?? true
         hotkeysEnabled = defaults.object(forKey: "hotkeysEnabled") as? Bool ?? true
         showPublicIP = defaults.object(forKey: "showPublicIP") as? Bool ?? false
+        clipboardHotkey = defaults.bool(forKey: "clipboardHotkey")
+        findCursorHotkey = defaults.bool(forKey: "findCursorHotkey")
         hotkeyModifier = defaults.string(forKey: "hotkeyModifier").flatMap(HotkeyModifier.init(rawValue:))
             ?? .controlOptionCommand
         let storedOrder = (defaults.array(forKey: "moduleOrder") as? [String] ?? []).compactMap(Module.init(rawValue:))

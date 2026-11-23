@@ -310,7 +310,13 @@ private struct DeckFooter: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            if let query = model.paletteQuery {
+            if let notice = model.notice {
+                Label(notice, systemImage: "checkmark.circle.fill")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 6)
+                Spacer(minLength: 0)
+            } else if let query = model.paletteQuery {
                 let count = DeckCommands.filter(DeckCommands.all(model: model, settings: settings), query: query).count
                 Group {
                     hint("↩", "run")

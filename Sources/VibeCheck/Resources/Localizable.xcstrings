@@ -572,6 +572,26 @@
         }
       }
     },
+    "%@F finds your cursor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@F finds your cursor"
+          }
+        }
+      }
+    },
+    "%@V opens clipboard history": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@V opens clipboard history"
+          }
+        }
+      }
+    },
     "%lld": {
       "localizations": {
         "en": {
@@ -608,6 +628,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$lld dBm, noise %2$lld dBm"
+          }
+        }
+      }
+    },
+    "%lld files": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld files"
           }
         }
       }
@@ -1111,6 +1141,16 @@
         }
       }
     },
+    "Add App…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add App…"
+          }
+        }
+      }
+    },
     "Add a city or time zone": {
       "localizations": {
         "en": {
@@ -1187,6 +1227,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "All sensors (%lld)"
+          }
+        }
+      }
+    },
+    "Allow VibeCheck in System Settings → Privacy & Security → Accessibility, then try again. VibeCheck only ignores keys while cleaning mode is on.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow VibeCheck in System Settings → Privacy & Security → Accessibility, then try again. VibeCheck only ignores keys while cleaning mode is on."
           }
         }
       }
@@ -1918,12 +1968,42 @@
         }
       }
     },
+    "Clean keyboard": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clean keyboard"
+          }
+        }
+      }
+    },
     "Clear": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Clear"
+          }
+        }
+      }
+    },
+    "Clear History": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear History"
+          }
+        }
+      }
+    },
+    "Clear clipboard history": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear clipboard history"
           }
         }
       }
@@ -1949,6 +2029,16 @@
         }
       }
     },
+    "Clipboard": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipboard"
+          }
+        }
+      }
+    },
     "Clock": {
       "localizations": {
         "en": {
@@ -1965,6 +2055,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Colorful graphs"
+          }
+        }
+      }
+    },
+    "Common password managers are on this list from the start, installed or not.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Common password managers are on this list from the start, installed or not."
           }
         }
       }
@@ -2026,6 +2126,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Copied"
+          }
+        }
+      }
+    },
+    "Copied. Press ⌘V to paste.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied. Press ⌘V to paste."
           }
         }
       }
@@ -2203,6 +2313,16 @@
         }
       }
     },
+    "Delete from history": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete from history"
+          }
+        }
+      }
+    },
     "Details": {
       "localizations": {
         "en": {
@@ -2270,6 +2390,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Display"
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
           }
         }
       }
@@ -2662,6 +2792,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Find anything in the deck"
+          }
+        }
+      }
+    },
+    "Find my cursor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find my cursor"
           }
         }
       }
@@ -3266,6 +3406,16 @@
         }
       }
     },
+    "Image, %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image, %@"
+          }
+        }
+      }
+    },
     "Import": {
       "localizations": {
         "en": {
@@ -3528,12 +3678,32 @@
         }
       }
     },
+    "Keep clipboard history": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep clipboard history"
+          }
+        }
+      }
+    },
     "Keep display awake": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Keep display awake"
+          }
+        }
+      }
+    },
+    "Keep history across restarts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep history across restarts"
           }
         }
       }
@@ -3594,6 +3764,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Keeping your Mac awake."
+          }
+        }
+      }
+    },
+    "Keyboard cleaning": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyboard cleaning"
+          }
+        }
+      }
+    },
+    "Keyboard cleaning needs Accessibility": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyboard cleaning needs Accessibility"
+          }
+        }
+      }
+    },
+    "Keys are off for %lld s": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keys are off for %lld s"
           }
         }
       }
@@ -4201,6 +4401,26 @@
         }
       }
     },
+    "Never record copies from": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never record copies from"
+          }
+        }
+      }
+    },
+    "New snippet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New snippet"
+          }
+        }
+      }
+    },
     "No %@ alerts.": {
       "localizations": {
         "en": {
@@ -4631,6 +4851,16 @@
         }
       }
     },
+    "Off by default. Find copies in ⌘K: type “clip”. Text up to 64 KB, images up to 5 MB and files are kept, in memory only unless you keep them across restarts (images never are). Never recorded: items apps mark as private, anything copied while secure keyboard entry is on, and copies from the apps below. %@V can open it from anywhere (see Shortcuts). Pasting into the app you were in needs Accessibility; without it, ↩ copies and you press ⌘V.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off by default. Find copies in ⌘K: type “clip”. Text up to 64 KB, images up to 5 MB and files are kept, in memory only unless you keep them across restarts (images never are). Never recorded: items apps mark as private, anything copied while secure keyboard entry is on, and copies from the apps below. %@V can open it from anywhere (see Shortcuts). Pasting into the app you were in needs Accessibility; without it, ↩ copies and you press ⌘V."
+          }
+        }
+      }
+    },
     "Off by default. When on, VibeCheck asks api.ipify.org (over HTTPS) for your address at most every 10 minutes and when your network changes. That service sees your IP, as any website does.": {
       "localizations": {
         "en": {
@@ -4781,12 +5011,32 @@
         }
       }
     },
+    "Open Privacy & Security": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Privacy & Security"
+          }
+        }
+      }
+    },
     "Open Settings from the deck": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Open Settings from the deck"
+          }
+        }
+      }
+    },
+    "Open System Settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open System Settings"
           }
         }
       }
@@ -4931,6 +5181,16 @@
         }
       }
     },
+    "Paste as plain text": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste as plain text"
+          }
+        }
+      }
+    },
     "Peak %@": {
       "localizations": {
         "en": {
@@ -4987,6 +5247,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pick a city to see the weather."
+          }
+        }
+      }
+    },
+    "Pin": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pin"
+          }
+        }
+      }
+    },
+    "Pinned snippets": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pinned snippets"
           }
         }
       }
@@ -5282,12 +5562,32 @@
         }
       }
     },
+    "Remember the last %lld items": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remember the last %lld items"
+          }
+        }
+      }
+    },
     "Remove %@": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Remove %@"
+          }
+        }
+      }
+    },
+    "Remove snippet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove snippet"
           }
         }
       }
@@ -5789,6 +6089,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Signal"
+          }
+        }
+      }
+    },
+    "Snippets come first in ⌘K's clipboard results and are kept even with history off. Pin a text copy with ⌘↩ in ⌘K.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snippets come first in ⌘K's clipboard results and are kept even with history off. Pin a text copy with ⌘↩ in ⌘K."
           }
         }
       }
@@ -6657,6 +6967,16 @@
         }
       }
     },
+    "Unpin": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unpin"
+          }
+        }
+      }
+    },
     "Until": {
       "localizations": {
         "en": {
@@ -7300,6 +7620,16 @@
         }
       }
     },
+    "Wipe away. Touch ID and the power button still work.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wipe away. Touch ID and the power button still work."
+          }
+        }
+      }
+    },
     "Wired": {
       "localizations": {
         "en": {
@@ -7676,6 +8006,16 @@
         }
       }
     },
+    "macOS is blocking VibeCheck from reading the clipboard, so nothing is recorded. Allow it in System Settings → Privacy & Security → Paste from Other Apps.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS is blocking VibeCheck from reading the clipboard, so nothing is recorded. Allow it in System Settings → Privacy & Security → Paste from Other Apps."
+          }
+        }
+      }
+    },
     "macOS is starting to throttle": {
       "comment": "Vibe reason, fits 'Your Mac is cooked: …'",
       "localizations": {
@@ -7694,6 +8034,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "macOS is throttling to cool down"
+          }
+        }
+      }
+    },
+    "macOS may ask before VibeCheck reads a copy. Choose Always Allow for VibeCheck in System Settings → Privacy & Security → Paste from Other Apps to stop the prompts.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS may ask before VibeCheck reads a copy. Choose Always Allow for VibeCheck in System Settings → Privacy & Security → Paste from Other Apps to stop the prompts."
           }
         }
       }
