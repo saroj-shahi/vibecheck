@@ -551,6 +551,16 @@
         }
       }
     },
+    "%@: %lld min mid, %lld min cooked": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$lld min mid, %3$lld min cooked"
+          }
+        }
+      }
+    },
     "%@: %lld percent left, resets in %@": {
       "localizations": {
         "en": {
@@ -578,6 +588,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@: %2$lld percent left, resets in %3$@, runs out before reset at this pace"
+          }
+        }
+      }
+    },
+    "%@: vibing all day": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: vibing all day"
           }
         }
       }
@@ -915,6 +935,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "+%lld more"
+          }
+        }
+      }
+    },
+    ", %@ for %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", %1$@ for %2$@."
+          }
+        }
+      }
+    },
+    ", mostly %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", mostly %@"
           }
         }
       }
@@ -1549,6 +1589,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "CPU"
+          }
+        }
+      }
+    },
+    "CPU %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU %@"
           }
         }
       }
@@ -2443,6 +2493,16 @@
         }
       }
     },
+    "Dismiss overnight battery note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss overnight battery note"
+          }
+        }
+      }
+    },
     "Dismiss tip": {
       "localizations": {
         "en": {
@@ -2590,6 +2650,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Drizzle"
+          }
+        }
+      }
+    },
+    "Efficiency cores": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Efficiency cores"
           }
         }
       }
@@ -3175,6 +3245,16 @@
         }
       }
     },
+    "GPU %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GPU %@"
+          }
+        }
+      }
+    },
     "GPU is at %@.": {
       "localizations": {
         "en": {
@@ -3646,6 +3726,16 @@
         }
       }
     },
+    "It woke %lld times": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It woke %lld times"
+          }
+        }
+      }
+    },
     "It worked for %@.": {
       "localizations": {
         "en": {
@@ -3919,6 +4009,7 @@
       }
     },
     "Last 24 h": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4507,6 +4598,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Network name"
+          }
+        }
+      }
+    },
+    "Neural Engine %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neural Engine %@"
           }
         }
       }
@@ -5281,6 +5382,16 @@
         }
       }
     },
+    "Overnight: battery dropped %lld%% in %lld h.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overnight: battery dropped %1$lld%% in %2$lld h."
+          }
+        }
+      }
+    },
     "Owned by another user": {
       "localizations": {
         "en": {
@@ -5377,6 +5488,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Percent used"
+          }
+        }
+      }
+    },
+    "Performance cores": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Performance cores"
           }
         }
       }
@@ -5577,6 +5698,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rain"
+          }
+        }
+      }
+    },
+    "Range": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Range"
           }
         }
       }
@@ -7418,6 +7549,16 @@
         }
       }
     },
+    "Vibe over the last 7 days, minutes mid or cooked per day. %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vibe over the last 7 days, minutes mid or cooked per day. %@"
+          }
+        }
+      }
+    },
     "Vibe: %@": {
       "localizations": {
         "en": {
@@ -8319,6 +8460,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "memory pressure is critical"
+          }
+        }
+      }
+    },
+    "most often": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "most often"
+          }
+        }
+      }
+    },
+    "mostly": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "mostly"
           }
         }
       }

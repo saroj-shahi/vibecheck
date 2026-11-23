@@ -44,6 +44,8 @@ final class SystemStats {
     private(set) var volumes: [VolumeInfo] = []
 
     private(set) var sensors = SensorsSample()
+    /// Latest CPU/GPU/Neural Engine power; only refreshed while a CPU or GPU panel is open.
+    private(set) var power: PowerReport?
     private(set) var temperatureHistory = History(capacity: historyLength)
 
     private(set) var battery = BatterySample()
@@ -96,6 +98,8 @@ final class SystemStats {
     private let networkMonitor = NetworkMonitor()
     private let diskMonitor = DiskMonitor()
     private let sensorsMonitor = SensorsMonitor()
+    @ObservationIgnored private let powerSampler = PowerSampler()
+    @ObservationIgnored private var lastPowerRead = Date.distantPast
 
     /// Number of open panels that list processes; `ps` only runs while this is > 0.
     var processDemand = 0 {
@@ -115,6 +119,18 @@ final class SystemStats {
     /// Number of open views listing every temperature sensor; otherwise only the summary sensors are read.
     var sensorDemand = 0 {
         didSet { if sensorDemand > 0, oldValue == 0 { sensors = sensorsMonitor.sample(allSensors: true) } }
+    }
+
+    /// Number of open CPU/GPU panels; the energy counters are only read while this is > 0.
+    var powerDemand = 0 {
+        didSet {
+            if powerDemand > 0, oldValue == 0 {
+                powerSampler.reset()
+                _ = powerSampler.sample(cpuBusy: nil) // baseline for the first delta
+                lastPowerRead = Date()
+            }
+            if powerDemand == 0 { power = nil; powerSampler.reset() }
+        }
     }
 
     private var timer: Timer?
@@ -249,6 +265,10 @@ final class SystemStats {
             lastSensorRead = Date()
         }
         if let hottest = sensors.hottest { temperatureHistory.append(hottest) }
+        if powerDemand > 0, Date().timeIntervalSince(lastPowerRead) >= 1.9 {
+            if let report = powerSampler.sample(cpuBusy: cpu.total) { power = report }
+            lastPowerRead = Date()
+        }
 
         // Slower-changing data refreshes every few ticks.
         if tickCount % 5 == 0 {

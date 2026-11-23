@@ -6,6 +6,9 @@ struct CPUSample {
     var system: Double = 0
     var idle: Double = 1
     var perCore: [Double] = []
+    /// Average busy of performance / efficiency cores; nil on Intel or when the cluster map isn't usable.
+    var performanceBusy: Double?
+    var efficiencyBusy: Double?
     var total: Double { min(1, user + system) }
 }
 
@@ -15,6 +18,7 @@ final class CPUMonitor {
 
     let performanceCores = SysctlReader.int("hw.perflevel0.logicalcpu") ?? 0
     let efficiencyCores = SysctlReader.int("hw.perflevel1.logicalcpu") ?? 0
+    private let clusters = CoreClusters.read()
     let modelName: String = SysctlReader.string("machdep.cpu.brand_string") ?? "CPU"
 
     func sample() -> CPUSample? {
@@ -57,8 +61,10 @@ final class CPUMonitor {
         }
         let all = sumUser + sumSystem + sumIdle
         guard all > 0 else { return nil }
+        let split = CoreClusters.averages(perCore: perCore, map: clusters)
         return CPUSample(user: sumUser / all, system: sumSystem / all,
-                         idle: sumIdle / all, perCore: perCore)
+                         idle: sumIdle / all, perCore: perCore,
+                         performanceBusy: split?.p, efficiencyBusy: split?.e)
     }
 
     static func loadAverage() -> [Double] {

@@ -173,6 +173,7 @@ final class DeckController: NSObject {
     private var holdsProcessDemand = false
     private var holdsNetworkDemand = false
     private var holdsSensorDemand = false
+    private var holdsPowerDemand = false
     /// Bumped on every open/close so a stale close-fade can't hide a deck that was just reopened.
     private var generation = 0
     /// Set by `--deck-demo` so stray clicks elsewhere don't dismiss the deck mid-demo.
@@ -561,10 +562,15 @@ final class DeckController: NSObject {
         let wantsProcesses = visible && [.home, .module(.cpu), .module(.memory)].contains(model.route)
         let wantsNetwork = visible && model.route == .module(.network)
         let wantsSensors = visible && model.route == .module(.sensors)
+        let wantsPower = visible && [.module(.cpu), .module(.gpu)].contains(model.route)
         stats.processInterval = model.route == .home ? 5 : 0
         if wantsSensors != holdsSensorDemand {
             stats.sensorDemand = max(0, stats.sensorDemand + (wantsSensors ? 1 : -1))
             holdsSensorDemand = wantsSensors
+        }
+        if wantsPower != holdsPowerDemand {
+            stats.powerDemand = max(0, stats.powerDemand + (wantsPower ? 1 : -1))
+            holdsPowerDemand = wantsPower
         }
         if wantsProcesses != holdsProcessDemand {
             stats.processDemand = max(0, stats.processDemand + (wantsProcesses ? 1 : -1))
