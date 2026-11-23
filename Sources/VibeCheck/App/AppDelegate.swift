@@ -191,6 +191,12 @@ final class StatusItemController: NSObject {
         refreshLength()
     }
 
+    /// Window state for the launch visibility check.
+    var visibilityProbe: MenuBarVisibility.Probe {
+        let window = item.button?.window
+        return MenuBarVisibility.Probe(hasWindow: window != nil, isVisible: window?.isVisible ?? false, frame: window?.frame ?? .zero)
+    }
+
     /// True when macOS has hidden this item behind the notch (or off the screen's left edge).
     var isHiddenByNotch: Bool {
         guard let window = item.button?.window, window.isVisible,
@@ -266,6 +272,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                 kind: .alert, url: release.pageURL)
         }
         UpdateChecker.shared.start()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+            MainActor.assumeIsolated { self?.checkMenuBarVisibleAtLaunch() }
+        }
         if !CommandLine.arguments.contains("--deck-demo") { StarPrompt.shared.start() }
         stats.onTick = { [weak self] in
             guard let self else { return }
@@ -411,6 +420,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             settings.menuBar.notchNoticeShown = true
             alerts.notify(title: NotchHideWatch.noticeTitle, body: NotchHideWatch.noticeBody, kind: .alert)
         }
+    }
+
+    /// About 3 s after launch: if macOS is hiding every status item ("Allow in the Menu Bar" off), say so once.
+    /// The notch case is NotchHideWatch's job, and an auto-hidden or full-screen menu bar proves nothing.
+    private func checkMenuBarVisibleAtLaunch(secondLook: Bool = false) {
+        guard !UserDefaults.standard.bool(forKey: MenuBarVisibility.shownKey), NSMenu.menuBarVisible() else { return }
+        let all = Array(items.values) + [vibeItem, keepAwakeItem, combinedItem].compactMap { $0 }
+        let probes = all.map { (probe: $0.visibilityProbe, notchHidden: $0.isHiddenByNotch) }
+        let verdict = MenuBarVisibility.verdict(probes: probes, screenFrames: NSScreen.screens.map(\.frame))
+        guard verdict == .hiddenByMacOS else { return }
+        // At login the items may not be placed yet: only a second miss 10 s later counts.
+        guard secondLook else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
+                MainActor.assumeIsolated { self?.checkMenuBarVisibleAtLaunch(secondLook: true) }
+            }
+            return
+        }
+        UserDefaults.standard.set(true, forKey: MenuBarVisibility.shownKey)
+        let alert = NSAlert()
+        alert.messageText = MenuBarVisibility.title
+        alert.informativeText = MenuBarVisibility.body(verdict)
+        alert.addButton(withTitle: String(localized: "Open System Settings"))
+        alert.addButton(withTitle: String(localized: "Not now"))
+        NSApp.activate()
+        if alert.runModal() == .alertFirstButtonReturn { NSWorkspace.shared.open(MenuBarVisibility.settingsURL) }
     }
 
     /// The owner switched back to separate items after an automatic collapse: don't collapse again.

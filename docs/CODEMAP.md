@@ -14,6 +14,8 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 | `AppSettingsGroups.swift` | `SettingsWriter` (shared save helper) and the setting groups `settings.menuBar`, `.clock`, `.weather`, `.keepAwake` (same flat defaults keys as before the split) |
 | `ItemOptions.swift` | Per-item menu bar options (Agents: which agents, % left/used/tokens, windows, reset; Memory, Network, Disk, Battery, Sensors) + `AgentUsageSample.menuBarContent` |
 | `SystemStats.swift` | The tick: samples every monitor, histories, demand counters (`processDemand`, `networkAppDemand`, `sensorDemand`), vibe input, listening ports |
+| `TickPolicy.swift` | `TickPolicy` (pause reasons + Low Power + keep awake → tick interval or none), `TickGate` (ring animation follows the pause) |
+| `MenuBarVisibility.swift` | `DeckBackgroundKind` (glass / blur / opaque for Reduce Transparency), launch check that macOS isn't hiding every item |
 | `Vibe.swift` | Vibe score (vibing / mid / cooked), the verdict sentence and its culprit module |
 | `Alerts.swift` | `AlertMetric`, `AlertRule` (sentence alerts), `AlertEngine` (evaluate, notify, history log) |
 | `KeepAwake.swift` | Sessions (`AwakeEnd`, focus sessions, triggers: power / display / downloads / `AwakeSchedule`), IOKit assertion |

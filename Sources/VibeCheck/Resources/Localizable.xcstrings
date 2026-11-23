@@ -1272,6 +1272,16 @@
         }
       }
     },
+    "Always color the ring": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always color the ring"
+          }
+        }
+      }
+    },
     "Always shown. Click it to start or stop, using the length in “Start sessions for” above. Right-click (or ⌥-click) for every option.": {
       "extractionState": "stale",
       "localizations": {
@@ -1748,6 +1758,16 @@
         }
       }
     },
+    "Charger": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charger"
+          }
+        }
+      }
+    },
     "Charging": {
       "localizations": {
         "en": {
@@ -1764,6 +1784,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Charging at"
+          }
+        }
+      }
+    },
+    "Charging slowly": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charging slowly"
           }
         }
       }
@@ -4732,6 +4762,16 @@
         }
       }
     },
+    "Not now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        }
+      }
+    },
     "Not running": {
       "localizations": {
         "en": {
@@ -6104,6 +6144,16 @@
         }
       }
     },
+    "Shows the vibe color even when everything's vibing.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows the vibe color even when everything's vibing."
+          }
+        }
+      }
+    },
     "Signal": {
       "localizations": {
         "en": {
@@ -7308,6 +7358,16 @@
         }
       }
     },
+    "VibeCheck is running but you can't see it": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCheck is running but you can't see it"
+          }
+        }
+      }
+    },
     "VibeCheck isn't allowed to use Bluetooth, so this does nothing. Allow it in System Settings → Privacy & Security → Bluetooth. ": {
       "localizations": {
         "en": {
@@ -8033,6 +8093,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "macOS is blocking VibeCheck from reading the clipboard, so nothing is recorded. Allow it in System Settings → Privacy & Security → Paste from Other Apps."
+          }
+        }
+      }
+    },
+    "macOS is hiding it. Turn it on in System Settings → Menu Bar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS is hiding it. Turn it on in System Settings → Menu Bar."
           }
         }
       }

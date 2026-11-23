@@ -113,6 +113,10 @@ Choices that shouldn't be undone without a good reason.
 | Glass on the deck only, quiet fills on tiles | Apple's guidelines say not to stack glass on glass |
 | Menu bar monochrome by default, color only when not vibing | macOS menu bar conventions |
 | Vibe state needs 2 consecutive samples to change | Prevents menu bar flicker |
+| The tick stops while the display sleeps, the screen is locked or the session is switched out; every 30 s instead while a keep-awake session runs; doubled (min 4 s) in Low Power Mode (2026-11-23) | No one can see it. Keep-awake's own 5 s check still needs fresh battery readings. Lock state is re-read from `CGSessionCopyCurrentDictionary` on wake / unlock and opening the deck clears every pause, so a dropped notification can't freeze the tick. Trade-off: a trigger can't start a session until wake |
+| Charger wattage from public `IOPSCopyExternalPowerAdapterDetails` (fallback `AdapterDetails`), only on AC; shown only when a real value exists | Honest numbers: never 0 W or a guess. The reading (68 W) can differ from the label (70 W) |
+| Reduce Transparency gives the deck an opaque `windowBackgroundColor` background, hairline kept | Accessibility; glass behind dense rows reads poorly with transparency reduced |
+| Launch check: if macOS hides every item ("Allow in the Menu Bar" off) at 3 s and again at 13 s, one `NSAlert` ever, opening System Settings (undocumented `com.apple.ControlCenter-Settings.extension` pane id); skipped when the menu bar is auto-hidden | Otherwise the app looks like it never launched. The notch case stays with `NotchHideWatch` |
 | `ps` / `nettop` only run while a view needs them | CPU budget |
 | Charts resample every range to 120 buckets | Lets Live/1H/24H morph with one animatable shape |
 | Open-Meteo + city search, no Location permission | Free, no API key, privacy |
