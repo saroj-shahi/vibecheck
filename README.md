@@ -60,8 +60,8 @@ with a button to quit the app that's causing it.
   overnight: tap the cup and your Mac won't nod off. It even goes back to normal on its own.
 - **Calm during calls.** When your camera or mic is on, VibeCheck keeps quiet and keeps the screen on.
 - **Heads-ups, only when it matters.** Set alerts in plain sentences: _"Tell me when the battery is below 20%."_
-- **See how much your AI tools are using.** It counts the tokens Claude Code, Codex and others use each day, and shows how close you are to their limits.
-- **Weather, world clocks and widgets** too, so the menu bar you already look at becomes more useful.
+- **See how much your AI tools are using.** It counts the tokens Claude Code, Codex and others use each day, shows how close you are to their limits, and when you'll run out at your current pace.
+- **Weather, world clocks, a to-do list from Apple Reminders and widgets** too, so the menu bar you already look at becomes more useful.
 - **Private by design.** No account, no tracking, no cloud. Everything stays on your Mac.
 - **Made for the Mac.** Fast, light on battery, and at home in macOS, with glass panels, keyboard shortcuts,
   Shortcuts and Siri.
@@ -154,7 +154,13 @@ The glass panel that opens under the menu bar.
 </tr></table>
 
 - **The verdict line** on top says what's going on and who is the loudest app.
-- **Tiles** show each module live. Click one (or use the arrow keys and Return) and it unfolds into the
+- **Quick controls** under the search field: **Mic** mute, **Bluetooth** on/off and **Share** (the Vibe
+  Card), then sliders for **volume** (tap the speaker to mute) and the **built-in display's brightness**. With
+  a Bluetooth keyboard or mouse connected, turning Bluetooth off asks for a second tap.
+- **The summary card** shows uptime, the top app right now, today's biggest energy user and the agent limit
+  closest to running out. Click a fact to open its module. Hide it in Settings → General.
+- **Tiles** show each module live: a big number, a chart, and one more fact (the top app, GB used, upload,
+  charge watts and time to full, fan speed or throttling, the tightest agent limit). Click one (or use the arrow keys and Return) and it unfolds into the
   module's detail view; **Esc** folds back, then closes. **⌘1…⌘9** jump between modules.
 - **Detail views** lead with one big number and a summary, then a chart, then **who's responsible** (top
   apps), with everything else behind a remembered **Details** toggle. Hover a chart to scrub it, switch
@@ -162,12 +168,12 @@ The glass panel that opens under the menu bar.
 - **Quit or force quit** a top app straight from its row (asks first). ⌘↩ runs a tile's main action.
 - **The cup** is keep awake (see below); **the bell** lists the last 20 alerts, with a red dot for unseen
   ones; **the gear** opens Settings.
-- **Mic mute** is one click in the deck; **Empty Trash** lives in the palette.
+- **Empty Trash** lives in the palette.
 
 ### Command palette (⌘K)
 
 Open the deck and press **⌘K**, or just start typing. Everything VibeCheck can do is a command: open a
-module, start or stop keep awake, mute the mic, **Empty Trash** (press ↩ twice), **Quit /
+module, start or stop keep awake, mute the mic, **Add task…** to your to-do list, **Share Vibe Card**, **Empty Trash** (press ↩ twice), **Quit /
 Force Quit** one of the top 3 apps by CPU, turn an alert on or off, **Check for Updates**. The last 8
 commands you ran come first.
 
@@ -186,10 +192,11 @@ Agents). Every detail view follows the same order: the big number, a chart, then
 | Network | ↑/↓ rates, "Offline" when disconnected | per-interface traffic, Wi-Fi details, local IP (public IP opt-in), top apps by traffic, listening ports |
 | Disk | read/write rates | I/O graph, every local volume with free space, connected USB devices |
 | Sensors | hottest temperature | SoC, SSD and battery temperatures, fan speed, system and adapter power |
-| Battery | icon + % | state, time left, power draw, health, cycles, 90-day charge and capacity history, Bluetooth device batteries |
+| Battery | icon + % | state, time left, power draw, health, cycles, 90-day charge and capacity history, **energy used today / yesterday by app** (top 5, estimated by macOS), Bluetooth device batteries |
 | Weather | condition + temperature | now, next 12 hours, 7 days ([Open-Meteo](https://open-meteo.com/); pick a city, no location access) |
 | Agents | agent logo + tokens today | see [AI agents](#ai-agents) |
 | Clock | time | date, month calendar, world clocks with day/night and offset |
+| To-do | checklist + open count | your chosen Apple Reminders list: add (Return), tick off, delete, due dates, a Completed section; switch lists from the header. Asks for Reminders access only when you turn it on |
 
 ### Keep awake
 
@@ -232,7 +239,9 @@ and OpenCode:
 
 - Tokens today, the last 24 h by hour, a 7-day chart, busiest projects and per-model split.
 - Usage limits: Codex limits, and Claude's current 5-hour window (estimated, or live through your own
-  `claude` CLI).
+  `claude` CLI). Each limit has a pace bar (the dot is how much of the window has passed) and a forecast:
+  _"At this pace: runs out ~3:40 pm"_ or _"On pace to last until reset"_. Optionally show the run-out time in
+  the menu bar (Settings → Agents).
 - **Several Claude accounts?** Pick which one in Settings → Agents (auto-found `~/.claude-*` folders, or
   "Choose account folder…").
 - **Agent watch:** keep your Mac awake while an agent is working, and get an "<Agent> is done"
@@ -270,7 +279,7 @@ Control Center); it works while VibeCheck is running.
 
 ### Vibe Card
 
-⌘K → **Share Vibe Card** makes a 1200×630 image of the current vibe: the ring and verdict, your Mac's chip
+**Share** in the deck (or ⌘K → **Share Vibe Card**) makes a 1200×630 image of the current vibe: the ring and verdict, your Mac's chip
 and memory, memory pressure, thermals, power and the top three apps. Pick Light or Dark, optionally hide app
 names, then **Copy Image** or **Save PNG…**. Nothing is uploaded.
 
@@ -295,6 +304,13 @@ vibecheck mood              # vibing / mid / cooked (exit code 0 / 1 / 2)
 vibecheck culprits --top 5  # by memory; --by cpu while the deck is open
 ```
 
+`status --json` also carries each agent limit with its forecast (`limits[].runsOutAt`) and today's top
+energy users (`energyToday`) when there are any.
+
+**Raycast:** a Raycast extension lives in [`integrations/raycast`](integrations/raycast) (Mac Vibe, a menu bar
+command, Culprits), built on `vibecheck status --json`. It isn't in the Raycast Store; run `npm install && npm
+run dev` in that folder to load it.
+
 If you also installed Homebrew's unrelated `vibecheck` formula, the two commands clash; uninstall one or
 call ours by its full path.
 
@@ -302,12 +318,12 @@ call ours by its full path.
 
 Open with the gear in the deck, **⌘,**, or by opening the app again. A searchable sidebar groups the pages:
 
-- **General:** update interval, launch at login, turn Bluetooth off while asleep (Advanced).
+- **General:** update interval, launch at login, show the deck's quick toggles and summary card, turn Bluetooth off while asleep (Advanced).
 - **Menu Bar:** a live preview with your real stats. Choose **Just the vibe ring** (default), separate items
   or **one combined item**; spacing; colorful or single-color graphs; drag to reorder; per-item style (graph,
   icon or value). **Fit around the camera notch** shows only what fits beside the notch plus a "+N" badge.
 - **One page per module:** on/off, how it looks in the menu bar, its alerts and its shortcut.
-- **Keep Awake**, **Alerts**, **Agents**, **Clock** (formats, seconds, world clocks), **Weather** (city, °C / °F).
+- **Keep Awake**, **Alerts**, **Agents**, **Clock** (formats, seconds, world clocks), **Weather** (city, °C / °F), **To-do** (which Reminders list).
 - **Shortcuts:** global hotkeys (see below).
 - **Backup:** export, import or reset settings.
 - **About:** version and the update check.
@@ -320,7 +336,7 @@ Less-used options sit under each page's **Advanced** section.
 
 | Shortcut | Where | Does |
 |---|---|---|
-| `⌃⌥⌘1`…`⌃⌥⌘9`, `⌃⌥⌘0` | anywhere | open the deck on a module |
+| `⌃⌥⌘1`…`⌃⌥⌘9`, `⌃⌥⌘0` | anywhere | open the deck on a module (the first ten; To-do opens from its menu bar item or tile) |
 | `⌃⌥⌘A` | anywhere | toggle keep awake |
 | `⌘K` or start typing | deck | command palette |
 | `⌘1`…`⌘9` | deck | jump to a module |
@@ -434,7 +450,7 @@ version, you must share its source under the same license.
 
 **No warranty.** VibeCheck is provided "as is", without warranty of any kind, and the author isn't liable for
 any damage from using it (GPL-3.0 sections 15 and 16). It reads some undocumented macOS interfaces (SMC
-sensors, HID temperature sensors, Bluetooth power), and can turn Bluetooth off, keep your Mac awake, empty the
+sensors, HID temperature sensors, Bluetooth power, display brightness), and can turn Bluetooth on or off, change the volume and brightness, keep your Mac awake, empty the
 Trash or quit apps when you ask it to. Use those features at your own risk.
 
 The VibeCheck name, icon and artwork aren't covered by the code license; forks must use their own. See

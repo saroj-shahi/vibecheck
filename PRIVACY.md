@@ -8,6 +8,10 @@ VibeCheck runs on your Mac. It has no account, no analytics, no crash reporting 
   home folder. These are counted on your Mac and never sent anywhere.
 - Your Wi-Fi network name, only if you turn on the Wi-Fi keep-awake trigger. Your location is never used or
   stored.
+- Your Apple Reminders, only if you turn on the To-do module: the one list you pick is shown, and reminders are
+  added, completed or deleted only when you do it. Nothing is copied out of Reminders or stored by VibeCheck.
+- Each app's estimated energy use (from macOS), totalled for today and yesterday in `energy.json` (readable
+  only by you) and nothing older.
 
 ## Network requests
 | When | To | What is sent |

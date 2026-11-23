@@ -33,13 +33,14 @@ item count, hidden gestures, unverified accessibility, no distribution. Call gua
 | Header | ~50 pt | Ring + verdict title, then only bell and cup |
 | Search field | 28 pt | Always visible, drawn (the panel never takes focus); ⌘K key cap; click it or just type |
 | Live chips | 0 or 26 pt | One pill per thing happening now (keep awake / focus, mic muted, shortcuts paused); hover shows × to stop; absent when nothing is live |
-| Body | flexible | Quick toggles (one row, max three) + bento grid, or palette results |
+| Body | flexible | Quick controls (one row of three buttons: Mic, Bluetooth, Share; then volume and brightness sliders, each only when available) + summary card (2×2 facts, hideable) + bento grid, or palette results |
 | Footer | 30 pt | Settings (⌘,) · version · Quit; key hints and result count while the palette is open |
 | Detail view | up to the screen | Matched-geometry unfold; pinned header; lists cap at 8 rows + "+N more" |
 
-- Tiles: 3 columns, 8 pt gutters, (390 − 32 − 16) / 3 = **114 pt** so edges land on whole pixels. One hero
-  number per tile; detail lives one click deeper.
-- Settings stays a separate window; the deck never shows a configuration control except the quick toggles.
+- Tiles: 3 columns, 8 pt gutters, (390 − 32 − 16) / 3 = **114 pt** so edges land on whole pixels, 90 pt tall.
+  One hero number per tile, a chart (or detail) line and one note line that's always there so rows stay even;
+  everything else lives one click deeper.
+- Settings stays a separate window; the deck never shows a configuration control except the quick controls.
 
 **Materials**
 - macOS 26+: `NSGlassEffectView`, 18 pt continuous corners. Glass appears once; tiles, chips and rows use
@@ -268,4 +269,14 @@ scripts/qa/build.sh && .build/qa/qa help   # on-screen QA tools
   detail is open.
 - Weather needs network access to Open-Meteo; only the chosen city's coordinates are sent.
 - Keep awake only prevents idle sleep; closing the lid still sleeps the Mac (lid-closed needs root, P3).
+- The agent limit forecast uses the average pace since the window started (no per-window history), so a
+  burst late in the window shows up slowly.
+- Energy today under-counts processes that start and exit between the once-a-minute scans (short compiler
+  runs); totals are macOS's estimates, not metered watts.
+- `status.json` is rewritten on meaningful change or every 5 min, so `limits` and `energyToday` can be up to
+  5 min old there.
+- The brightness slider covers the built-in display only (external displays need DDC); it hides with the lid
+  closed or when DisplayServices is missing.
+- The Reminders permission prompt takes focus, so the deck closes behind it; reopen it after answering.
+- To-do is the 11th module, so it has no `⌃⌥⌘` / `⌘` number shortcut.
 - Agent watch notices a brand-new agent session within 5 min (the full folder walk); known files every minute.
