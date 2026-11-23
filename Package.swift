@@ -32,6 +32,7 @@ let package = Package(
             swiftSettings: [.unsafeFlags(["-application-extension"])],
             linkerSettings: [
                 .linkedFramework("WidgetKit"),
+                .linkedFramework("AppIntents"), // the Control Center toggle's intent
                 // Extensions start in Foundation's NSExtensionMain (as Xcode links them), not Swift's main:
                 // without it the widget traps while bootstrapping.
                 .unsafeFlags(["-Xlinker", "-application_extension", "-Xlinker", "-e", "-Xlinker", "_NSExtensionMain"]),

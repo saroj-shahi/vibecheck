@@ -1,6 +1,8 @@
 import AppKit
 import IOKit.pwr_mgt
 import Observation
+import VibeCheckShared
+import WidgetKit
 
 extension Notification.Name {
     /// A keep-awake session started or ended (the menu bar shows a cup while one runs).
@@ -209,6 +211,42 @@ final class KeepAwake {
 
     private var settings: AppSettings { .shared }
 
+    @ObservationIgnored private var controlObservers: [NSObjectProtocol] = []
+    @ObservationIgnored private var publishedState: Bool?
+
+    private init() {
+        // The Control Center toggle (a sandboxed extension) asks for sessions with these notifications.
+        let center = DistributedNotificationCenter.default()
+        controlObservers = [
+            center.addObserver(forName: Notification.Name(WidgetShared.keepAwakeStartName), object: nil, queue: .main) { _ in
+                MainActor.assumeIsolated { KeepAwake.shared.controlRequested(start: true) }
+            },
+            center.addObserver(forName: Notification.Name(WidgetShared.keepAwakeStopName), object: nil, queue: .main) { _ in
+                MainActor.assumeIsolated { KeepAwake.shared.controlRequested(start: false) }
+            },
+        ]
+        publishControlState()   // clears a stale "on" left by a crash
+    }
+
+    /// The control asked for a session: the user's quick-start length, or indefinitely if that is unset.
+    private func controlRequested(start: Bool) {
+        if start {
+            if !isActive { self.start(minutes: settings.keepAwake.defaultMinutes) }
+        } else {
+            stop()
+        }
+        publishControlState()
+    }
+
+    /// Tells the Control Center toggle whether a session is running (only when that changed).
+    private func publishControlState() {
+        let active = isActive
+        guard publishedState != active else { return }
+        publishedState = active
+        WidgetShared.writeKeepAwake(active)
+        if #available(macOS 26, *) { ControlCenter.shared.reloadControls(ofKind: WidgetShared.keepAwakeControlKind) }
+    }
+
     func start(_ end: AwakeEnd, focus: Bool = false) {
         session = AwakeSession(started: Date(), end: end, focus: focus)
         lastEndReason = nil
@@ -224,6 +262,7 @@ final class KeepAwake {
             ) { _ in MainActor.assumeIsolated { KeepAwake.shared.check() } }
         }
         NotificationCenter.default.post(name: .vibeCheckKeepAwakeChanged, object: nil)
+        publishControlState()
     }
 
     func start(minutes: Int) { start(AwakePreset.end(minutes)) }
@@ -251,6 +290,7 @@ final class KeepAwake {
             onSessionEnded?(reason)
         }
         NotificationCenter.default.post(name: .vibeCheckKeepAwakeChanged, object: nil)
+        publishControlState()
     }
 
     /// Ends the session if its condition is met; also picks up a changed "keep display on" setting.

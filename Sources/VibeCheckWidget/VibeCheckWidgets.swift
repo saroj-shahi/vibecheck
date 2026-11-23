@@ -7,6 +7,9 @@ struct VibeCheckWidgets: WidgetBundle {
     var body: some Widget {
         VibeRingWidget()
         SparklineWidget()
+        if #available(macOS 26, *) {
+            KeepAwakeControl()
+        }
     }
 }
 
