@@ -200,30 +200,83 @@ final class DeckController: NSObject {
         host.autoresizingMask = [.width, .height]
         container.addSubview(host)
 
-        let background: NSView
-        if #available(macOS 26, *) {
-            let glass = NSGlassEffectView(frame: initial)
-            glass.cornerRadius = Deck.cornerRadius
-            glass.contentView = container
-            background = glass
-        } else {
-            let effect = NSVisualEffectView(frame: initial)
-            effect.material = .popover
-            effect.blendingMode = .behindWindow
-            effect.state = .active
-            effect.wantsLayer = true
-            effect.layer?.cornerRadius = Deck.cornerRadius
-            effect.layer?.cornerCurve = .continuous
-            effect.layer?.masksToBounds = true
-            effect.addSubview(container)
-            background = effect
-        }
+        self.container = container
+        self.initialFrame = initial
+        let background = makeBackground()
         background.autoresizingMask = [.width, .height]
         panel.contentView = background
         panel.setContentSize(initial.size)
 
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refreshBackground() }
+        }
+
         model.onRouteChange = { [weak self] _ in self?.updateSamplerDemand() }
         model.requestClose = { [weak self] in self?.close() }
+    }
+
+    private var container: NSView!
+    private var initialFrame = NSRect.zero
+    private var backgroundKind: DeckBackgroundKind?
+
+    private func makeBackground() -> NSView {
+        let kind = DeckBackgroundKind.choose(osMajor: ProcessInfo.processInfo.operatingSystemVersion.majorVersion,
+                                             reduceTransparency: NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency)
+        backgroundKind = kind
+        let frame = container.superview?.frame ?? initialFrame
+        container.removeFromSuperview()
+        let background: NSView
+        switch kind {
+        case .liquidGlass:
+            if #available(macOS 26, *) {
+                let glass = NSGlassEffectView(frame: frame)
+                glass.cornerRadius = Deck.cornerRadius
+                glass.contentView = container
+                background = glass
+            } else {
+                background = blurView(frame)
+            }
+        case .blur:
+            background = blurView(frame)
+        case .opaque:
+            let plain = NSView(frame: frame)
+            plain.wantsLayer = true
+            plain.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+            plain.layer?.cornerRadius = Deck.cornerRadius
+            plain.layer?.cornerCurve = .continuous
+            plain.layer?.masksToBounds = true
+            plain.addSubview(container)
+            background = plain
+        }
+        container.frame = NSRect(origin: .zero, size: frame.size)
+        return background
+    }
+
+    private func blurView(_ frame: NSRect) -> NSView {
+        let effect = NSVisualEffectView(frame: frame)
+        effect.material = .popover
+        effect.blendingMode = .behindWindow
+        effect.state = .active
+        effect.wantsLayer = true
+        effect.layer?.cornerRadius = Deck.cornerRadius
+        effect.layer?.cornerCurve = .continuous
+        effect.layer?.masksToBounds = true
+        effect.addSubview(container)
+        return effect
+    }
+
+    /// Reduce Transparency was toggled: swap the background live, keeping the window size.
+    private func refreshBackground() {
+        let wanted = DeckBackgroundKind.choose(osMajor: ProcessInfo.processInfo.operatingSystemVersion.majorVersion,
+                                               reduceTransparency: NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency)
+        guard wanted != backgroundKind else { return }
+        let size = panel.contentView?.frame.size ?? initialFrame.size
+        initialFrame = NSRect(origin: .zero, size: size)
+        let background = makeBackground()
+        background.autoresizingMask = [.width, .height]
+        panel.contentView = background
+        panel.setContentSize(size)
     }
 
     // MARK: Showing and hiding
@@ -238,6 +291,7 @@ final class DeckController: NSObject {
     }
 
     func open(from button: NSStatusBarButton, route: DeckRoute) {
+        stats.userIsHere()
         model.modules = settings.orderedModules
         let wasVisible = isVisible
         let anchorChanged = anchor !== button
@@ -291,7 +345,6 @@ final class DeckController: NSObject {
             context.duration = Deck.reduceMotion ? 0 : 0.12
             panel.animator().alphaValue = 0
         }, completionHandler: {
-        stats.userIsHere()
             MainActor.assumeIsolated {
                 guard self.generation == closing else { return }
                 panel.orderOut(nil)

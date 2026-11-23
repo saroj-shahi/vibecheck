@@ -77,9 +77,11 @@ struct DeckRoot: View {
 private struct GlassHairline: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.displayScale) private var scale
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
-        if #unavailable(macOS 26) {
+        // The opaque Reduce Transparency background has no glass edge of its own, on any macOS.
+        if reduceTransparency || { if #available(macOS 26, *) { false } else { true } }() {
             let retina = scale >= 2
             let opacity = (scheme == .dark ? 0.10 : 0.08) * (retina ? 1 : 0.5)
             RoundedRectangle(cornerRadius: Deck.cornerRadius, style: .continuous)
