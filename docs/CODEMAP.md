@@ -17,6 +17,7 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 | `TickPolicy.swift` | `TickPolicy` (pause reasons + Low Power + keep awake → tick interval or none), `TickGate` (ring animation follows the pause) |
 | `MenuBarVisibility.swift` | `DeckBackgroundKind` (glass / blur / opaque for Reduce Transparency), launch check that macOS isn't hiding every item |
 | `AppMemoryHistory.swift` | Per-app memory footprint once a minute (libproc, no `ps`; grouped by responsible pid, keyed with start time), ~65 min of samples for the top 15 apps, `growth` for the verdict |
+| `DevServers.swift` | `ListenerDetails` (cwd, start time, exe, footprint via libproc), dev-server classification, project name (nearest `.git` / `package.json` up to home), grouping, uptime text |
 | `Vibe.swift` | Vibe score (vibing / mid / cooked) with per-module enter / exit thresholds (`VibeThresholds`), swap and fast-drain signals, the verdict sentence and its culprit module |
 | `Alerts.swift` | `AlertMetric`, `AlertRule` (sentence alerts), `AlertEngine` (evaluate, notify, history log) |
 | `KeepAwake.swift` | Sessions (`AwakeEnd`, focus sessions, triggers: power / display / downloads / `AwakeSchedule`), IOKit assertion |
@@ -51,7 +52,7 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 
 `CPUMonitor`, `GPUMonitor`, `MemoryMonitor`, `NetworkMonitor` (+ `NetworkAppSampler`: `nettop`), `DiskMonitor`,
 `SensorsMonitor` (HID temps, private API) + `SMC`, `BatteryMonitor`, `DeviceBatteryMonitor` (Bluetooth
-accessories via `system_profiler`), `ProcessSampler` (`ps`), `PortSampler` (`lsof`), `USBDeviceMonitor` (IOKit),
+accessories via `system_profiler`), `ProcessSampler` (`ps`), `EnergySampler` (per-pid `ri_energy_nj` → estimated watts), `PortSampler` (`lsof` + `ListenerDetails`), `USBDeviceMonitor` (IOKit),
 `NetworkExtras` (`WiFiReader` CoreWLAN, `PublicIPFetcher` opt-in api.ipify.org, `AppTrafficHistory` 1 h per app),
 `AgentUsageMonitor` (parsers for Claude / Codex / Copilot / OpenCode logs, `RateWindow`, scanner, summaries).
 
@@ -67,7 +68,7 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `PortSampler` (`lso
 | `ProcessList.swift` | `ProcessList` (CPU/memory top processes; app rows expand to their processes, 8 + "+N more"), quit/force-quit menu items, `ForceQuitConfirmRow` |
 | `CPUGPUPanels.swift` | `CPUPanel`, `GPUPanel` |
 | `MemoryPanel.swift` | `MemoryPanel` |
-| `NetworkPanel.swift` | `NetworkPanel`, `ListeningPortsSection` |
+| `NetworkPanel.swift` | `NetworkPanel`, `ListeningPortsSection` (Dev servers group with Stop / Force stop, then other listeners) |
 | `DiskPanel.swift` | `DiskPanel` |
 | `SensorsPanel.swift` | `SensorsPanel` |
 | `BatteryPanel.swift` | `BatteryPanel`, `DeviceBatteryRow`, `USBDevicesSection` |

@@ -118,8 +118,15 @@ struct ListeningPortsSection: View {
     private let limit = 8
 
     var body: some View {
-        let ports = stats.listeningPorts
+        let all = stats.listeningPorts
+        let projects = DevServers.projects(from: all, home: NSHomeDirectory(), currentUID: getuid())
+        let devKeys = Set(projects.flatMap { $0.ports.map(\.id) })
+        let ports = all.filter { !devKeys.contains($0.id) }
         VStack(alignment: .leading, spacing: 4) {
+            if !projects.isEmpty {
+                DevServersGroup(projects: projects)
+                    .padding(.bottom, 4)
+            }
             SectionTitle(text: "Listening ports")
             if ports.isEmpty {
                 Text("Nothing is listening.").font(.callout).foregroundStyle(.tertiary)
@@ -194,3 +201,141 @@ struct ListeningPortsSection: View {
     }
 }
 
+
+/// "Dev servers": local servers started from a project folder, grouped by project, with a Stop button.
+struct DevServersGroup: View {
+    let projects: [DevProject]
+    @State private var showAll = false
+    private let limit = 8
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            SectionTitle(text: "Dev servers")
+            ForEach(showAll ? projects : Array(projects.prefix(limit))) { DevProjectRow(project: $0) }
+            if projects.count > limit {
+                Button {
+                    withAnimation(Deck.animation) { showAll.toggle() }
+                } label: {
+                    Text(showAll ? "Show fewer" : "+\(projects.count - limit) more")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+struct DevProjectRow: View {
+    let project: DevProject
+    @Environment(SystemStats.self) private var stats
+    private enum Phase: Equatable { case running, stopping, stillRunning, failed(String) }
+    @State private var phase = Phase.running
+    @State private var targets: [ProcessKiller.Identity] = []
+    @State private var stillRunningSince: Date?
+    @State private var work: Task<Void, Never>?
+
+    var body: some View {
+        let uptime = DevServers.uptimeText(started: project.startedSeconds)
+        let long = DevServers.isLongRunning(started: project.startedSeconds)
+        let portText = project.ports.map { String($0.port) }.joined(separator: ", ")
+        let showForce = phase == .stillRunning && forceStillValid
+        HStack(spacing: 6) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(project.name).lineLimit(1).truncationMode(.middle)
+                Text(project.runtimes.joined(separator: ", "))
+                    .font(.caption).foregroundStyle(.tertiary).lineLimit(1)
+            }
+            Spacer(minLength: 4)
+            if showForce {
+                Text("Still running. Force stop?").font(.caption).foregroundStyle(.orange).lineLimit(1)
+                Button("Force stop") { forceStop() }
+                    .buttonStyle(.borderless).font(.caption.weight(.medium))
+                    .accessibilityLabel("Force stop \(project.name)")
+            } else if case .failed(let text) = phase {
+                Text(text).font(.caption).foregroundStyle(.orange).lineLimit(1)
+            } else {
+                Text(portText).font(.system(.callout, design: .monospaced)).foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Text(uptime).font(.caption).foregroundStyle(long ? .secondary : .tertiary)
+                    .frame(minWidth: 36, alignment: .trailing)
+                if let bytes = project.footprint {
+                    Text(Fmt.bytes(Double(bytes))).font(.caption).foregroundStyle(.tertiary)
+                }
+                Button("Stop") { stop() }
+                    .buttonStyle(.borderless).font(.caption.weight(.medium))
+                    .disabled(phase == .stopping)
+                    .accessibilityLabel("Stop \(project.name) on port \(project.ports.first?.port ?? 0)")
+            }
+        }
+        .font(.callout)
+        .help(project.folder)
+        .onDisappear { work?.cancel() }
+    }
+
+    /// "Force stop?" only holds for 20 s, and only while the project still runs the pids that were stopped.
+    private var forceStillValid: Bool {
+        guard let since = stillRunningSince, Date().timeIntervalSince(since) < 20 else { return false }
+        return targets.contains { t in project.ports.contains { $0.pid == t.pid && $0.details?.startedMicros == t.started } }
+    }
+
+    private func refreshIfOpen() {
+        if stats.networkAppDemand > 0 { stats.refreshPorts() }
+    }
+
+    private func stop() {
+        // Identity comes from the sampled start time, so a recycled pid is never signalled.
+        var unique: [ProcessKiller.Identity] = []
+        for port in project.ports {
+            guard let d = port.details else { continue }
+            let id = ProcessKiller.Identity(pid: port.pid, started: d.startedMicros)
+            if !unique.contains(id) { unique.append(id) }
+        }
+        targets = unique
+        stillRunningSince = nil
+        phase = .stopping
+        var failure: String?
+        for t in unique {
+            if case .failed(let text) = ProcessKiller.quit(t, mode: .quit), text != String(localized: "Already gone") {
+                failure = text
+            }
+        }
+        work?.cancel()
+        if let failure {
+            phase = .failed(failure)
+            work = Task { @MainActor in
+                try? await Task.sleep(for: .seconds(4))
+                if !Task.isCancelled { phase = .running }
+            }
+            return
+        }
+        work = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1))
+            if Task.isCancelled { return }
+            refreshIfOpen()
+            try? await Task.sleep(for: .seconds(2))
+            if Task.isCancelled { return }
+            if targets.contains(where: { ProcessKiller.identity(of: $0.pid) == $0 }) {
+                stillRunningSince = Date()
+                phase = .stillRunning
+                try? await Task.sleep(for: .seconds(20))
+                if !Task.isCancelled, phase == .stillRunning { phase = .running }
+            } else {
+                phase = .running
+            }
+        }
+    }
+
+    private func forceStop() {
+        stillRunningSince = nil
+        phase = .stopping
+        for t in targets where ProcessKiller.identity(of: t.pid) == t { ProcessKiller.quit(t, mode: .forceQuit) }
+        work?.cancel()
+        work = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1))
+            if Task.isCancelled { return }
+            refreshIfOpen()
+            phase = .running
+        }
+    }
+}

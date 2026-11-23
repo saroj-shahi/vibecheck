@@ -2392,6 +2392,16 @@
         }
       }
     },
+    "Dev servers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dev servers"
+          }
+        }
+      }
+    },
     "Devices": {
       "localizations": {
         "en": {
@@ -2714,6 +2724,16 @@
         }
       }
     },
+    "Estimated from the energy macOS counts for this app": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimated from the energy macOS counts for this app"
+          }
+        }
+      }
+    },
     "Every alert, for all modules, is in": {
       "localizations": {
         "en": {
@@ -3011,6 +3031,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Force quit %1$@%2$@? Unsaved work is lost."
+          }
+        }
+      }
+    },
+    "Force stop": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Force stop"
+          }
+        }
+      }
+    },
+    "Force stop %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Force stop %@"
           }
         }
       }
@@ -6433,12 +6473,32 @@
         }
       }
     },
+    "Still running. Force stop?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Still running. Force stop?"
+          }
+        }
+      }
+    },
     "Stop": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Stop"
+          }
+        }
+      }
+    },
+    "Stop %@ on port %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop %1$@ on port %2$lld"
           }
         }
       }
