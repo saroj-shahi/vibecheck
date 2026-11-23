@@ -1412,6 +1412,16 @@
         }
       }
     },
+    "Apple's on-device model is still downloading.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple's on-device model is still downloading."
+          }
+        }
+      }
+    },
     "Apps": {
       "localizations": {
         "en": {
@@ -2349,6 +2359,16 @@
         }
       }
     },
+    "Couldn't explain this time.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't explain this time."
+          }
+        }
+      }
+    },
     "Couldn't load weather. Check your connection.": {
       "localizations": {
         "en": {
@@ -2579,6 +2599,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dismiss"
+          }
+        }
+      }
+    },
+    "Dismiss explanation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss explanation"
           }
         }
       }
@@ -2900,6 +2930,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Every alert, for all modules, is in"
+          }
+        }
+      }
+    },
+    "Explain my Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explain my Mac"
           }
         }
       }
@@ -4054,6 +4094,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Keeping your Mac awake."
+          }
+        }
+      }
+    },
+    "Keeps your Mac from sleeping. VibeCheck has to be running.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keeps your Mac from sleeping. VibeCheck has to be running."
           }
         }
       }
@@ -5292,6 +5342,16 @@
         }
       }
     },
+    "On": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On"
+          }
+        }
+      }
+    },
     "On a display with a notch, the combined item shows as many stats as fit beside it (in the order below) plus a +N badge. Everything stays in the deck.": {
       "localizations": {
         "en": {
@@ -5338,6 +5398,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "On power"
+          }
+        }
+      }
+    },
+    "On-device explanations": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On-device explanations"
           }
         }
       }
@@ -7198,6 +7268,16 @@
         }
       }
     },
+    "Thinking…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thinking…"
+          }
+        }
+      }
+    },
     "This microphone can't be muted.": {
       "localizations": {
         "en": {
@@ -7459,6 +7539,16 @@
         }
       }
     },
+    "Turn on Apple Intelligence in System Settings first.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on Apple Intelligence in System Settings first."
+          }
+        }
+      }
+    },
     "Turn on alert: %@": {
       "localizations": {
         "en": {
@@ -7715,6 +7805,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "User %1$@ · Sys %2$@"
+          }
+        }
+      }
+    },
+    "Uses Apple's on-device model. Nothing leaves your Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uses Apple's on-device model. Nothing leaves your Mac."
           }
         }
       }

@@ -8,17 +8,35 @@ enum WidgetVibe {
     static func fill(_ vibe: Int) -> Double { [1, 0.66, 0.33][min(max(vibe, 0), 2)] }
 }
 
+extension WidgetRenderingMode {
+    var style: WidgetRenderStyle {
+        switch self {
+        case .accented: .accented
+        case .vibrant: .vibrant
+        default: .fullColor
+        }
+    }
+}
+
+extension WidgetTone {
+    /// `color` is the full-color choice for this element (state color or a fixed one).
+    func shapeStyle(color: Color) -> Color {
+        (usesStateColor ? color : Color.primary).opacity(opacity)
+    }
+}
+
 struct WidgetRing: View {
+    @Environment(\.widgetRenderingMode) private var mode
     var vibe: Int
     var lineWidth: CGFloat
     var dimmed: Bool
 
     var body: some View {
         ZStack {
-            Circle().stroke(.primary.opacity(0.15), lineWidth: lineWidth)
+            Circle().stroke(.primary.opacity(mode.style.trackOpacity), lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: WidgetVibe.fill(vibe))
-                .stroke(dimmed ? Color.secondary : WidgetVibe.color(vibe),
+                .stroke(mode.style.stroke(vibe: vibe, dimmed: dimmed).shapeStyle(color: WidgetVibe.color(vibe)),
                         style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .widgetAccentable()
@@ -83,8 +101,8 @@ struct SparklineWidgetView: View {
             }
             .frame(width: 104, alignment: .leading)
             VStack(spacing: 10) {
-                SparkRow(title: String(localized: "CPU"), now: s.cpu, values: s.cpuHour, color: .mint, dimmed: entry.stale)
-                SparkRow(title: String(localized: "Memory"), now: s.memory, values: s.memoryHour, color: .cyan, dimmed: entry.stale)
+                SparkRow(title: String(localized: "CPU"), now: s.cpu, values: s.cpuHour, color: .mint, emphasis: 1, dimmed: entry.stale)
+                SparkRow(title: String(localized: "Memory"), now: s.memory, values: s.memoryHour, color: .cyan, emphasis: 0.7, dimmed: entry.stale)
             }
         }
         .containerBackground(.fill.tertiary, for: .widget)
@@ -92,13 +110,19 @@ struct SparklineWidgetView: View {
 }
 
 struct SparkRow: View {
+    @Environment(\.widgetRenderingMode) private var mode
     var title: String
     var now: Double
     var values: [Double]
     var color: Color
+    /// Vibrant mode tells the two lines apart by opacity instead of hue.
+    var emphasis: Double
     var dimmed: Bool
 
     var body: some View {
+        let style = mode.style
+        let tone = style.stroke(vibe: 0, dimmed: dimmed, emphasis: emphasis)
+        let line = dimmed ? Color.secondary : tone.shapeStyle(color: color)
         VStack(alignment: .leading, spacing: 3) {
             HStack(alignment: .firstTextBaseline) {
                 Text(title).font(.caption).foregroundStyle(.secondary)
@@ -107,11 +131,12 @@ struct SparkRow: View {
                     .font(.system(.callout, design: .rounded).weight(.semibold).monospacedDigit())
             }
             Sparkline(values: values)
-                .stroke(dimmed ? Color.secondary : color,
-                        style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+                .stroke(line, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
                 .background(alignment: .bottom) {
-                    Sparkline(values: values, closed: true)
-                        .fill((dimmed ? Color.secondary : color).opacity(0.15))
+                    if style.areaOpacity > 0 {
+                        Sparkline(values: values, closed: true)
+                            .fill((dimmed ? Color.secondary : line).opacity(style.areaOpacity))
+                    }
                 }
                 .widgetAccentable()
         }

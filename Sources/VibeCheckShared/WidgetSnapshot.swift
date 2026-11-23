@@ -57,6 +57,31 @@ public enum WidgetShared {
     public static let appGroup = "77HKFF78Z8.io.github.saroj-shahi.vibecheck"
     public static let ringKind = "VibeRingWidget"
     public static let sparklineKind = "SparklineWidget"
+    /// The Control Center "Keep Awake" control (macOS 26+).
+    public static let keepAwakeControlKind = "KeepAwakeControl"
+    /// Distributed notifications the control posts; the app listens. No userInfo.
+    public static let keepAwakeStartName = "io.github.saroj-shahi.vibecheck.keepAwake.start"
+    public static let keepAwakeStopName = "io.github.saroj-shahi.vibecheck.keepAwake.stop"
+
+    public static var keepAwakeURL: URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup)?
+            .appendingPathComponent("keep-awake.json")
+    }
+
+    private struct KeepAwakeState: Codable { var active: Bool }
+
+    /// Whether a keep-awake session is running (the app writes it) or was just requested (the control writes it).
+    public static func readKeepAwake(from url: URL? = keepAwakeURL) -> Bool {
+        guard let url, let data = try? Data(contentsOf: url) else { return false }
+        return (try? JSONDecoder().decode(KeepAwakeState.self, from: data))?.active ?? false
+    }
+
+    @discardableResult
+    public static func writeKeepAwake(_ active: Bool, to url: URL? = keepAwakeURL) -> Bool {
+        guard let url, let data = try? JSONEncoder().encode(KeepAwakeState(active: active)) else { return false }
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        return (try? data.write(to: url, options: .atomic)) != nil
+    }
 
     public static var snapshotURL: URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup)?

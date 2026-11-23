@@ -21,6 +21,7 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 | `SleepDrain.swift` | Overnight drain: battery at sleep vs wake (≥ 2 h, on battery, ≥ 5 points), wake causes from one `pmset -g log` run, a 12 h report shown as one line on the deck home |
 | `BluetoothConnectWatch.swift` | IOBluetooth connect / disconnect → accessory battery refresh (3 s debounce + 20 s re-read); `DeviceRefreshPolicy` (event-only, 10 min with an accessory alert, 60 s fallback without Bluetooth permission) |
 | `IntentSnippets.swift` | `VibeSnippetView`: ring + verdict shown by the "How's my Mac's vibe?" intent |
+| `OnDeviceExplainer.swift` | Opt-in "Explain my Mac" (⌘K): facts string from `SystemStats`, FoundationModels `@Generable MacExplanation` (macOS 26+, 10 s timeout, one session per request), post-check against the facts, `ExplainCardView` on the deck home |
 | `Vibe.swift` | Vibe score (vibing / mid / cooked) with per-module enter / exit thresholds (`VibeThresholds`), swap and fast-drain signals, the verdict sentence and its culprit module |
 | `Alerts.swift` | `AlertMetric`, `AlertRule` (sentence alerts), `AlertEngine` (evaluate, notify, history log); smart alerts (app memory leak, throttling ≥ 5 min, slow charger ≥ 5 min) with a 2 h per-culprit `AlertRateLimiter` |
 | `KeepAwake.swift` | Sessions (`AwakeEnd`, focus sessions, triggers: power / display / downloads / `AwakeSchedule`), IOKit assertion |
@@ -95,7 +96,7 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `EnergySampler` (pe
 |---|---|
 | `App/WidgetPublisher.swift` | Called on every tick: writes the widget snapshot into the app group once a minute while a widget is placed; reloads timelines on a vibe change |
 | `Sources/VibeCheckShared/WidgetSnapshot.swift` | Library shared by app and widget: `WidgetSnapshot` (vibe, verdict, CPU / memory now and last hour), `WidgetShared` (app group `77HKFF78Z8.io.github.saroj-shahi.vibecheck`, read / write) |
-| `Sources/VibeCheckWidget/VibeCheckWidgets.swift`, `WidgetViews.swift` | The WidgetKit extension: bundle, timeline provider (15 min), small "Vibe" ring and medium "CPU and Memory" sparklines |
+| `Sources/VibeCheckWidget/VibeCheckWidgets.swift`, `WidgetViews.swift`, `KeepAwakeControl.swift` | The WidgetKit extension: bundle, timeline provider (15 min), small "Vibe" ring and medium "CPU and Memory" sparklines (full color / accented / vibrant via `WidgetRenderStyle` in VibeCheckShared), and the macOS 26 Control Center "Keep Awake" toggle (state in the app group, start / stop by distributed notification to the app) |
 | `Resources/Widget/` (`Info.plist`, `Widget.entitlements`), `Resources/VibeCheck.entitlements` | Appex plist and sandbox + app group entitlements; `build.sh` assembles `Contents/PlugIns/VibeCheckWidget.appex` (Apple Development identity only) |
 
 ## Tests/VibeCheckTests/
