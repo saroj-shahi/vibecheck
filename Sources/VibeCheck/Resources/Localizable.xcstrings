@@ -5181,6 +5181,16 @@
         }
       }
     },
+    "Paste": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste"
+          }
+        }
+      }
+    },
     "Paste as plain text": {
       "localizations": {
         "en": {
