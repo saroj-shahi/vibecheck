@@ -1,5 +1,6 @@
 import AppIntents
 import AppKit
+import SwiftUI
 
 // Shortcuts / Spotlight / Siri actions. They run inside the app (launching it in the background if needed).
 // build.sh extracts their metadata with Xcode's appintentsmetadataprocessor; without that step Shortcuts
@@ -92,9 +93,10 @@ struct GetVibeIntent: AppIntent {
     static let description = IntentDescription("Says whether your Mac is vibing, mid or cooked, and why.")
 
     @MainActor
-    func perform() async throws -> some IntentResult & ReturnsValue<String> & ProvidesDialog {
+    func perform() async throws -> some IntentResult & ReturnsValue<String> & ProvidesDialog & ShowsSnippetView {
         let report = try await IntentSupport.stats().vibe
-        return .result(value: report.vibe.title, dialog: "\(report.vibe.title). \(report.verdict)")
+        return .result(value: report.vibe.title, dialog: "\(report.vibe.title). \(report.verdict)",
+                       view: VibeSnippetView(vibe: report.vibe, verdict: report.verdict))
     }
 }
 
@@ -182,6 +184,181 @@ struct StopKeepAwakeIntent: AppIntent {
     }
 }
 
+// MARK: - Culprits
+
+enum CulpritMetric: String, AppEnum {
+    case cpu, memory
+
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Measure"
+    static let caseDisplayRepresentations: [CulpritMetric: DisplayRepresentation] = [
+        .cpu: "CPU", .memory: "Memory",
+    ]
+
+    /// Memory when the vibe is blaming memory, CPU otherwise.
+    nonisolated static func defaultMetric(culprit: Module?) -> CulpritMetric { culprit == .memory ? .memory : .cpu }
+}
+
+/// One app's share, as plain values (CPU in percent of one core, memory in bytes).
+struct CulpritSummary: Equatable, Sendable {
+    var name: String
+    var cpu: Double
+    var memory: Double
+    var processCount: Int
+}
+
+struct CulpritEntity: TransientAppEntity {
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Busy app"
+
+    @Property(title: "Name") var name: String
+    @Property(title: "CPU %") var cpu: Double
+    @Property(title: "Memory bytes") var memoryBytes: Double
+    @Property(title: "Processes") var processCount: Int
+
+    init() {}
+
+    init(_ summary: CulpritSummary) {
+        name = summary.name
+        cpu = summary.cpu
+        memoryBytes = summary.memory
+        processCount = summary.processCount
+    }
+
+    var displayRepresentation: DisplayRepresentation { DisplayRepresentation(title: "\(name)") }
+}
+
+enum CulpritText {
+    /// The busiest apps first, by `metric`, at most `count`.
+    nonisolated static func top(_ apps: [CulpritSummary], metric: CulpritMetric, count: Int) -> [CulpritSummary] {
+        let key: (CulpritSummary) -> Double = metric == .cpu ? { $0.cpu } : { $0.memory }
+        return Array(apps.sorted { key($0) > key($1) }.prefix(max(1, min(10, count))))
+    }
+
+    /// "Chrome 42% CPU, Xcode 18%, Slack 6%." The first entry names the measure.
+    nonisolated static func dialog(_ apps: [CulpritSummary], metric: CulpritMetric) -> String {
+        guard !apps.isEmpty else { return String(localized: "Nothing is busy right now.") }
+        let parts = apps.enumerated().map { index, app -> String in
+            switch metric {
+            case .cpu:
+                let value = "\(Int(app.cpu.rounded()))%"
+                return index == 0 ? "\(app.name) \(value) CPU" : "\(app.name) \(value)"
+            case .memory:
+                let value = Fmt.bytes(app.memory)
+                return index == 0 ? "\(app.name) \(value) memory" : "\(app.name) \(value)"
+            }
+        }
+        return parts.joined(separator: ", ") + "."
+    }
+}
+
+struct ListTopCulpritsIntent: AppIntent {
+    static let title: LocalizedStringResource = "List Busiest Apps"
+    static let description = IntentDescription("Lists the apps using the most CPU or memory right now, with their helper processes added in.")
+
+    @Parameter(title: "Measure", description: "Leave empty to follow what's slowing your Mac down.")
+    var metric: CulpritMetric?
+
+    @Parameter(title: "Count", default: 5, inclusiveRange: (1, 10))
+    var count: Int
+
+    static var parameterSummary: some ParameterSummary { Summary("List the \(\.$count) busiest apps by \(\.$metric)") }
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ReturnsValue<[CulpritEntity]> & ProvidesDialog {
+        let stats = try await IntentSupport.stats()
+        let chosen = metric ?? CulpritMetric.defaultMetric(culprit: stats.vibe.culprit)
+        let rows = stats.processes.isEmpty ? await ProcessSampler.fetch() : stats.processes
+        let apps = SystemStats.groupByApp(rows) { _ in nil }.map {
+            CulpritSummary(name: $0.name, cpu: $0.cpu, memory: $0.memory, processCount: $0.processCount)
+        }
+        let top = CulpritText.top(apps, metric: chosen, count: count)
+        return .result(value: top.map(CulpritEntity.init), dialog: "\(CulpritText.dialog(top, metric: chosen))")
+    }
+}
+
+// MARK: - Dev servers
+
+/// One project's servers and the process identities to stop (from the sampled start times).
+struct DevServerTarget: Equatable, Sendable {
+    var name: String
+    var ports: [Int]
+    var identities: [ProcessKiller.Identity]
+}
+
+enum DevServerText {
+    nonisolated static func targets(from ports: [ListeningPort], home: String, currentUID: uid_t) -> [DevServerTarget] {
+        DevServers.projects(from: ports, home: home, currentUID: currentUID).map { project in
+            var ids: [ProcessKiller.Identity] = []
+            for port in project.ports {
+                guard let d = port.details else { continue }
+                let id = ProcessKiller.Identity(pid: port.pid, started: d.startedMicros)
+                if !ids.contains(id) { ids.append(id) }
+            }
+            return DevServerTarget(name: project.name, ports: Array(Set(project.ports.map(\.port))).sorted(), identities: ids)
+        }
+    }
+
+    private nonisolated static func label(_ t: DevServerTarget) -> String {
+        "\(t.name) (\(t.ports.map(String.init).joined(separator: ", ")))"
+    }
+
+    nonisolated static let none = String(localized: "No dev servers are running.")
+
+    /// "Stop 2 dev servers: web (3000), api (8080)?"
+    nonisolated static func confirmation(_ targets: [DevServerTarget]) -> String {
+        let list = targets.map(label).joined(separator: ", ")
+        return targets.count == 1 ? String(localized: "Stop 1 dev server: \(list)?")
+                                  : String(localized: "Stop \(targets.count) dev servers: \(list)?")
+    }
+
+    /// `failures` maps a project name to the reason it refused.
+    nonisolated static func result(stopped: [String], refused: [(name: String, reason: String)]) -> String {
+        var parts: [String] = []
+        if !stopped.isEmpty { parts.append(String(localized: "Stopped \(stopped.joined(separator: ", ")).")) }
+        for r in refused { parts.append(String(localized: "Couldn't stop \(r.name): \(r.reason).")) }
+        return parts.isEmpty ? none : parts.joined(separator: " ")
+    }
+}
+
+struct StopDevServersIntent: AppIntent {
+    static let title: LocalizedStringResource = "Stop Dev Servers"
+    static let description = IntentDescription("Asks your forgotten local dev servers to quit, after you confirm.")
+
+    /// macOS 14 only has the call macOS 15 deprecated.
+    @available(*, deprecated)
+    private func confirmOnMacOS14(_ question: String) async throws {
+        try await requestConfirmation(result: .result(dialog: "\(question)"))
+    }
+
+    @available(*, deprecated)
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        _ = try await IntentSupport.stats()
+        let found = await PortSampler.fetch()
+        let targets = DevServerText.targets(from: found, home: NSHomeDirectory(), currentUID: getuid())
+        guard !targets.isEmpty else { return .result(dialog: "\(DevServerText.none)") }
+        let question = DevServerText.confirmation(targets)
+        if #available(macOS 15, *) {
+            try await requestConfirmation(actionName: .custom(acceptLabel: "Stop", acceptAlternatives: [], denyLabel: "Cancel",
+                                                              denyAlternatives: [], destructive: true),
+                                          dialog: "\(question)")
+        } else {
+            try await confirmOnMacOS14(question)
+        }
+        var stopped: [String] = []
+        var refused: [(name: String, reason: String)] = []
+        for target in targets {
+            var failure: String?
+            for id in target.identities {
+                if case .failed(let text) = ProcessKiller.quit(id, mode: .quit), text != String(localized: "Already gone") {
+                    failure = text
+                }
+            }
+            if let failure { refused.append((target.name, failure)) } else { stopped.append(target.name) }
+        }
+        return .result(dialog: "\(DevServerText.result(stopped: stopped, refused: refused))")
+    }
+}
+
 // MARK: - Spotlight and Siri phrases
 
 struct VibeCheckShortcuts: AppShortcutsProvider {
@@ -195,6 +372,12 @@ struct VibeCheckShortcuts: AppShortcutsProvider {
         AppShortcut(intent: StopKeepAwakeIntent(),
                     phrases: ["Let my Mac sleep with \(.applicationName)"],
                     shortTitle: "Let Mac Sleep", systemImageName: "cup.and.saucer")
+        AppShortcut(intent: ListTopCulpritsIntent(),
+                    phrases: ["What's slowing my Mac down in \(.applicationName)", "Which apps are busiest in \(.applicationName)"],
+                    shortTitle: "Busiest Apps", systemImageName: "list.number")
+        AppShortcut(intent: StopDevServersIntent(),
+                    phrases: ["Stop my dev servers with \(.applicationName)"],
+                    shortTitle: "Stop Dev Servers", systemImageName: "stop.circle")
         AppShortcut(intent: OpenDeckIntent(),
                     phrases: ["Open the \(.applicationName) deck"],
                     shortTitle: "Open Deck", systemImageName: "square.grid.2x2")
