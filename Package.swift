@@ -24,6 +24,8 @@ let package = Package(
                 .linkedLibrary("sqlite3"),
             ]
         ),
+        // The bundled `vibecheck` command line tool (build.sh copies it to Contents/Helpers). Foundation only.
+        .executableTarget(name: "VibeCheckCLI", dependencies: ["VibeCheckShared"], path: "Sources/VibeCheckCLI"),
         // WidgetKit extension. SwiftPM builds the executable; build.sh wraps it into VibeCheckWidget.appex.
         .executableTarget(
             name: "VibeCheckWidget",
