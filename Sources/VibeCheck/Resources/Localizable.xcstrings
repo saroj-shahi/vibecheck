@@ -5584,11 +5584,22 @@
       }
     },
     "New in 1.7: a Reminders to-do list, volume and brightness, and when your agent limits run out.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "New in 1.7: a Reminders to-do list, volume and brightness, and when your agent limits run out."
+          }
+        }
+      }
+    },
+    "New in 1.8: Antigravity in AI Agents, plus reliability fixes for sleep drain, Wi-Fi and alerts.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New in 1.8: Antigravity in AI Agents, plus reliability fixes for sleep drain, Wi-Fi and alerts."
           }
         }
       }

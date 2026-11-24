@@ -3,7 +3,7 @@ import SwiftUI
 /// One dismissible line on the deck home, shown once per app version (stored by CFBundleShortVersionString).
 enum DeckHint {
     static let seenKey = "deckHintSeenVersion"
-    static var text: String { String(localized: "New in 1.7: a Reminders to-do list, volume and brightness, and when your agent limits run out.") }
+    static var text: String { String(localized: "New in 1.8: Antigravity in AI Agents, plus reliability fixes for sleep drain, Wi-Fi and alerts.") }
 
     static var currentVersion: String? {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
