@@ -5,8 +5,8 @@ import UniformTypeIdentifiers
 enum SettingsBackup {
     static let keys = [
         "enabledModules", "knownModules", "refreshInterval", "menuBarStyle", "menuBarSpacing", "labelStyles",
-        "colorfulMenuBar", "alwaysColorRing", "pulseOnAgentNeedsInput", "showVibeRing", "autoFitNotch", "notchMaxStats", "moduleOrder", "hotkeysEnabled", "hotkeyModifier", "alertRules", "smartAlertMemoryLeak", "smartAlertThrottling", "smartAlertSlowCharger", "onDeviceExplanations","clockFormat", "clockShowSeconds",
-        "worldClocks", "weatherLocation", "temperatureUnit", "todoListID", "chartRange", "groupProcessesByApp",
+        "colorfulMenuBar", "alwaysColorRing", "pulseOnAgentNeedsInput", "showVibeRing", "autoFitNotch", "notchMaxStats", "moduleOrder", "hotkeysEnabled", "hotkeyModifier", "alertRules", "smartAlertMemoryLeak", "smartAlertThrottling", "smartAlertSlowCharger", "onDeviceExplanations", "clockFormat", "clockShowSeconds",
+        "worldClocks", "weatherLocation", "temperatureUnit", "todoListID", "chartRange", "vibeTimelineRange", "groupProcessesByApp", "showQuickToggles", "showDeckSummary",
         "keepAwakeDefaultMinutes", "keepAwakeDisplayOn", "keepAwakeBatteryFloor", "keepAwakeAtLaunch", "keepAwakeShowInMenuBar",
         "keepAwakeUntilMinute", "keepAwakeNotify", "keepAwakeHotkey", "keepAwakeOnPower", "keepAwakeWithDisplay",
         "showPublicIP", "keepAwakeWhileDownloading", "keepAwakeDownloadsFolder",

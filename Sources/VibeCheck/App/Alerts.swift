@@ -184,7 +184,7 @@ struct SmartAlertInput {
 
 struct SmartAlertState: Sendable {
     static let sustained: TimeInterval = 300
-    static let leakBytes = 1_000_000_000.0
+    static let leakBytes = 1_073_741_824.0
     static let leakMinutes = 45
 
     private var throttle = ConditionTimer()

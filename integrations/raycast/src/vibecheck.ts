@@ -94,8 +94,8 @@ function plural(n?: number): string {
 }
 
 export function bytesText(value: number): string {
-  const gb = value / 1_000_000_000;
-  return gb >= 1 ? `${gb.toFixed(1)} GB` : `${Math.round(value / 1_000_000)} MB`;
+  const gb = value / 1_073_741_824;
+  return gb >= 1 ? `${gb.toFixed(1)} GB` : `${Math.round(value / 1_048_576)} MB`;
 }
 
 export function vibeWord(s: Status): Vibe {

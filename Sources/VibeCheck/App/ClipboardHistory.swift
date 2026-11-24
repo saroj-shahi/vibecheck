@@ -94,6 +94,7 @@ final class ClipboardHistory {
     }
 
     @ObservationIgnored private var timer: Timer?
+    @ObservationIgnored private var gateObserver: NSObjectProtocol?
     @ObservationIgnored private var lastChangeCount = 0
     /// Frontmost app at the previous poll: a copy in an ignored app followed by a quick ⌘Tab is still skipped.
     @ObservationIgnored private var previousFront: String?
@@ -115,13 +116,20 @@ final class ClipboardHistory {
         }
     }
 
-    /// Starts polling if history is on (called once at launch).
-    func start() { updatePolling() }
+    /// Starts polling if history is on (called once at launch); follows `TickGate` so it pauses during sleep/lock.
+    func start() {
+        if gateObserver == nil {
+            gateObserver = NotificationCenter.default.addObserver(forName: .vibeCheckTickSuspendedChanged, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.updatePolling() }
+            }
+        }
+        updatePolling()
+    }
 
     private func updatePolling() {
         timer?.invalidate()
         timer = nil
-        guard isEnabled else { return }
+        guard isEnabled, !TickGate.isSuspended else { return }
         lastChangeCount = NSPasteboard.general.changeCount   // what's already there was copied before history was on
         let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.poll() }
@@ -248,13 +256,10 @@ final class ClipboardHistory {
         guard isEnabled, keepAcrossRestarts else { try? FileManager.default.removeItem(at: fileURL); return }
         let kept = items.filter { if case .image = $0.content { false } else { true } }
         guard let data = try? JSONEncoder().encode(kept) else { return }
-        try? FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        // Owner-only: copies can be private.
-        if FileManager.default.createFile(atPath: fileURL.path, contents: data, attributes: [.posixPermissions: 0o600]) == false {
+        // Atomic owner-only write: copies can be private and a crash mid-write must not truncate the file.
+        if !AtomicPrivateFile.write(data, to: fileURL) {
             NSLog("VibeCheck: couldn't save clipboard history")
         }
-        // createFile keeps an existing file's mode; tighten it in case an older one was wider.
-        try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: fileURL.path)
     }
 }
 

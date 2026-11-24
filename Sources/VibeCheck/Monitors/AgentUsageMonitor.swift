@@ -19,7 +19,7 @@ struct TokenCounts: Equatable {
 }
 
 enum AgentKind: String, CaseIterable, Identifiable {
-    case claude, codex, copilot, opencode
+    case claude, codex, copilot, opencode, antigravity
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -27,6 +27,7 @@ enum AgentKind: String, CaseIterable, Identifiable {
         case .codex: "Codex"
         case .copilot: "GitHub Copilot"
         case .opencode: "OpenCode"
+        case .antigravity: "Antigravity"
         }
     }
 }
@@ -410,6 +411,22 @@ enum AgentLogParser {
                           project: project(path?["cwd"] as? String), tokens: counts)
     }
 
+    /// One Antigravity transcript line (`~/.gemini/antigravity/brain/<id>/.system_generated/logs/transcript.jsonl`).
+    /// Model response turns record `input_tokens` (non-cached), `output_tokens` and `cache_read_tokens`.
+    static func antigravity(_ line: Data) -> (key: String, entry: UsageEntry)? {
+        guard let object = try? JSONSerialization.jsonObject(with: line) as? [String: Any],
+              object["source"] as? String == "MODEL",
+              let time = date(object["created_at"] as? String) else { return nil }
+        let tokens = TokenCounts(input: int(object["input_tokens"]), output: int(object["output_tokens"]),
+                                 cacheWrite: int(object["cache_write_tokens"]),
+                                 cacheRead: int(object["cache_read_tokens"]))
+        guard tokens.total > 0 else { return nil }
+        let model = (object["model"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? "unknown"
+        let key = (object["step_index"] as? NSNumber).map { "step:\($0.intValue)" } ?? UUID().uuidString
+        return (key, UsageEntry(time: time, agent: .antigravity, model: model,
+                                project: project(object["cwd"] as? String), tokens: tokens))
+    }
+
     /// The active 5-hour block: starts at the hour of the first message after a previous block ended
     /// (or after a 5-hour gap). Nil when the last block is over.
     static func currentBlock(_ entries: [UsageEntry], now: Date, calendar: Calendar = .current) -> UsageBlock? {
@@ -510,6 +527,7 @@ final class AgentUsageScanner: @unchecked Sendable {
     private let claudeRoots: [URL]
     private let codexRoots: [URL]
     private let copilotRoots: [URL]
+    private let antigravityRoots: [URL]
     private let opencodeDB: URL
     private let claudeConfig: URL
     /// Names and plans, refreshed on each full walk.
@@ -531,8 +549,8 @@ final class AgentUsageScanner: @unchecked Sendable {
     /// How often the folder tree is walked to find new log files; in between, only known files are checked.
     var walkInterval: TimeInterval = 300
 
-    init(claudeRoots: [URL]? = nil, codexRoots: [URL]? = nil, copilotRoots: [URL]? = nil, opencodeDB: URL? = nil,
-         claudeConfig: URL? = nil) {
+    init(claudeRoots: [URL]? = nil, codexRoots: [URL]? = nil, copilotRoots: [URL]? = nil,
+         antigravityRoots: [URL]? = nil, opencodeDB: URL? = nil, claudeConfig: URL? = nil) {
         let home = FileManager.default.homeDirectoryForCurrentUser
         let env = ProcessInfo.processInfo.environment
         var claude = [home.appending(path: ".claude/projects"), home.appending(path: ".config/claude/projects")]
@@ -542,6 +560,13 @@ final class AgentUsageScanner: @unchecked Sendable {
             ?? [URL(fileURLWithPath: env["CODEX_HOME"] ?? home.appending(path: ".codex").path).appending(path: "sessions")]
         self.copilotRoots = copilotRoots
             ?? [URL(fileURLWithPath: env["COPILOT_HOME"] ?? home.appending(path: ".copilot").path).appending(path: "session-state")]
+        var antigravity = [
+            home.appending(path: ".gemini/antigravity/brain"),
+            home.appending(path: ".gemini/antigravity-cli/brain"),
+            home.appending(path: ".gemini/antigravity-ide/brain"),
+        ]
+        if let dir = env["ANTIGRAVITY_HOME"] { antigravity.append(URL(fileURLWithPath: dir).appending(path: "brain")) }
+        self.antigravityRoots = antigravityRoots ?? antigravity
         let dataHome = env["XDG_DATA_HOME"].map { URL(fileURLWithPath: $0) } ?? home.appending(path: ".local/share")
         self.opencodeDB = opencodeDB ?? dataHome.appending(path: "opencode/opencode.db")
         self.claudeConfig = claudeConfig
@@ -572,6 +597,11 @@ final class AgentUsageScanner: @unchecked Sendable {
                     }
                     known += files.map { (url: $0, agent: agent) }
                 }
+            }
+            for root in Set(antigravityRoots.map(\.standardizedFileURL)) {
+                guard FileManager.default.fileExists(atPath: root.path) else { continue }
+                present.insert(.antigravity)
+                known += Self.antigravityLogFiles(in: root, changedSince: cutoff).map { (url: $0, agent: .antigravity) }
             }
         }
         // Free each file's parsed JSON as we go; on a GCD queue it would otherwise pile up until the scan ends.
@@ -614,10 +644,29 @@ final class AgentUsageScanner: @unchecked Sendable {
         return result
     }
 
+    /// Antigravity stores transcripts at `<brain>/<conversation-id>/.system_generated/logs/transcript.jsonl`.
+    /// Look up that exact path per conversation so hidden folders work without walking artifacts or double-counting
+    /// `transcript_full.jsonl`.
+    private static func antigravityLogFiles(in root: URL, changedSince cutoff: Date) -> [URL] {
+        guard let conversations = try? FileManager.default.contentsOfDirectory(
+            at: root, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
+        ) else { return [] }
+        var result: [URL] = []
+        for conv in conversations {
+            let log = conv.appending(path: ".system_generated/logs/transcript.jsonl")
+            var info = stat()
+            guard stat(log.path, &info) == 0, (info.st_mode & S_IFMT) == S_IFREG,
+                  Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec)) >= cutoff else { continue }
+            result.append(log)
+        }
+        return result
+    }
+
     private static let usageMarker = Data("\"usage\"".utf8)
     private static let tokenMarker = Data("token_count".utf8)
     private static let contextMarkers = [Data("\"session_meta\"".utf8), Data("\"turn_context\"".utf8)]
     private static let copilotMarkers = ["session.usage_record", "quotaSnapshots", "session.start", "session.resume"].map { Data($0.utf8) }
+    private static let antigravityMarkers = ["\"input_tokens\"", "\"output_tokens\""].map { Data($0.utf8) }
 
     private func read(_ url: URL, agent: AgentKind) {
         var state = files[url.path] ?? FileState()
@@ -661,6 +710,15 @@ final class AgentUsageScanner: @unchecked Sendable {
                     if key.isEmpty || seen.insert(key).inserted { entries.append(entry); entryKeys.append(key) }
                 }
                 if let windows = result.limits, let time = result.time { keepLimits(windows, at: time, for: .copilot) }
+            case .antigravity:
+                guard Self.antigravityMarkers.contains(where: { line.range(of: $0) != nil }),
+                      let (rawKey, parsed) = AgentLogParser.antigravity(Data(line)) else { continue }
+                let key = "antigravity:\(url.path):\(rawKey)"
+                guard seen.insert(key).inserted else { continue }
+                var entry = parsed
+                entry.session = url.path
+                entries.append(entry)
+                entryKeys.append(key)
             case .opencode:
                 continue // read from its database, not from log files
             }

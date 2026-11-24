@@ -28,3 +28,23 @@ jobs:
         run: scripts/compile_strings.sh "$(swift build --show-bin-path)/VibeCheck_VibeCheck.bundle"
       - name: Test
         run: swift test --skip-build
+      - name: Smoke-test CLI and shell scripts
+        run: |
+          BIN="$(swift build --show-bin-path)/VibeCheckCLI"
+          "$BIN" --help >/dev/null
+          "$BIN" --version | grep -q '^vibecheck '
+          bash -n build.sh scripts/*.sh
+
+  raycast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: integrations/raycast/package-lock.json
+      - name: Typecheck Raycast integration
+        working-directory: integrations/raycast
+        run: npm ci && npx tsc --noEmit

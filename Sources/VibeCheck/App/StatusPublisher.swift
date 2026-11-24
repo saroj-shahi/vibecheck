@@ -25,22 +25,7 @@ final class StatusPublisher {
     /// The file lists app names, so it is private to the user: a folder we create is 0700 (an existing one is left
     /// alone) and the file is 0600 from the moment it exists (temp file in the same folder, then an atomic rename).
     nonisolated static func write(_ data: Data, to url: URL) {
-        let fm = FileManager.default
-        let dir = url.deletingLastPathComponent()
-        if !fm.fileExists(atPath: dir.path) {
-            try? fm.createDirectory(at: dir, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
-        }
-        let temp = dir.appendingPathComponent(".status-\(UUID().uuidString).tmp")
-        let fd = open(temp.path, O_WRONLY | O_CREAT | O_EXCL, 0o600)
-        guard fd >= 0 else { return }
-        let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
-        do {
-            try handle.write(contentsOf: data)
-            try handle.close()
-            guard rename(temp.path, url.path) == 0 else { throw CocoaError(.fileWriteUnknown) }
-        } catch {
-            try? fm.removeItem(at: temp)
-        }
+        AtomicPrivateFile.write(data, to: url)
     }
 
     private static func snapshot(stats: SystemStats, now: Date) -> StatusSnapshot {

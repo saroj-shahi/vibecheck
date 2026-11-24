@@ -177,10 +177,12 @@ final class DeckController: NSObject {
     private var holdsDeviceDemand = false
     /// Bumped on every open/close so a stale close-fade can't hide a deck that was just reopened.
     private var generation = 0
+    /// True while the close fade-out animation is running (panel.isVisible is still true until completion).
+    private var isClosing = false
     /// Set by `--deck-demo` so stray clicks elsewhere don't dismiss the deck mid-demo.
     var ignoresOutsideClicks = false
 
-    var isVisible: Bool { panel.isVisible }
+    var isVisible: Bool { panel.isVisible && !isClosing }
     var route: DeckRoute { model.route }
 
     init(stats: SystemStats, settings: AppSettings) {
@@ -309,6 +311,7 @@ final class DeckController: NSObject {
         }
 
         generation += 1
+        isClosing = false
         model.go(route, animated: false)
         model.keyboardFocusVisible = false
         model.focusIndex = nil
@@ -356,6 +359,7 @@ final class DeckController: NSObject {
 
     func close() {
         guard isVisible else { return }
+        isClosing = true
         removeMonitors()
         model.closePalette()
         model.clearNotice()
@@ -368,6 +372,7 @@ final class DeckController: NSObject {
         }, completionHandler: {
             MainActor.assumeIsolated {
                 guard self.generation == closing else { return }
+                self.isClosing = false
                 panel.orderOut(nil)
                 panel.alphaValue = 1
                 self.updateSamplerDemand()

@@ -85,7 +85,7 @@ final class PowerSampler {
     private typealias ChannelGetString = @convention(c) (CFDictionary) -> Unmanaged<CFString>?
     private typealias SimpleValue = @convention(c) (CFDictionary, UnsafeMutablePointer<Int32>?) -> Int64
 
-    private struct API {
+    private struct API: Sendable {
         let copyChannels: CopyChannelsInGroup
         let createSubscription: CreateSubscription
         let createSamples: CreateSamples
@@ -95,18 +95,9 @@ final class PowerSampler {
         let simpleValue: SimpleValue
     }
 
-    private var api: API?
-    private var subscription: UnsafeRawPointer?
-    private var subscribed: CFMutableDictionary?
-    private var previous: (sample: CFDictionary, time: Date)?
-    private var loaded = false
-    /// Set once the OS has shown zeroed CPU energy; kept for the rest of the subscription.
-    private var cpuZeroed = false
-
-    private func load() {
-        guard !loaded else { return }
-        loaded = true
-        guard let handle = dlopen("/usr/lib/libIOReport.dylib", RTLD_NOW) else { return }
+    /// Loaded once per process: avoids repeated `dlopen`/`dlsym` on every CPU/GPU panel open.
+    private static let sharedAPI: API? = {
+        guard let handle = dlopen("/usr/lib/libIOReport.dylib", RTLD_NOW) else { return nil }
         func sym<T>(_ name: String, as _: T.Type) -> T? {
             guard let p = dlsym(handle, name) else { return nil }
             return unsafeBitCast(p, to: T.self)
@@ -117,21 +108,41 @@ final class PowerSampler {
               let createDelta = sym("IOReportCreateSamplesDelta", as: CreateSamplesDelta.self),
               let channelName = sym("IOReportChannelGetChannelName", as: ChannelGetString.self),
               let unitLabel = sym("IOReportChannelGetUnitLabel", as: ChannelGetString.self),
-              let simpleValue = sym("IOReportSimpleGetIntegerValue", as: SimpleValue.self),
-              let channels = copyChannels("Energy Model" as CFString, nil, 0, 0, 0)?.takeRetainedValue()
+              let simpleValue = sym("IOReportSimpleGetIntegerValue", as: SimpleValue.self)
+        else { return nil }
+        return API(copyChannels: copyChannels, createSubscription: createSubscription, createSamples: createSamples,
+                   createDelta: createDelta, channelName: channelName, unitLabel: unitLabel, simpleValue: simpleValue)
+    }()
+
+    private var subscription: UnsafeRawPointer?
+    private var subscribed: CFMutableDictionary?
+    private var previous: (sample: CFDictionary, time: Date)?
+    private var attemptedSubscribe = false
+    /// Set once the OS has shown zeroed CPU energy; kept for the rest of the subscription.
+    private var cpuZeroed = false
+
+    deinit { reset() }
+
+    private func subscribeIfNeeded() {
+        guard !attemptedSubscribe else { return }
+        attemptedSubscribe = true
+        guard let api = Self.sharedAPI,
+              let channels = api.copyChannels("Energy Model" as CFString, nil, 0, 0, 0)?.takeRetainedValue()
         else { return }
         var subbed: Unmanaged<CFMutableDictionary>?
-        guard let sub = createSubscription(nil, channels, &subbed, 0, nil), let subbed else { return }
+        guard let sub = api.createSubscription(nil, channels, &subbed, 0, nil) else { return }
+        guard let subbed else {
+            Unmanaged<CFTypeRef>.fromOpaque(sub).release()
+            return
+        }
         subscription = sub
         subscribed = subbed.takeRetainedValue()
-        api = API(copyChannels: copyChannels, createSubscription: createSubscription, createSamples: createSamples,
-                  createDelta: createDelta, channelName: channelName, unitLabel: unitLabel, simpleValue: simpleValue)
     }
 
     /// Average power since the previous call. The first call only primes the baseline and returns nil.
     func sample(cpuBusy: Double?) -> PowerReport? {
-        load()
-        guard let api, let subscription, let subscribed,
+        subscribeIfNeeded()
+        guard let api = Self.sharedAPI, let subscription, let subscribed,
               let now = api.createSamples(subscription, subscribed, nil)?.takeRetainedValue() else { return nil }
         let time = Date()
         defer { previous = (now, time) }
@@ -162,7 +173,7 @@ final class PowerSampler {
         subscribed = nil
         if let subscription { Unmanaged<CFTypeRef>.fromOpaque(subscription).release() }
         subscription = nil
-        loaded = false
+        attemptedSubscribe = false
     }
 }
 

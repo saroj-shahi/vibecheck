@@ -70,15 +70,15 @@ struct AwakeSession: Equatable {
     /// "42 min left", "1 h 5 min left", "until Safari quits", "until you stop it".
     func remaining(now: Date) -> String {
         switch end {
-        case .never: return "until you stop it"
-        case .whileRunning(_, let name): return "until \(name) quits"
-        case .whileChanging(_, let name): return "until \(name) stops changing"
+        case .never: return String(localized: "until you stop it")
+        case .whileRunning(_, let name): return String(localized: "until \(name) quits")
+        case .whileChanging(_, let name): return String(localized: "until \(name) stops changing")
         case .whileTriggered(let description): return description
         case .at(let date):
             let minutes = max(0, Int((date.timeIntervalSince(now) / 60).rounded(.up)))
-            if minutes < 60 { return "\(max(minutes, 1)) min left" }
+            if minutes < 60 { return String(localized: "\(String(max(minutes, 1))) min left") }
             let hours = minutes / 60, rest = minutes % 60
-            return rest == 0 ? "\(hours) h left" : "\(hours) h \(rest) min left"
+            return rest == 0 ? String(localized: "\(String(hours)) h left") : String(localized: "\(String(hours)) h \(String(rest)) min left")
         }
     }
 }
@@ -101,10 +101,10 @@ enum AwakePreset {
 
     static func title(_ minutes: Int) -> String {
         switch minutes {
-        case 0: "Indefinitely"
-        case ..<60: "\(minutes) minutes"
-        case 60: "1 hour"
-        default: minutes % 60 == 0 ? "\(minutes / 60) hours" : "\(minutes) minutes"
+        case 0: String(localized: "Indefinitely")
+        case ..<60: String(localized: "\(String(minutes)) minutes")
+        case 60: String(localized: "1 hour")
+        default: minutes % 60 == 0 ? String(localized: "\(String(minutes / 60)) hours") : String(localized: "\(String(minutes)) minutes")
         }
     }
 
@@ -156,7 +156,7 @@ struct AwakeSchedule: Equatable {
     /// "within your schedule (until 17:00)", in the user's clock style.
     func description(now: Date = Date(), calendar: Calendar = .current) -> String {
         let end = AwakePreset.nextOccurrence(ofMinute: endMinute, after: now, calendar: calendar)
-        return "within your schedule (until \(end.formatted(date: .omitted, time: .shortened)))"
+        return String(localized: "within your schedule (until \(end.formatted(date: .omitted, time: .shortened)))")
     }
 }
 
@@ -177,13 +177,18 @@ enum AwakeTriggerAction: Equatable {
     static func description(onPower: Bool, externalDisplay: Bool, downloading: Bool = false,
                             schedule: String? = nil, agentWorking: Bool = false,
                             onCall: Bool = false, wifi: String? = nil, focus: Bool = false) -> String? {
-        let parts = [onPower ? "plugged in" : nil, externalDisplay ? "a display is connected" : nil,
-                     downloading ? "files are downloading" : nil, schedule,
-                     agentWorking ? "an AI agent is working" : nil, onCall ? "you're on a call" : nil,
-                     wifi.map { "on Wi-Fi \($0)" }, focus ? "a Focus asks for it" : nil].compactMap { $0 }
+        let parts = [onPower ? String(localized: "plugged in") : nil,
+                     externalDisplay ? String(localized: "a display is connected") : nil,
+                     downloading ? String(localized: "files are downloading") : nil,
+                     schedule,
+                     agentWorking ? String(localized: "an AI agent is working") : nil,
+                     onCall ? String(localized: "you're on a call") : nil,
+                     wifi.map { String(localized: "on Wi-Fi \($0)") },
+                     focus ? String(localized: "a Focus asks for it") : nil].compactMap { $0 }
         guard let last = parts.last else { return nil }
         let head = parts.dropLast().joined(separator: ", ")
-        return "while " + (head.isEmpty ? last : head + " and " + last)
+        let combined = head.isEmpty ? last : String(localized: "\(head) and \(last)")
+        return String(localized: "while \(combined)")
     }
 }
 
@@ -298,10 +303,9 @@ final class KeepAwake {
         evaluateTriggers()
         guard let session else { return }
         if case .whileChanging(let path, _) = session.end { PathActivity.shared.refreshIfDue(path: path, now: now) }
-        let running = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier))
         if let reason = AwakeSession.endReason(session, now: now, battery: batteryProvider(),
                                                batteryFloor: settings.keepAwake.batteryFloor,
-                                               isRunning: running.contains,
+                                               isRunning: { id in NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == id } },
                                                lastChange: { PathActivity.shared.lastChange($0) }) {
             stop(reason: reason)
         } else if assertionKeepsDisplayOn != wantsDisplayOn {

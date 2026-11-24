@@ -49,7 +49,7 @@ struct AgentMenuBarChoiceTests {
     @Test func switchingAgentsKeepsAllAsEmptyAndOneOn() {
         var o = ItemOptions()
         o.setAgent(.codex, shown: false)
-        #expect(o.agents == [.claude, .copilot, .opencode])
+        #expect(o.agents == [.claude, .copilot, .opencode, .antigravity])
         o.setAgent(.codex, shown: true)
         #expect(o.agents.isEmpty)
         o.agents = [.claude]
@@ -106,7 +106,7 @@ struct ClaudeProfileTests {
         try write("me@work.test", to: home.appending(path: ".claude-work/.claude.json"))
 
         let scanner = AgentUsageScanner(claudeRoots: work.projectRoots(home: home, environment: [:]), codexRoots: [], copilotRoots: [],
-                                        opencodeDB: home.appending(path: "none.db"),
+                                        antigravityRoots: [], opencodeDB: home.appending(path: "none.db"),
                                         claudeConfig: work.configFile(home: home, environment: [:]))
         let claude = try #require(scanner.scan(now: now, fullWalk: true).agents.first { $0.agent == .claude })
         #expect(claude.today.total == 10)
@@ -125,7 +125,7 @@ struct ClaudeProfileTests {
     try Data((line + "\n").utf8).write(to: project.appending(path: "s.jsonl"))
     let empty = dir.appending(path: "none")
     func scanner() -> AgentUsageScanner {
-        AgentUsageScanner(claudeRoots: [dir], codexRoots: [empty], copilotRoots: [empty],
+        AgentUsageScanner(claudeRoots: [dir], codexRoots: [empty], copilotRoots: [empty], antigravityRoots: [],
                           opencodeDB: empty.appending(path: "x.db"), claudeConfig: empty.appending(path: "c.json"))
     }
     let all = scanner().scan(now: now, fullWalk: true)

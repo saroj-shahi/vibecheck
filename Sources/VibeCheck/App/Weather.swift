@@ -106,7 +106,12 @@ enum OpenMeteo {
             }
             let results: [Result]?
         }
-        let (data, _) = try await URLSession.shared.data(from: components.url!)
+        var request = URLRequest(url: components.url!, timeoutInterval: 15)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        let (data, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+            throw URLError(.badServerResponse)
+        }
         return (try JSONDecoder().decode(Response.self, from: data).results ?? []).map {
             WeatherLocation(name: $0.name, region: $0.admin1, country: $0.country,
                             latitude: $0.latitude, longitude: $0.longitude)
@@ -126,7 +131,8 @@ enum OpenMeteo {
             URLQueryItem(name: "temperature_unit", value: unit.rawValue),
             URLQueryItem(name: "wind_speed_unit", value: unit == .fahrenheit ? "mph" : "kmh"),
         ]
-        let (data, response) = try await URLSession.shared.data(from: components.url!)
+        let request = URLRequest(url: components.url!, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
+        let (data, response) = try await URLSession.shared.data(for: request)
         if let http = response as? HTTPURLResponse, http.statusCode != 200 {
             throw URLError(.badServerResponse)
         }
@@ -177,17 +183,21 @@ enum OpenMeteo {
         dayFormat.dateFormat = "yyyy-MM-dd"
 
         let now = hourFormat.date(from: r.current.time) ?? Date()
-        let hours: [WeatherForecast.Hour] = r.hourly.time.indices.compactMap { i in
+        let hourCount = min(r.hourly.time.count, r.hourly.temperature_2m.count, r.hourly.weather_code.count)
+        let hours: [WeatherForecast.Hour] = (0..<hourCount).compactMap { i in
             guard let time = hourFormat.date(from: r.hourly.time[i]),
                   time >= now.addingTimeInterval(-3600),
                   let temp = r.hourly.temperature_2m[i], let code = r.hourly.weather_code[i] else { return nil }
-            return .init(time: time, temperature: temp, code: code, precipitationChance: r.hourly.precipitation_probability?[i])
+            let precip = r.hourly.precipitation_probability.flatMap { i < $0.count ? $0[i] : nil }
+            return .init(time: time, temperature: temp, code: code, precipitationChance: precip)
         }
-        let days: [WeatherForecast.Day] = r.daily.time.indices.compactMap { i in
+        let dayCount = min(r.daily.time.count, r.daily.weather_code.count,
+                           r.daily.temperature_2m_max.count, r.daily.temperature_2m_min.count)
+        let days: [WeatherForecast.Day] = (0..<dayCount).compactMap { i in
             guard let date = dayFormat.date(from: r.daily.time[i]), let code = r.daily.weather_code[i],
                   let high = r.daily.temperature_2m_max[i], let low = r.daily.temperature_2m_min[i] else { return nil }
-            return .init(date: date, code: code, high: high, low: low,
-                         precipitationChance: r.daily.precipitation_probability_max?[i])
+            let precip = r.daily.precipitation_probability_max.flatMap { i < $0.count ? $0[i] : nil }
+            return .init(date: date, code: code, high: high, low: low, precipitationChance: precip)
         }
         return WeatherForecast(temperature: r.current.temperature_2m, feelsLike: r.current.apparent_temperature,
                                humidity: r.current.relative_humidity_2m, windSpeed: r.current.wind_speed_10m,
@@ -208,6 +218,9 @@ final class WeatherStore {
     private(set) var isLoading = false
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var loadedKey: String?
+    @ObservationIgnored private var fetchTask: Task<Void, Never>?
+    @ObservationIgnored private var fetchKey: String?
+    @ObservationIgnored private var fetchGeneration = 0
 
     private init() {
         let timer = Timer(timeInterval: 30 * 60, repeats: true) { _ in
@@ -221,23 +234,42 @@ final class WeatherStore {
     func refresh(force: Bool = false) {
         let settings = AppSettings.shared
         guard settings.isEnabled(.weather), let location = settings.weather.location else {
-            if settings.weather.location == nil { forecast = nil; loadedKey = nil }
+            if settings.weather.location == nil {
+                fetchTask?.cancel(); fetchTask = nil; fetchKey = nil; isLoading = false
+                forecast = nil; loadedKey = nil
+            }
             return
         }
-        let key = "\(location.id)|\(settings.weather.unit.rawValue)"
-        guard force || key != loadedKey, !isLoading else { return }
+        let unit = settings.weather.unit
+        let key = "\(location.id)|\(unit.rawValue)"
+        // Skip duplicate requests for the same key; a new city/unit supersedes an in-flight fetch.
+        if !force {
+            if key == loadedKey && !isLoading { return }
+            if isLoading && key == fetchKey { return }
+        } else if isLoading && key == fetchKey {
+            return
+        }
+        fetchTask?.cancel()
+        fetchGeneration += 1
+        let generation = fetchGeneration
+        fetchKey = key
         isLoading = true
-        Task {
+        fetchTask = Task {
             do {
-                let result = try await OpenMeteo.forecast(for: location, unit: settings.weather.unit)
+                let result = try await OpenMeteo.forecast(for: location, unit: unit)
+                guard !Task.isCancelled, generation == fetchGeneration else { return }
                 forecast = result
                 lastUpdated = Date()
                 errorMessage = nil
                 loadedKey = key
             } catch {
+                guard !Task.isCancelled, generation == fetchGeneration else { return }
                 errorMessage = String(localized: "Couldn't load weather. Check your connection.")
             }
-            isLoading = false
+            if generation == fetchGeneration {
+                isLoading = false
+                fetchKey = nil
+            }
         }
     }
 }

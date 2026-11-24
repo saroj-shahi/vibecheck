@@ -142,6 +142,12 @@ if printf '%s\n' "$IDENTITIES" | grep -qF "\"$IDENTITY\""; then
     cp -R "$APP/Contents/Resources/"*.lproj "$APPEX/Contents/Resources/"
     codesign --force "${SIGN_FLAGS[@]+"${SIGN_FLAGS[@]}"}" --sign "$IDENTITY" --entitlements Resources/Widget/Widget.entitlements "$APPEX"
     codesign --force "${SIGN_FLAGS[@]+"${SIGN_FLAGS[@]}"}" --sign "$IDENTITY" --entitlements Resources/VibeCheck.entitlements "$APP"
+    CERT_TEAM=$(codesign -dv "$APP" 2>&1 | sed -n 's/^TeamIdentifier=//p' | head -1)
+    ENT_GROUP=$(/usr/libexec/PlistBuddy -c "Print :com.apple.security.application-groups:0" Resources/VibeCheck.entitlements 2>/dev/null || true)
+    ENT_TEAM="${ENT_GROUP%%.*}"
+    if [ -n "$CERT_TEAM" ] && [ "$CERT_TEAM" != "not set" ] && [ -n "$ENT_TEAM" ] && [ "$CERT_TEAM" != "$ENT_TEAM" ]; then
+      echo "warning: signing Team ID ($CERT_TEAM) differs from entitlements app group prefix ($ENT_TEAM); update Resources/{VibeCheck,Widget/Widget}.entitlements and Sources/VibeCheckShared/WidgetSnapshot.swift for widgets to share state" >&2
+    fi
   else
     echo "warning: \"$IDENTITY\" has no Team ID; building without widgets" >&2
     codesign --force --sign "$IDENTITY" "$APP"

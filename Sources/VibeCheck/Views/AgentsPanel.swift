@@ -11,7 +11,7 @@ struct AgentsPanel: View {
             if !sample.scanned {
                 ProgressView().controlSize(.small).frame(maxWidth: .infinity)
             } else if sample.agents.isEmpty {
-                Text("No agent usage found on this Mac. VibeCheck reads Claude Code (~/.claude), Codex (~/.codex), GitHub Copilot CLI (~/.copilot) and OpenCode (~/.local/share/opencode).")
+                Text("No agent usage found on this Mac. VibeCheck reads Claude Code (~/.claude), Codex (~/.codex), GitHub Copilot CLI (~/.copilot), OpenCode (~/.local/share/opencode) and Antigravity (~/.gemini/antigravity).")
                     .font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {

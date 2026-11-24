@@ -60,13 +60,45 @@ struct MoreAgentsTests {
         sqlite3_close(db)
 
         let scanner = AgentUsageScanner(claudeRoots: [dir.appending(path: "none")], codexRoots: [dir.appending(path: "none")],
-                                        copilotRoots: [dir.appending(path: "copilot")], opencodeDB: dbURL,
+                                        copilotRoots: [dir.appending(path: "copilot")], antigravityRoots: [], opencodeDB: dbURL,
                                         claudeConfig: URL(fileURLWithPath: "/nonexistent/.claude.json"))
         let sample = scanner.scan(now: now, fullWalk: true)
         #expect(Set(sample.agents.map(\.agent)) == [.copilot, .opencode])
         #expect(sample.agents.first { $0.agent == .copilot }?.today.total == 18085 + 441 + 10 + 2304)
         #expect(sample.agents.first { $0.agent == .opencode }?.today.total == 120)
         // A rescan with nothing changed keeps the same totals (no double counting).
+        #expect(scanner.scan(now: now).today == sample.today)
+    }
+
+    @Test func antigravityTranscriptParsingAndScanning() throws {
+        let modelLine = #"{"step_index":4,"type":"PLANNER_RESPONSE","source":"MODEL","status":"DONE","created_at":"2026-11-24T04:04:34Z","model":"gemini-4-neon-high","input_tokens":3988,"output_tokens":347,"cache_read_tokens":14526}"#
+        let parsed = try #require(AgentLogParser.antigravity(Data(modelLine.utf8)))
+        #expect(parsed.key == "step:4")
+        #expect(parsed.entry.agent == .antigravity)
+        #expect(parsed.entry.model == "gemini-4-neon-high")
+        #expect(parsed.entry.tokens == TokenCounts(input: 3988, output: 347, cacheWrite: 0, cacheRead: 14526))
+        #expect(AgentLogParser.antigravity(Data(#"{"step_index":0,"type":"USER_INPUT","source":"USER_EXPLICIT","created_at":"2026-11-24T04:04:00Z"}"#.utf8)) == nil)
+        #expect(AgentLogParser.antigravity(Data(#"{"step_index":2,"type":"PLANNER_RESPONSE","source":"MODEL","created_at":"2026-11-24T04:04:10Z","input_tokens":0,"output_tokens":0}"#.utf8)) == nil)
+
+        let dir = FileManager.default.temporaryDirectory.appending(path: "vc-antigravity-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let logs = dir.appending(path: "brain/conv-1/.system_generated/logs")
+        try FileManager.default.createDirectory(at: logs, withIntermediateDirectories: true)
+        let now = Date()
+        let stamp = ISO8601DateFormatter().string(from: now.addingTimeInterval(-30))
+        let fresh = modelLine.replacingOccurrences(of: "2026-11-24T04:04:34Z", with: stamp)
+        // Write transcript.jsonl (with a duplicate step_index) AND transcript_full.jsonl (must be ignored).
+        try (fresh + "\n" + fresh + "\n").write(to: logs.appending(path: "transcript.jsonl"), atomically: true, encoding: .utf8)
+        try (fresh + "\n").write(to: logs.appending(path: "transcript_full.jsonl"), atomically: true, encoding: .utf8)
+
+        let scanner = AgentUsageScanner(claudeRoots: [], codexRoots: [], copilotRoots: [],
+                                        antigravityRoots: [dir.appending(path: "brain")],
+                                        opencodeDB: dir.appending(path: "none.db"),
+                                        claudeConfig: URL(fileURLWithPath: "/nonexistent/.claude.json"))
+        let sample = scanner.scan(now: now, fullWalk: true)
+        #expect(sample.agents.map(\.agent) == [.antigravity])
+        #expect(sample.agents.first?.today.total == 3988 + 347 + 14526)
+        #expect(sample.activeSessions.count == 1 && sample.activeSessions.first?.agent == .antigravity)
         #expect(scanner.scan(now: now).today == sample.today)
     }
 }

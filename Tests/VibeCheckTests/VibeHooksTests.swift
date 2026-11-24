@@ -175,4 +175,21 @@ struct VibeHooksTests {
         #expect(hooks.hooks.map(\.id) == ["deep"])
         hooks.stop()
     }
+
+    @Test func watchesInitiallyEmptyFileWrittenInPlace() async throws {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let file = dir.appendingPathComponent("in-place.json")
+        try Data().write(to: file)
+        let hooks = VibeHooks(directory: dir, now: { VibeHooksTests.fixed.addingTimeInterval(10) })
+        hooks.start()
+        #expect(hooks.hooks.isEmpty)
+        // Write valid JSON directly to the existing file handle (no directory entry change).
+        let handle = try FileHandle(forWritingTo: file)
+        try handle.write(contentsOf: json(id: "in-place", state: "active"))
+        try handle.close()
+        for _ in 0..<40 where hooks.hooks.isEmpty { try await Task.sleep(for: .milliseconds(100)) }
+        #expect(hooks.hooks.map(\.id) == ["in-place"])
+        hooks.stop()
+    }
 }

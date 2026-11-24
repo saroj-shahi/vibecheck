@@ -234,7 +234,7 @@ let card = canvas(1280, 640) { context in
         .font: roundedFont(40, .medium), .foregroundColor: Brand.haze,
     ]).draw(at: CGPoint(x: 506, y: 268))
     var x: CGFloat = 506
-    for label in ["CPU", "GPU", "Memory", "Network", "Sensors", "+4"] {
+    for label in ["CPU", "Memory", "Battery", "Agents", "Sensors", "+6"] {
         let text = NSAttributedString(string: label, attributes: [.font: roundedFont(22, .semibold), .foregroundColor: Brand.cloud])
         let width = text.size().width + 32
         let pill = NSBezierPath(roundedRect: NSRect(x: x, y: 180, width: width, height: 42), xRadius: 21, yRadius: 21)

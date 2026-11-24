@@ -196,14 +196,10 @@ final class EnergyLog {
     func save(at date: Date = Date()) {
         lastSave = date
         guard dirty else { return }
-        let dir = fileURL.deletingLastPathComponent()
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         guard let data = try? JSONEncoder().encode(File(days: days)) else { return }
-        // Atomic, so a crash mid-write can't leave a truncated file that loses both days on the next launch.
-        do {
-            try data.write(to: fileURL, options: [.atomic])
-            try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: fileURL.path)
+        // Atomic 0600 write, so a crash mid-write can't leave a truncated or world-readable file.
+        if AtomicPrivateFile.write(data, to: fileURL) {
             dirty = false
-        } catch {}
+        }
     }
 }

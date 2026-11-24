@@ -142,11 +142,11 @@ final class SleepDrain {
     /// letter or digit) and the first token that means something wins.
     nonisolated static func plainReason(_ reason: String) -> String {
         let words: [String: String] = [
-            "wifibt": "Wi-Fi or Bluetooth", "arpt": "Wi-Fi", "wifi": "Wi-Fi",
-            "bluetooth": "Bluetooth", "bt": "Bluetooth",
-            "pwrbtn": "the power button", "lid": "the lid", "usb": "a USB device",
-            "rtc": "scheduled maintenance", "maintenance": "scheduled maintenance",
-            "useractivity": "you",
+            "wifibt": String(localized: "Wi-Fi or Bluetooth"), "arpt": String(localized: "Wi-Fi"), "wifi": String(localized: "Wi-Fi"),
+            "bluetooth": String(localized: "Bluetooth"), "bt": String(localized: "Bluetooth"),
+            "pwrbtn": String(localized: "the power button"), "lid": String(localized: "the lid"), "usb": String(localized: "a USB device"),
+            "rtc": String(localized: "scheduled maintenance"), "maintenance": String(localized: "scheduled maintenance"),
+            "useractivity": String(localized: "you"),
         ]
         let tokens = reason.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber })
         for t in tokens {
@@ -186,8 +186,17 @@ final class SleepDrain {
     private final class Stop: @unchecked Sendable {
         private let lock = NSLock()
         private var stopped = false
+        private var finished = false
         var value: Bool { lock.lock(); defer { lock.unlock() }; return stopped }
         func set() { lock.lock(); stopped = true; lock.unlock() }
+        func markFinished() { lock.lock(); finished = true; lock.unlock() }
+        /// Marks timed out and returns true only if the child hasn't already exited.
+        func tripIfRunning() -> Bool {
+            lock.lock(); defer { lock.unlock() }
+            guard !finished else { return false }
+            stopped = true
+            return true
+        }
     }
 
     /// Runs `pmset -g log` with a 20 s deadline and a 32 MB cap. Returns nil when it had to be stopped
@@ -200,9 +209,15 @@ final class SleepDrain {
         p.standardOutput = pipe
         p.standardError = FileHandle.nullDevice
         do { try p.run() } catch { return nil }
+        let pid = p.processIdentifier
         let timedOut = Stop()
-        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 20) {
-            if p.isRunning { timedOut.set(); p.terminate() }
+        let timeoutWork = DispatchWorkItem {
+            if timedOut.tripIfRunning(), pid > 0 { kill(pid, SIGTERM) }
+        }
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 20, execute: timeoutWork)
+        defer {
+            timedOut.markFinished()
+            timeoutWork.cancel()
         }
         let cap = 32 * 1024 * 1024
         var data = Data()
@@ -210,10 +225,13 @@ final class SleepDrain {
         while !timedOut.value {
             guard let chunk = try? handle.read(upToCount: 64 * 1024), !chunk.isEmpty else { break }
             data.append(chunk)
-            if data.count > cap { timedOut.set(); p.terminate(); break }
+            if data.count > cap {
+                if timedOut.tripIfRunning(), pid > 0 { kill(pid, SIGTERM) }
+                break
+            }
         }
-        if timedOut.value { p.waitUntilExit(); return nil }
         p.waitUntilExit()
+        if timedOut.value { return nil }
         return String(decoding: data, as: UTF8.self)
     }
 }

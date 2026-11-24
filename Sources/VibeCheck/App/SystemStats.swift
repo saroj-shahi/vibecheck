@@ -355,13 +355,14 @@ final class SystemStats {
     private func updateVibe() {
         recordSwap()
         let input = vibeInput
-        vibeHeld = VibeScore.held(input)
-        let level = vibeTracker.update(VibeScore.evaluate(input))
+        let reasons = VibeScore.reasons(input)
+        vibeHeld = VibeScore.held(reasons)
+        let level = vibeTracker.update(VibeScore.evaluate(reasons))
         // Only while a view wants processes (the list is empty otherwise).
         let top = processDemand == 0 || processes.isEmpty ? nil : topApps(by: \.cpu, limit: 1).first.map { ($0.name, $0.cpu) }
-        let report = VibeReport(vibe: level, verdict: VibeScore.verdict(for: level, input: input, topApp: top, memoryApp: appMemory.top()),
-                                culprit: VibeScore.culprit(for: level, input: input),
-                                badge: VibeScore.badge(for: level, input: input))
+        let report = VibeReport(vibe: level, verdict: VibeScore.verdict(for: level, reasons: reasons, topApp: top, memoryApp: appMemory.top()),
+                                culprit: VibeScore.culprit(for: level, reasons: reasons),
+                                badge: VibeScore.badge(for: level, reasons: reasons))
         if report != vibe { vibe = report }
         vibeReplay.observe(level: level, culprit: report.culprit, process: top?.0)
     }
@@ -451,13 +452,15 @@ final class SystemStats {
         fetchingNetworkApps = true
         Task {
             let rows = await NetworkAppSampler.fetch()
-            self.networkApps = NetworkAppSampler.groupByApp(rows) { NSRunningApplication(processIdentifier: $0)?.localizedName }
-            let now = Date()
-            // History only grows while the panel is open (that's when nettop runs).
-            let gap = self.lastNetworkAppSample.map { now.timeIntervalSince($0) } ?? 1
-            self.lastNetworkAppSample = now
-            // After a pause the gap says nothing about the rate; skip that one sample rather than guess.
-            if gap <= 10 { self.appTraffic.record(self.networkApps, seconds: min(gap, 5), now: now) }
+            if self.networkAppDemand > 0 {
+                self.networkApps = NetworkAppSampler.groupByApp(rows) { NSRunningApplication(processIdentifier: $0)?.localizedName }
+                let now = Date()
+                // History only grows while the panel is open (that's when nettop runs).
+                let gap = self.lastNetworkAppSample.map { now.timeIntervalSince($0) } ?? 1
+                self.lastNetworkAppSample = now
+                // After a pause the gap says nothing about the rate; skip that one sample rather than guess.
+                if gap <= 10 { self.appTraffic.record(self.networkApps, seconds: min(gap, 5), now: now) }
+            }
             self.fetchingNetworkApps = false
         }
     }
@@ -480,13 +483,19 @@ final class SystemStats {
         lastProcessFetch = Date()
         Task {
             let rows = await ProcessSampler.fetch()
+            guard self.processDemand > 0 else {
+                self.fetchingProcesses = false
+                return
+            }
             let readings = await Task.detached { EnergySampler.read(pids: rows.map(\.id)) }.value
-            let watts = EnergySampler.watts(previous: self.energyReadings, current: readings)
-            self.energyReadings = readings
-            self.processes = rows.map { row in
-                var row = row
-                row.watts = watts[row.id]
-                return row
+            if self.processDemand > 0 {
+                let watts = EnergySampler.watts(previous: self.energyReadings, current: readings)
+                self.energyReadings = readings
+                self.processes = rows.map { row in
+                    var row = row
+                    row.watts = watts[row.id]
+                    return row
+                }
             }
             self.fetchingProcesses = false
         }
