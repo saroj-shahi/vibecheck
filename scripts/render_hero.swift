@@ -29,31 +29,34 @@ let image = NSImage(size: NSSize(width: W, height: H), flipped: true) { _ in
     for x in stride(from: 0, through: W, by: 40) { ctx.stroke(CGRect(x: x + 0.5, y: 0, width: 0, height: H)) }
     for y in stride(from: 0, through: H, by: 40) { ctx.stroke(CGRect(x: 0, y: y + 0.5, width: W, height: 0)) }
     let glowCenter = CGPoint(x: W * 0.8, y: H * 0.42)
-    NSGradient(starting: mint.withAlphaComponent(0.2), ending: mint.withAlphaComponent(0))!
+    NSGradient(starting: mint.withAlphaComponent(0.22), ending: mint.withAlphaComponent(0))!
         .draw(fromCenter: glowCenter, radius: 0, toCenter: glowCenter, radius: W * 0.44, options: [])
-    NSGradient(colors: [black, black.withAlphaComponent(0.55), black.withAlphaComponent(0)], atLocations: [0, 0.5, 1],
+    let accentGlow = CGPoint(x: W * 0.16, y: H * 0.25)
+    NSGradient(starting: violet.withAlphaComponent(0.14), ending: violet.withAlphaComponent(0))!
+        .draw(fromCenter: accentGlow, radius: 0, toCenter: accentGlow, radius: W * 0.28, options: [])
+    NSGradient(colors: [black, black.withAlphaComponent(0.45), black.withAlphaComponent(0)], atLocations: [0, 0.5, 1],
                colorSpace: .sRGB)!.draw(in: NSRect(x: 0, y: 0, width: W, height: H), angle: 0)
 
     // The deck, floating on the right.
-    // 916 px tall, width from the screenshot's own aspect (the deck's width changes between versions).
-    let deckSize = NSSize(width: (916 * deck.size.width / deck.size.height).rounded(), height: 916)
-    let deckRect = NSRect(x: W - deckSize.width - 170, y: (H - deckSize.height) / 2, width: deckSize.width, height: deckSize.height)
+    // 930 px tall, width from the screenshot's own aspect (the deck's width changes between versions).
+    let deckSize = NSSize(width: (930 * deck.size.width / deck.size.height).rounded(), height: 930)
+    let deckRect = NSRect(x: W - deckSize.width - 155, y: (H - deckSize.height) / 2, width: deckSize.width, height: deckSize.height)
     ctx.saveGState()
-    ctx.setShadow(offset: CGSize(width: 0, height: 30), blur: 90, color: NSColor.black.withAlphaComponent(0.6).cgColor)
+    ctx.setShadow(offset: CGSize(width: 0, height: 32), blur: 96, color: NSColor.black.withAlphaComponent(0.65).cgColor)
     deck.draw(in: deckRect, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
     ctx.restoreGState()
 
-    // Left column: icon, slogan, ring states.
-    let left: CGFloat = 150
-    icon.draw(in: NSRect(x: left - 12, y: 170, width: 176, height: 176), from: .zero, operation: .sourceOver,
+    // Left column: icon, slogan, ring states, capability pills.
+    let left: CGFloat = 140
+    icon.draw(in: NSRect(x: left - 12, y: 148, width: 172, height: 172), from: .zero, operation: .sourceOver,
               fraction: 1, respectFlipped: true, hints: nil)
 
-    let line1 = NSAttributedString(string: "Your Mac's mood,", attributes: [.font: rounded(92, .bold), .foregroundColor: cloud])
-    line1.draw(at: NSPoint(x: left, y: 380))
+    let line1 = NSAttributedString(string: "Your Mac's mood,", attributes: [.font: rounded(94, .bold), .foregroundColor: cloud])
+    line1.draw(at: NSPoint(x: left, y: 350))
     // Second line in the brand gradient (Mint → Sky → Violet), clipped to the glyphs.
-    let line2 = NSAttributedString(string: "in one little ring.", attributes: [.font: rounded(92, .bold), .foregroundColor: cloud])
+    let line2 = NSAttributedString(string: "in one little ring.", attributes: [.font: rounded(94, .bold), .foregroundColor: cloud])
     let size2 = line2.size()
-    let rect2 = NSRect(x: left, y: 490, width: size2.width, height: size2.height)
+    let rect2 = NSRect(x: left, y: 460, width: size2.width, height: size2.height)
     let mask = NSImage(size: size2, flipped: true) { _ in line2.draw(at: .zero); return true }
     ctx.saveGState()
     // CG masks are bottom-up; undo the view's flip so the glyphs come out upright.
@@ -66,12 +69,12 @@ let image = NSImage(size: NSSize(width: W, height: H), flipped: true) { _ in
 
     let sub = NSAttributedString(string: "Is your Mac vibing or cooked? One glance tells you.",
                                  attributes: [.font: rounded(36, .medium), .foregroundColor: haze])
-    sub.draw(at: NSPoint(x: left, y: 630))
+    sub.draw(at: NSPoint(x: left, y: 604))
 
     // Ring states: full / two-thirds / one-third, as in the menu bar.
     var x = left
     for (label, color, fill) in [("Vibing", cloud, 1.0), ("Mid", mid, 2.0 / 3), ("Cooked", cooked, 1.0 / 3)] {
-        let center = CGPoint(x: x + 34, y: 790)
+        let center = CGPoint(x: x + 34, y: 742)
         let track = NSBezierPath(); track.appendArc(withCenter: center, radius: 26, startAngle: 0, endAngle: 360)
         track.lineWidth = 10; color.withAlphaComponent(0.18).setStroke(); track.stroke()
         let arc = NSBezierPath()
@@ -79,13 +82,25 @@ let image = NSImage(size: NSSize(width: W, height: H), flipped: true) { _ in
         arc.appendArc(withCenter: center, radius: 26, startAngle: -90, endAngle: -90 + 360 * fill * 0.999, clockwise: false)
         arc.lineWidth = 10; arc.lineCapStyle = .round; color.setStroke(); arc.stroke()
         let text = NSAttributedString(string: label, attributes: [.font: rounded(38, .semibold), .foregroundColor: cloud])
-        text.draw(at: NSPoint(x: x + 82, y: 790 - text.size().height / 2))
-        x += 82 + text.size().width + 70
+        text.draw(at: NSPoint(x: x + 82, y: 742 - text.size().height / 2))
+        x += 82 + text.size().width + 66
     }
 
-    let foot = NSAttributedString(string: "A native menu bar app for macOS 14 and later",
-                                  attributes: [.font: rounded(28, .regular), .foregroundColor: haze.withAlphaComponent(0.8)])
-    foot.draw(at: NSPoint(x: left, y: 900))
+    // Subtle capability pills
+    var px = left
+    for pillLabel in ["macOS 14+", "11 Modules", "AI Agents", "100% Local", "GPL-3.0"] {
+        let t = NSAttributedString(string: pillLabel, attributes: [.font: rounded(24, .semibold), .foregroundColor: cloud.withAlphaComponent(0.9)])
+        let pw = t.size().width + 34, ph: CGFloat = 46
+        let pill = NSBezierPath(roundedRect: NSRect(x: px, y: 842, width: pw, height: ph), xRadius: ph / 2, yRadius: ph / 2)
+        NSColor.white.withAlphaComponent(0.08).setFill(); pill.fill()
+        NSColor.white.withAlphaComponent(0.14).setStroke(); pill.lineWidth = 1.5; pill.stroke()
+        t.draw(at: NSPoint(x: px + 17, y: 842 + (ph - t.size().height) / 2))
+        px += pw + 14
+    }
+
+    let foot = NSAttributedString(string: "Native Swift · Zero accounts · Zero tracking",
+                                  attributes: [.font: rounded(26, .regular), .foregroundColor: haze.withAlphaComponent(0.75)])
+    foot.draw(at: NSPoint(x: left, y: 924))
     return true
 }
 
