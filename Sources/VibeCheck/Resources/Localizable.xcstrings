@@ -5595,11 +5595,22 @@
       }
     },
     "New in 1.8: Antigravity in AI Agents, plus reliability fixes for sleep drain, Wi-Fi and alerts.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "New in 1.8: Antigravity in AI Agents, plus reliability fixes for sleep drain, Wi-Fi and alerts."
+          }
+        }
+      }
+    },
+    "New in 1.8.1: fixes a crash when a Bluetooth device connects or disconnects.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New in 1.8.1: fixes a crash when a Bluetooth device connects or disconnects."
           }
         }
       }
