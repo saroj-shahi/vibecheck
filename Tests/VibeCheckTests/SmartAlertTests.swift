@@ -158,6 +158,36 @@ struct SmartAlertTests {
         #expect(!P.pollDue(.poll(600), lastFetch: t0, now: t0.addingTimeInterval(599)))
         #expect(P.pollDue(.poll(600), lastFetch: t0, now: t0.addingTimeInterval(600)))
     }
+
+    @MainActor
+    @Test func bluetoothConnectWatchHopsToMainActorFromBackgroundQueue() async {
+        let watch = BluetoothConnectWatch()
+        var mainThreadHits: [Bool] = []
+        await withCheckedContinuation { (done: CheckedContinuation<Void, Never>) in
+            watch.onChange = {
+                mainThreadHits.append(Thread.isMainThread)
+                if mainThreadHits.count == 2 { done.resume() }
+            }
+            let bg = DispatchQueue(label: "test.iobluetooth.coordinator")
+            bg.async {
+                watch.deviceConnected(nil, device: nil)
+                watch.deviceDisconnected(nil, device: nil)
+            }
+        }
+        #expect(mainThreadHits == [true, true])
+
+        // Callbacks arriving after stop() must not fire onChange.
+        watch.stop()
+        await withCheckedContinuation { (done: CheckedContinuation<Void, Never>) in
+            let bg = DispatchQueue(label: "test.iobluetooth.coordinator.stopped")
+            bg.async {
+                watch.deviceConnected(nil, device: nil)
+                watch.deviceDisconnected(nil, device: nil)
+                DispatchQueue.main.async { done.resume() }
+            }
+        }
+        #expect(mainThreadHits.count == 2)
+    }
 }
 
 struct ConditionTimerGapTests {

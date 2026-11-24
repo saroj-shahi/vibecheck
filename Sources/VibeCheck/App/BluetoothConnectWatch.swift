@@ -43,12 +43,14 @@ final class BluetoothConnectWatch: NSObject {
     private var connectToken: IOBluetoothUserNotification?
     private var disconnectTokens: [String: IOBluetoothUserNotification] = [:]
     private(set) var isWatching = false
+    private var stopped = false
 
     /// Registers once, and only when the permission is already granted. Returns whether it is watching.
     @discardableResult
     func startIfAllowed() -> Bool {
         if isWatching { return true }
         guard DeviceRefreshPolicy.permissionAllowed() else { return false }
+        stopped = false
         isWatching = true
         connectToken = IOBluetoothDevice.register(forConnectNotifications: self, selector: #selector(deviceConnected(_:device:)))
         for case let device as IOBluetoothDevice in IOBluetoothDevice.pairedDevices() ?? [] where device.isConnected() {
@@ -58,6 +60,7 @@ final class BluetoothConnectWatch: NSObject {
     }
 
     func stop() {
+        stopped = true
         connectToken?.unregister()
         connectToken = nil
         disconnectTokens.values.forEach { $0.unregister() }
@@ -70,20 +73,28 @@ final class BluetoothConnectWatch: NSObject {
         disconnectTokens[address] = device.register(forDisconnectNotification: self, selector: #selector(deviceDisconnected(_:device:)))
     }
 
-    @objc nonisolated private func deviceConnected(_ notification: IOBluetoothUserNotification, device: IOBluetoothDevice) {
-        // The device is registered on the main run loop's thread (where IOBluetooth delivers), so this is safe.
+    @objc nonisolated func deviceConnected(_ notification: IOBluetoothUserNotification?, device: IOBluetoothDevice?) {
+        // IOBluetooth bridges CoreBluetooth events via IOBluetoothCoreBluetoothCoordinator and delivers
+        // on `com.apple.bluetooth.iobluetooth.coordinatorQueue`, not the main thread.
         nonisolated(unsafe) let device = device
-        MainActor.assumeIsolated {
-            watchDisconnect(device)
-            onChange?()
+        DispatchQueue.main.async { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self, !self.stopped else { return }
+                if self.isWatching, let device { self.watchDisconnect(device) }
+                self.onChange?()
+            }
         }
     }
 
-    @objc nonisolated private func deviceDisconnected(_ notification: IOBluetoothUserNotification, device: IOBluetoothDevice) {
-        let address = device.addressString
-        MainActor.assumeIsolated {
-            if let address { disconnectTokens[address]?.unregister(); disconnectTokens[address] = nil }
-            onChange?()
+    @objc nonisolated func deviceDisconnected(_ notification: IOBluetoothUserNotification?, device: IOBluetoothDevice?) {
+        // Same coordinator queue as `deviceConnected`.
+        let address = device?.addressString
+        DispatchQueue.main.async { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self, !self.stopped else { return }
+                if let address { self.disconnectTokens[address]?.unregister(); self.disconnectTokens[address] = nil }
+                self.onChange?()
+            }
         }
     }
 }
