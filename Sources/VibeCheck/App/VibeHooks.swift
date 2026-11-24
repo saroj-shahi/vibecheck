@@ -128,7 +128,11 @@ final class VibeHooks {
             parentSource?.cancel(); parentSource = nil; parentPath = nil
             if dirSource == nil { dirSource = makeSource(path: directory.path, mask: [.write, .rename, .delete, .link]) }
             // A per-file source catches in-place writes that don't touch the directory entry.
-            let names = Set(all.map(\.file))
+            // Watch every candidate *.json file (not only already-parsed hooks) so a file created empty and
+            // written in place is picked up when its JSON lands.
+            let candidateNames = ((try? fm.contentsOfDirectory(atPath: directory.path)) ?? [])
+                .filter { $0.hasSuffix(".json") }.sorted().prefix(Self.maxFiles)
+            let names = Set(candidateNames)
             for (name, source) in fileSources where !names.contains(name) { source.cancel(); fileSources[name] = nil }
             for name in names where fileSources[name] == nil {
                 fileSources[name] = makeSource(path: directory.appendingPathComponent(name).path,

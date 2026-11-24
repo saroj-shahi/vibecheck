@@ -20,6 +20,7 @@ final class ClaudeLiveLimits {
         didSet {
             guard oldValue != isOn else { return }
             UserDefaults.standard.set(isOn, forKey: Self.defaultsKey)
+            updateTimer()
             if isOn { lastAttempt = .distantPast; outcome = .none; tick() } else { AgentUsageStore.shared.reapply() }
         }
     }
@@ -32,21 +33,36 @@ final class ClaudeLiveLimits {
     @ObservationIgnored private var lastAttempt = Date.distantPast
     @ObservationIgnored private var fetching = false
     @ObservationIgnored private var timer: Timer?
+    @ObservationIgnored private var started = false
 
     /// Live windows that may be shown right now (empty when off or stale).
-    func currentWindows(now: Date = Date()) -> [RateWindow] { isOn ? windows : [] }
+    func currentWindows(now: Date = Date()) -> [RateWindow] {
+        guard isOn, let fetchedAt, now.timeIntervalSince(fetchedAt) < Self.staleAfter else { return [] }
+        return windows.filter { $0.resetsAt > now }
+    }
 
     func start() {
-        guard timer == nil else { return }
-        tick()
-        timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
+        guard !started else { return }
+        started = true
+        updateTimer()
+        if isOn { tick() }
+    }
+
+    private func updateTimer() {
+        timer?.invalidate()
+        timer = nil
+        guard started, isOn else { return }
+        let timer = Timer(timeInterval: 30, repeats: true) { _ in
             MainActor.assumeIsolated { ClaudeLiveLimits.shared.tick() }
         }
+        timer.tolerance = 3
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
     }
 
     /// Fetches when the setting and the Agents module are on and the next fetch is due.
     private func tick(now: Date = Date()) {
-        guard isOn, AppSettings.shared.isEnabled(.agents), !fetching else { return }
+        guard isOn, !TickGate.isSuspended, AppSettings.shared.isEnabled(.agents), !fetching else { return }
         let interval = outcome == .live || outcome == .none ? Self.normalInterval : Self.errorInterval
         guard now.timeIntervalSince(lastAttempt) >= interval else { return }
         fetching = true
@@ -223,8 +239,8 @@ enum ClaudeLimitsClient {
             return Usage(windows: [], plan: plan, available: false)
         }
         let keys: [(String, Int, String?)] = [("five_hour", 300, nil), ("seven_day", 10080, nil),
-                                              (String(localized: "seven_day_opus"), 10080, String(localized: "Weekly · Opus")),
-                                              (String(localized: "seven_day_sonnet"), 10080, String(localized: "Weekly · Sonnet"))]
+                                              ("seven_day_opus", 10080, String(localized: "Weekly · Opus")),
+                                              ("seven_day_sonnet", 10080, String(localized: "Weekly · Sonnet"))]
         let windows = keys.compactMap { key, minutes, name -> RateWindow? in
             guard let window = limits[key] as? [String: Any],
                   let used = (window["utilization"] as? NSNumber)?.doubleValue, used.isFinite,

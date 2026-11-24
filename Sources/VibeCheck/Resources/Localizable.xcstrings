@@ -91,6 +91,16 @@
         }
       }
     },
+    "%@ and %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ and %2$@"
+          }
+        }
+      }
+    },
     "%@ chart, peak %@": {
       "localizations": {
         "en": {
@@ -117,6 +127,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ cores"
+          }
+        }
+      }
+    },
+    "%@ didn't accept the request": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ didn't accept the request"
           }
         }
       }
@@ -171,6 +191,26 @@
         }
       }
     },
+    "%@ h %@ min left": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ h %2$@ min left"
+          }
+        }
+      }
+    },
+    "%@ h left": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ h left"
+          }
+        }
+      }
+    },
     "%@ has been %@ %@ for %@.": {
       "localizations": {
         "en": {
@@ -197,6 +237,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ has grown %2$@ in the last %3$@ and is still climbing."
+          }
+        }
+      }
+    },
+    "%@ hours": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ hours"
           }
         }
       }
@@ -307,6 +357,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ min"
+          }
+        }
+      }
+    },
+    "%@ min left": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ min left"
+          }
+        }
+      }
+    },
+    "%@ minutes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ minutes"
           }
         }
       }
@@ -1085,6 +1155,16 @@
           "stringUnit": {
             "state": "translated",
             "value": ", mostly %@"
+          }
+        }
+      }
+    },
+    "1 hour": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 hour"
           }
         }
       }
@@ -4295,6 +4375,16 @@
         }
       }
     },
+    "Indefinitely": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indefinitely"
+          }
+        }
+      }
+    },
     "Input": {
       "localizations": {
         "en": {
@@ -4362,6 +4452,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Is your Mac vibing or cooked?"
+          }
+        }
+      }
+    },
+    "It": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It"
           }
         }
       }
@@ -5584,11 +5684,22 @@
       }
     },
     "No agent usage found on this Mac. VibeCheck reads Claude Code (~/.claude), Codex (~/.codex), GitHub Copilot CLI (~/.copilot) and OpenCode (~/.local/share/opencode).": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "No agent usage found on this Mac. VibeCheck reads Claude Code (~/.claude), Codex (~/.codex), GitHub Copilot CLI (~/.copilot) and OpenCode (~/.local/share/opencode)."
+          }
+        }
+      }
+    },
+    "No agent usage found on this Mac. VibeCheck reads Claude Code (~/.claude), Codex (~/.codex), GitHub Copilot CLI (~/.copilot), OpenCode (~/.local/share/opencode) and Antigravity (~/.gemini/antigravity).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No agent usage found on this Mac. VibeCheck reads Claude Code (~/.claude), Codex (~/.codex), GitHub Copilot CLI (~/.copilot), OpenCode (~/.local/share/opencode) and Antigravity (~/.gemini/antigravity)."
           }
         }
       }
@@ -9474,6 +9585,16 @@
         }
       }
     },
+    "Wi-Fi or Bluetooth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wi-Fi or Bluetooth"
+          }
+        }
+      }
+    },
     "Wipe away. Touch ID and the power button still work.": {
       "localizations": {
         "en": {
@@ -9704,6 +9825,36 @@
         }
       }
     },
+    "a Focus asks for it": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a Focus asks for it"
+          }
+        }
+      }
+    },
+    "a USB device": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a USB device"
+          }
+        }
+      }
+    },
+    "a display is connected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a display is connected"
+          }
+        }
+      }
+    },
     "above": {
       "comment": "Alert comparison, as in 'CPU usage has been above 90%'",
       "localizations": {
@@ -9711,6 +9862,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "above"
+          }
+        }
+      }
+    },
+    "an AI agent is working": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "an AI agent is working"
           }
         }
       }
@@ -9805,6 +9966,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "downloading %1$@, uploading %2$@"
+          }
+        }
+      }
+    },
+    "files are downloading": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "files are downloading"
           }
         }
       }
@@ -10096,6 +10267,16 @@
         }
       }
     },
+    "on Wi-Fi %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "on Wi-Fi %@"
+          }
+        }
+      }
+    },
     "on battery": {
       "localizations": {
         "en": {
@@ -10167,7 +10348,28 @@
         }
       }
     },
+    "plugged in": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "plugged in"
+          }
+        }
+      }
+    },
+    "scheduled maintenance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "scheduled maintenance"
+          }
+        }
+      }
+    },
     "seven_day_opus": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10178,11 +10380,32 @@
       }
     },
     "seven_day_sonnet": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "seven_day_sonnet"
+          }
+        }
+      }
+    },
+    "the lid": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "the lid"
+          }
+        }
+      }
+    },
+    "the power button": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "the power button"
           }
         }
       }
@@ -10233,6 +10456,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "unavailable"
+          }
+        }
+      }
+    },
+    "until %@ quits": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "until %@ quits"
+          }
+        }
+      }
+    },
+    "until %@ stops changing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "until %@ stops changing"
+          }
+        }
+      }
+    },
+    "until you stop it": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "until you stop it"
+          }
+        }
+      }
+    },
+    "while %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "while %@"
+          }
+        }
+      }
+    },
+    "within your schedule (until %@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "within your schedule (until %@)"
+          }
+        }
+      }
+    },
+    "you": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "you"
+          }
+        }
+      }
+    },
+    "you're on a call": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "you're on a call"
           }
         }
       }

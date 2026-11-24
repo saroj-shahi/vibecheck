@@ -54,7 +54,7 @@ struct AgentNowTests {
         try #"{"oauthAccount":{"displayName":"Saroj","organizationType":"claude_team"}}"#.write(to: config, atomically: true, encoding: .utf8)
 
         let scanner = AgentUsageScanner(claudeRoots: [dir.appending(path: "claude")], codexRoots: [codexDir], copilotRoots: [],
-                                        opencodeDB: dir.appending(path: "none.db"), claudeConfig: config)
+                                        antigravityRoots: [], opencodeDB: dir.appending(path: "none.db"), claudeConfig: config)
         let sample = scanner.scan(now: now, fullWalk: true)
         #expect(sample.agents.first { $0.agent == .claude }?.account == AgentAccount(name: "Saroj", plan: "Team"))
         #expect(sample.agents.first { $0.agent == .codex }?.account.plan == "Free")

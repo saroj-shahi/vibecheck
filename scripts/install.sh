@@ -24,7 +24,16 @@ else
 fi
 APP="$DEST/VibeCheck.app"
 
-quit_app() { [ "$TESTING" = 1 ] || osascript -e 'quit app "VibeCheck"' >/dev/null 2>&1 || true; }
+quit_app() {
+  [ "$TESTING" = 1 ] && return 0
+  osascript -e 'quit app "VibeCheck"' >/dev/null 2>&1 || true
+  # Give the running app a moment to flush history/energy logs before replacing the bundle.
+  local i=0
+  while pgrep -x VibeCheck >/dev/null 2>&1 && [ "$i" -lt 30 ]; do
+    sleep 0.1
+    i=$((i + 1))
+  done
+}
 
 if [ "${1:-}" = "--uninstall" ]; then
   quit_app

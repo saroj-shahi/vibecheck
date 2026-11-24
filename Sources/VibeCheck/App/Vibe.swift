@@ -129,30 +129,34 @@ enum VibeScore {
         return found.sorted { $0.0 > $1.0 }
     }
 
-    static func evaluate(_ input: VibeInput) -> Vibe {
-        reasons(input).map(\.0).max() ?? .vibing
+    static func evaluate(_ input: VibeInput) -> Vibe { evaluate(reasons(input)) }
+    static func evaluate(_ reasons: [(Vibe, String, Module, String)]) -> Vibe {
+        reasons.map(\.0).max() ?? .vibing
     }
 
     /// Each module's worst level in this sample: feed it back as `VibeInput.held` next time.
-    static func held(_ input: VibeInput) -> [Module: Vibe] {
-        reasons(input).reduce(into: [:]) { result, reason in result[reason.2] = max(result[reason.2] ?? .vibing, reason.0) }
+    static func held(_ input: VibeInput) -> [Module: Vibe] { held(reasons(input)) }
+    static func held(_ reasons: [(Vibe, String, Module, String)]) -> [Module: Vibe] {
+        reasons.reduce(into: [:]) { result, reason in result[reason.2] = max(result[reason.2] ?? .vibing, reason.0) }
     }
 
     /// The module whose problem sets the verdict at this level; nil while vibing or settling down.
-    static func culprit(for vibe: Vibe, input: VibeInput) -> Module? {
+    static func culprit(for vibe: Vibe, input: VibeInput) -> Module? { culprit(for: vibe, reasons: reasons(input)) }
+    static func culprit(for vibe: Vibe, reasons: [(Vibe, String, Module, String)]) -> Module? {
         guard vibe != .vibing else { return nil }
-        return reasons(input).first { $0.0 >= vibe }?.2
+        return reasons.first { $0.0 >= vibe }?.2
     }
 
     /// The short badge for the same problem as `culprit`; nil while vibing or settling down.
-    static func badge(for vibe: Vibe, input: VibeInput) -> String? {
+    static func badge(for vibe: Vibe, input: VibeInput) -> String? { badge(for: vibe, reasons: reasons(input)) }
+    static func badge(for vibe: Vibe, reasons: [(Vibe, String, Module, String)]) -> String? {
         guard vibe != .vibing else { return nil }
-        return reasons(input).first { $0.0 >= vibe }?.3
+        return reasons.first { $0.0 >= vibe }?.3
     }
 
     /// The memory culprit by app: growth over the last hour when it's big, else who uses the most.
     nonisolated static func memoryLine(_ app: (name: String, footprint: Double, processCount: Int, growth: Double?, minutes: Int?)) -> String {
-        if let growth = app.growth, growth >= 500_000_000, let minutes = app.minutes {
+        if let growth = app.growth, growth >= 512 * 1_048_576, let minutes = app.minutes {
             let span = minutes >= 55 ? String(localized: "hour") : String(localized: "\(minutes) min")
             let label = app.processCount > 1 ? String(localized: "\(app.name) (\(app.processCount) processes)") : app.name
             return String(localized: "\(label) grew \(Fmt.bytes(growth)) in the last \(span).")
@@ -163,16 +167,21 @@ enum VibeScore {
     /// One friendly sentence for the deck header.
     static func verdict(for vibe: Vibe, input: VibeInput, topApp: (name: String, cpu: Double)?,
                         memoryApp: (name: String, footprint: Double, processCount: Int, growth: Double?, minutes: Int?)? = nil) -> String {
+        verdict(for: vibe, reasons: reasons(input), topApp: topApp, memoryApp: memoryApp)
+    }
+
+    static func verdict(for vibe: Vibe, reasons: [(Vibe, String, Module, String)], topApp: (name: String, cpu: Double)?,
+                        memoryApp: (name: String, footprint: Double, processCount: Int, growth: Double?, minutes: Int?)? = nil) -> String {
         var loudest = topApp.flatMap { app in
             app.cpu >= 5 ? String(localized: "\(app.name) is the loudest at \(Int(app.cpu.rounded()))% CPU.") : nil
         }
-        if vibe != .vibing, culprit(for: vibe, input: input) == .memory, let mem = memoryApp {
+        if vibe != .vibing, culprit(for: vibe, reasons: reasons) == .memory, let mem = memoryApp {
             loudest = memoryLine(mem)
         }
         guard vibe != .vibing else {
             return String(localized: "Your Mac is vibing.") + " " + (loudest ?? String(localized: "Nothing's working hard."))
         }
-        let reason = reasons(input).first { $0.0 >= vibe }?.1 ?? String(localized: "things are settling down")
+        let reason = reasons.first { $0.0 >= vibe }?.1 ?? String(localized: "things are settling down")
         let opener = vibe == .cooked ? String(localized: "Your Mac is cooked") : String(localized: "Kinda mid")
         return String(localized: "\(opener): \(reason).") + (loudest.map { " " + $0 } ?? "")
     }

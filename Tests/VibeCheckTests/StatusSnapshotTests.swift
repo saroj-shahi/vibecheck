@@ -12,7 +12,7 @@ import VibeCheckShared
                        verdict: vibe == "vibing" ? "Your Mac is vibing. Nothing's working hard." : "Kinda mid: memory is getting tight. Chrome grew 2.4 GB in the last hour.",
                        culprit: vibe == "vibing" ? nil : "memory", cpu: cpu, memoryPressure: "warning", swapUsedBytes: 1_000_000_000,
                        thermalState: "nominal", battery: .init(percent: 80, onAC: onAC, minutesLeft: nil),
-                       topMemory: names.map { .init(name: $0, bytes: 4_000_000_000, processes: 12, growthBytes: 2_400_000_000, growthMinutes: 60) },
+                       topMemory: names.map { .init(name: $0, bytes: 4 * 1_073_741_824, processes: 12, growthBytes: 2.4 * 1_073_741_824, growthMinutes: 60) },
                        topCPU: withCPU ? [.init(name: "Xcode", cpu: 88, processes: 3)] : nil, topCPUAt: withCPU ? cpuAt : nil)
     }
 

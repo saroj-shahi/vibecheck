@@ -93,7 +93,7 @@ enum OnDeviceExplainer {
         }
         if let app = f.memoryApp {
             var line = "Top memory app: \(app.name), \(Fmt.bytes(app.footprint)), \(app.processCount) process\(app.processCount == 1 ? "" : "es")"
-            if let growth = app.growth, growth >= 500_000_000, let minutes = app.minutes {
+            if let growth = app.growth, growth >= 512 * 1_048_576, let minutes = app.minutes {
                 line += ", grew \(Fmt.bytes(growth)) in the last \(minutes) minutes"
             }
             lines.append(line + ".")

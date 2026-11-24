@@ -1,4 +1,5 @@
 import Foundation
+import MachO
 import VibeCheckShared
 
 // The `vibecheck` command line tool: one file read, no processes, no AppKit.
@@ -18,10 +19,24 @@ usage: vibecheck <command>
 Exit code 3 means VibeCheck isn't running (no status yet). Reads \(StatusSnapshot.defaultURL().path).
 """
 
+func resolvedExecutableURL() -> URL {
+    var size: UInt32 = 0
+    _NSGetExecutablePath(nil, &size)
+    if size > 0 {
+        var buffer = [CChar](repeating: 0, count: Int(size))
+        if _NSGetExecutablePath(&buffer, &size) == 0 {
+            let path = String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+            return URL(fileURLWithPath: path).resolvingSymlinksInPath()
+        }
+    }
+    let arg0 = CommandLine.arguments[0]
+    let path = arg0.hasPrefix("/") ? arg0 : FileManager.default.currentDirectoryPath + "/" + arg0
+    return URL(fileURLWithPath: path).resolvingSymlinksInPath()
+}
+
 func appVersion() -> String {
-    // Installed at VibeCheck.app/Contents/Helpers/vibecheck (maybe through a symlink).
-    let exe = URL(fileURLWithPath: CommandLine.arguments[0].hasPrefix("/") ? CommandLine.arguments[0] : FileManager.default.currentDirectoryPath + "/" + CommandLine.arguments[0])
-        .resolvingSymlinksInPath()
+    // Installed at VibeCheck.app/Contents/Helpers/vibecheck (often invoked via a PATH symlink).
+    let exe = resolvedExecutableURL()
     let plist = exe.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Info.plist")
     if let data = try? Data(contentsOf: plist),
        let dict = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],

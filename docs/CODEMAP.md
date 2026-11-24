@@ -24,6 +24,7 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 | `OnDeviceExplainer.swift` | Opt-in "Explain my Mac" (⌘K): facts string from `SystemStats`, FoundationModels `@Generable MacExplanation` (macOS 26+, 10 s timeout, one session per request), post-check against the facts, `ExplainCardView` on the deck home |
 | `VibeHooks.swift` | Vibe Hooks: watches `~/.config/vibecheck/hooks/*.json` (DispatchSource, no polling; 8 files, 4 KB each), parse / clamp / sort, one timer for the next TTL expiry; pills in `LiveChipsRow`, optional ring pulse on `needs_input` |
 | `StatusPublisher.swift` | Writes `~/Library/Application Support/VibeCheck/status.json` (`StatusSnapshot` in VibeCheckShared) on meaningful change or every 5 min, at most every 10 s, for the `vibecheck` CLI |
+| `AtomicPrivateFile.swift` | Shared atomic `0600` file writer (same-folder `O_CREAT | O_EXCL` temp file + `rename`, `0700` dir if new) used by `StatusPublisher`, `EnergyLog` and `ClipboardHistory` |
 | `VibeCardWindow.swift` | ⌘K "Share Vibe Card": snapshot, window with Light / Dark and "Hide app names", `ImageRenderer` at 2×, Copy Image / Save PNG (card view in `Views/VibeCard.swift`) |
 | `Vibe.swift` | Vibe score (vibing / mid / cooked) with per-module enter / exit thresholds (`VibeThresholds`), swap and fast-drain signals, the verdict sentence and its culprit module |
 | `Alerts.swift` | `AlertMetric`, `AlertRule` (sentence alerts), `AlertEngine` (evaluate, notify, history log); smart alerts (app memory leak, throttling ≥ 5 min, slow charger ≥ 5 min) with a 2 h per-culprit `AlertRateLimiter` |
@@ -65,7 +66,7 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 `SensorsMonitor` (HID temps, private API) + `SMC`, `BatteryMonitor`, `DeviceBatteryMonitor` (Bluetooth
 accessories via `system_profiler`), `ProcessSampler` (`ps`), `EnergySampler` (per-pid `ri_energy_nj` → estimated watts), `PowerReport` (IOReport "Energy Model" watts via `dlopen`, only while the CPU / GPU panel is open; CPU / ANE hidden when the OS zeroes them), `PortSampler` (`lsof` + `ListenerDetails`), `USBDeviceMonitor` (IOKit),
 `NetworkExtras` (`WiFiReader` CoreWLAN, `PublicIPFetcher` opt-in api.ipify.org, `AppTrafficHistory` 1 h per app),
-`AgentUsageMonitor` (parsers for Claude / Codex / Copilot / OpenCode logs, `RateWindow`, scanner, summaries).
+`AgentUsageMonitor` (parsers for Claude / Codex / Copilot / OpenCode / Antigravity logs, `RateWindow`, scanner, summaries).
 
 ## Views/
 
@@ -106,6 +107,7 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `EnergySampler` (pe
 |---|---|
 | `App/WidgetPublisher.swift` | Called on every tick: writes the widget snapshot into the app group once a minute while a widget is placed; reloads timelines on a vibe change |
 | `Sources/VibeCheckShared/WidgetSnapshot.swift` | Library shared by app and widget: `WidgetSnapshot` (vibe, verdict, CPU / memory now and last hour), `WidgetShared` (app group `77HKFF78Z8.io.github.saroj-shahi.vibecheck`, read / write) |
+| `Sources/VibeCheckShared/WidgetStyle.swift` | `WidgetRenderStyle`: full-color, accented and vibrant palettes shared by widgets |
 | `Sources/VibeCheckWidget/VibeCheckWidgets.swift`, `WidgetViews.swift`, `KeepAwakeControl.swift` | The WidgetKit extension: bundle, timeline provider (15 min), small "Vibe" ring and medium "CPU and Memory" sparklines (full color / accented / vibrant via `WidgetRenderStyle` in VibeCheckShared), and the macOS 26 Control Center "Keep Awake" toggle (state in the app group, start / stop by distributed notification to the app) |
 | `Resources/Widget/` (`Info.plist`, `Widget.entitlements`), `Resources/VibeCheck.entitlements` | Appex plist and sandbox + app group entitlements; `build.sh` assembles `Contents/PlugIns/VibeCheckWidget.appex` (Apple Development identity only) |
 

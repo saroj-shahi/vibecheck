@@ -211,9 +211,9 @@ public struct StatusSnapshot: Codable, Equatable, Sendable {
     // MARK: Text
 
     public static func bytesText(_ value: Double) -> String {
-        let gb = value / 1_000_000_000
+        let gb = value / 1_073_741_824
         if gb >= 1 { return String(format: "%.1f GB", gb) }
-        return String(format: "%.0f MB", value / 1_000_000)
+        return String(format: "%.0f MB", value / 1_048_576)
     }
 
     /// "Mid: memory is getting tight. Chrome grew 2.4 GB in the last hour." Vibing keeps the app's sentence.

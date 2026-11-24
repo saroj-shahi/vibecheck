@@ -85,10 +85,10 @@ enum ProcessKiller {
             }
             return outcome
         }
-        let name = name(of: pid) ?? "It"
+        let name = name(of: pid) ?? String(localized: "It")
         if let app = NSRunningApplication(processIdentifier: pid) {
             let sent = mode == .quit ? app.terminate() : app.forceTerminate()
-            return sent ? .sent : .failed("\(name) didn't accept the request")
+            return sent ? .sent : .failed(String(localized: "\(name) didn't accept the request"))
         }
         if kill(pid, mode == .quit ? SIGTERM : SIGKILL) == 0 { return .sent }
         return .failed(errno == EPERM ? String(localized: "Not allowed") : String(localized: "Already gone"))

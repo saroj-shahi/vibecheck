@@ -148,20 +148,29 @@ final class StatusItemController: NSObject {
 
     // MARK: Notch auto-fit (combined item)
 
+    private var placementObservers: [(NotificationCenter, NSObjectProtocol)] = []
+
     private func observePlacement() {
+        removePlacementObservers()
         let center = NotificationCenter.default
+        let workspace = NSWorkspace.shared.notificationCenter
         let refit: @Sendable (Notification) -> Void = { [weak self] _ in
             MainActor.assumeIsolated { self?.refitAroundNotch() }
         }
         if let window = item.button?.window {
-            center.addObserver(forName: NSWindow.didMoveNotification, object: window, queue: .main, using: refit)
-            center.addObserver(forName: NSWindow.didChangeScreenNotification, object: window, queue: .main, using: refit)
+            placementObservers.append((center, center.addObserver(forName: NSWindow.didMoveNotification, object: window, queue: .main, using: refit)))
+            placementObservers.append((center, center.addObserver(forName: NSWindow.didChangeScreenNotification, object: window, queue: .main, using: refit)))
         }
-        center.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main, using: refit)
-        NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.activeSpaceDidChangeNotification,
-                                                          object: nil, queue: .main, using: refit)
+        placementObservers.append((center, center.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main, using: refit)))
+        placementObservers.append((workspace, workspace.addObserver(forName: NSWorkspace.activeSpaceDidChangeNotification,
+                                                                    object: nil, queue: .main, using: refit)))
         // The item gets its final position shortly after launch.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in self?.refitAroundNotch() }
+    }
+
+    private func removePlacementObservers() {
+        for (center, token) in placementObservers { center.removeObserver(token) }
+        placementObservers.removeAll()
     }
 
     /// Shows only as many stats as fit between the camera notch and the item's right edge (which stays put
@@ -238,7 +247,10 @@ final class StatusItemController: NSObject {
         set { item.isVisible = newValue }
     }
 
-    func remove() { NSStatusBar.system.removeStatusItem(item) }
+    func remove() {
+        removePlacementObservers()
+        NSStatusBar.system.removeStatusItem(item)
+    }
 }
 
 @MainActor
@@ -603,7 +615,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func openFromShortcut(_ module: Module) {
         guard settings.isEnabled(module) else { NSSound.beep(); return }
         if deck.isVisible, deck.route == .module(module) { deck.close(); return }
-        guard let button = (combinedItem ?? items[module])?.button else { return }
+        guard let button = (combinedItem ?? items[module] ?? vibeItem ?? items.values.first)?.button else { return }
         deck.open(from: button, route: .module(module))
     }
 

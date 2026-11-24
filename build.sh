@@ -131,6 +131,12 @@ if printf '%s\n' "$IDENTITIES" | grep -qF "\"$IDENTITY\""; then
   # Widgets: the extension must be sandboxed and shares the app group "<Team ID>.io.github.saroj-shahi.vibecheck" with the
   # app, so it needs a Team ID; with other identities the app ships without widgets.
   if [[ "$IDENTITY" == "Apple Development:"* || "$IDENTITY" == "Developer ID Application:"* ]]; then
+    CERT_TEAM=$(printf '%s\n' "$IDENTITY" | sed -n 's/.*(\([A-Z0-9]*\))/\1/p')
+    ENT_GROUP=$(/usr/libexec/PlistBuddy -c "Print :com.apple.security.application-groups:0" Resources/VibeCheck.entitlements 2>/dev/null || true)
+    ENT_TEAM="${ENT_GROUP%%.*}"
+    if [ -n "$CERT_TEAM" ] && [ -n "$ENT_TEAM" ] && [ "$CERT_TEAM" != "$ENT_TEAM" ]; then
+      echo "warning: signing Team ID ($CERT_TEAM) differs from entitlements app group prefix ($ENT_TEAM); update Resources/{VibeCheck,Widget/Widget}.entitlements and Sources/VibeCheckShared/WidgetSnapshot.swift for widgets to share state" >&2
+    fi
     APPEX="$APP/Contents/PlugIns/VibeCheckWidget.appex"
     mkdir -p "$APPEX/Contents/MacOS"
     install_binary VibeCheckWidget "$APPEX/Contents/MacOS/VibeCheckWidget"

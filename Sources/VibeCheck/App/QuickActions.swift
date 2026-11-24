@@ -167,7 +167,7 @@ final class QuickActions {
             // connected the first tap only warns and a second tap within 5 s does it.
             if !on, Self.bluetoothInputConnected(), (bluetoothOffArmedUntil ?? .distantPast) < Date() {
                 bluetoothOffArmedUntil = Date().addingTimeInterval(5)
-                show(String(localized: "Your Bluetooth keyboard or mouse will disconnect. Tap again to turn Bluetooth off."), toggle: .bluetooth)
+                show(String(localized: "Your Bluetooth keyboard or mouse will disconnect. Tap again to turn Bluetooth off."), duration: 5)
                 return
             }
             bluetoothOffArmedUntil = nil
@@ -288,12 +288,12 @@ final class QuickActions {
 
     // MARK: Failure message
 
-    private func show(_ message: String, toggle: QuickToggle? = nil) {
+    private func show(_ message: String, toggle: QuickToggle? = nil, duration: Double = 3) {
         if let toggle { failedToggle = toggle; failureTick &+= 1 }
         failure = message
         failureTask?.cancel()
         failureTask = Task {
-            try? await Task.sleep(for: .seconds(3))
+            try? await Task.sleep(for: .seconds(duration))
             if !Task.isCancelled { failure = nil }
         }
     }
