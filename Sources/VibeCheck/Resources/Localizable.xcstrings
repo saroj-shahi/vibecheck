@@ -631,6 +631,16 @@
         }
       }
     },
+    "%@-day · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@-day · %2$@"
+          }
+        }
+      }
+    },
     "%@-hour limit": {
       "localizations": {
         "en": {
@@ -641,12 +651,32 @@
         }
       }
     },
+    "%@-hour · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@-hour · %2$@"
+          }
+        }
+      }
+    },
     "%@-min limit": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%@-min limit"
+          }
+        }
+      }
+    },
+    "%@-min · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@-min · %2$@"
           }
         }
       }
@@ -1339,6 +1369,16 @@
         }
       }
     },
+    "5-hour · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5-hour · %@"
+          }
+        }
+      }
+    },
     "7 days": {
       "localizations": {
         "en": {
@@ -1693,6 +1733,46 @@
         }
       }
     },
+    "Antigravity": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Antigravity"
+          }
+        }
+      }
+    },
+    "Antigravity CLI didn't answer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Antigravity CLI didn't answer"
+          }
+        }
+      }
+    },
+    "Antigravity CLI is signed out": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Antigravity CLI is signed out"
+          }
+        }
+      }
+    },
+    "Antigravity CLI isn't installed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Antigravity CLI isn't installed"
+          }
+        }
+      }
+    },
     "App %lld": {
       "localizations": {
         "en": {
@@ -1739,6 +1819,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "As many as fit"
+          }
+        }
+      }
+    },
+    "Asks your Antigravity CLI (agy) for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access; agy signs in itself.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asks your Antigravity CLI (agy) for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access; agy signs in itself."
           }
         }
       }
@@ -2454,6 +2544,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "City"
+          }
+        }
+      }
+    },
+    "Claude & GPT": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude & GPT"
           }
         }
       }
@@ -4005,6 +4105,16 @@
         }
       }
     },
+    "Gemini": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemini"
+          }
+        }
+      }
+    },
     "General": {
       "localizations": {
         "en": {
@@ -4975,6 +5085,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Live"
+          }
+        }
+      }
+    },
+    "Live from Antigravity CLI · updated %@ min ago": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live from Antigravity CLI · updated %@ min ago"
+          }
+        }
+      }
+    },
+    "Live from Antigravity CLI · updated just now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live from Antigravity CLI · updated just now"
           }
         }
       }
@@ -6166,6 +6296,16 @@
         }
       }
     },
+    "Off: Antigravity shows its local 5-hour estimate. When on, VibeCheck asks your Antigravity CLI (agy) for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off: Antigravity shows its local 5-hour estimate. When on, VibeCheck asks your Antigravity CLI (agy) for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access."
+          }
+        }
+      }
+    },
     "Off: Claude Code shows its local 5-hour estimate. When on, VibeCheck asks your Claude Code for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access.": {
       "localizations": {
         "en": {
@@ -7008,11 +7148,22 @@
       }
     },
     "Reads the usage Claude Code, Codex, OpenCode, GitHub Copilot and Antigravity record on this Mac and the plan limits Claude Code reports. Prompts, replies and files are never kept, and your usage never leaves your Mac.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Reads the usage Claude Code, Codex, OpenCode, GitHub Copilot and Antigravity record on this Mac and the plan limits Claude Code reports. Prompts, replies and files are never kept, and your usage never leaves your Mac."
+          }
+        }
+      }
+    },
+    "Reads the usage Claude Code, Codex, OpenCode, GitHub Copilot and Antigravity record on this Mac, plus the plan limits Claude Code and Antigravity report when turned on. Prompts, replies and files are never kept, and your usage never leaves your Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reads the usage Claude Code, Codex, OpenCode, GitHub Copilot and Antigravity record on this Mac, plus the plan limits Claude Code and Antigravity report when turned on. Prompts, replies and files are never kept, and your usage never leaves your Mac."
           }
         }
       }
@@ -7483,6 +7634,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Show %@"
+          }
+        }
+      }
+    },
+    "Show Antigravity's real plan limits": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Antigravity's real plan limits"
           }
         }
       }
@@ -9453,6 +9614,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Weekly limit"
+          }
+        }
+      }
+    },
+    "Weekly · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly · %@"
           }
         }
       }

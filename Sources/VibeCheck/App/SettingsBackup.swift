@@ -15,7 +15,8 @@ enum SettingsBackup {
         // not "keepAwakeWhileOnWiFi": switching it on asks for Location access, decided on each Mac
         "bluetoothOffWhileAsleep", "itemOptions", "keepAwakeMenuBarItem", "recentCommands", "checkForUpdates",
         "clipboardHotkey", "findCursorHotkey", "clipboardSnippets", "clipboardHistoryLimit", "clipboardIgnoredApps",
-        // not "clipboardHistory" / "clipboardKeepAcrossRestarts": recording copies is decided on each Mac  // not "claudeLiveLimits": Keychain access is opted into on each Mac
+        // not "clipboardHistory" / "clipboardKeepAcrossRestarts": recording copies is decided on each Mac
+        // not "claudeLiveLimits" / "antigravityLiveLimits": live CLI queries are opted into on each Mac
     ]
     static let formatKey = "VibeCheckSettingsVersion"
 

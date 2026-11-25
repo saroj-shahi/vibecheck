@@ -34,7 +34,7 @@ extension Module {
         case .disk: "storage ssd free space read write"
         case .sensors: "temperature heat fans celsius fahrenheit"
         case .battery: "charge power health cycles accessories bluetooth usb"
-        case .agents: "ai claude codex copilot opencode antigravity tokens limits usage"
+        case .agents: "ai claude codex copilot opencode antigravity agy tokens limits usage"
         case .clock: "time world time zone seconds"
         case .weather: "forecast city temperature units"
         case .todo: "todo to-do tasks reminders checklist list"
@@ -58,6 +58,7 @@ struct ModuleSettings: View {
             case .agents:
                 AgentSourcesSection()
                 ClaudeLimitsSection()
+                AntigravityLimitsSection()
             case .network: PublicIPSection()
             case .clock: ClockSections()
             case .weather: WeatherSections()
@@ -258,7 +259,7 @@ private struct AgentSourcesSection: View {
         let sample = AgentUsageStore.shared.sample
         let found = sample.found
         Section {
-            Text("Reads the usage Claude Code, Codex, OpenCode, GitHub Copilot and Antigravity record on this Mac and the plan limits Claude Code reports. Prompts, replies and files are never kept, and your usage never leaves your Mac.")
+            Text("Reads the usage Claude Code, Codex, OpenCode, GitHub Copilot and Antigravity record on this Mac, plus the plan limits Claude Code and Antigravity report when turned on. Prompts, replies and files are never kept, and your usage never leaves your Mac.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -341,6 +342,30 @@ private struct ClaudeLimitsSection: View {
             Text(claudeLimits.isOn
                  ? String(localized: "Asks your Claude Code for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access; Claude Code signs in itself.")
                  : String(localized: "Off: Claude Code shows its local 5-hour estimate. When on, VibeCheck asks your Claude Code for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access."))
+                .settingsFooter()
+        }
+    }
+}
+
+/// Opt-in live Antigravity limits via the user's `agy` CLI (lives on the Agents page).
+private struct AntigravityLimitsSection: View {
+    var body: some View {
+        @Bindable var limits = AntigravityLiveLimits.shared
+        Section {
+            Toggle("Show Antigravity's real plan limits", isOn: $limits.isOn)
+            if limits.isOn {
+                TimelineView(.periodic(from: .now, by: 30)) { context in
+                    Text(limits.statusText(now: context.date))
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } header: {
+            Text("Antigravity")
+        } footer: {
+            Text(limits.isOn
+                 ? String(localized: "Asks your Antigravity CLI (agy) for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access; agy signs in itself.")
+                 : String(localized: "Off: Antigravity shows its local 5-hour estimate. When on, VibeCheck asks your Antigravity CLI (agy) for your plan usage every 5 minutes, the same data /usage shows. No model request, no Keychain access."))
                 .settingsFooter()
         }
     }

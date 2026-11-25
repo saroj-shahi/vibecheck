@@ -147,11 +147,21 @@ extension AgentUsageSample {
         let counted = agents(for: options)
         if options.agentValue.isLimits {
             if let withLimits = counted.first(where: { !$0.limits.isEmpty }) {
-                var windows = withLimits.limits.sorted { $0.windowMinutes < $1.windowMinutes }
+                let sorted = withLimits.limits.sorted { $0.windowMinutes < $1.windowMinutes }
+                let shortest = sorted[0]
+                // Prefer the first window of each distinct length so multi-group limits (e.g. Antigravity's
+                // Gemini + Claude & GPT pools, or Claude's overall + Opus/Sonnet weekly) show primary session + weekly.
+                let longest = sorted.first { $0.windowMinutes == sorted[sorted.count - 1].windowMinutes } ?? sorted[sorted.count - 1]
+                let windows: [RateWindow]
                 switch options.agentWindows {
-                case .both: windows = Array(windows.prefix(2))
-                case .session: windows = Array(windows.prefix(1))
-                case .longest: windows = Array(windows.suffix(1))
+                case .both:
+                    if let longer = sorted.first(where: { $0.windowMinutes > shortest.windowMinutes }) {
+                        windows = [shortest, longer]
+                    } else {
+                        windows = Array(sorted.prefix(2))
+                    }
+                case .session: windows = [shortest]
+                case .longest: windows = [longest]
                 }
                 return .limits(windows, used: options.agentValue == .limitsUsed)
             }

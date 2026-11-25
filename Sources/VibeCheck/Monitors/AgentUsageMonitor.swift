@@ -133,8 +133,8 @@ extension RateWindow {
     var key: String { "\(windowMinutes):\(title)" }
     var leftPercent: Double { min(max(100 - usedPercent, 0), 100) }
 
-    /// "Current session" for the 5-hour window, otherwise the plain title.
-    var cardTitle: String { windowMinutes == 300 ? String(localized: "Current session") : title }
+    /// "Current session" for an unnamed 5-hour window, otherwise the plain title.
+    var cardTitle: String { name ?? (windowMinutes == 300 ? String(localized: "Current session") : title) }
 
     /// How far through the window we are, 0–1.
     func elapsedFraction(now: Date) -> Double {

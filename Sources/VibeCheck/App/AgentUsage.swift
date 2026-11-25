@@ -22,6 +22,7 @@ final class AgentUsageStore {
         guard timer == nil else { return }
         refresh()
         ClaudeLiveLimits.shared.start()
+        AntigravityLiveLimits.shared.start()
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
             MainActor.assumeIsolated { AgentUsageStore.shared.refresh() }
         }
@@ -73,10 +74,12 @@ final class AgentUsageStore {
         settings.isEnabled(.agents) || settings.keepAwake.whileAgentWorks || settings.keepAwake.notifyAgentFinished
     }
 
-    /// Publishes the last scan with fresh live Claude limits merged in (only assigns when it changed).
+    /// Publishes the last scan with fresh live limits merged in (only assigns when it changed).
     func reapply(now: Date = Date()) {
-        let live = ClaudeLiveLimits.shared
-        let merged = ClaudeLiveLimits.merge(scanned, live: live.currentWindows(now: now), fetchedAt: live.fetchedAt, now: now)
+        let claude = ClaudeLiveLimits.shared
+        let antigravity = AntigravityLiveLimits.shared
+        var merged = ClaudeLiveLimits.merge(scanned, live: claude.currentWindows(now: now), fetchedAt: claude.fetchedAt, now: now)
+        merged = AntigravityLiveLimits.merge(merged, live: antigravity.currentWindows(now: now), fetchedAt: antigravity.fetchedAt, now: now)
         if sample != merged { sample = merged }
     }
 }

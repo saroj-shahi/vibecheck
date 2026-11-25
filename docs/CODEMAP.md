@@ -39,9 +39,10 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 | `BatteryLog.swift` | `BatteryLogStore`: 90-day charge samples (every 15 min or 3% change) and daily health trend |
 | `KeepAwakeMenu.swift` | Native keep-awake menu: the menu bar item's right-click and the deck's cup |
 | `Deck.swift` | `DeckPanel` (borderless non-activating NSPanel), `DeckController` (open/close, frame, keys, outside clicks) |
-| `AgentUsage.swift` | `AgentUsageStore` (rescans agent logs every 60 s, merges live Claude limits) |
+| `AgentUsage.swift` | `AgentUsageStore` (rescans agent logs every 60 s, merges live Claude and Antigravity limits) |
 | `ClaudeProfiles.swift` | Claude Code accounts: `ClaudeProfile` (default `~/.claude` or a `CLAUDE_CONFIG_DIR` folder; log roots, `.claude.json`, discovery of `~/.claude-*`), `ClaudeProfiles` (selected account, added folders; per Mac) |
 | `ClaudeLimits.swift` | Live Claude limits from the user's `claude` CLI (`get_usage` control request); opt-in |
+| `AntigravityLimits.swift` | Live Antigravity limits from the user's `agy` CLI (`--print /usage --output-format json`); opt-in |
 | `ProcessKiller.swift` | Quit / Force Quit (optionally with subprocesses) with protected processes and pid start-time identity |
 | `QuickActions.swift` | Quick toggles: mic mute (CoreAudio), Bluetooth on/off (second tap when a Bluetooth keyboard / mouse is connected), empty Trash (Finder) |
 | `SystemVolume.swift` | Default output volume and mute (CoreAudio, property listeners, follows device changes) for the deck slider |
@@ -95,7 +96,7 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `EnergySampler` (pe
 | `DeckHintView.swift` | One dismissible what's-new line on the deck home after an update |
 | `MetricChart.swift` | Detail charts (resampling, `SeriesShape`, scrubbing) |
 | `SettingsView.swift` | Settings window: `SettingsSection` (sidebar groups, icons, search keywords), `SettingsRouter.open`, sidebar, Menu Bar / General / Backup / About / Support (Buy Me a Coffee) / Shortcuts pages, `.settingsFooter()` |
-| `SettingsModules.swift` | One Settings page per module (`ModuleSettings`): on/off, menu bar options, the module's alerts, shortcut; Claude limits, Clock and Weather sections |
+| `SettingsModules.swift` | One Settings page per module (`ModuleSettings`): on/off, menu bar options, the module's alerts, shortcut; Claude & Antigravity limits, Clock and Weather sections |
 | `SettingsAlerts.swift` | Alerts page, `AlertRuleRow` (sentence alerts), token menus, `NumberToken`, `FlowLayout` |
 | `ClipboardSettings.swift` | Settings → Clipboard: history on/off, length, keep across restarts, ignored apps, snippets, the "Paste from Other Apps" warning |
 | `KeepAwakeViews.swift` | Deck cup (click → `KeepAwakeMenu`, hold → `AwakeDial`), Keep Awake settings pane |
