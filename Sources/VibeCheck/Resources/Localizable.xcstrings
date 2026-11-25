@@ -5725,6 +5725,7 @@
       }
     },
     "New in 1.8.1: fixes a crash when a Bluetooth device connects or disconnects.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5741,6 +5742,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "New in 1.8: Antigravity in AI Agents, plus reliability fixes for sleep drain, Wi-Fi and alerts."
+          }
+        }
+      }
+    },
+    "New in 1.9: live Antigravity plan limits via agy CLI and a local 5-hour window estimate.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New in 1.9: live Antigravity plan limits via agy CLI and a local 5-hour window estimate."
           }
         }
       }

@@ -589,7 +589,7 @@ private struct AboutSettings: View {
     }
 
     private var version: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.8.1"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.9"
     }
 
     @ViewBuilder private var updateStatus: some View {
