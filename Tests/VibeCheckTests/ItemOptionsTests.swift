@@ -49,14 +49,28 @@ struct ItemOptionsTests {
         var o = ItemOptions()
         o.agentValue = .limitsLeft
         o.agents = [.claude]
-        guard case .claudeEstimate(let block, let today) = sample.menuBarContent(o) else { Issue.record("no estimate"); return }
-        #expect(block.tokens.total == 40 && today == 100)
+        guard case .windowEstimate(let agent, let block, let today) = sample.menuBarContent(o) else { Issue.record("no estimate"); return }
+        #expect(agent == .claude && block.tokens.total == 40 && today == 100)
         // All agents: Codex has real limits, so they're shown rather than Claude's estimate.
         o.agents = []
         #expect(sample.menuBarContent(o) == .limits([window(5, 300), window(30, 10080)], used: false))
-        // No agent with limits and no Claude: falls back to tokens.
+        // No agent with limits and no 5-hour estimate: falls back to tokens.
         o.agents = [.copilot]
         #expect(sample.menuBarContent(o) == .tokens(1))
+    }
+
+    @Test func antigravityWithoutLiveLimitsUsesItsEstimate() {
+        let block = UsageBlock(start: now.addingTimeInterval(-1800), end: now.addingTimeInterval(16200), tokens: tokens(25))
+        var s = AgentUsageSample(scanned: true)
+        s.agents = [AgentSummary(agent: .antigravity, today: tokens(60), week: tokens(200), block: block)]
+        var o = ItemOptions()
+        o.agentValue = .limitsLeft
+        o.agents = [.antigravity]
+        guard case .windowEstimate(let agent, let estimated, let today) = s.menuBarContent(o) else { Issue.record("no estimate"); return }
+        #expect(agent == .antigravity && estimated.tokens.total == 25 && today == 60)
+        #expect(s.menuBarAgent(o) == .antigravity)
+        o.agentValue = .tokensWindow
+        #expect(s.menuBarContent(o) == .tokens(25))
     }
 
     @Test func decodesPartialAndUnknownValues() throws {

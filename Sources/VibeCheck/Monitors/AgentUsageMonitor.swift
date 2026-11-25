@@ -484,7 +484,9 @@ enum AgentLogParser {
             }
             summary.modelsToday = models.sorted { $0.value > $1.value }.map { (name: $0.key, tokens: $0.value) }
             summary.lastActive = mine.map(\.time).max()
-            if agent == .claude { summary.block = currentBlock(mine.filter { $0.time > now.addingTimeInterval(-24 * 3600) }, now: now, calendar: calendar) }
+            if agent == .claude || agent == .antigravity {
+                summary.block = currentBlock(mine.filter { $0.time > now.addingTimeInterval(-24 * 3600) }, now: now, calendar: calendar)
+            }
             summary.limits = (limits[agent] ?? []).filter { $0.resetsAt > now }
             summary.account = accounts[agent] ?? AgentAccount()
             sample.agents.append(summary)

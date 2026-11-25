@@ -283,9 +283,9 @@ struct MenuBarLabel: View {
         case .limits(let limits, let used):
             AgentLimitsLabel(limits: limits, tint: tint(agent.brandColor), agent: agent, used: used,
                              showReset: options.agentShowReset, showRunOut: options.agentShowRunOut, showIcon: showIcon)
-        case .claudeEstimate(let block, let today) where options.agentShowReset:
-            ClaudeEstimateLabel(block: block, today: today, tint: tint(AgentKind.claude.brandColor), showIcon: showIcon)
-        case .claudeEstimate(_, let today):
+        case .windowEstimate(let estAgent, let block, let today) where options.agentShowReset:
+            WindowEstimateLabel(agent: estAgent, block: block, today: today, tint: tint(estAgent.brandColor), showIcon: showIcon)
+        case .windowEstimate(_, _, let today):
             agentTokens(today, agent: agent, showIcon: showIcon)
         case .tokens(let total):
             agentTokens(total, agent: agent, showIcon: showIcon)
@@ -429,9 +429,10 @@ struct AgentLimitsLabel: View {
     }
 }
 
-/// "Limits left" without live limits: Claude Code's tokens in the estimated 5-hour window with its reset
-/// countdown, over today's Claude Code total.
-struct ClaudeEstimateLabel: View {
+/// "Limits left" without live limits: an agent's tokens in the estimated 5-hour window with its reset
+/// countdown, over today's total.
+struct WindowEstimateLabel: View {
+    let agent: AgentKind
     let block: UsageBlock
     let today: Int
     let tint: Color
@@ -441,7 +442,7 @@ struct ClaudeEstimateLabel: View {
         TimelineView(.periodic(from: .now, by: 60)) { context in
             let reset = RateWindow(usedPercent: 0, windowMinutes: 300, resetsAt: block.end).countdown(now: context.date)
             HStack(spacing: 4) {
-                if showIcon { AgentLogo(agent: .claude, size: MenuBarLabel.graphHeight).foregroundStyle(tint) }
+                if showIcon { AgentLogo(agent: agent, size: MenuBarLabel.graphHeight).foregroundStyle(tint) }
                 VStack(alignment: .trailing, spacing: -1) {
                     HStack(spacing: 3) {
                         Text(Fmt.tokens(block.tokens.total)).frame(width: 30, alignment: .trailing)
@@ -457,7 +458,7 @@ struct ClaudeEstimateLabel: View {
                 .lineLimit(1)
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Claude Code: \(Fmt.tokens(block.tokens.total)) tokens this 5-hour window, resets in \(reset). \(Fmt.tokens(today)) today")
+            .accessibilityLabel("\(agent.title): \(Fmt.tokens(block.tokens.total)) tokens this 5-hour window, resets in \(reset). \(Fmt.tokens(today)) today")
         }
     }
 }

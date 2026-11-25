@@ -701,6 +701,16 @@
         }
       }
     },
+    "%@: %@ tokens this 5-hour window, resets in %@. %@ today": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$@ tokens this 5-hour window, resets in %3$@. %4$@ today"
+          }
+        }
+      }
+    },
     "%@: %@.": {
       "localizations": {
         "en": {
@@ -2494,16 +2504,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Claude Code, Codex, Copilot CLI or OpenCode wrote to its logs in the last 3 minutes."
-          }
-        }
-      }
-    },
-    "Claude Code: %@ tokens this 5-hour window, resets in %@. %@ today": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Claude Code: %1$@ tokens this 5-hour window, resets in %2$@. %3$@ today"
           }
         }
       }
@@ -5594,6 +5594,16 @@
         }
       }
     },
+    "New in 1.8.1: fixes a crash when a Bluetooth device connects or disconnects.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New in 1.8.1: fixes a crash when a Bluetooth device connects or disconnects."
+          }
+        }
+      }
+    },
     "New in 1.8: Antigravity in AI Agents, plus reliability fixes for sleep drain, Wi-Fi and alerts.": {
       "extractionState": "stale",
       "localizations": {
@@ -5601,16 +5611,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "New in 1.8: Antigravity in AI Agents, plus reliability fixes for sleep drain, Wi-Fi and alerts."
-          }
-        }
-      }
-    },
-    "New in 1.8.1: fixes a crash when a Bluetooth device connects or disconnects.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New in 1.8.1: fixes a crash when a Bluetooth device connects or disconnects."
           }
         }
       }
@@ -6967,12 +6967,12 @@
         }
       }
     },
-    "Read from local logs; nothing leaves your Mac. Totals include cache reads. The Claude 5-hour window is an estimate.": {
+    "Read from local logs; nothing leaves your Mac. Totals include cache reads. 5-hour windows without live limits are estimates.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Read from local logs; nothing leaves your Mac. Totals include cache reads. The Claude 5-hour window is an estimate."
+            "value": "Read from local logs; nothing leaves your Mac. Totals include cache reads. 5-hour windows without live limits are estimates."
           }
         }
       }
@@ -7007,12 +7007,12 @@
         }
       }
     },
-    "Reads the usage Claude Code, Codex, OpenCode and GitHub Copilot record on this Mac and the plan limits Claude Code reports. Prompts, replies and files are never kept, and your usage never leaves your Mac.": {
+    "Reads the usage Claude Code, Codex, OpenCode, GitHub Copilot and Antigravity record on this Mac and the plan limits Claude Code reports. Prompts, replies and files are never kept, and your usage never leaves your Mac.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reads the usage Claude Code, Codex, OpenCode and GitHub Copilot record on this Mac and the plan limits Claude Code reports. Prompts, replies and files are never kept, and your usage never leaves your Mac."
+            "value": "Reads the usage Claude Code, Codex, OpenCode, GitHub Copilot and Antigravity record on this Mac and the plan limits Claude Code reports. Prompts, replies and files are never kept, and your usage never leaves your Mac."
           }
         }
       }
@@ -8594,12 +8594,12 @@
         }
       }
     },
-    "Tokens and plan limits for Claude Code, Codex, Copilot and OpenCode.": {
+    "Tokens and plan limits for Claude Code, Codex, Copilot, OpenCode and Antigravity.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tokens and plan limits for Claude Code, Codex, Copilot and OpenCode."
+            "value": "Tokens and plan limits for Claude Code, Codex, Copilot, OpenCode and Antigravity."
           }
         }
       }

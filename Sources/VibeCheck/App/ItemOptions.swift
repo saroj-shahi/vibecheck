@@ -141,8 +141,8 @@ extension AgentUsageSample {
     }
 
     /// What the agents item shows for `options`. Limits come from the first counted agent that reports
-    /// them (Claude Code first); Claude Code without live limits falls back to its local 5-hour estimate;
-    /// otherwise tokens.
+    /// them (Claude Code first); otherwise the first counted agent with a local 5-hour estimate (Claude Code
+    /// or Antigravity); otherwise tokens.
     func menuBarContent(_ options: ItemOptions) -> AgentMenuContent {
         let counted = agents(for: options)
         if options.agentValue.isLimits {
@@ -155,8 +155,8 @@ extension AgentUsageSample {
                 }
                 return .limits(windows, used: options.agentValue == .limitsUsed)
             }
-            if let claude = counted.first(where: { $0.agent == .claude }), let block = claude.block {
-                return .claudeEstimate(block, today: claude.today.total)
+            if let estimated = counted.first(where: { $0.block != nil }), let block = estimated.block {
+                return .windowEstimate(estimated.agent, block, today: estimated.today.total)
             }
         }
         let total: Int = switch options.agentValue {
@@ -169,13 +169,13 @@ extension AgentUsageSample {
 }
 
 extension AgentUsageSample {
-    /// Whose logo the agents item draws: the agent the number comes from (limits, Claude's estimate), else
-    /// the busiest counted agent for the chosen value, else the first counted one (Claude Code before any scan).
+    /// Whose logo the agents item draws: the agent the number comes from (limits or a local 5-hour estimate),
+    /// else the busiest counted agent for the chosen value, else the first counted one (Claude Code before any scan).
     func menuBarAgent(_ options: ItemOptions) -> AgentKind {
         let counted = agents(for: options)
         if options.agentValue.isLimits {
             if let withLimits = counted.first(where: { !$0.limits.isEmpty }) { return withLimits.agent }
-            if counted.contains(where: { $0.agent == .claude && $0.block != nil }) { return .claude }
+            if let estimated = counted.first(where: { $0.block != nil }) { return estimated.agent }
         }
         func value(_ a: AgentSummary) -> Int {
             switch options.agentValue {
@@ -192,6 +192,6 @@ extension AgentUsageSample {
 /// What the agents menu bar item draws.
 enum AgentMenuContent: Equatable {
     case limits([RateWindow], used: Bool)
-    case claudeEstimate(UsageBlock, today: Int)
+    case windowEstimate(AgentKind, UsageBlock, today: Int)
     case tokens(Int)
 }

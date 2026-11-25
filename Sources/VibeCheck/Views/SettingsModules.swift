@@ -17,7 +17,7 @@ extension Module {
         case .disk: String(localized: "Free space on the startup disk, and read and write speed.")
         case .sensors: String(localized: "Temperatures and fan speeds from the Mac's own sensors.")
         case .battery: String(localized: "Charge, time left and health, plus Bluetooth accessories and USB devices.")
-        case .agents: String(localized: "Tokens and plan limits for Claude Code, Codex, Copilot and OpenCode.")
+        case .agents: String(localized: "Tokens and plan limits for Claude Code, Codex, Copilot, OpenCode and Antigravity.")
         case .clock: "A menu bar clock, with world clocks in the deck."
         case .weather: String(localized: "Today's forecast for one city, from Open-Meteo.")
         case .todo: String(localized: "A simple to-do list, kept in Apple Reminders.")
@@ -34,7 +34,7 @@ extension Module {
         case .disk: "storage ssd free space read write"
         case .sensors: "temperature heat fans celsius fahrenheit"
         case .battery: "charge power health cycles accessories bluetooth usb"
-        case .agents: "ai claude codex copilot opencode tokens limits usage"
+        case .agents: "ai claude codex copilot opencode antigravity tokens limits usage"
         case .clock: "time world time zone seconds"
         case .weather: "forecast city temperature units"
         case .todo: "todo to-do tasks reminders checklist list"
@@ -258,7 +258,7 @@ private struct AgentSourcesSection: View {
         let sample = AgentUsageStore.shared.sample
         let found = sample.found
         Section {
-            Text("Reads the usage Claude Code, Codex, OpenCode and GitHub Copilot record on this Mac and the plan limits Claude Code reports. Prompts, replies and files are never kept, and your usage never leaves your Mac.")
+            Text("Reads the usage Claude Code, Codex, OpenCode, GitHub Copilot and Antigravity record on this Mac and the plan limits Claude Code reports. Prompts, replies and files are never kept, and your usage never leaves your Mac.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

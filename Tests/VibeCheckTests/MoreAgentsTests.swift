@@ -98,6 +98,7 @@ struct MoreAgentsTests {
         let sample = scanner.scan(now: now, fullWalk: true)
         #expect(sample.agents.map(\.agent) == [.antigravity])
         #expect(sample.agents.first?.today.total == 3988 + 347 + 14526)
+        #expect(sample.agents.first?.block?.tokens.total == 3988 + 347 + 14526)
         #expect(sample.activeSessions.count == 1 && sample.activeSessions.first?.agent == .antigravity)
         #expect(scanner.scan(now: now).today == sample.today)
     }

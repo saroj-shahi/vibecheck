@@ -72,7 +72,7 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `EnergySampler` (pe
 
 | File | What's in it |
 |---|---|
-| `MenuBarLabels.swift` | Every menu bar label (fixed widths!), `AgentLimitsLabel`, `ClaudeEstimateLabel` |
+| `MenuBarLabels.swift` | Every menu bar label (fixed widths!), `AgentLimitsLabel`, `WindowEstimateLabel` |
 | `CombinedViews.swift` | Combined item, `AwakeCup`, `KeepAwakeItemLabel` |
 | `DeckView.swift` | Deck shell (header, drawn search field, live chips, footer), home (quick toggles, tiles, culprit outline), tiles' spoken labels, glass hairline |
 | `CommandPalette.swift` | ⌘K palette results, ⌘↩ action card, `KeyCap`, `Caret` |
