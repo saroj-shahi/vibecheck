@@ -591,6 +591,16 @@
         }
       }
     },
+    "%@, %@, join video call available": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, %2$@, join video call available"
+          }
+        }
+      }
+    },
     "%@, %@, making your Mac %@": {
       "localizations": {
         "en": {
@@ -832,6 +842,16 @@
         }
       }
     },
+    "%@J joins the next video call": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@J joins the next video call"
+          }
+        }
+      }
+    },
     "%@V opens clipboard history": {
       "localizations": {
         "en": {
@@ -878,6 +898,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$lld dBm, noise %2$lld dBm"
+          }
+        }
+      }
+    },
+    "%lld days ago": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days ago"
           }
         }
       }
@@ -999,6 +1029,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$lld open, %2$lld due"
+          }
+        }
+      }
+    },
+    "%lld pt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld pt"
           }
         }
       }
@@ -1179,6 +1219,16 @@
         }
       }
     },
+    "+7d": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+7d"
+          }
+        }
+      }
+    },
     ", %@ for %@.": {
       "localizations": {
         "en": {
@@ -1225,6 +1275,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 min"
+          }
+        }
+      }
+    },
+    "1 minute before": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 minute before"
           }
         }
       }
@@ -1279,6 +1339,26 @@
         }
       }
     },
+    "2 hours": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2 hours"
+          }
+        }
+      }
+    },
+    "2 minutes before": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2 minutes before"
+          }
+        }
+      }
+    },
     "2 seconds": {
       "localizations": {
         "en": {
@@ -1309,6 +1389,16 @@
         }
       }
     },
+    "24-hour time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "24-hour time"
+          }
+        }
+      }
+    },
     "3 seconds": {
       "localizations": {
         "en": {
@@ -1329,12 +1419,32 @@
         }
       }
     },
+    "4 hours": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "4 hours"
+          }
+        }
+      }
+    },
     "5 min": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "5 min"
+          }
+        }
+      }
+    },
+    "5 minutes before": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 minutes before"
           }
         }
       }
@@ -1385,6 +1495,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "7 days"
+          }
+        }
+      }
+    },
+    "8 hours": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "8 hours"
           }
         }
       }
@@ -1461,6 +1581,16 @@
         }
       }
     },
+    "Active from": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active from"
+          }
+        }
+      }
+    },
     "Add": {
       "localizations": {
         "en": {
@@ -1492,6 +1622,7 @@
       }
     },
     "Add a city or time zone": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1571,12 +1702,32 @@
         }
       }
     },
+    "Alert style": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alert style"
+          }
+        }
+      }
+    },
     "Alerts": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Alerts"
+          }
+        }
+      }
+    },
+    "All day": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All day"
           }
         }
       }
@@ -1859,6 +2010,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "At most %lld"
+          }
+        }
+      }
+    },
+    "At start time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At start time"
           }
         }
       }
@@ -2237,6 +2398,96 @@
         }
       }
     },
+    "Calendar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar"
+          }
+        }
+      }
+    },
+    "Calendar & meetings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar & meetings"
+          }
+        }
+      }
+    },
+    "Calendar access": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar access"
+          }
+        }
+      }
+    },
+    "Calendar access is restricted on this Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar access is restricted on this Mac."
+          }
+        }
+      }
+    },
+    "Calendar access isn't enabled in VibeCheck.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar access isn't enabled in VibeCheck."
+          }
+        }
+      }
+    },
+    "Calendar icon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar icon"
+          }
+        }
+      }
+    },
+    "Calendar icon + time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar icon + time"
+          }
+        }
+      }
+    },
+    "Calendar icon only": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar icon only"
+          }
+        }
+      }
+    },
+    "Calendars (%lld of %lld)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendars (%1$lld of %2$lld)"
+          }
+        }
+      }
+    },
     "Camera or microphone in use: keeps the display awake, holds alerts until the call ends (overheating and low battery still come through) and warns once if one app is hogging the CPU.": {
       "localizations": {
         "en": {
@@ -2548,6 +2799,16 @@
         }
       }
     },
+    "City or Time Zone": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "City or Time Zone"
+          }
+        }
+      }
+    },
     "Claude & GPT": {
       "localizations": {
         "en": {
@@ -2658,12 +2919,52 @@
         }
       }
     },
+    "Clear selected day": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear selected day"
+          }
+        }
+      }
+    },
     "Click a highlighted word to change it; drag a number sideways to adjust it (hold ⌥ for fine steps). Each alert fires once, then waits until things recover and at least 5 minutes pass.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Click a highlighted word to change it; drag a number sideways to adjust it (hold ⌥ for fine steps). Each alert fires once, then waits until things recover and at least 5 minutes pass."
+          }
+        }
+      }
+    },
+    "Click to copy %@ time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click to copy %@ time"
+          }
+        }
+      }
+    },
+    "Click to copy time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click to copy time"
+          }
+        }
+      }
+    },
+    "Click to join video call when starting soon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click to join video call when starting soon"
           }
         }
       }
@@ -2690,6 +2991,7 @@
       }
     },
     "Clock": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2725,6 +3027,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Compact"
+          }
+        }
+      }
+    },
+    "Compact (120 pt)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compact (120 pt)"
+          }
+        }
+      }
+    },
+    "Compact world clocks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compact world clocks"
           }
         }
       }
@@ -2765,6 +3087,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Condition"
+          }
+        }
+      }
+    },
+    "Connect Apple Calendar to see upcoming events and one-click video call links here.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Apple Calendar to see upcoming events and one-click video call links here."
+          }
+        }
+      }
+    },
+    "Connect Calendar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Calendar"
           }
         }
       }
@@ -2830,6 +3172,16 @@
         }
       }
     },
+    "Copied: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied: %@"
+          }
+        }
+      }
+    },
     "Copy": {
       "localizations": {
         "en": {
@@ -2850,12 +3202,62 @@
         }
       }
     },
+    "Copy ISO 8601": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy ISO 8601"
+          }
+        }
+      }
+    },
     "Copy Image": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Copy Image"
+          }
+        }
+      }
+    },
+    "Copy Link": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Link"
+          }
+        }
+      }
+    },
+    "Copy Meeting Link": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Meeting Link"
+          }
+        }
+      }
+    },
+    "Copy Time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Time"
+          }
+        }
+      }
+    },
+    "Copy Title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Title"
           }
         }
       }
@@ -2896,6 +3298,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Couldn't explain this time."
+          }
+        }
+      }
+    },
+    "Couldn't find a city or time zone matching %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't find a city or time zone matching %@."
           }
         }
       }
@@ -3000,6 +3412,16 @@
         }
       }
     },
+    "Current month": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current month"
+          }
+        }
+      }
+    },
     "Current session": {
       "localizations": {
         "en": {
@@ -3016,6 +3438,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Current session only"
+          }
+        }
+      }
+    },
+    "Custom pattern": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom pattern"
+          }
+        }
+      }
+    },
+    "Custom popover height": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom popover height"
+          }
+        }
+      }
+    },
+    "Custom…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom…"
           }
         }
       }
@@ -3062,12 +3514,62 @@
         }
       }
     },
+    "Date": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date"
+          }
+        }
+      }
+    },
+    "Date & Time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date & Time"
+          }
+        }
+      }
+    },
+    "Date & time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date & time"
+          }
+        }
+      }
+    },
+    "Date (26)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date (26)"
+          }
+        }
+      }
+    },
     "Day": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Day"
+          }
+        }
+      }
+    },
+    "Day & time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Day & time"
           }
         }
       }
@@ -3178,6 +3680,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Delete…"
+          }
+        }
+      }
+    },
+    "Deselect All": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deselect All"
           }
         }
       }
@@ -3313,6 +3825,16 @@
         }
       }
     },
+    "Downgrade to banner while already on a call": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downgrade to banner while already on a call"
+          }
+        }
+      }
+    },
     "Download": {
       "extractionState": "stale",
       "localizations": {
@@ -3394,12 +3916,32 @@
         }
       }
     },
+    "Drag to preview world clocks (±12h). Hold ⌥ for 15-minute steps.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to preview world clocks (±12h). Hold ⌥ for 15-minute steps."
+          }
+        }
+      }
+    },
     "Drag to reorder, or right-click a row for Move Up / Move Down. The menu bar items, the combined item and the deck follow this order. Click › for an item's options and alerts.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Drag to reorder, or right-click a row for Move Up / Move Down. The menu bar items, the combined item and the deck follow this order. Click › for an item's options and alerts."
+          }
+        }
+      }
+    },
+    "Drag to resize height · double-click to reset": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to resize height · double-click to reset"
           }
         }
       }
@@ -3604,12 +4146,52 @@
         }
       }
     },
+    "Events": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Events"
+          }
+        }
+      }
+    },
+    "Every 30 minutes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every 30 minutes"
+          }
+        }
+      }
+    },
     "Every alert, for all modules, is in": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Every alert, for all modules, is in"
+          }
+        }
+      }
+    },
+    "Every hour": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every hour"
+          }
+        }
+      }
+    },
+    "Expand world clocks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expand world clocks"
           }
         }
       }
@@ -3955,6 +4537,16 @@
         }
       }
     },
+    "Format & calendar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Format & calendar"
+          }
+        }
+      }
+    },
     "Found on this Mac": {
       "localizations": {
         "en": {
@@ -4025,6 +4617,16 @@
         }
       }
     },
+    "Frequency": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frequency"
+          }
+        }
+      }
+    },
     "From": {
       "localizations": {
         "en": {
@@ -4051,6 +4653,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "From power adapter"
+          }
+        }
+      }
+    },
+    "Fullscreen alert": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fullscreen alert"
+          }
+        }
+      }
+    },
+    "Fullscreen alerts span your connected displays with one-click Join and Snooze, and automatically downgrade to a quiet banner if your display is mirrored (AirPlay/projector) or pause during a Focus filter.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fullscreen alerts span your connected displays with one-click Join and Snooze, and automatically downgrade to a quiet banner if your display is mirrored (AirPlay/projector) or pause during a Focus filter."
           }
         }
       }
@@ -4141,6 +4763,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Get Mac Vibe"
+          }
+        }
+      }
+    },
+    "Get World Clock Time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get World Clock Time"
           }
         }
       }
@@ -4285,6 +4917,16 @@
         }
       }
     },
+    "Hide This Event from Menu Bar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide This Event from Menu Bar"
+          }
+        }
+      }
+    },
     "Hide app names": {
       "localizations": {
         "en": {
@@ -4315,6 +4957,16 @@
         }
       }
     },
+    "Hide today's past events": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide today's past events"
+          }
+        }
+      }
+    },
     "Hold alerts": {
       "localizations": {
         "en": {
@@ -4326,6 +4978,7 @@
       }
     },
     "Hold alerts or keep the display awake while this Focus is on.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4336,11 +4989,22 @@
       }
     },
     "Hold alerts, keep display awake": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Hold alerts, keep display awake"
+          }
+        }
+      }
+    },
+    "Hold alerts, keep the display awake, or pause meeting alerts and hourly chime while this Focus is on.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold alerts, keep the display awake, or pause meeting alerts and hourly chime while this Focus is on."
           }
         }
       }
@@ -4361,6 +5025,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hottest temperature"
+          }
+        }
+      }
+    },
+    "Hourly chime": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hourly chime"
           }
         }
       }
@@ -4481,6 +5155,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "In the deck"
+          }
+        }
+      }
+    },
+    "Include dated Apple Reminders": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Include dated Apple Reminders"
           }
         }
       }
@@ -4606,6 +5290,16 @@
         }
       }
     },
+    "It's %@ in %@ (%@).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's %1$@ in %2$@ (%3$@)."
+          }
+        }
+      }
+    },
     "It's free and stays free. A coffee says thanks.": {
       "extractionState": "stale",
       "localizations": {
@@ -4623,6 +5317,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Items"
+          }
+        }
+      }
+    },
+    "Join": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join"
+          }
+        }
+      }
+    },
+    "Join %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join %@"
+          }
+        }
+      }
+    },
+    "Join Video Call": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join Video Call"
+          }
+        }
+      }
+    },
+    "Join video call": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join video call"
+          }
+        }
+      }
+    },
+    "Joining %@ on %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Joining %1$@ on %2$@."
+          }
+        }
+      }
+    },
+    "Joins your active video call or the next one starting within 15 minutes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Joins your active video call or the next one starting within 15 minutes."
+          }
+        }
+      }
+    },
+    "Jump back to today": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jump back to today"
           }
         }
       }
@@ -4764,6 +5528,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Keep history across restarts"
+          }
+        }
+      }
+    },
+    "Keep showing while event is in progress": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep showing while event is in progress"
           }
         }
       }
@@ -4955,6 +5729,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Leave empty to follow what's slowing your Mac down."
+          }
+        }
+      }
+    },
+    "Leave empty to open today.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave empty to open today."
           }
         }
       }
@@ -5180,12 +5964,32 @@
         }
       }
     },
+    "Local time · press ↩ to copy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local time · press ↩ to copy"
+          }
+        }
+      }
+    },
     "Location access is off for VibeCheck. Turn it on in System Settings > Privacy & Security > Location Services.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Location access is off for VibeCheck. Turn it on in System Settings > Privacy & Security > Location Services."
+          }
+        }
+      }
+    },
+    "Look ahead": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Look ahead"
           }
         }
       }
@@ -5340,12 +6144,32 @@
         }
       }
     },
+    "Maximum width": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum width"
+          }
+        }
+      }
+    },
     "Measure": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Measure"
+          }
+        }
+      }
+    },
+    "Meeting notifications": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meeting notifications"
           }
         }
       }
@@ -5447,6 +6271,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Menu bar"
+          }
+        }
+      }
+    },
+    "Menu bar clock, calendar events, meeting join links, alerts and world clocks.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu bar clock, calendar events, meeting join links, alerts and world clocks."
           }
         }
       }
@@ -5612,6 +6446,16 @@
         }
       }
     },
+    "Mute the hourly chime while this Focus is on.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mute the hourly chime while this Focus is on."
+          }
+        }
+      }
+    },
     "Mute the microphone": {
       "localizations": {
         "en": {
@@ -5762,6 +6606,66 @@
           "stringUnit": {
             "state": "translated",
             "value": "New snippet"
+          }
+        }
+      }
+    },
+    "Next 14 days": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next 14 days"
+          }
+        }
+      }
+    },
+    "Next 3 days": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next 3 days"
+          }
+        }
+      }
+    },
+    "Next 7 days": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next 7 days"
+          }
+        }
+      }
+    },
+    "Next Event": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next Event"
+          }
+        }
+      }
+    },
+    "Next month (⌥-click for next year)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next month (⌥-click for next year)"
+          }
+        }
+      }
+    },
+    "Next week": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next week"
           }
         }
       }
@@ -5957,6 +6861,36 @@
         }
       }
     },
+    "No due date": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No due date"
+          }
+        }
+      }
+    },
+    "No events in the next %lld days.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No events in the next %lld days."
+          }
+        }
+      }
+    },
+    "No events on this day.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No events on this day."
+          }
+        }
+      }
+    },
     "No internal battery": {
       "localizations": {
         "en": {
@@ -6023,6 +6957,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "No throttling"
+          }
+        }
+      }
+    },
+    "No video call is starting in the next 15 minutes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No video call is starting in the next 15 minutes."
+          }
+        }
+      }
+    },
+    "No video call starting soon.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No video call starting soon."
           }
         }
       }
@@ -6217,6 +7171,16 @@
         }
       }
     },
+    "Notification banner": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification banner"
+          }
+        }
+      }
+    },
     "Notification preview: %@. %@": {
       "localizations": {
         "en": {
@@ -6233,6 +7197,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Notifications are working. Your Mac's vibes are being watched. 👀"
+          }
+        }
+      }
+    },
+    "Notify before start": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notify before start"
           }
         }
       }
@@ -6457,6 +7431,36 @@
         }
       }
     },
+    "Only for events with a calendar alert": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only for events with a calendar alert"
+          }
+        }
+      }
+    },
+    "Only for video call events": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only for video call events"
+          }
+        }
+      }
+    },
+    "Only show video call events": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only show video call events"
+          }
+        }
+      }
+    },
     "Open": {
       "localizations": {
         "en": {
@@ -6493,6 +7497,37 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open Calendar"
+          }
+        }
+      }
+    },
+    "Open Calendar Date": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Calendar Date"
+          }
+        }
+      }
+    },
+    "Open Clock & Calendar": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Clock & Calendar"
+          }
+        }
+      }
+    },
+    "Open Date & Time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Date & Time"
           }
         }
       }
@@ -6613,6 +7648,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open from anywhere"
+          }
+        }
+      }
+    },
+    "Open in Calendar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in Calendar"
+          }
+        }
+      }
+    },
+    "Opens Apple Calendar at a specific date, or today if left empty.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens Apple Calendar at a specific date, or today if left empty."
           }
         }
       }
@@ -6747,6 +7802,36 @@
         }
       }
     },
+    "Pause fullscreen and banner meeting notifications while this Focus is on.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause fullscreen and banner meeting notifications while this Focus is on."
+          }
+        }
+      }
+    },
+    "Pause hourly chime": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause hourly chime"
+          }
+        }
+      }
+    },
+    "Pause meeting alerts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause meeting alerts"
+          }
+        }
+      }
+    },
     "Peak %@": {
       "localizations": {
         "en": {
@@ -6837,12 +7922,72 @@
         }
       }
     },
+    "Pin to menu bar beside local time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pin to menu bar beside local time"
+          }
+        }
+      }
+    },
+    "Pin up to 3 world clocks to show compactly beside the local time in the menu bar. Search works completely offline.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pin up to 3 world clocks to show compactly beside the local time in the menu bar. Search works completely offline."
+          }
+        }
+      }
+    },
     "Pinned snippets": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Pinned snippets"
+          }
+        }
+      }
+    },
+    "Play": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play"
+          }
+        }
+      }
+    },
+    "Play alert sound": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play alert sound"
+          }
+        }
+      }
+    },
+    "Play an hourly chime": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play an hourly chime"
+          }
+        }
+      }
+    },
+    "Plays a subtle macOS system sound on the hour during your active hours. Automatically muted during calls, screen lock, or a Focus filter.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plays a subtle macOS system sound on the hour during your active hours. Automatically muted during calls, screen lock, or a Focus filter."
           }
         }
       }
@@ -6863,6 +8008,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Plugged in, %lld W charger"
+          }
+        }
+      }
+    },
+    "Popover opacity": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popover opacity"
+          }
+        }
+      }
+    },
+    "Popover opacity blends a solid background over glass (0% is clear glass, 100% is solid). Quick toggles: mic mute, Bluetooth, Share Vibe Card, and volume and built-in display brightness sliders. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popover opacity blends a solid background over glass (0% is clear glass, 100% is solid). Quick toggles: mic mute, Bluetooth, Share Vibe Card, and volume and built-in display brightness sliders. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time."
           }
         }
       }
@@ -6907,6 +8072,16 @@
         }
       }
     },
+    "Press Esc to dismiss": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press Esc to dismiss"
+          }
+        }
+      }
+    },
     "Press a shortcut from any app to open that panel; press it again to close. Shortcuts for items that are switched off just beep. %@A starts or stops keeping your Mac awake (see Keep Awake).": {
       "localizations": {
         "en": {
@@ -6923,6 +8098,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Press it again to close."
+          }
+        }
+      }
+    },
+    "Press ↩ to copy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press ↩ to copy"
+          }
+        }
+      }
+    },
+    "Press ↩ to join · Esc to dismiss": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press ↩ to join · Esc to dismiss"
           }
         }
       }
@@ -6947,12 +8142,32 @@
         }
       }
     },
+    "Preview Fullscreen Alert": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview Fullscreen Alert"
+          }
+        }
+      }
+    },
     "Preview the notification": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Preview the notification"
+          }
+        }
+      }
+    },
+    "Previous month (⌥-click for previous year)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous month (⌥-click for previous year)"
           }
         }
       }
@@ -6988,6 +8203,7 @@
       }
     },
     "Quick toggles: mic mute, Bluetooth, Share Vibe Card, and volume and built-in display brightness sliders. The summary card shows uptime, the top app, today's energy leader and the agent limit closest to running out. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7138,6 +8354,16 @@
         }
       }
     },
+    "Reads Apple Calendar locally via EventKit (iCloud, Google, Exchange and Outlook accounts configured in macOS). Nothing is uploaded.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reads Apple Calendar locally via EventKit (iCloud, Google, Exchange and Outlook accounts configured in macOS). Nothing is uploaded."
+          }
+        }
+      }
+    },
     "Reads hook files in ~/.config/vibecheck/hooks. See examples/hooks for how to write them.": {
       "localizations": {
         "en": {
@@ -7259,6 +8485,16 @@
         }
       }
     },
+    "Remove from Menu Bar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from Menu Bar"
+          }
+        }
+      }
+    },
     "Remove snippet": {
       "localizations": {
         "en": {
@@ -7309,6 +8545,26 @@
         }
       }
     },
+    "Reset time travel to now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset time travel to now"
+          }
+        }
+      }
+    },
+    "Reset to Auto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset to Auto"
+          }
+        }
+      }
+    },
     "Resets in %@ (%@)": {
       "localizations": {
         "en": {
@@ -7329,6 +8585,16 @@
         }
       }
     },
+    "Resize Date & Time panel height": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resize Date & Time panel height"
+          }
+        }
+      }
+    },
     "Restore Default Alerts": {
       "localizations": {
         "en": {
@@ -7345,6 +8611,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Restricted on this Mac"
+          }
+        }
+      }
+    },
+    "Result": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Result"
+          }
+        }
+      }
+    },
+    "Returns the current local time for one of your world clocks or any city / time zone.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Returns the current local time for one of your world clocks or any city / time zone."
           }
         }
       }
@@ -7419,6 +8705,16 @@
         }
       }
     },
+    "Search city, country or time zone (e.g. San Francisco, IST, Tokyo)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search city, country or time zone (e.g. San Francisco, IST, Tokyo)"
+          }
+        }
+      }
+    },
     "Search failed. Check your connection.": {
       "localizations": {
         "en": {
@@ -7455,6 +8751,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search settings"
+          }
+        }
+      }
+    },
+    "Select All": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select All"
           }
         }
       }
@@ -7535,6 +8841,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Set %@"
+          }
+        }
+      }
+    },
+    "Set due date": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set due date"
           }
         }
       }
@@ -7669,6 +8985,16 @@
         }
       }
     },
+    "Show Join button for upcoming video calls": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Join button for upcoming video calls"
+          }
+        }
+      }
+    },
     "Show a cup in the menu bar while awake": {
       "extractionState": "stale",
       "localizations": {
@@ -7690,12 +9016,43 @@
         }
       }
     },
+    "Show all-day events": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show all-day events"
+          }
+        }
+      }
+    },
     "Show as": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Show as"
+          }
+        }
+      }
+    },
+    "Show calendar events in Date & Time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show calendar events in Date & Time"
+          }
+        }
+      }
+    },
+    "Show calendar events in the Clock panel": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show calendar events in the Clock panel"
           }
         }
       }
@@ -7710,6 +9067,16 @@
         }
       }
     },
+    "Show event title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show event title"
+          }
+        }
+      }
+    },
     "Show fewer": {
       "localizations": {
         "en": {
@@ -7720,12 +9087,32 @@
         }
       }
     },
+    "Show in Menu Bar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show in Menu Bar"
+          }
+        }
+      }
+    },
     "Show keep awake as its own item": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Show keep awake as its own item"
+          }
+        }
+      }
+    },
+    "Show next event in the menu bar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show next event in the menu bar"
           }
         }
       }
@@ -7800,12 +9187,42 @@
         }
       }
     },
+    "Show upcoming": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show upcoming"
+          }
+        }
+      }
+    },
     "Show vibe ring": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Show vibe ring"
+          }
+        }
+      }
+    },
+    "Show week number in menu bar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show week number in menu bar"
+          }
+        }
+      }
+    },
+    "Show week numbers in calendar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show week numbers in calendar"
           }
         }
       }
@@ -7820,12 +9237,42 @@
         }
       }
     },
+    "Shown in menu bar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shown in menu bar"
+          }
+        }
+      }
+    },
+    "Shown in menu bar — click to unpin": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shown in menu bar — click to unpin"
+          }
+        }
+      }
+    },
     "Shows %@ details": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Shows %@ details"
+          }
+        }
+      }
+    },
+    "Shows a compact standalone item when a meeting is coming up, and hides automatically when your schedule is clear. Right-click it for Join and Hide actions.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows a compact standalone item when a meeting is coming up, and hides automatically when your schedule is clear. Right-click it for Join and Hide actions."
           }
         }
       }
@@ -7910,6 +9357,26 @@
         }
       }
     },
+    "Snooze 1m": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snooze 1m"
+          }
+        }
+      }
+    },
+    "Snooze 5m": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snooze 5m"
+          }
+        }
+      }
+    },
     "Snow": {
       "localizations": {
         "en": {
@@ -7940,6 +9407,16 @@
         }
       }
     },
+    "Sound": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sound"
+          }
+        }
+      }
+    },
     "Spacing": {
       "localizations": {
         "en": {
@@ -7966,6 +9443,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Standard"
+          }
+        }
+      }
+    },
+    "Standard (160 pt)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard (160 pt)"
           }
         }
       }
@@ -8026,6 +9513,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Start sessions for"
+          }
+        }
+      }
+    },
+    "Starting now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting now"
+          }
+        }
+      }
+    },
+    "Starts %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starts %@"
+          }
+        }
+      }
+    },
+    "Starts %@ · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starts %1$@ · %2$@"
           }
         }
       }
@@ -8705,6 +10222,16 @@
         }
       }
     },
+    "Time travel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time travel"
+          }
+        }
+      }
+    },
     "Time's up.": {
       "localizations": {
         "en": {
@@ -8722,6 +10249,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tip: hold the cup to set a keep-awake time. Press ⌘K to search commands."
+          }
+        }
+      }
+    },
+    "Tmrw": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tmrw"
           }
         }
       }
@@ -8752,6 +10289,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Today"
+          }
+        }
+      }
+    },
+    "Today only": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today only"
           }
         }
       }
@@ -8862,6 +10409,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trash %lld"
+          }
+        }
+      }
+    },
+    "Try it out": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try it out"
           }
         }
       }
@@ -9056,12 +10613,42 @@
         }
       }
     },
+    "Untitled event": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untitled event"
+          }
+        }
+      }
+    },
     "Up %@": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Up %@"
+          }
+        }
+      }
+    },
+    "Upcoming": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upcoming"
+          }
+        }
+      }
+    },
+    "Upcoming event in menu bar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upcoming event in menu bar"
           }
         }
       }
@@ -9236,6 +10823,16 @@
         }
       }
     },
+    "Uses Unicode date tokens: EEE (Thu), d (26), MMM (Nov), MM (11), yyyy (2026), HH:mm (24h), h:mm a (12h), ss (seconds).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uses Unicode date tokens: EEE (Thu), d (26), MMM (Nov), MM (11), yyyy (2026), HH:mm (24h), h:mm a (12h), ss (seconds)."
+          }
+        }
+      }
+    },
     "Utilization": {
       "localizations": {
         "en": {
@@ -9406,6 +11003,16 @@
         }
       }
     },
+    "VibeCheck isn't allowed to read Calendars. Turn it on in System Settings › Privacy & Security › Calendars.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCheck isn't allowed to read Calendars. Turn it on in System Settings › Privacy & Security › Calendars."
+          }
+        }
+      }
+    },
     "VibeCheck isn't allowed to read Reminders. Turn it on in System Settings › Privacy & Security › Reminders.": {
       "localizations": {
         "en": {
@@ -9539,6 +11146,26 @@
         }
       }
     },
+    "W": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W"
+          }
+        }
+      }
+    },
+    "W%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W%lld"
+          }
+        }
+      }
+    },
     "Waiting for the first update": {
       "localizations": {
         "en": {
@@ -9609,12 +11236,62 @@
         }
       }
     },
+    "Week %lld · press ↩ to copy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Week %lld · press ↩ to copy"
+          }
+        }
+      }
+    },
+    "Week & date (W48 · 26)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Week & date (W48 · 26)"
+          }
+        }
+      }
+    },
+    "Week number (W48)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Week number (W48)"
+          }
+        }
+      }
+    },
+    "Weekday & date (Thu 26)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekday & date (Thu 26)"
+          }
+        }
+      }
+    },
     "Weekly (or monthly) only": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Weekly (or monthly) only"
+          }
+        }
+      }
+    },
+    "Weekly Design Sync": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly Design Sync"
           }
         }
       }
@@ -9799,6 +11476,16 @@
         }
       }
     },
+    "Wide (200 pt)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wide (200 pt)"
+          }
+        }
+      }
+    },
     "Wipe away. Touch ID and the power button still work.": {
       "localizations": {
         "en": {
@@ -9825,6 +11512,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "With the display allowed to sleep, the screen turns off but downloads, builds and music keep going. Closing the lid still puts the Mac to sleep."
+          }
+        }
+      }
+    },
+    "Work": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Work"
           }
         }
       }
@@ -10174,6 +11871,16 @@
         }
       }
     },
+    "e.g. Tokyo, London, UTC, or San Francisco.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. Tokyo, London, UTC, or San Francisco."
+          }
+        }
+      }
+    },
     "files are downloading": {
       "localizations": {
         "en": {
@@ -10210,6 +11917,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "hour"
+          }
+        }
+      }
+    },
+    "in %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in %@"
+          }
+        }
+      }
+    },
+    "in %lld days": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in %lld days"
           }
         }
       }
@@ -10252,6 +11979,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "it's warm at %lld °C"
+          }
+        }
+      }
+    },
+    "keep display awake": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "keep display awake"
+          }
+        }
+      }
+    },
+    "left": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "left"
           }
         }
       }
@@ -10552,12 +12299,42 @@
         }
       }
     },
+    "pause chime": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "pause chime"
+          }
+        }
+      }
+    },
+    "pause meetings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "pause meetings"
+          }
+        }
+      }
+    },
     "plugged in": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "plugged in"
+          }
+        }
+      }
+    },
+    "same time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "same time"
           }
         }
       }
@@ -10644,6 +12421,16 @@
         }
       }
     },
+    "tomorrow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tomorrow"
+          }
+        }
+      }
+    },
     "twice": {
       "localizations": {
         "en": {
@@ -10714,6 +12501,16 @@
         }
       }
     },
+    "yesterday": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yesterday"
+          }
+        }
+      }
+    },
     "you": {
       "localizations": {
         "en": {
@@ -10761,6 +12558,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "°F"
+          }
+        }
+      }
+    },
+    "·": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "·"
           }
         }
       }

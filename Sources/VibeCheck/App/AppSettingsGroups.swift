@@ -88,12 +88,146 @@ final class ClockGroup {
     var format: ClockFormat {
         didSet { writer.save(format.rawValue, "clockFormat", structural: true) }
     }
+    var customFormat: String {
+        didSet { writer.save(customFormat, "clockCustomFormat", structural: true) }
+    }
     var showSeconds: Bool {
         didSet { writer.save(showSeconds, "clockShowSeconds", structural: true) }
+    }
+    var showWeekNumberInMenuBar: Bool {
+        didSet { writer.save(showWeekNumberInMenuBar, "clockShowWeekNumberInMenuBar", structural: true) }
+    }
+    var showWeekNumbersInCalendar: Bool {
+        didSet { writer.save(showWeekNumbersInCalendar, "clockShowWeekNumbersInCalendar", structural: false) }
+    }
+    /// What the menu bar calendar icon shows (date, weekday & date, week & date, or week number).
+    var calendarIconStyle: CalendarIconStyle {
+        didSet { writer.save(calendarIconStyle.rawValue, "clockCalendarIconStyle", structural: true) }
+    }
+    /// User-dragged Date & Time popover height (0 = fit content automatically).
+    var panelHeight: Double {
+        didSet {
+            let clamped = panelHeight <= 0 ? 0 : min(max(panelHeight, 260), 1400)
+            if clamped != panelHeight { panelHeight = clamped; return }
+            writer.save(panelHeight, "clockPanelHeight", structural: false)
+        }
+    }
+    /// Opt-in Apple Calendar events in the Clock panel (asks for Calendar access only when enabled).
+    var showCalendarEvents: Bool {
+        didSet {
+            writer.save(showCalendarEvents, "clockShowCalendarEvents", structural: false)
+            if showCalendarEvents { CalendarStore.shared.activate(requestAccess: true) }
+        }
+    }
+    /// Agenda lookahead in days (1, 3, 7 or 14).
+    var calendarDaysAhead: Int {
+        didSet { writer.save(calendarDaysAhead, "clockCalendarDaysAhead", structural: false) }
+    }
+    var showAllDayEvents: Bool {
+        didSet { writer.save(showAllDayEvents, "clockShowAllDayEvents", structural: false) }
+    }
+    var hidePastEventsToday: Bool {
+        didSet { writer.save(hidePastEventsToday, "clockHidePastEventsToday", structural: false) }
+    }
+    /// Show dated Apple Reminders alongside calendar events in the Clock agenda.
+    var showRemindersInAgenda: Bool {
+        didSet {
+            writer.save(showRemindersInAgenda, "clockShowRemindersInAgenda", structural: false)
+            if showRemindersInAgenda { RemindersStore.shared.activate(requestAccess: true) }
+        }
+    }
+    /// Calendars unchecked by the user (per Mac, not in settings backup).
+    var hiddenCalendarIDs: Set<String> {
+        didSet {
+            defaults.set(Array(hiddenCalendarIDs), forKey: "clockHiddenCalendarIDs")
+            NotificationCenter.default.post(name: .vibeCheckCalendarChanged, object: nil)
+        }
+    }
+    /// Standalone "Next Event" item in the menu bar (off by default).
+    var nextEventInMenuBar: Bool {
+        didSet {
+            writer.save(nextEventInMenuBar, "clockNextEventInMenuBar", structural: true)
+            if nextEventInMenuBar {
+                if !showCalendarEvents { showCalendarEvents = true }
+                CalendarStore.shared.activate(requestAccess: true)
+            }
+        }
+    }
+    var nextEventShowTitle: Bool {
+        didSet { writer.save(nextEventShowTitle, "clockNextEventShowTitle", structural: true) }
+    }
+    var nextEventOnlyVideoCalls: Bool {
+        didSet { writer.save(nextEventOnlyVideoCalls, "clockNextEventOnlyVideoCalls", structural: true) }
+    }
+    var nextEventShowDuringEntireEvent: Bool {
+        didSet { writer.save(nextEventShowDuringEntireEvent, "clockNextEventShowDuringEntireEvent", structural: true) }
+    }
+    var nextEventClickToJoin: Bool {
+        didSet { writer.save(nextEventClickToJoin, "clockNextEventClickToJoin", structural: false) }
+    }
+    /// Show an inline "Join" button inside the Next Event menu bar item for upcoming/active video calls.
+    var nextEventShowJoinButton: Bool {
+        didSet { writer.save(nextEventShowJoinButton, "clockNextEventShowJoinButton", structural: true) }
+    }
+    var nextEventMaxWidth: Int {
+        didSet { writer.save(nextEventMaxWidth, "clockNextEventMaxWidth", structural: true) }
+    }
+    var nextEventLookaheadHours: Int {
+        didSet { writer.save(nextEventLookaheadHours, "clockNextEventLookaheadHours", structural: true) }
+    }
+    /// Fullscreen or banner alerts right before meetings start.
+    var meetingAlertStyle: MeetingAlertStyle {
+        didSet {
+            writer.save(meetingAlertStyle.rawValue, "clockMeetingAlertStyle", structural: true)
+            if meetingAlertStyle != .off {
+                if !showCalendarEvents { showCalendarEvents = true }
+                CalendarStore.shared.activate(requestAccess: true)
+            }
+        }
+    }
+    var meetingAlertLeadMinutes: Int {
+        didSet { writer.save(meetingAlertLeadMinutes, "clockMeetingAlertLeadMinutes", structural: true) }
+    }
+    var meetingAlertOnlyVideoCalls: Bool {
+        didSet { writer.save(meetingAlertOnlyVideoCalls, "clockMeetingAlertOnlyVideoCalls", structural: true) }
+    }
+    var meetingAlertOnlyWithAlarm: Bool {
+        didSet { writer.save(meetingAlertOnlyWithAlarm, "clockMeetingAlertOnlyWithAlarm", structural: true) }
+    }
+    var meetingAlertSuppressDuringCall: Bool {
+        didSet { writer.save(meetingAlertSuppressDuringCall, "clockMeetingAlertSuppressDuringCall", structural: false) }
+    }
+    var meetingAlertPlaySound: Bool {
+        didSet { writer.save(meetingAlertPlaySound, "clockMeetingAlertPlaySound", structural: false) }
+    }
+    /// Optional subtle chime on the hour or half-hour during active hours.
+    var hourlyChimeEnabled: Bool {
+        didSet { writer.save(hourlyChimeEnabled, "clockHourlyChimeEnabled", structural: true) }
+    }
+    var hourlyChimeCadence: ChimeCadence {
+        didSet { writer.save(hourlyChimeCadence.rawValue, "clockHourlyChimeCadence", structural: true) }
+    }
+    var hourlyChimeSound: ChimeSound {
+        didSet { writer.save(hourlyChimeSound.rawValue, "clockHourlyChimeSound", structural: false) }
+    }
+    var hourlyChimeVolume: Double {
+        didSet { writer.save(hourlyChimeVolume, "clockHourlyChimeVolume", structural: false) }
+    }
+    /// Active hours start & end in minutes since midnight (e.g. 9*60 = 09:00, 18*60 = 18:00).
+    var hourlyChimeStartMinute: Int {
+        didSet { writer.save(hourlyChimeStartMinute, "clockHourlyChimeStartMinute", structural: false) }
+    }
+    var hourlyChimeEndMinute: Int {
+        didSet { writer.save(hourlyChimeEndMinute, "clockHourlyChimeEndMinute", structural: false) }
     }
     var worldClocks: [WorldClock] {
         didSet {
             if let data = try? JSONEncoder().encode(worldClocks) { defaults.set(data, forKey: "worldClocks") }
+            let oldPinned = oldValue.filter(\.showInMenuBar).map { "\($0.menuBarTag)|\($0.timeZoneID)" }
+            let newPinned = worldClocks.filter(\.showInMenuBar).map { "\($0.menuBarTag)|\($0.timeZoneID)" }
+            if oldPinned != newPinned {
+                NotificationCenter.default.post(name: .vibeCheckSettingsChanged, object: nil)
+            }
         }
     }
     /// While the clock panel is open its seconds tick even if the menu bar shows minutes only.
@@ -103,19 +237,71 @@ final class ClockGroup {
         self.defaults = defaults
         writer = SettingsWriter(defaults: defaults)
         format = defaults.string(forKey: "clockFormat").flatMap(ClockFormat.init(rawValue:)) ?? .dayTime
+        customFormat = defaults.string(forKey: "clockCustomFormat") ?? "EEE d MMM HH:mm"
         showSeconds = defaults.bool(forKey: "clockShowSeconds")
+        showWeekNumberInMenuBar = defaults.bool(forKey: "clockShowWeekNumberInMenuBar")
+        showWeekNumbersInCalendar = defaults.bool(forKey: "clockShowWeekNumbersInCalendar")
+        calendarIconStyle = defaults.string(forKey: "clockCalendarIconStyle").flatMap(CalendarIconStyle.init(rawValue:)) ?? .day
+        let savedPanelH = defaults.double(forKey: "clockPanelHeight")
+        panelHeight = savedPanelH > 0 ? min(max(savedPanelH, 260), 1400) : 0
+        showCalendarEvents = defaults.bool(forKey: "clockShowCalendarEvents")
+        let savedDays = defaults.integer(forKey: "clockCalendarDaysAhead")
+        calendarDaysAhead = [1, 3, 7, 14].contains(savedDays) ? savedDays : 7
+        showAllDayEvents = defaults.object(forKey: "clockShowAllDayEvents") as? Bool ?? true
+        hidePastEventsToday = defaults.bool(forKey: "clockHidePastEventsToday")
+        showRemindersInAgenda = defaults.bool(forKey: "clockShowRemindersInAgenda")
+        hiddenCalendarIDs = Set(defaults.stringArray(forKey: "clockHiddenCalendarIDs") ?? [])
+        nextEventInMenuBar = defaults.bool(forKey: "clockNextEventInMenuBar")
+        nextEventShowTitle = defaults.object(forKey: "clockNextEventShowTitle") as? Bool ?? true
+        nextEventOnlyVideoCalls = defaults.bool(forKey: "clockNextEventOnlyVideoCalls")
+        nextEventShowDuringEntireEvent = defaults.object(forKey: "clockNextEventShowDuringEntireEvent") as? Bool ?? true
+        nextEventClickToJoin = defaults.bool(forKey: "clockNextEventClickToJoin")
+        nextEventShowJoinButton = defaults.object(forKey: "clockNextEventShowJoinButton") as? Bool ?? true
+        let savedMaxW = defaults.integer(forKey: "clockNextEventMaxWidth")
+        nextEventMaxWidth = [120, 160, 200].contains(savedMaxW) ? savedMaxW : 160
+        let savedLookahead = defaults.integer(forKey: "clockNextEventLookaheadHours")
+        nextEventLookaheadHours = [1, 2, 4, 8, 24].contains(savedLookahead) ? savedLookahead : 4
+        meetingAlertStyle = defaults.string(forKey: "clockMeetingAlertStyle").flatMap(MeetingAlertStyle.init(rawValue:)) ?? .off
+        let savedLead = defaults.object(forKey: "clockMeetingAlertLeadMinutes") as? Int
+        meetingAlertLeadMinutes = savedLead.flatMap { [0, 1, 2, 5].contains($0) ? $0 : nil } ?? 1
+        meetingAlertOnlyVideoCalls = defaults.object(forKey: "clockMeetingAlertOnlyVideoCalls") as? Bool ?? true
+        meetingAlertOnlyWithAlarm = defaults.bool(forKey: "clockMeetingAlertOnlyWithAlarm")
+        meetingAlertSuppressDuringCall = defaults.object(forKey: "clockMeetingAlertSuppressDuringCall") as? Bool ?? true
+        meetingAlertPlaySound = defaults.object(forKey: "clockMeetingAlertPlaySound") as? Bool ?? true
+        hourlyChimeEnabled = defaults.bool(forKey: "clockHourlyChimeEnabled")
+        hourlyChimeCadence = defaults.string(forKey: "clockHourlyChimeCadence").flatMap(ChimeCadence.init(rawValue:)) ?? .hourly
+        hourlyChimeSound = defaults.string(forKey: "clockHourlyChimeSound").flatMap(ChimeSound.init(rawValue:)) ?? .tink
+        let savedVol = defaults.object(forKey: "clockHourlyChimeVolume") as? Double
+        hourlyChimeVolume = savedVol.map { min(max($0, 0.1), 1.0) } ?? 0.5
+        hourlyChimeStartMinute = defaults.object(forKey: "clockHourlyChimeStartMinute") as? Int ?? 9 * 60
+        hourlyChimeEndMinute = defaults.object(forKey: "clockHourlyChimeEndMinute") as? Int ?? 18 * 60
         worldClocks = defaults.data(forKey: "worldClocks")
             .flatMap { try? JSONDecoder().decode([WorldClock].self, from: $0) } ?? WorldClock.defaults
     }
 
-    var formatStyle: ClockFormatStyle { ClockFormatStyle(format: format, seconds: showSeconds) }
+    var formatStyle: ClockFormatStyle {
+        ClockFormatStyle(format: format, seconds: showSeconds, customFormat: customFormat,
+                         showWeekNumber: showWeekNumberInMenuBar)
+    }
+
+    var menuBarWorldClocks: [WorldClock] {
+        Array(worldClocks.filter(\.showInMenuBar).prefix(3))
+    }
 
     /// Width that fits the clock's widest possible text in the current format, so it never jiggles.
     var textWidth: CGFloat {
         let widest = DateComponents(calendar: .current, year: 2026, month: 9, day: 30, hour: 22, minute: 58, second: 58).date ?? Date()
-        let text = format.formatter(seconds: showSeconds).string(from: widest)
+        let text = formatStyle.format(widest)
         let font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .medium)
         return ceil((text as NSString).size(withAttributes: [.font: font]).width) + 2
+    }
+
+    /// Fixed width for one pinned menu bar world clock badge (`NYC 22:58`).
+    func worldClockWidth(for clock: WorldClock) -> CGFloat {
+        let widest = DateComponents(calendar: .current, year: 2026, month: 9, day: 30, hour: 22, minute: 58).date ?? Date()
+        let sample = "\(clock.menuBarTag) \(clock.formattedTime(at: widest))"
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .medium)
+        return ceil((sample as NSString).size(withAttributes: [.font: font]).width) + 2
     }
 }
 

@@ -53,7 +53,7 @@ private struct PaletteActionsCard: View {
             }
         }
         .padding(4)
-        .frame(width: 270)
+        .frame(width: 260)
         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.windowBackground))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
         .shadow(color: .black.opacity(0.22), radius: 12, y: 6)

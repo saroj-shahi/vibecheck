@@ -10,7 +10,7 @@ Condensed from three reviews: the "menu bar Creative Director" brief (round one)
 mockup review (round two) and the Apple Design Award style
 teardown (round three). BRAND.md still decides voice, color and motion.
 
-**The idea.** A verdict first and a cockpit second, in a 390 pt sheet of glass. Everything folds behind three
+**The idea.** A verdict first and a cockpit second, in a 372 pt sheet of glass (312 pt for individual module popovers). Everything folds behind three
 doors: **tile → detail**, **cup → menu**, **⌘K → anything**. Before adding UI, ask whether it can be a palette
 command.
 
@@ -26,7 +26,7 @@ item count, hidden gestures, unverified accessibility, no distribution. Call gua
 - Haptics only fire with a finger on a Force Touch trackpad: use them for direct manipulation (dial
   detents, chart peaks), never for background events.
 
-**The deck shell, top to bottom** (390 pt wide since 2026-11-19, never wider)
+**The deck shell, top to bottom** (372 pt wide on home / ⌘K; 312 pt wide on module detail popovers)
 
 | Zone | Height | Rule |
 |---|---|---|
@@ -37,7 +37,7 @@ item count, hidden gestures, unverified accessibility, no distribution. Call gua
 | Footer | 30 pt | Settings (⌘,) · version · Quit; key hints and result count while the palette is open |
 | Detail view | up to the screen | Matched-geometry unfold; pinned header; lists cap at 8 rows + "+N more" |
 
-- Tiles: 3 columns, 8 pt gutters, (390 − 32 − 16) / 3 = **114 pt** so edges land on whole pixels, 90 pt tall.
+- Tiles: 3 columns, 8 pt gutters, (372 − 32 − 16) / 3 = **108 pt** so edges land on whole pixels, 90 pt tall.
   One hero number per tile, a chart (or detail) line and one note line that's always there so rows stay even;
   everything else lives one click deeper.
 - Settings stays a separate window; the deck never shows a configuration control except the quick controls.
@@ -91,6 +91,7 @@ Choices that shouldn't be undone without a good reason.
 | The deck window has no shadow on Liquid Glass (`hasShadow` only for the blur / opaque backgrounds) (2026-11-23, owner confirmed) | `NSGlassEffectView` draws its own edge and depth; the window shadow traced around it showed as a dark square-cornered outline |
 | Deck quick controls gain volume and built-in display brightness sliders, a Bluetooth toggle and a labelled Share Vibe Card button (owner, 2026-11-23); brightness came off "Not planned" | Owner asked for them in the deck. Brightness uses private DisplayServices via `dlsym` (built-in display only, hidden when missing); volume is CoreAudio with listeners, no polling |
 | To-do is a module backed by Apple Reminders (owner, 2026-11-23): a list picked in Settings, its own menu bar item and a deck panel; Reminders full access is asked only when the module is turned on or the panel opens, never at launch or from the label | Tasks sync to the owner's iPhone with no store of our own; the permission prompt only follows a choice the user just made |
+| Date & Time upgrade (owner approved 2026-11-26): opt-in EventKit calendar events, video call join (18+ services), standalone Next Event menu bar item with inline Join pill, fullscreen/banner meeting alerts, Time Travel slider, offline `CityIndex`, hourly chime, calendar icon styles, resizable height, popover opacity, and inline ⌘K `TimeCalculator` all live inside the existing Date & Time module (no 12th deck tile) | Keeps the 3-column deck grid and ⌘1–0 shortcuts intact; Calendar access (`NSCalendarsFullAccessUsageDescription`) is asked only when opted in, uses `.EKEventStoreChanged` with zero polling, opens Apple Calendar via `calshow://` (no Automation permission), and downgrades fullscreen alerts to banners while mirrored or already in a call |
 | Agent limit forecast uses the average pace since the window started, not a recent rate | `RateWindow` keeps no history; the average is honest and steady, and the panel says it's "at this pace" |
 | Energy leaderboard scans libproc (`proc_listallpids` + `proc_pid_rusage`) at most once a minute even with the deck closed, keeps today and yesterday only | A day's total needs continuous counting; one cheap scan a minute (no `ps`) is the floor, and two days is all the panel shows |
 | Deck tiles carry a second line (top split, GB, time left, tightest agent limit…) from readings the tick already has; tiles are 90 pt | Owner asked for more info per card; nothing new is sampled for it |
@@ -103,6 +104,7 @@ Choices that shouldn't be undone without a good reason.
 | The star / support prompt shows exactly once, 2 days after first launch, and is marked shown before it opens (owner, 2026-11-20) | Asking for support must never become a nag; existing installs count from the first launch of the version that added it |
 | Keep awake on state loops (steam shimmer) though motion otherwise never decorates (2026-11-19) | Owner found the old filled-cup state "not fun"; the loop only runs while the deck is open and stops with Reduce Motion |
 | Mouse, keyboard and clipboard back on the roadmap (2026-11-19, owner): clipboard history in ⌘K and pinned snippets (P1); find my cursor and keyboard cleaning mode (P2). History is off by default and never records concealed / transient items or anything copied during Secure Input | Owner asked for them. Kept to ⌘K commands and the fewest permissions, per the product rules; no input monitoring |
+| Main deck 372 pt (108 pt tiles, +20% over module popovers), module popover cards 312 pt, notifications popover 288 pt, ⌘↩ actions card 260 pt (owner, 2026-11-26) | Owner asked for compact module popover cards with a +20% wider main deck; both widths keep whole-pixel grid alignment |
 | Deck 390 pt (was 360), notifications popover 346 pt, ⌘↩ actions card 270 pt, alerts widened to 288 pt with an empty accessory view (2026-11-19) | Owner asked for wider pop-ups (~20% was too much; settled ~8% over the old sizes). 390 keeps tiles whole-pixel (114 pt) |
 | Share with colleagues through an un-notarized `--share` DMG signed with Apple Development, not a paid Developer ID | The owner wants to share, not sell; each person runs one `xattr -dr com.apple.quarantine` command (a colleague found Open Anyway didn't work on their Mac, 2026-11-19; Terminal did). Building from source would need Xcode and repo access and loses the widget (team-signed app group) |
 | Updates via the GitHub Releases API (`releases/latest`, tag `v<version>`), not Sparkle; the app shows the update command (`brew upgrade --cask saroj-shahi/tap/vibecheck` or the install line), it doesn't replace itself (2026-11-19: was "opens the DMG") | No framework to embed with SwiftPM, no EdDSA keys; enough for a small app. Revisit Sparkle if silent in-place updates are wanted |

@@ -53,6 +53,7 @@ private struct TodoListView: View {
     @Environment(AppSettings.self) private var settings
     private var store: RemindersStore { .shared }
     @State private var newTitle = ""
+    @State private var newDue: TodoQuickDue = .none
     @FocusState private var addFocused: Bool
     @State private var returnKey = TodoReturnKey()
     /// Row whose delete button was pressed once and now asks to confirm.
@@ -142,6 +143,27 @@ private struct TodoListView: View {
                 .textFieldStyle(.plain)
                 .focused($addFocused)
                 .onSubmit(submit)
+            Menu {
+                ForEach(TodoQuickDue.allCases) { option in
+                    Button {
+                        newDue = option
+                    } label: {
+                        if option == newDue { Label(option.title, systemImage: "checkmark") } else { Text(option.title) }
+                    }
+                }
+            } label: {
+                HStack(spacing: 3) {
+                    Image(systemName: "calendar").font(.system(size: 10.5))
+                    if newDue != .none {
+                        Text(newDue.shortTitle).font(.caption2.weight(.medium))
+                    }
+                }
+                .foregroundStyle(newDue == .none ? AnyShapeStyle(.tertiary) : AnyShapeStyle(Color.accentColor))
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("Set due date")
             if !newTitle.trimmingCharacters(in: .whitespaces).isEmpty {
                 Button(action: submit) { KeyCap(text: "↩") }
                     .buttonStyle(.plain)
@@ -158,8 +180,10 @@ private struct TodoListView: View {
     private func submit() {
         let title = newTitle
         guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let due = newDue.date(from: Date())
         newTitle = ""
-        store.add(title: title)
+        newDue = .none
+        store.add(title: title, due: due)
     }
 
     // MARK: Rows
@@ -297,5 +321,38 @@ final class TodoReturnKey {
     func remove() {
         if let monitor { NSEvent.removeMonitor(monitor) }
         monitor = nil
+    }
+}
+
+private enum TodoQuickDue: String, CaseIterable, Identifiable {
+    case none, today, tomorrow, nextWeek
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .none: String(localized: "No due date")
+        case .today: String(localized: "Today")
+        case .tomorrow: String(localized: "Tomorrow")
+        case .nextWeek: String(localized: "Next week")
+        }
+    }
+
+    var shortTitle: String {
+        switch self {
+        case .none: ""
+        case .today: String(localized: "Today")
+        case .tomorrow: String(localized: "Tmrw")
+        case .nextWeek: String(localized: "+7d")
+        }
+    }
+
+    func date(from now: Date, calendar: Calendar = .current) -> Date? {
+        let start = calendar.startOfDay(for: now)
+        switch self {
+        case .none: return nil
+        case .today: return start
+        case .tomorrow: return calendar.date(byAdding: .day, value: 1, to: start)
+        case .nextWeek: return calendar.date(byAdding: .day, value: 7, to: start)
+        }
     }
 }

@@ -19,5 +19,5 @@ What's planned for VibeCheck, highest priority first. **P1** soon · **P2** nice
   "Dynamic Island" bar, and API cost estimates.
 - Anything that needs input monitoring: a mouse jiggler, scroll direction per device, typing stats, key
   remapping.
-- Fan control, a disk cleaner, a calendar in the Clock panel, keep awake with the lid closed, a sandboxed
+- Fan control, a disk cleaner, keep awake with the lid closed, a sandboxed
   App Store edition, iCloud settings sync, and a dark mode toggle.

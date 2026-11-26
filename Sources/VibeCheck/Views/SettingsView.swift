@@ -81,7 +81,7 @@ enum SettingsSection: Hashable, Identifiable {
     /// Extra words the sidebar search matches, so "notch" finds Menu Bar and "caffeinate" finds Keep Awake.
     var keywords: String {
         switch self {
-        case .general: "update interval refresh launch login startup quick toggles mute trash bluetooth sleep advanced sampling"
+        case .general: "update interval refresh launch login startup quick toggles mute trash bluetooth sleep advanced sampling opacity glass transparency popover background"
         case .menuBar: "style combined separate items spacing ring notch colorful order reorder preview advanced graphs camera"
         case .keepAwake: "caffeinate sleep display focus timer schedule power downloads agents"
         case .clipboard: "paste copy history snippets pinned ignore password clear"
@@ -501,10 +501,20 @@ private struct GeneralSettings: View {
             Section {
                 Toggle("Show quick toggles in the deck", isOn: $showQuickToggles)
                 Toggle("Show the summary card in the deck", isOn: $showDeckSummary)
+                LabeledContent("Popover opacity") {
+                    HStack(spacing: 8) {
+                        Slider(value: $settings.deckOpacity, in: 0...1, step: 0.05)
+                            .frame(width: 150)
+                        Text("\(Int((settings.deckOpacity * 100).rounded()))%")
+                            .font(.body.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .frame(width: 38, alignment: .trailing)
+                    }
+                }
             } header: {
                 Text("Deck")
             } footer: {
-                Text("Quick toggles: mic mute, Bluetooth, Share Vibe Card, and volume and built-in display brightness sliders. The summary card shows uptime, the top app, today's energy leader and the agent limit closest to running out. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time.")
+                Text("Popover opacity blends a solid background over glass (0% is clear glass, 100% is solid). Quick toggles: mic mute, Bluetooth, Share Vibe Card, and volume and built-in display brightness sliders. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time.")
                     .settingsFooter()
             }
             ExplainSettingRow()
@@ -744,6 +754,7 @@ private struct ShortcutSettings: View {
             Section {
                 Toggle("\(settings.hotkeyModifier.symbols)V opens clipboard history", isOn: $settings.clipboardHotkey)
                 Toggle("\(settings.hotkeyModifier.symbols)F finds your cursor", isOn: $settings.findCursorHotkey)
+                Toggle("\(settings.hotkeyModifier.symbols)J joins the next video call", isOn: $settings.joinCallHotkey)
             }
             .disabled(!settings.hotkeysEnabled)
             Section {

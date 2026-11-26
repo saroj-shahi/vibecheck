@@ -33,6 +33,19 @@ enum DeckCommands {
         var list: [DeckCommand] = []
         let close = { model.requestClose?() }
 
+        // Inline date & time calculator ("3pm EST", "today + 45d", "days until Dec 31").
+        if let query = model.paletteQuery, let calc = TimeCalculator.evaluate(query) {
+            list.append(DeckCommand(id: "timecalc", title: calc.title, symbol: "calendar.badge.clock",
+                                    shortcut: String(localized: "Copy"),
+                                    keywords: query, settingsSection: .module(.clock)) {
+                let pb = NSPasteboard.general
+                pb.clearContents()
+                pb.setString(calc.copyValue, forType: .string)
+                model.closePalette()
+                model.showNotice(String(localized: "Copied: \(calc.copyValue)"))
+            })
+        }
+
         for module in model.modules {
             list.append(DeckCommand(id: "module.\(module.rawValue)", title: String(localized: "Open \(module.title)"), symbol: module.symbol,
                                     shortcut: module.shortcutKey.map { "⌘\($0)" }, keywords: "show view details",
@@ -41,6 +54,28 @@ enum DeckCommands {
                 model.go(.module(module))
             })
         }
+
+        // Calendar & Video Call quick actions
+        if settings.clock.showCalendarEvents, CalendarStore.shared.access == .granted {
+            let joinable = CalendarLogic.nextJoinableCall(in: CalendarStore.shared.events, now: Date(),
+                                                          hiddenCalendarIDs: settings.clock.hiddenCalendarIDs)
+            list.append(DeckCommand(id: "calendar.joinCall",
+                                    title: joinable.map { String(localized: "Join \($0.title)") } ?? String(localized: "Join video call"),
+                                    symbol: "video.fill",
+                                    keywords: "meeting call zoom meet teams webex facetime join video calendar",
+                                    settingsSection: .module(.clock)) {
+                close()
+                if CalendarStore.shared.joinNextVideoCall() == nil {
+                    model.showNotice(String(localized: "No video call starting soon."))
+                }
+            })
+        }
+        list.append(DeckCommand(id: "calendar.open", title: String(localized: "Open Calendar"), symbol: "calendar",
+                                keywords: "calendar schedule events date apple calendar",
+                                settingsSection: .module(.clock)) {
+            close()
+            CalendarDateHelper.openCalendarApp()
+        })
 
         // To-do on: opens its panel with the "Add task" field focused (the panel asks for Reminders access if needed).
         if model.modules.contains(.todo) {
@@ -236,8 +271,10 @@ enum DeckCommands {
             model.paletteConfirmID = command.id
         } else {
             model.paletteConfirmID = nil
-            // Process ids carry a pid, which gets reused, and clipboard rows come and go: don't rank them.
-            if !command.id.hasPrefix("process.") && !command.id.hasPrefix("clip.") { RecentCommands.record(command.id) }
+            // Process ids carry a pid, which gets reused, and clipboard/calculator rows come and go: don't rank them.
+            if !command.id.hasPrefix("process.") && !command.id.hasPrefix("clip.") && command.id != "timecalc" {
+                RecentCommands.record(command.id)
+            }
             command.run()
         }
     }
@@ -255,6 +292,7 @@ enum DeckCommands {
         }
         func rank(_ id: String) -> Int { recent.firstIndex(of: id) ?? Int.max }
         let scored: [(Int, Int, DeckCommand)] = commands.enumerated().compactMap { index, command in
+            if command.id == "timecalc" { return (1000, index, command) }
             let value = q.isEmpty ? Optional(0) : score(q, title: command.title, keywords: command.keywords)
             return value.map { ($0, index, command) }
         }

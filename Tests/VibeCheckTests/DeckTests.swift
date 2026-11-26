@@ -62,6 +62,12 @@ struct DeckTests {
         #expect(home > 150 && home < 400)
         #expect(cpu > home)
     }
+
+    @Test func mainDeckIsWiderThanModulePopovers() {
+        #expect(Deck.width(for: .home) == 372)
+        #expect(Deck.width(for: .module(.clock)) == 312)
+        #expect(Deck.width(for: .module(.clock), paletteOpen: true) == 372)
+    }
 }
 
 struct DeckPlacementTests {

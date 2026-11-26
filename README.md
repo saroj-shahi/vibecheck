@@ -152,7 +152,7 @@ The script downloads the latest `VibeCheck.zip` from GitHub Releases, verifies i
 
 ### The deck
 
-A 390 pt glass panel anchored cleanly under your menu bar that **never steals focus** from the app you're working in.
+A 372 pt glass cockpit (312 pt for individual module cards) anchored cleanly under your menu bar that **never steals focus** from the app you're working in.
 
 <table align="center">
   <tr>

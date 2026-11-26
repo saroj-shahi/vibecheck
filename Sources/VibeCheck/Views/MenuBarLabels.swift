@@ -63,7 +63,7 @@ struct MenuBarLabel: View {
             switch style {
             case .standard: graph().frame(width: module == .memory ? 7 : 23, height: Self.graphHeight)
             case .iconAndValue, .iconValueArrows: Image(systemName: module.symbol).font(iconFont)
-            case .valueOnly, .limits: EmptyView()
+            case .valueOnly, .limits, .calendarIcon, .calendarIconOnly: EmptyView()
             }
             value(text, width: width)
         }
@@ -302,15 +302,115 @@ struct MenuBarLabel: View {
     }
 
     private var clock: some View {
-        HStack(spacing: gap) {
+        let now = ClockTicker.shared.now
+        let pinned = settings.clock.menuBarWorldClocks
+        return HStack(spacing: gap) {
             if style == .iconAndValue {
                 Image(systemName: "clock").font(iconFont)
+            } else if style == .calendarIcon || style == .calendarIconOnly {
+                CalendarDayIcon(date: now, style: settings.clock.calendarIconStyle)
             }
-            Text(ClockTicker.shared.now, format: settings.clock.formatStyle)
-                .font(.system(size: 13, weight: .medium).monospacedDigit())
-                .lineLimit(1)
-                .frame(width: settings.clock.textWidth, alignment: .center)
+            if style != .calendarIconOnly {
+                Text(now, format: settings.clock.formatStyle)
+                    .font(.system(size: 13, weight: .medium).monospacedDigit())
+                    .lineLimit(1)
+                    .frame(width: settings.clock.textWidth, alignment: .center)
+            }
+            if !pinned.isEmpty {
+                ForEach(pinned) { world in
+                    Text("\(world.menuBarTag) \(world.formattedTime(at: now))")
+                        .font(.system(size: 11, weight: .medium).monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .frame(width: settings.clock.worldClockWidth(for: world), alignment: .center)
+                }
+            }
         }
+    }
+}
+
+/// Crisp monochrome mini calendar icon displaying date, weekday & date, week & date, or week number.
+struct CalendarDayIcon: View {
+    let date: Date
+    var style: CalendarIconStyle = .day
+
+    private var dayNumber: Int { Calendar.current.component(.day, from: date) }
+    private var weekNumber: Int { CalendarDateHelper.weekNumber(for: date) }
+    private var shortWeekday: String {
+        let df = DateFormatter()
+        df.locale = .current
+        df.dateFormat = "EEE"
+        return String(df.string(from: date).prefix(3)).uppercased()
+    }
+
+    private var iconWidth: CGFloat {
+        switch style {
+        case .day: 16
+        case .weekdayAndDay: 21
+        case .weekAndDay, .week: 23
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            switch style {
+            case .day:
+                Rectangle()
+                    .fill(.primary)
+                    .frame(height: 3.5)
+                Text("\(dayNumber)")
+                    .font(.system(size: 9, weight: .bold, design: .rounded).monospacedDigit())
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .weekdayAndDay:
+                ZStack {
+                    Rectangle().fill(.primary)
+                    Text(shortWeekday)
+                        .font(.system(size: 5.5, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.background)
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                }
+                .frame(height: 6.5)
+                Text("\(dayNumber)")
+                    .font(.system(size: 8.5, weight: .bold, design: .rounded).monospacedDigit())
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .weekAndDay:
+                ZStack {
+                    Rectangle().fill(.primary)
+                    Text("W\(weekNumber)")
+                        .font(.system(size: 5.5, weight: .heavy, design: .rounded).monospacedDigit())
+                        .foregroundStyle(.background)
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                }
+                .frame(height: 6.5)
+                Text("\(dayNumber)")
+                    .font(.system(size: 8.5, weight: .bold, design: .rounded).monospacedDigit())
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .week:
+                Rectangle()
+                    .fill(.primary)
+                    .frame(height: 3.5)
+                Text("W\(weekNumber)")
+                    .font(.system(size: 8, weight: .bold, design: .rounded).monospacedDigit())
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .frame(width: iconWidth, height: 16.5)
+        .clipShape(RoundedRectangle(cornerRadius: 3.5, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 3.5, style: .continuous)
+                .strokeBorder(.primary, lineWidth: 1.1)
+        )
+        .accessibilityHidden(true)
     }
 }
 

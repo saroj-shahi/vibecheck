@@ -18,7 +18,7 @@ extension Module {
         case .sensors: String(localized: "Temperatures and fan speeds from the Mac's own sensors.")
         case .battery: String(localized: "Charge, time left and health, plus Bluetooth accessories and USB devices.")
         case .agents: String(localized: "Tokens and plan limits for Claude Code, Codex, Copilot, OpenCode and Antigravity.")
-        case .clock: "A menu bar clock, with world clocks in the deck."
+        case .clock: String(localized: "Menu bar clock, calendar events, meeting join links, alerts and world clocks.")
         case .weather: String(localized: "Today's forecast for one city, from Open-Meteo.")
         case .todo: String(localized: "A simple to-do list, kept in Apple Reminders.")
         }
@@ -35,7 +35,7 @@ extension Module {
         case .sensors: "temperature heat fans celsius fahrenheit"
         case .battery: "charge power health cycles accessories bluetooth usb"
         case .agents: "ai claude codex copilot opencode antigravity agy tokens limits usage"
-        case .clock: "time world time zone seconds"
+        case .clock: "time world time zone seconds calendar events meeting zoom meet teams video call chime"
         case .weather: "forecast city temperature units"
         case .todo: "todo to-do tasks reminders checklist list"
         }
@@ -163,6 +163,13 @@ private struct ModuleOptionRows: View {
                 Text("°F").tag(TemperatureUnit.fahrenheit)
             }
             .pickerStyle(.segmented)
+        case .clock:
+            if settings.labelStyle(.clock) == .calendarIcon || settings.labelStyle(.clock) == .calendarIconOnly {
+                Picker("Calendar icon", selection: Binding(get: { settings.clock.calendarIconStyle },
+                                                           set: { settings.clock.calendarIconStyle = $0 })) {
+                    ForEach(CalendarIconStyle.allCases) { Text($0.title).tag($0) }
+                }
+            }
         default: EmptyView()
         }
     }
@@ -379,26 +386,66 @@ private struct ClockSections: View {
 
     var body: some View {
         @Bindable var settings = settings
-        Section("Format") {
+        Section {
             Picker("Format", selection: $settings.clock.format) {
                 ForEach(ClockFormat.allCases) { format in
-                    Text(format.formatter(seconds: settings.clock.showSeconds).string(from: Date())).tag(format)
+                    if format == .custom {
+                        Text(format.title).tag(format)
+                    } else {
+                        Text(format.formatter(seconds: settings.clock.showSeconds).string(from: Date())).tag(format)
+                    }
                 }
             }
-            Toggle("Show seconds", isOn: $settings.clock.showSeconds)
+            if settings.clock.format == .custom {
+                TextField("Custom pattern", text: $settings.clock.customFormat)
+                    .font(.body.monospaced())
+                LabeledContent("Result") {
+                    Text(settings.clock.formatStyle.format(Date()))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if settings.clock.format != .custom {
+                Toggle("Show seconds", isOn: $settings.clock.showSeconds)
+            }
+            Toggle("Show week number in menu bar", isOn: $settings.clock.showWeekNumberInMenuBar)
+            Toggle("Show week numbers in calendar", isOn: $settings.clock.showWeekNumbersInCalendar)
+            if settings.clock.panelHeight > 0 {
+                LabeledContent("Custom popover height") {
+                    HStack(spacing: 8) {
+                        Text("\(Int(settings.clock.panelHeight)) pt").foregroundStyle(.secondary).monospacedDigit()
+                        Button("Reset to Auto") { settings.clock.panelHeight = 0 }
+                            .controlSize(.small)
+                    }
+                }
+            }
+        } header: {
+            Text("Format & calendar")
+        } footer: {
+            if settings.clock.format == .custom {
+                Text("Uses Unicode date tokens: EEE (Thu), d (26), MMM (Nov), MM (11), yyyy (2026), HH:mm (24h), h:mm a (12h), ss (seconds).").settingsFooter()
+            }
         }
 
-        Section("World clocks") {
+        Section {
             if settings.clock.worldClocks.isEmpty {
                 Text("No world clocks yet.").foregroundStyle(.secondary)
             }
             ForEach($settings.clock.worldClocks) { $clock in
-                HStack {
-                    TextField("Name", text: $clock.name).labelsHidden().frame(maxWidth: 160)
-                    Text(clock.timeZoneID).font(.caption).foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    TextField("Name", text: $clock.name).labelsHidden().frame(maxWidth: 140)
+                    Text(clock.timeZoneID).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                     Spacer()
-                    Text(Date().formatted(Date.FormatStyle(date: .omitted, time: .shortened, timeZone: clock.timeZone)))
+                    Text(clock.formattedTime(at: Date()))
                         .monospacedDigit().foregroundStyle(.secondary)
+                    Button {
+                        clock.showInMenuBar.toggle()
+                    } label: {
+                        Image(systemName: clock.showInMenuBar ? "pin.fill" : "pin")
+                            .foregroundStyle(clock.showInMenuBar ? Color.accentColor : .secondary)
+                    }
+                    .buttonStyle(.borderless)
+                    .help(clock.showInMenuBar ? "Shown in menu bar — click to unpin" : "Pin to menu bar beside local time")
                     Button(role: .destructive) {
                         settings.clock.worldClocks.removeAll { $0.id == clock.id }
                     } label: { Image(systemName: "trash") }
@@ -406,29 +453,238 @@ private struct ClockSections: View {
                         .help("Remove \(clock.name)")
                 }
             }
-            TextField("Add a city or time zone", text: $search)
-            ForEach(matches, id: \.self) { identifier in
+            TextField("Search city, country or time zone (e.g. San Francisco, IST, Tokyo)", text: $search)
+            ForEach(matches) { entry in
                 HStack {
-                    Text(WorldClock.cityName(identifier))
-                    Text(identifier).font(.caption).foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(entry.name)
+                        Text(entry.displaySubtitle).font(.caption).foregroundStyle(.secondary)
+                    }
                     Spacer()
+                    let previewClock = WorldClock(name: entry.name, timeZoneID: entry.timeZoneID)
+                    Text(previewClock.formattedTime(at: Date()))
+                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                     Button("Add") {
-                        settings.clock.worldClocks.append(WorldClock(name: WorldClock.cityName(identifier), timeZoneID: identifier))
+                        settings.clock.worldClocks.append(WorldClock(name: entry.name, timeZoneID: entry.timeZoneID))
                         search = ""
                     }
-                    .disabled(settings.clock.worldClocks.contains { $0.timeZoneID == identifier })
+                    .disabled(settings.clock.worldClocks.contains { $0.name == entry.name && $0.timeZoneID == entry.timeZoneID })
                 }
             }
+        } header: {
+            Text("World clocks")
+        } footer: {
+            Text("Pin up to 3 world clocks to show compactly beside the local time in the menu bar. Search works completely offline.").settingsFooter()
         }
+
+        CalendarEventsSettingsSection()
+        NextEventSettingsSection()
+        MeetingAlertsSettingsSection()
+        HourlyChimeSettingsSection()
     }
 
-    private var matches: [String] {
-        let query = search.trimmingCharacters(in: .whitespaces)
-        guard !query.isEmpty else { return [] }
-        let normalized = query.replacingOccurrences(of: " ", with: "_")
-        return Array((TimeZone.knownTimeZoneIdentifiers + ["UTC"])
-            .filter { $0.localizedCaseInsensitiveContains(normalized) || $0.localizedCaseInsensitiveContains(query) }
-            .prefix(8))
+    private var matches: [CityEntry] {
+        CityIndex.search(search, limit: 8)
+    }
+}
+
+private struct CalendarEventsSettingsSection: View {
+    @Environment(AppSettings.self) private var settings
+    private var store: CalendarStore { .shared }
+
+    var body: some View {
+        @Bindable var settings = settings
+        Section {
+            Toggle("Show calendar events in Date & Time", isOn: $settings.clock.showCalendarEvents)
+            if settings.clock.showCalendarEvents {
+                switch store.access {
+                case .granted:
+                    Picker("Show upcoming", selection: $settings.clock.calendarDaysAhead) {
+                        Text("Today only").tag(1)
+                        Text("Next 3 days").tag(3)
+                        Text("Next 7 days").tag(7)
+                        Text("Next 14 days").tag(14)
+                    }
+                    Toggle("Show all-day events", isOn: $settings.clock.showAllDayEvents)
+                    Toggle("Hide today's past events", isOn: $settings.clock.hidePastEventsToday)
+                    Toggle("Include dated Apple Reminders", isOn: $settings.clock.showRemindersInAgenda)
+                    if !store.calendars.isEmpty {
+                        let allIDs = Set(store.calendars.map(\.id))
+                        let selectedCount = store.calendars.count - settings.clock.hiddenCalendarIDs.intersection(allIDs).count
+                        DisclosureGroup("Calendars (\(selectedCount) of \(store.calendars.count))") {
+                            HStack(spacing: 10) {
+                                Button("Select All") {
+                                    settings.clock.hiddenCalendarIDs.removeAll()
+                                }
+                                .disabled(selectedCount == store.calendars.count)
+                                Button("Deselect All") {
+                                    settings.clock.hiddenCalendarIDs = allIDs
+                                }
+                                .disabled(selectedCount == 0)
+                                Spacer()
+                            }
+                            .controlSize(.small)
+                            .padding(.vertical, 2)
+
+                            ForEach(store.calendars) { cal in
+                                let enabled = !settings.clock.hiddenCalendarIDs.contains(cal.id)
+                                Toggle(isOn: Binding(
+                                    get: { enabled },
+                                    set: { on in
+                                        if on { settings.clock.hiddenCalendarIDs.remove(cal.id) }
+                                        else { settings.clock.hiddenCalendarIDs.insert(cal.id) }
+                                    }
+                                )) {
+                                    HStack(spacing: 6) {
+                                        Circle().fill(Color(red: cal.red, green: cal.green, blue: cal.blue)).frame(width: 8, height: 8)
+                                        Text(cal.title)
+                                        if !cal.source.isEmpty {
+                                            Text(cal.source).font(.caption).foregroundStyle(.secondary)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                case .notAsked:
+                    LabeledContent("Calendar access") {
+                        Button("Allow Access…") { store.activate(requestAccess: true) }
+                    }
+                case .restricted:
+                    LabeledContent("Calendar access") {
+                        Text("Restricted on this Mac").foregroundStyle(.secondary)
+                    }
+                case .denied, .writeOnly:
+                    LabeledContent("Calendar access") {
+                        Button("Open Privacy Settings…") { CalendarStore.openPrivacySettings() }
+                    }
+                }
+            }
+        } header: {
+            Text("Calendar & meetings")
+        } footer: {
+            Text("Reads Apple Calendar locally via EventKit (iCloud, Google, Exchange and Outlook accounts configured in macOS). Nothing is uploaded.").settingsFooter()
+        }
+        .onAppear {
+            if settings.clock.showCalendarEvents { store.activate(requestAccess: false) }
+        }
+    }
+}
+
+private struct NextEventSettingsSection: View {
+    @Environment(AppSettings.self) private var settings
+
+    var body: some View {
+        @Bindable var settings = settings
+        Section {
+            Toggle("Show next event in the menu bar", isOn: $settings.clock.nextEventInMenuBar)
+            if settings.clock.nextEventInMenuBar {
+                Toggle("Show event title", isOn: $settings.clock.nextEventShowTitle)
+                Toggle("Show Join button for upcoming video calls", isOn: $settings.clock.nextEventShowJoinButton)
+                Toggle("Only show video call events", isOn: $settings.clock.nextEventOnlyVideoCalls)
+                Toggle("Keep showing while event is in progress", isOn: $settings.clock.nextEventShowDuringEntireEvent)
+                Toggle("Click to join video call when starting soon", isOn: $settings.clock.nextEventClickToJoin)
+                Picker("Look ahead", selection: $settings.clock.nextEventLookaheadHours) {
+                    Text("1 hour").tag(1)
+                    Text("2 hours").tag(2)
+                    Text("4 hours").tag(4)
+                    Text("8 hours").tag(8)
+                    Text("24 hours").tag(24)
+                }
+                Picker("Maximum width", selection: $settings.clock.nextEventMaxWidth) {
+                    Text("Compact (120 pt)").tag(120)
+                    Text("Standard (160 pt)").tag(160)
+                    Text("Wide (200 pt)").tag(200)
+                }
+            }
+        } header: {
+            Text("Upcoming event in menu bar")
+        } footer: {
+            Text("Shows a compact standalone item when a meeting is coming up, and hides automatically when your schedule is clear. Right-click it for Join and Hide actions.").settingsFooter()
+        }
+    }
+}
+
+private struct MeetingAlertsSettingsSection: View {
+    @Environment(AppSettings.self) private var settings
+
+    var body: some View {
+        @Bindable var settings = settings
+        Section {
+            Picker("Alert style", selection: $settings.clock.meetingAlertStyle) {
+                ForEach(MeetingAlertStyle.allCases) { Text($0.title).tag($0) }
+            }
+            if settings.clock.meetingAlertStyle != .off {
+                Picker("Notify before start", selection: $settings.clock.meetingAlertLeadMinutes) {
+                    Text("At start time").tag(0)
+                    Text("1 minute before").tag(1)
+                    Text("2 minutes before").tag(2)
+                    Text("5 minutes before").tag(5)
+                }
+                Toggle("Only for video call events", isOn: $settings.clock.meetingAlertOnlyVideoCalls)
+                Toggle("Only for events with a calendar alert", isOn: $settings.clock.meetingAlertOnlyWithAlarm)
+                if settings.clock.meetingAlertStyle == .fullscreen {
+                    Toggle("Downgrade to banner while already on a call", isOn: $settings.clock.meetingAlertSuppressDuringCall)
+                    Toggle("Play alert sound", isOn: $settings.clock.meetingAlertPlaySound)
+                }
+                LabeledContent("Try it out") {
+                    Button("Preview Fullscreen Alert") { MeetingAlertManager.shared.showPreview() }
+                }
+            }
+        } header: {
+            Text("Meeting notifications")
+        } footer: {
+            Text("Fullscreen alerts span your connected displays with one-click Join and Snooze, and automatically downgrade to a quiet banner if your display is mirrored (AirPlay/projector) or pause during a Focus filter.").settingsFooter()
+        }
+    }
+}
+
+private struct HourlyChimeSettingsSection: View {
+    @Environment(AppSettings.self) private var settings
+
+    private static func hourLabel(_ minutes: Int) -> String {
+        let comps = DateComponents(calendar: .current, hour: minutes / 60, minute: minutes % 60)
+        return comps.date?.formatted(date: .omitted, time: .shortened) ?? "\(minutes / 60):00"
+    }
+
+    var body: some View {
+        @Bindable var settings = settings
+        Section {
+            Toggle("Play an hourly chime", isOn: $settings.clock.hourlyChimeEnabled)
+            if settings.clock.hourlyChimeEnabled {
+                Picker("Frequency", selection: $settings.clock.hourlyChimeCadence) {
+                    ForEach(ChimeCadence.allCases) { Text($0.title).tag($0) }
+                }
+                HStack {
+                    Picker("Sound", selection: $settings.clock.hourlyChimeSound) {
+                        ForEach(ChimeSound.allCases) { Text($0.title).tag($0) }
+                    }
+                    Button("Play") {
+                        HourlyChimeManager.shared.preview(sound: settings.clock.hourlyChimeSound,
+                                                          volume: settings.clock.hourlyChimeVolume)
+                    }
+                    .controlSize(.small)
+                }
+                LabeledContent("Volume") {
+                    Slider(value: $settings.clock.hourlyChimeVolume, in: 0.1...1.0)
+                        .frame(width: 150)
+                }
+                Picker("Active from", selection: $settings.clock.hourlyChimeStartMinute) {
+                    ForEach(0..<24, id: \.self) { hour in
+                        Text(Self.hourLabel(hour * 60)).tag(hour * 60)
+                    }
+                }
+                Picker("Until", selection: $settings.clock.hourlyChimeEndMinute) {
+                    ForEach(0..<24, id: \.self) { hour in
+                        Text(Self.hourLabel(hour * 60)).tag(hour * 60)
+                    }
+                }
+            }
+        } header: {
+            Text("Hourly chime")
+        } footer: {
+            Text("Plays a subtle macOS system sound on the hour during your active hours. Automatically muted during calls, screen lock, or a Focus filter.").settingsFooter()
+        }
     }
 }
 

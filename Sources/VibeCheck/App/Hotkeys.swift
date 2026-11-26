@@ -7,11 +7,11 @@ import Foundation
 final class HotkeyManager {
     static let shared = HotkeyManager()
 
-    /// Shortcuts beside the module ones: modifier + A / V / F.
+    /// Shortcuts beside the module ones: modifier + A / V / F / J.
     enum Extra: UInt32, CaseIterable {
-        case keepAwake = 100, clipboard, findCursor
-        var keyCode: Int { [.keepAwake: kVK_ANSI_A, .clipboard: kVK_ANSI_V, .findCursor: kVK_ANSI_F][self]! }
-        var key: String { [.keepAwake: "A", .clipboard: "V", .findCursor: "F"][self]! }
+        case keepAwake = 100, clipboard, findCursor, joinVideoCall
+        var keyCode: Int { [.keepAwake: kVK_ANSI_A, .clipboard: kVK_ANSI_V, .findCursor: kVK_ANSI_F, .joinVideoCall: kVK_ANSI_J][self]! }
+        var key: String { [.keepAwake: "A", .clipboard: "V", .findCursor: "F", .joinVideoCall: "J"][self]! }
     }
 
     var onTrigger: ((Module) -> Void)?

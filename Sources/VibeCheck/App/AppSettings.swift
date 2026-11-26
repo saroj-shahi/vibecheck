@@ -17,7 +17,7 @@ enum Module: String, CaseIterable, Identifiable {
         case .disk: String(localized: "Disk")
         case .sensors: String(localized: "Sensors")
         case .battery: String(localized: "Battery")
-        case .clock: String(localized: "Clock")
+        case .clock: String(localized: "Date & Time")
         case .weather: String(localized: "Weather")
         case .agents: String(localized: "Agents")
         case .todo: String(localized: "To-do")
@@ -60,7 +60,7 @@ enum Module: String, CaseIterable, Identifiable {
         switch self {
         case .sensors, .battery, .weather, .todo: [.standard, .valueOnly]
         case .agents: [.standard, .valueOnly]
-        case .clock: [.standard, .iconAndValue]
+        case .clock: [.standard, .iconAndValue, .calendarIcon, .calendarIconOnly]
         case .network: [.standard, .iconAndValue, .iconValueArrows, .valueOnly]
         default: [.standard, .iconAndValue, .valueOnly]
         }
@@ -123,6 +123,10 @@ enum LabelStyle: String, CaseIterable, Identifiable {
     case iconValueArrows
     /// Agents only: two stacked rows, "% left" and time to reset for the 5-hour and weekly limits.
     case limits
+    /// Date & Time only: dynamic mini calendar badge showing date/weekday/week beside the time.
+    case calendarIcon
+    /// Date & Time only: dynamic mini calendar badge without the time text.
+    case calendarIconOnly
     var id: String { rawValue }
 
     func title(for module: Module) -> String {
@@ -140,6 +144,8 @@ enum LabelStyle: String, CaseIterable, Identifiable {
         case .valueOnly: String(localized: "Value only")
         case .iconValueArrows: String(localized: "Icon + rates + arrows")
         case .limits: String(localized: "Limits left")
+        case .calendarIcon: String(localized: "Calendar icon + time")
+        case .calendarIconOnly: String(localized: "Calendar icon only")
         }
     }
 }
@@ -227,6 +233,18 @@ final class AppSettings {
     var findCursorHotkey: Bool {
         didSet { save(findCursorHotkey, "findCursorHotkey", structural: true) }
     }
+    /// Modifier + J joins the active or next upcoming video call. Off by default.
+    var joinCallHotkey: Bool {
+        didSet { save(joinCallHotkey, "joinCallHotkey", structural: true) }
+    }
+    /// Popover background opacity over glass: 0 = clear Liquid Glass / blur, 1 = fully opaque background.
+    var deckOpacity: Double {
+        didSet {
+            let clamped = min(max(deckOpacity, 0), 1)
+            if clamped != deckOpacity { deckOpacity = clamped; return }
+            save(deckOpacity, "deckOpacity", structural: false)
+        }
+    }
     /// Opt-in: "Explain my Mac" in ⌘K, using Apple's on-device model (see `OnDeviceExplainer`).
     var onDeviceExplanations: Bool {
         didSet { save(onDeviceExplanations, "onDeviceExplanations", structural: false) }
@@ -293,6 +311,8 @@ final class AppSettings {
         todo = TodoGroup(defaults: defaults)
         keepAwake = KeepAwakeGroup(defaults: defaults)
         onDeviceExplanations = defaults.bool(forKey: "onDeviceExplanations")
+        let savedOpacity = defaults.object(forKey: "deckOpacity") as? Double ?? 0
+        deckOpacity = min(max(savedOpacity, 0), 1)
         smartAlertMemoryLeak = defaults.bool(forKey: "smartAlertMemoryLeak")
         smartAlertThrottling = defaults.bool(forKey: "smartAlertThrottling")
         smartAlertSlowCharger = defaults.bool(forKey: "smartAlertSlowCharger")
@@ -302,6 +322,7 @@ final class AppSettings {
         showPublicIP = defaults.object(forKey: "showPublicIP") as? Bool ?? false
         clipboardHotkey = defaults.bool(forKey: "clipboardHotkey")
         findCursorHotkey = defaults.bool(forKey: "findCursorHotkey")
+        joinCallHotkey = defaults.bool(forKey: "joinCallHotkey")
         hotkeyModifier = defaults.string(forKey: "hotkeyModifier").flatMap(HotkeyModifier.init(rawValue:))
             ?? .controlOptionCommand
         let storedOrder = (defaults.array(forKey: "moduleOrder") as? [String] ?? []).compactMap(Module.init(rawValue:))

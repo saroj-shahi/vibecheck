@@ -4,7 +4,7 @@ import SwiftUI
 
 struct Panel<Content: View>: View {
     let module: Module
-    let headline: String
+    var headline: String? = nil
     var subtitle: String? = nil
     @ViewBuilder var content: Content
     @Environment(SystemStats.self) private var stats
@@ -16,23 +16,25 @@ struct Panel<Content: View>: View {
             // In the deck the header row is pinned above the scroll view (DeckRoot draws it).
             if !showsBack { PanelHeader(module: module) }
             // Hero: the one number that answers "how is it doing?", with a short summary beside it.
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(headline)
-                    .font(.system(size: 34, weight: .semibold, design: .rounded).monospacedDigit())
-                    .tracking(-0.6)
-                    .contentTransition(.numericText())
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                    .deckMatched("value.\(module.rawValue)", namespace)
-                Spacer(minLength: 4)
-                if let subtitle {
-                    Text(subtitle)
-                        .font(.callout).foregroundStyle(.secondary)
-                        .multilineTextAlignment(.trailing)
-                        .lineLimit(2)
+            if let headline {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(headline)
+                        .font(.system(size: 34, weight: .semibold, design: .rounded).monospacedDigit())
+                        .tracking(-0.6)
+                        .contentTransition(.numericText())
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .deckMatched("value.\(module.rawValue)", namespace)
+                    Spacer(minLength: 4)
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(.callout).foregroundStyle(.secondary)
+                            .multilineTextAlignment(.trailing)
+                            .lineLimit(2)
+                    }
                 }
+                .padding(.top, -6)
             }
-            .padding(.top, -6)
             content
             Divider()
             HStack {

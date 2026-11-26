@@ -59,7 +59,8 @@ are added or split. Plans are in [ROADMAP.md](ROADMAP.md); design rules and deci
 | `UpdateChecker.swift` | `UpdateChecker`: GitHub Releases check (`VCUpdateRepository` in Info.plist), version compare, 24 h throttle, one notification per version; injectable `fetch` |
 | `StarPrompt.swift` | `StarPrompt`: one-time modal 2 days after first launch (keys `starPromptFirstSeen`, `starPromptShown`) asking for a GitHub star or a coffee |
 | `Weather.swift` | Open-Meteo forecast + city search, `TemperatureUnit` |
-| `Clock.swift`, `NotchFit.swift` (+ `NotchHideWatch`, notch auto-collapse), `Hotkeys.swift`, `HistoryStore.swift`, `NotificationLog.swift`, `SettingsBackup.swift`, `Intents.swift`, `Format.swift` | Clock formats/world clocks, notch fitting maths, global shortcuts, 1H/24H history file, notification history, settings export/import (key list!), Shortcuts actions, formatters (`Fmt`) |
+| `Clock.swift`, `CityIndex.swift`, `CalendarStore.swift`, `VideoCallDetector.swift`, `MeetingAlerts.swift`, `HourlyChime.swift`, `TimeCalculator.swift` | Clock formats (incl. custom & week numbers), Time Travel math, offline city/timezone index, opt-in EventKit calendar store & deduplication, 20+ service video call URL detector, fullscreen/banner meeting alert scheduler & smart suppression, hourly chime, and inline ⌘K date/time calculator |
+| `NotchFit.swift` (+ `NotchHideWatch`, notch auto-collapse), `Hotkeys.swift`, `HistoryStore.swift`, `NotificationLog.swift`, `SettingsBackup.swift`, `Intents.swift`, `Format.swift` | Notch fitting maths, global shortcuts, 1H/24H history file, notification history, settings export/import (key list!), Shortcuts actions, formatters (`Fmt`) |
 
 ## Monitors/ (one sampler each; no UI)
 
@@ -100,7 +101,7 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `EnergySampler` (pe
 | `SettingsAlerts.swift` | Alerts page, `AlertRuleRow` (sentence alerts), token menus, `NumberToken`, `FlowLayout` |
 | `ClipboardSettings.swift` | Settings → Clipboard: history on/off, length, keep across restarts, ignored apps, snippets, the "Paste from Other Apps" warning |
 | `KeepAwakeViews.swift` | Deck cup (click → `KeepAwakeMenu`, hold → `AwakeDial`), Keep Awake settings pane |
-| `QuickTogglesView.swift`, `NotificationHistoryView.swift`, `VibeRing.swift`, `ClockPanel.swift`, `WeatherPanel.swift`, `Charts.swift` | as named |
+| `QuickTogglesView.swift`, `NotificationHistoryView.swift`, `VibeRing.swift`, `ClockPanel.swift`, `NextEventMenuBarLabel.swift`, `MeetingAlertView.swift`, `WeatherPanel.swift`, `Charts.swift` | as named |
 
 ## Widgets (separate targets)
 

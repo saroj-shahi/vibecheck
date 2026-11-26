@@ -17,6 +17,8 @@ final class StatusItemController: NSObject {
         case vibe
         /// Standalone keep-awake cup: click toggles with the default length, right-click shows a menu.
         case keepAwake
+        /// Standalone next calendar event item: shows upcoming event + countdown, click opens Clock or joins call.
+        case nextEvent
     }
 
     let kind: Kind
@@ -37,9 +39,15 @@ final class StatusItemController: NSObject {
 
     /// Where this item's deck opens.
     var route: DeckRoute {
-        if case .single(let module) = kind { return .module(module) }
-        return .home
+        switch kind {
+        case .single(let module): return .module(module)
+        case .nextEvent: return .module(.clock)
+        default: return .home
+        }
     }
+
+    /// Next event item only: event IDs temporarily hidden from the menu bar by the user.
+    var dismissedNextEventIDs: Set<String> = []
 
     init(kind: Kind, stats: SystemStats, settings: AppSettings, onClick: @escaping (StatusItemController) -> Void) {
         self.kind = kind
@@ -63,6 +71,9 @@ final class StatusItemController: NSObject {
         case .keepAwake:
             item.autosaveName = AppSettings.autosaveName("keepawake", generation: settings.statusItemGeneration)
             label = AnyView(KeepAwakeItemLabel())
+        case .nextEvent:
+            item.autosaveName = AppSettings.autosaveName("nextevent", generation: settings.statusItemGeneration)
+            label = AnyView(NextEventMenuBarLabel(dismissedEventIDs: []))
         }
         // macOS restores a hidden item's visibility by autosave name; every item we create is meant to show.
         item.isVisible = true
@@ -93,7 +104,7 @@ final class StatusItemController: NSObject {
             }
             button.target = self
             button.action = #selector(buttonClicked(_:))
-            if kind == .keepAwake { button.sendAction(on: [.leftMouseUp, .rightMouseUp]) }
+            if kind == .keepAwake || kind == .nextEvent { button.sendAction(on: [.leftMouseUp, .rightMouseUp]) }
             button.setAccessibilityLabel(kind == .combined ? String(localized: "VibeCheck") : String(localized: "VibeCheck \(title)"))
         }
         if kind == .combined { observePlacement() }
@@ -113,7 +124,7 @@ final class StatusItemController: NSObject {
         switch kind {
         case .combined: return ("\(verdict)\(suffix)", String(localized: "VibeCheck. \(verdict)\(suffix)"))
         case .vibe: return ("\(verdict)\(suffix)", String(localized: "VibeCheck vibe. \(verdict)\(suffix)"))
-        case .single, .keepAwake: return nil
+        case .single, .keepAwake, .nextEvent: return nil
         }
     }
 
@@ -222,7 +233,20 @@ final class StatusItemController: NSObject {
         case .vibe: String(localized: "Vibe")
         case .combined: String(localized: "VibeCheck")
         case .keepAwake: String(localized: "Keep Awake")
+        case .nextEvent: String(localized: "Next Event")
         }
+    }
+
+    /// Rebinds the Next Event label after dismissed events change and re-measures its width.
+    func updateNextEventLabel(dismissed: Set<String>) {
+        guard kind == .nextEvent, let button = item.button else { return }
+        dismissedNextEventIDs = dismissed
+        let updated = AnyView(NextEventMenuBarLabel(dismissedEventIDs: dismissed).environment(stats).environment(settings))
+        labelView = updated
+        if let host = button.subviews.first(where: { $0 is PassthroughHostingView<AnyView> }) as? PassthroughHostingView<AnyView> {
+            host.rootView = updated
+        }
+        refreshLength()
     }
 
     /// Sizes the item to its label's natural width. Values use fixed-width slots, so this stays stable.
@@ -267,10 +291,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: NSWindow?
     /// The standalone Keep Awake item, when it's switched on in Settings.
     private var keepAwakeItem: StatusItemController?
+    /// The standalone Next Event item, when enabled and an upcoming event is within lookahead.
+    private var nextEventItem: StatusItemController?
     /// Items turned off in Settings, hidden rather than removed so they come back in the same spot.
     private var parkedItems: [Module: StatusItemController] = [:]
     private var parkedVibeItem: StatusItemController?
     private var parkedKeepAwakeItem: StatusItemController?
+    private var parkedNextEventItem: StatusItemController?
+    private var dismissedNextEventIDs: Set<String> = []
+    private var nextEventTimer: Timer?
     private let keepAwakeMenu = KeepAwakeMenu()
     /// Generation the separate items were created with; a reorder in Settings bumps it.
     private var itemGeneration = 0
@@ -322,6 +351,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             case .keepAwake: KeepAwake.shared.toggle()
             case .clipboard: self?.openClipboard()
             case .findCursor: CursorFinder.flash()
+            case .joinVideoCall:
+                if CalendarStore.shared.joinNextVideoCall() == nil { NSSound.beep() }
             }
         }
         ClipboardHistory.shared.start()
@@ -333,6 +364,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         HotkeyManager.shared.onTrigger = { [weak self] module in self?.openFromShortcut(module) }
         configureHotkeys()
         WeatherStore.shared.refresh()
+        if settings.clock.showCalendarEvents || settings.clock.nextEventInMenuBar || settings.clock.meetingAlertStyle != .off {
+            CalendarStore.shared.ensureStarted()
+        }
+        MeetingAlertManager.shared.start(alerts: alerts)
+        HourlyChimeManager.shared.start()
+        NotificationCenter.default.addObserver(forName: .vibeCheckCalendarChanged, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.syncNextEventItem() }
+        }
         AgentUsageStore.shared.start()
         BluetoothSnooze.shared.isEnabled = { [unowned settings] in settings.keepAwake.bluetoothOffWhileAsleep }
         BluetoothSnooze.shared.start()
@@ -363,6 +402,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        MeetingAlertManager.shared.stop()
+        HourlyChimeManager.shared.stop()
         KeyboardCleaner.shared.stop()
         KeepAwake.shared.stop()
         stats.history.save()
@@ -471,7 +512,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func syncItems() {
         deck.close()
-        defer { syncKeepAwakeItem() }
+        defer {
+            syncKeepAwakeItem()
+            syncNextEventItem()
+        }
         if settings.menuBar.style == .ring {
             items.values.forEach { $0.remove() }
             items.removeAll()
@@ -564,6 +608,149 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     private var keepAwakeItemGeneration = -1
+    private var nextEventItemGeneration = -1
+
+    /// Optional standalone Next Event item in the menu bar. Hides cleanly when no event is within lookahead.
+    private func syncNextEventItem() {
+        let clock = settings.clock
+        let display = clock.nextEventInMenuBar && CalendarStore.shared.access == .granted
+            ? NextEventLogic.display(events: CalendarStore.shared.events,
+                                     now: Date(),
+                                     hiddenCalendarIDs: clock.hiddenCalendarIDs,
+                                     dismissedEventIDs: dismissedNextEventIDs,
+                                     onlyVideoCalls: clock.nextEventOnlyVideoCalls,
+                                     showDuringEntireEvent: clock.nextEventShowDuringEntireEvent,
+                                     lookaheadMinutes: clock.nextEventLookaheadHours * 60)
+            : nil
+
+        scheduleNextEventTimer(enabled: clock.nextEventInMenuBar && CalendarStore.shared.access == .granted)
+
+        if let display {
+            if nextEventItemGeneration != settings.statusItemGeneration {
+                nextEventItem?.remove()
+                nextEventItem = nil
+                parkedNextEventItem?.remove()
+                parkedNextEventItem = nil
+                nextEventItemGeneration = settings.statusItemGeneration
+            }
+            if nextEventItem == nil, let parked = parkedNextEventItem {
+                parked.isShown = true
+                nextEventItem = parked
+                parkedNextEventItem = nil
+            }
+            if nextEventItem == nil {
+                nextEventItem = StatusItemController(kind: .nextEvent, stats: stats, settings: settings) { [weak self] item in
+                    self?.nextEventClicked(item)
+                }
+            }
+            nextEventItem?.updateNextEventLabel(dismissed: dismissedNextEventIDs)
+            nextEventItem?.button?.toolTip = "\(display.event.title) (\(display.countdown))"
+        } else if let item = nextEventItem {
+            item.isShown = false
+            parkedNextEventItem = item
+            nextEventItem = nil
+        }
+    }
+
+    private func scheduleNextEventTimer(enabled: Bool) {
+        nextEventTimer?.invalidate()
+        nextEventTimer = nil
+        guard enabled else { return }
+        // Fire cleanly right after the next minute boundary so countdowns and item appearance stay in sync.
+        let now = Date()
+        let secondsIntoMinute = now.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 60)
+        let delay = max(1, 60.5 - secondsIntoMinute)
+        let timer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated { self?.syncNextEventItem() }
+        }
+        timer.tolerance = 0.5
+        RunLoop.main.add(timer, forMode: .common)
+        nextEventTimer = timer
+    }
+
+    private func nextEventClicked(_ item: StatusItemController) {
+        let clock = settings.clock
+        let now = Date()
+        let display = NextEventLogic.display(events: CalendarStore.shared.events,
+                                             now: now,
+                                             hiddenCalendarIDs: clock.hiddenCalendarIDs,
+                                             dismissedEventIDs: dismissedNextEventIDs,
+                                             onlyVideoCalls: clock.nextEventOnlyVideoCalls,
+                                             showDuringEntireEvent: clock.nextEventShowDuringEntireEvent,
+                                             lookaheadMinutes: clock.nextEventLookaheadHours * 60)
+        let event = NSApp.currentEvent
+        let wantsMenu = event?.type == .rightMouseUp
+            || event?.modifierFlags.contains(.control) == true
+        if wantsMenu, let display {
+            deck.close()
+            item.show(buildNextEventMenu(for: display.event))
+            return
+        }
+        // Clicking the inline trailing "Join" pill joins the video call directly.
+        if let display,
+           display.showsJoinPill(at: now, enabled: clock.nextEventShowJoinButton),
+           let link = display.event.videoCall,
+           let button = item.button,
+           let event {
+            let local = button.convert(event.locationInWindow, from: nil)
+            if local.x >= button.bounds.width - (NextEventMenuBarLabel.joinPillWidth + 8) {
+                deck.close()
+                NSWorkspace.shared.open(link.url)
+                return
+            }
+        }
+        if clock.nextEventClickToJoin, let display, display.canQuickJoin(at: now), let link = display.event.videoCall {
+            deck.close()
+            NSWorkspace.shared.open(link.url)
+            return
+        }
+        guard let button = item.button else { return }
+        deck.toggle(from: button, route: .module(.clock))
+    }
+
+    private func buildNextEventMenu(for event: CalendarEvent) -> NSMenu {
+        let menu = NSMenu()
+        if let link = event.videoCall {
+            let join = NSMenuItem(title: String(localized: "Join \(link.service.title)"), action: #selector(menuJoinCall(_:)), keyEquivalent: "")
+            join.target = self
+            join.representedObject = link.url
+            menu.addItem(join)
+            menu.addItem(.separator())
+        }
+        let openCal = NSMenuItem(title: String(localized: "Open in Calendar"), action: #selector(menuOpenCalendarDate(_:)), keyEquivalent: "")
+        openCal.target = self
+        openCal.representedObject = event.startDate
+        menu.addItem(openCal)
+
+        let openPanel = NSMenuItem(title: String(localized: "Open Date & Time"), action: #selector(menuOpenClockPanel), keyEquivalent: "")
+        openPanel.target = self
+        menu.addItem(openPanel)
+
+        menu.addItem(.separator())
+        let hide = NSMenuItem(title: String(localized: "Hide This Event from Menu Bar"), action: #selector(menuHideNextEvent(_:)), keyEquivalent: "")
+        hide.target = self
+        hide.representedObject = event.id
+        menu.addItem(hide)
+        return menu
+    }
+
+    @objc private func menuJoinCall(_ sender: NSMenuItem) {
+        if let url = sender.representedObject as? URL { NSWorkspace.shared.open(url) }
+    }
+
+    @objc private func menuOpenCalendarDate(_ sender: NSMenuItem) {
+        CalendarDateHelper.openCalendarApp(at: sender.representedObject as? Date)
+    }
+
+    @objc private func menuOpenClockPanel() {
+        openDeck(.clock)
+    }
+
+    @objc private func menuHideNextEvent(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        dismissedNextEventIDs.insert(id)
+        syncNextEventItem()
+    }
 
     /// Click: start (with the default length) or stop. Right-click, ⌃-click or ⌥-click: the full menu.
     private func keepAwakeClicked(_ item: StatusItemController) {
@@ -605,6 +792,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if settings.keepAwake.hotkey { extras.insert(.keepAwake) }
             if settings.clipboardHotkey { extras.insert(.clipboard) }
             if settings.findCursorHotkey { extras.insert(.findCursor) }
+            if settings.joinCallHotkey { extras.insert(.joinVideoCall) }
             HotkeyManager.shared.register(modifier: settings.hotkeyModifier, extras: extras)
         } else {
             HotkeyManager.shared.unregisterAll()

@@ -154,12 +154,12 @@ private struct QuickChip: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 5) {
+            HStack(spacing: 4) {
                 Image(systemName: symbol)
                     .font(.system(size: 11, weight: .semibold))
                     .contentTransition(.symbolEffect(.replace))
                     .animation(Deck.reduceMotion ? nil : .default, value: symbol)
-                Text(label).font(.system(size: 11, weight: .medium)).lineLimit(1)
+                Text(label).font(.system(size: 11, weight: .medium)).lineLimit(1).minimumScaleFactor(0.85)
             }
             .frame(maxWidth: .infinity)
         }
@@ -194,7 +194,7 @@ private struct QuickChipStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 6)
             .frame(height: 30)
             .foregroundStyle(on ? (filled ? Color.white : Color.accentColor) : Color.primary)
             .background(

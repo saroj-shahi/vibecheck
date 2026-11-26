@@ -129,7 +129,7 @@ enum DeckModuleOption: String, AppEnum {
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "Module"
     static let caseDisplayRepresentations: [DeckModuleOption: DisplayRepresentation] = [
         .cpu: "CPU", .gpu: "GPU", .memory: "Memory", .network: "Network", .disk: "Disk",
-        .sensors: "Sensors", .battery: "Battery", .weather: "Weather", .clock: "Clock", .agents: "Agents",
+        .sensors: "Sensors", .battery: "Battery", .weather: "Weather", .clock: "Date & Time", .agents: "Agents",
         .todo: "To-do",
     ]
 
@@ -360,6 +360,71 @@ struct StopDevServersIntent: AppIntent {
     }
 }
 
+// MARK: - Calendar & World Clocks
+
+struct JoinVideoCallIntent: AppIntent {
+    static let title: LocalizedStringResource = "Join Video Call"
+    static let description = IntentDescription("Joins your active video call or the next one starting within 15 minutes.")
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ReturnsValue<Bool> & ProvidesDialog {
+        let store = CalendarStore.shared
+        store.activate(requestAccess: false)
+        guard store.access == .granted else {
+            return .result(value: false, dialog: "Calendar access isn't enabled in VibeCheck.")
+        }
+        if let event = store.joinNextVideoCall(lookaheadMinutes: 15), let link = event.videoCall {
+            return .result(value: true, dialog: "Joining \(event.title) on \(link.service.title).")
+        }
+        return .result(value: false, dialog: "No video call is starting in the next 15 minutes.")
+    }
+}
+
+struct OpenCalendarDateIntent: AppIntent {
+    static let title: LocalizedStringResource = "Open Calendar Date"
+    static let description = IntentDescription("Opens Apple Calendar at a specific date, or today if left empty.")
+
+    @Parameter(title: "Date", description: "Leave empty to open today.")
+    var date: Date?
+
+    static var parameterSummary: some ParameterSummary { Summary("Open Calendar at \(\.$date)") }
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        CalendarDateHelper.openCalendarApp(at: date ?? Date())
+        return .result()
+    }
+}
+
+struct GetWorldClockIntent: AppIntent {
+    static let title: LocalizedStringResource = "Get World Clock Time"
+    static let description = IntentDescription("Returns the current local time for one of your world clocks or any city / time zone.")
+
+    @Parameter(title: "City or Time Zone", description: "e.g. Tokyo, London, UTC, or San Francisco.")
+    var query: String
+
+    static var parameterSummary: some ParameterSummary { Summary("Get time in \(\.$query)") }
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ReturnsValue<String> & ProvidesDialog {
+        let now = Date()
+        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let saved = AppSettings.shared.clock.worldClocks.first(where: {
+            $0.name.localizedCaseInsensitiveCompare(needle) == .orderedSame
+                || $0.timeZoneID.localizedCaseInsensitiveCompare(needle) == .orderedSame
+        }) {
+            let formatted = saved.formattedTime(at: now)
+            return .result(value: saved.iso8601String(at: now), dialog: "It's \(formatted) in \(saved.name) (\(saved.relativeDescription(at: now))).")
+        }
+        if let match = CityIndex.search(needle, limit: 1).first {
+            let clock = WorldClock(name: match.name, timeZoneID: match.timeZoneID)
+            let formatted = clock.formattedTime(at: now)
+            return .result(value: clock.iso8601String(at: now), dialog: "It's \(formatted) in \(clock.name) (\(clock.relativeDescription(at: now))).")
+        }
+        return .result(value: "", dialog: "Couldn't find a city or time zone matching \(needle).")
+    }
+}
+
 // MARK: - Spotlight and Siri phrases
 
 struct VibeCheckShortcuts: AppShortcutsProvider {
@@ -379,6 +444,9 @@ struct VibeCheckShortcuts: AppShortcutsProvider {
         AppShortcut(intent: StopDevServersIntent(),
                     phrases: ["Stop my dev servers with \(.applicationName)"],
                     shortTitle: "Stop Dev Servers", systemImageName: "stop.circle")
+        AppShortcut(intent: JoinVideoCallIntent(),
+                    phrases: ["Join my next video call with \(.applicationName)"],
+                    shortTitle: "Join Video Call", systemImageName: "video.fill")
         AppShortcut(intent: OpenDeckIntent(),
                     phrases: ["Open the \(.applicationName) deck"],
                     shortTitle: "Open Deck", systemImageName: "square.grid.2x2")

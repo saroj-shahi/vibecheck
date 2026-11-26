@@ -12,11 +12,20 @@ enum DeckDirection { case left, right, up, down }
 
 /// Shared motion and layout constants for the deck.
 enum Deck {
-    static let width: CGFloat = 390
+    /// Compact width for module detail popover cards (Clock, CPU, Battery, To-do, …).
+    static let width: CGFloat = 312
+    /// Main deck home & ⌘K palette width (+20% wider than module popovers; 3-column tiles are 108 pt whole pixels).
+    static let homeWidth: CGFloat = 372
     static let cornerRadius: CGFloat = 18
     static let columns = 3
-    /// Between tiles, both ways; with 16 pt padding it makes tiles exactly 114 pt wide.
+    /// Between tiles, both ways; with 16 pt padding it makes home tiles exactly 108 pt wide.
     static let gutter: CGFloat = 8
+
+    nonisolated static func width(for route: DeckRoute, paletteOpen: Bool = false) -> CGFloat {
+        if paletteOpen { return homeWidth }
+        if case .home = route { return homeWidth }
+        return width
+    }
     /// Unfold / fold spring (response 0.38, damping 0.86).
     static let spring = Animation.spring(response: 0.38, dampingFraction: 0.86)
     /// Window resize curve matched to the spring so frame and content land together.
@@ -190,14 +199,24 @@ final class DeckController: NSObject {
         self.settings = settings
         super.init()
 
-        let root = DeckRoot(onHeight: { [weak self] height in self?.contentHeightChanged(height) })
+        let root = DeckRoot(onHeight: { [weak self] height in self?.contentHeightChanged(height) },
+                            onWidth: { [weak self] in
+                                guard let self, self.isVisible else { return }
+                                self.reposition(animated: true)
+                            },
+                            onDragResize: { [weak self] deltaY, ended in
+                                self?.handleClockResizeDrag(deltaY: deltaY, ended: ended)
+                            },
+                            onResetHeight: { [weak self] in
+                                self?.resetClockCustomHeight()
+                            })
             .environment(stats).environment(settings).environment(model)
         let host = NSHostingView(rootView: root)
         host.sizingOptions = []   // the controller sizes the window; SwiftUI must not resize it
 
         // A plain frame-based container between the material and SwiftUI, so nothing in the view tree
         // can derive the window size from content (that collapsed the window to 10 × 10 pt).
-        let initial = NSRect(x: 0, y: 0, width: Deck.width, height: 300)
+        let initial = NSRect(x: 0, y: 0, width: Deck.homeWidth, height: 300)
         let container = NSView(frame: initial)
         container.autoresizingMask = [.width, .height]
         host.frame = initial
@@ -216,7 +235,11 @@ final class DeckController: NSObject {
             MainActor.assumeIsolated { self?.refreshBackground() }
         }
 
-        model.onRouteChange = { [weak self] _ in self?.updateSamplerDemand() }
+        model.onRouteChange = { [weak self] _ in
+            guard let self else { return }
+            self.updateSamplerDemand()
+            if self.isVisible { self.reposition(animated: true) }
+        }
         model.requestClose = { [weak self] in self?.close() }
     }
 
@@ -382,8 +405,41 @@ final class DeckController: NSObject {
 
     // MARK: Geometry
 
+    /// Live height while dragging the bottom edge of the Date & Time modal (nil when not dragging).
+    private var dragStartHeight: CGFloat?
+
+    /// Dragging the bottom edge of the Date & Time modal resizes its height with the top edge pinned.
+    private func handleClockResizeDrag(deltaY: CGFloat, ended: Bool) {
+        guard case .module(.clock) = model.route, !model.paletteOpen else { return }
+        if dragStartHeight == nil {
+            dragStartHeight = panel.frame.height
+        }
+        let base = dragStartHeight ?? panel.frame.height
+        let screen = anchor?.window?.screen ?? panel.screen ?? NSScreen.main ?? NSScreen.screens.first
+        let maxHeight = screen.map { ($0.visibleFrame.maxY - 6) - $0.visibleFrame.minY - 12 } ?? 900
+        let target = min(max(ceil(base + deltaY), 260), maxHeight)
+
+        var frame = panel.frame
+        let top = frame.maxY
+        frame.size.height = target
+        frame.origin.y = top - target
+        panel.setFrame(frame, display: true)
+
+        if ended {
+            dragStartHeight = nil
+            settings.clock.panelHeight = Double(target)
+            panel.invalidateShadow()
+        }
+    }
+
+    private func resetClockCustomHeight() {
+        dragStartHeight = nil
+        settings.clock.panelHeight = 0
+        if isVisible { reposition(animated: true) }
+    }
+
     private func contentHeightChanged(_ height: CGFloat) {
-        guard abs(height - contentHeight) > 0.5 else { return }
+        guard dragStartHeight == nil, abs(height - contentHeight) > 0.5 else { return }
         contentHeight = height
         if isVisible { reposition(animated: true) }
     }
@@ -396,17 +452,25 @@ final class DeckController: NSObject {
         let anchorRect = anchorRectOnScreen()
         let screen = anchorRect.flatMap { rect in NSScreen.screens.first { $0.frame.intersects(rect) } }
             ?? anchor?.window?.screen ?? NSScreen.main ?? NSScreen.screens.first
-        guard let screen else { return NSRect(x: 0, y: 0, width: Deck.width, height: contentHeight) }
+        let panelWidth = Deck.width(for: model.route, paletteOpen: model.paletteOpen)
+        guard let screen else { return NSRect(x: 0, y: 0, width: panelWidth, height: contentHeight) }
         let visible = screen.visibleFrame
 
         let top = visible.maxY - 6
-        var centerX = visible.maxX - Deck.width / 2 - 8
+        var centerX = visible.maxX - panelWidth / 2 - 8
         if let rect = anchorRect, Self.isInMenuBar(rect, screen: screen.frame, visible: visible) {
             centerX = rect.midX
         }
-        let height = max(160, min(ceil(contentHeight), top - visible.minY - 12))
-        let x = min(max(centerX - Deck.width / 2, visible.minX + 8), visible.maxX - Deck.width - 8)
-        return NSRect(x: x, y: top - height, width: Deck.width, height: height)
+        let maxH = top - visible.minY - 12
+        let wantedHeight: CGFloat = {
+            if case .module(.clock) = model.route, !model.paletteOpen, settings.clock.panelHeight > 0 {
+                return CGFloat(settings.clock.panelHeight)
+            }
+            return ceil(contentHeight)
+        }()
+        let height = max(160, min(wantedHeight, maxH))
+        let x = min(max(centerX - panelWidth / 2, visible.minX + 8), visible.maxX - panelWidth - 8)
+        return NSRect(x: x, y: top - height, width: panelWidth, height: height)
     }
 
     private func anchorRectOnScreen() -> NSRect? {

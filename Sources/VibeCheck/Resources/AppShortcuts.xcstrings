@@ -88,6 +88,17 @@
           }
         }
       }
+    },
+    "Join my next video call with ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join my next video call with ${applicationName}"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -5,8 +5,8 @@ import UniformTypeIdentifiers
 enum SettingsBackup {
     static let keys = [
         "enabledModules", "knownModules", "refreshInterval", "menuBarStyle", "menuBarSpacing", "labelStyles",
-        "colorfulMenuBar", "alwaysColorRing", "pulseOnAgentNeedsInput", "showVibeRing", "autoFitNotch", "notchMaxStats", "moduleOrder", "hotkeysEnabled", "hotkeyModifier", "alertRules", "smartAlertMemoryLeak", "smartAlertThrottling", "smartAlertSlowCharger", "onDeviceExplanations", "clockFormat", "clockShowSeconds",
-        "worldClocks", "weatherLocation", "temperatureUnit", "todoListID", "chartRange", "vibeTimelineRange", "groupProcessesByApp", "showQuickToggles", "showDeckSummary",
+        "colorfulMenuBar", "alwaysColorRing", "pulseOnAgentNeedsInput", "showVibeRing", "autoFitNotch", "notchMaxStats", "moduleOrder", "hotkeysEnabled", "hotkeyModifier", "alertRules", "smartAlertMemoryLeak", "smartAlertThrottling", "smartAlertSlowCharger", "onDeviceExplanations", "clockFormat", "clockCustomFormat", "clockShowSeconds", "clockShowWeekNumberInMenuBar", "clockShowWeekNumbersInCalendar", "clockCalendarIconStyle", "clockPanelHeight", "clockShowCalendarEvents", "clockCalendarDaysAhead", "clockShowAllDayEvents", "clockHidePastEventsToday", "clockShowRemindersInAgenda", "clockNextEventInMenuBar", "clockNextEventShowTitle", "clockNextEventOnlyVideoCalls", "clockNextEventShowDuringEntireEvent", "clockNextEventClickToJoin", "clockNextEventShowJoinButton", "clockNextEventMaxWidth", "clockNextEventLookaheadHours", "clockMeetingAlertStyle", "clockMeetingAlertLeadMinutes", "clockMeetingAlertOnlyVideoCalls", "clockMeetingAlertOnlyWithAlarm", "clockMeetingAlertSuppressDuringCall", "clockMeetingAlertPlaySound", "clockHourlyChimeEnabled", "clockHourlyChimeCadence", "clockHourlyChimeSound", "clockHourlyChimeVolume", "clockHourlyChimeStartMinute", "clockHourlyChimeEndMinute",
+        "worldClocks", "weatherLocation", "temperatureUnit", "todoListID", "chartRange", "vibeTimelineRange", "groupProcessesByApp", "showQuickToggles", "showDeckSummary", "deckOpacity",
         "keepAwakeDefaultMinutes", "keepAwakeDisplayOn", "keepAwakeBatteryFloor", "keepAwakeAtLaunch", "keepAwakeShowInMenuBar",
         "keepAwakeUntilMinute", "keepAwakeNotify", "keepAwakeHotkey", "keepAwakeOnPower", "keepAwakeWithDisplay",
         "showPublicIP", "keepAwakeWhileDownloading", "keepAwakeDownloadsFolder",
@@ -14,7 +14,7 @@ enum SettingsBackup {
         "keepAwakeWhileAgentWorks", "notifyAgentFinished", "callGuardEnabled", "keepAwakeWiFiName",
         // not "keepAwakeWhileOnWiFi": switching it on asks for Location access, decided on each Mac
         "bluetoothOffWhileAsleep", "itemOptions", "keepAwakeMenuBarItem", "recentCommands", "checkForUpdates",
-        "clipboardHotkey", "findCursorHotkey", "clipboardSnippets", "clipboardHistoryLimit", "clipboardIgnoredApps",
+        "clipboardHotkey", "findCursorHotkey", "joinCallHotkey", "clipboardSnippets", "clipboardHistoryLimit", "clipboardIgnoredApps",
         // not "clipboardHistory" / "clipboardKeepAcrossRestarts": recording copies is decided on each Mac
         // not "claudeLiveLimits" / "antigravityLiveLimits": live CLI queries are opted into on each Mac
     ]

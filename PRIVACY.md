@@ -10,6 +10,9 @@ VibeCheck runs on your Mac. It has no account, no analytics, no crash reporting 
   stored.
 - Your Apple Reminders, only if you turn on the To-do module: the one list you pick is shown, and reminders are
   added, completed or deleted only when you do it. Nothing is copied out of Reminders or stored by VibeCheck.
+- Your Apple Calendar events, only if you turn on calendar events, the Next Event menu bar item, or meeting alerts in
+  Settings → Clock: events are read locally through EventKit to show your schedule, detect video call join links, and
+  trigger local meeting alerts. Nothing is copied out of Calendar or uploaded anywhere.
 - Each app's estimated energy use (from macOS), totalled for today and yesterday in `energy.json` (readable
   only by you) and nothing older.
 

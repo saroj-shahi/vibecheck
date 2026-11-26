@@ -64,7 +64,12 @@ struct NotificationHistoryList: View {
                 .frame(maxHeight: 360)
             }
         }
-        .frame(width: 346)
+        .frame(width: 288)
+        .background {
+            if AppSettings.shared.deckOpacity > 0 {
+                Color(nsColor: .windowBackgroundColor).opacity(AppSettings.shared.deckOpacity)
+            }
+        }
     }
 }
 

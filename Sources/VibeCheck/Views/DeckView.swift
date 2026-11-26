@@ -7,7 +7,7 @@ extension EnvironmentValues {
     @Entry var deckShowsBack = false
 }
 
-private struct DeckHeightKey: PreferenceKey {
+struct DeckHeightKey: PreferenceKey {
     static let defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
@@ -24,14 +24,20 @@ extension View {
 /// height so the window can resize around it.
 struct DeckRoot: View {
     let onHeight: (CGFloat) -> Void
+    var onWidth: () -> Void = {}
+    var onDragResize: (CGFloat, Bool) -> Void = { _, _ in }
+    var onResetHeight: () -> Void = {}
     @Environment(DeckModel.self) private var model
     @Environment(SystemStats.self) private var stats
+    @Environment(AppSettings.self) private var settings
     @Namespace private var namespace
     @State private var contentHeight: CGFloat = 0
     @State private var headerHeight: CGFloat = 0
 
     var body: some View {
         let detail: Module? = if case .module(let module) = model.route, !model.paletteOpen { module } else { nil }
+        let activeWidth = Deck.width(for: model.route, paletteOpen: model.paletteOpen)
+        let isResizableClock = detail == .clock
         VStack(spacing: 0) {
             // A detail view's header row stays put while its content scrolls.
             if let detail {
@@ -41,33 +47,153 @@ struct DeckRoot: View {
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
                     .transition(.opacity)
             }
-            ScrollView(.vertical) {
-                Group {
-                    if let detail {
-                        ModulePanel(module: detail)
-                            .environment(\.deckShowsBack, true)
-                            .transition(.opacity)
-                    } else {
-                        DeckShell()
-                            .transition(.opacity)
+            if detail == .clock {
+                // Date & Time manages its own internal scroll so the month calendar stays pinned sticky
+                // while only the events list scrolls.
+                ClockPanel()
+                    .environment(\.deckShowsBack, true)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .transition(.opacity)
+            } else {
+                ScrollView(.vertical) {
+                    Group {
+                        if let detail {
+                            ModulePanel(module: detail)
+                                .environment(\.deckShowsBack, true)
+                                .transition(.opacity)
+                        } else {
+                            DeckShell()
+                                .transition(.opacity)
+                        }
                     }
+                    .background(GeometryReader { proxy in
+                        Color.clear.preference(key: DeckHeightKey.self, value: proxy.size.height)
+                    })
                 }
-                .background(GeometryReader { proxy in
-                    Color.clear.preference(key: DeckHeightKey.self, value: proxy.size.height)
-                })
+                .scrollBounceBehavior(.basedOnSize)
+                .scrollIndicators(.automatic)
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .scrollIndicators(.automatic)
+
+            if isResizableClock {
+                DeckResizeHandle(onDrag: onDragResize, onDoubleClick: onResetHeight)
+            }
         }
         .environment(\.deckNamespace, namespace)
         .onAppear { DeckCommands.stats = stats }
-        .frame(width: Deck.width)
+        .frame(width: activeWidth)
         .frame(maxHeight: .infinity, alignment: .top)
         .onPreferenceChange(DeckHeightKey.self) { height in
             MainActor.assumeIsolated { contentHeight = height }
         }
-        .onChange(of: contentHeight + (detail == nil ? 0 : headerHeight), initial: true) { _, total in onHeight(total) }
+        .onChange(of: contentHeight + (detail == nil ? 0 : headerHeight) + (isResizableClock ? DeckResizeHandle.height : 0), initial: true) { _, total in
+            onHeight(total)
+        }
+        .onChange(of: activeWidth) { _, _ in onWidth() }
+        .background {
+            if settings.deckOpacity > 0 {
+                RoundedRectangle(cornerRadius: Deck.cornerRadius, style: .continuous)
+                    .fill(Color(nsColor: .windowBackgroundColor).opacity(settings.deckOpacity))
+                    .allowsHitTesting(false)
+            }
+        }
         .overlay { GlassHairline() }
+    }
+}
+
+/// Bottom mouse-drag resize grip for the Date & Time popover. Uses screen-space `NSEvent.mouseLocation`
+/// so live window resizing never suffers SwiftUI local coordinate feedback jitter. Double-click resets to auto height.
+private struct DeckResizeHandle: View {
+    static let height: CGFloat = 14
+    let onDrag: (CGFloat, Bool) -> Void
+    let onDoubleClick: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        ZStack {
+            Color.clear
+            Capsule()
+                .fill(.primary.opacity(hovering ? 0.36 : 0.16))
+                .frame(width: 36, height: 3.5)
+            ResizeDragNSView(onHover: { hovering = $0 }, onDrag: onDrag, onDoubleClick: onDoubleClick)
+        }
+        .frame(height: Self.height)
+        .help("Drag to resize height · double-click to reset")
+        .accessibilityLabel("Resize Date & Time panel height")
+    }
+}
+
+private struct ResizeDragNSView: NSViewRepresentable {
+    let onHover: (Bool) -> Void
+    let onDrag: (CGFloat, Bool) -> Void
+    let onDoubleClick: () -> Void
+
+    func makeNSView(context: Context) -> ResizeGripView {
+        let view = ResizeGripView()
+        view.onHover = onHover
+        view.onDrag = onDrag
+        view.onDoubleClick = onDoubleClick
+        return view
+    }
+
+    func updateNSView(_ nsView: ResizeGripView, context: Context) {
+        nsView.onHover = onHover
+        nsView.onDrag = onDrag
+        nsView.onDoubleClick = onDoubleClick
+    }
+}
+
+private final class ResizeGripView: NSView {
+    var onHover: ((Bool) -> Void)?
+    var onDrag: ((CGFloat, Bool) -> Void)?
+    var onDoubleClick: (() -> Void)?
+    private var startScreenY: CGFloat?
+    private var tracking: NSTrackingArea?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let tracking { removeTrackingArea(tracking) }
+        let area = NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .cursorUpdate, .activeAlways, .inVisibleRect], owner: self)
+        addTrackingArea(area)
+        tracking = area
+    }
+
+    override func cursorUpdate(with event: NSEvent) {
+        NSCursor.resizeUpDown.set()
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        NSCursor.resizeUpDown.set()
+        onHover?(true)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        if startScreenY == nil { NSCursor.arrow.set() }
+        onHover?(false)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 2 {
+            startScreenY = nil
+            onDoubleClick?()
+            return
+        }
+        startScreenY = NSEvent.mouseLocation.y
+        NSCursor.resizeUpDown.set()
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let startScreenY else { return }
+        // Screen Y increases upward, so dragging downward (negative screen delta) grows the panel height.
+        let delta = startScreenY - NSEvent.mouseLocation.y
+        onDrag?(delta, false)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        guard let startScreenY else { return }
+        let delta = startScreenY - NSEvent.mouseLocation.y
+        self.startScreenY = nil
+        onDrag?(delta, true)
+        NSCursor.arrow.set()
     }
 }
 
@@ -435,7 +561,7 @@ private struct FooterButton: View {
 
 // MARK: - Home
 
-/// Quick toggles and the bento grid. Tiles are 114 pt: (390 − 2 × 16 − 2 × 8) / 3, whole pixels at 1× and 2×.
+/// Quick toggles and the bento grid. Tiles are 108 pt: (372 − 2 × 16 − 2 × 8) / 3, whole pixels at 1× and 2×.
 struct DeckHome: View {
     @Environment(DeckModel.self) private var model
     @AppStorage("showQuickToggles") private var showQuickToggles = true
@@ -566,7 +692,8 @@ struct ModuleTile: View {
                     .contentTransition(.opacity)
                     .accessibilityHidden(true)
             }
-            .padding(10)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 10)
             .frame(maxWidth: .infinity, minHeight: 90, maxHeight: 90, alignment: .topLeading)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -665,12 +792,23 @@ struct TileContent {
             // The limit closest to running out, across every agent.
             guard let tightest = DeckFacts.tightestLimit(AgentUsageStore.shared.sample.agents) else { return nil }
             return String(localized: "\(tightest.window.title): \(Fmt.percent(tightest.window.leftPercent / 100)) left")
-        case .clock, .weather, .todo:
+        case .clock:
+            let clockSettings = AppSettings.shared.clock
+            let calStore = CalendarStore.shared
+            guard clockSettings.showCalendarEvents else { return nil }
+            calStore.ensureStarted()
+            guard calStore.access == .granted,
+                  let next = CalendarLogic.nextEvent(in: calStore.events, now: Date(),
+                                                     hiddenCalendarIDs: clockSettings.hiddenCalendarIDs,
+                                                     showDuringEntireEvent: true,
+                                                     lookaheadMinutes: 480) else { return nil }
+            return "\(DeckFacts.shortName(next.title, max: 10)) · \(CalendarLogic.compactCountdown(for: next, now: Date()))"
+        case .weather, .todo:
             return nil
         }
     }
 
-    /// "Chrome 46%": the name gives way so the number always shows in a 114-pt tile.
+    /// "Chrome 46%": the name gives way so the number always shows in a 108-pt tile.
     nonisolated static func appNote(_ name: String, _ amount: String, maxName: Int = 11) -> String {
         "\(DeckFacts.shortName(name, max: maxName)) \(amount)"
     }

@@ -268,13 +268,17 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
         if canNotify {
             UNUserNotificationCenter.current().delegate = self
             let quit = UNNotificationAction(identifier: Self.quitAction, title: String(localized: "Quit"), options: [])
-            let category = UNNotificationCategory(identifier: Self.quitCategory, actions: [quit],
-                                                  intentIdentifiers: [], options: [])
-            UNUserNotificationCenter.current().setNotificationCategories([category])
+            let quitCat = UNNotificationCategory(identifier: Self.quitCategory, actions: [quit],
+                                                 intentIdentifiers: [], options: [])
+            let join = UNNotificationAction(identifier: Self.joinAction, title: String(localized: "Join"), options: [.foreground])
+            let meetingCat = UNNotificationCategory(identifier: Self.meetingCategory, actions: [join],
+                                                    intentIdentifiers: [], options: [])
+            UNUserNotificationCenter.current().setNotificationCategories([quitCat, meetingCat])
         }
     }
 
     nonisolated static let quitCategory = "vibecheck.quit", quitAction = "vibecheck.quit.action"
+    nonisolated static let meetingCategory = "vibecheck.meeting", joinAction = "vibecheck.meeting.join"
 
     /// Overheating and a dying battery still get through during a call; everything else waits.
     nonisolated static func isCritical(_ metric: AlertMetric) -> Bool { metric == .temperature || metric == .batteryLevel }
@@ -296,6 +300,15 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
         requestPermissionIfNeeded()
         post(title: title, body: body, category: Self.quitCategory,
              userInfo: ["pid": Int(target.pid), "started": String(target.started), "name": appName])
+        log?.record(.alert, title: title, body: body)
+    }
+
+    /// Posts a meeting reminder banner, attaching a one-click Join action when a video call URL is present.
+    func notifyMeeting(title: String, body: String, joinURL: URL?) {
+        requestPermissionIfNeeded()
+        var info: [String: Any] = [:]
+        if let joinURL { info["meetingURL"] = joinURL.absoluteString }
+        post(title: title, body: body, category: joinURL != nil ? Self.meetingCategory : nil, userInfo: info)
         log?.record(.alert, title: title, body: body)
     }
 
@@ -426,6 +439,12 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
         let isQuit = response.actionIdentifier == Self.quitAction
         let pid = info["pid"] as? Int, started = (info["started"] as? String).flatMap(UInt64.init)
         completionHandler()
+        if let meetingLink = (info["meetingURL"] as? String).flatMap(URL.init(string:)),
+           let scheme = meetingLink.scheme?.lowercased(),
+           ["https", "http", "zoommtg", "zoomus", "msteams", "facetime", "webex"].contains(scheme) {
+            Task { @MainActor in _ = NSWorkspace.shared.open(meetingLink) }
+            return
+        }
         if let link = (info["url"] as? String).flatMap(URL.init(string:)), link.scheme == "https" {
             Task { @MainActor in _ = NSWorkspace.shared.open(link) }
             return

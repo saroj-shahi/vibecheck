@@ -256,7 +256,7 @@ final class RemindersStore {
 
     // MARK: Editing
 
-    func add(title: String) {
+    func add(title: String, due: Date? = nil) {
         let text = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, access == .granted else { return }
         let store = eventStore()
@@ -267,10 +267,13 @@ final class RemindersStore {
         let reminder = EKReminder(eventStore: store)
         reminder.title = text
         reminder.calendar = calendar
+        if let due {
+            reminder.dueDateComponents = Calendar.current.dateComponents([.year, .month, .day], from: due)
+        }
         do {
             try store.save(reminder, commit: true)
             errorMessage = nil
-            let item = TodoItem(id: reminder.calendarItemIdentifier, title: text, created: Date())
+            let item = TodoItem(id: reminder.calendarItemIdentifier, title: text, due: due, dueHasTime: false, created: Date())
             open = TodoLogic.sortOpen(open + [item], now: Date())
         } catch {
             errorMessage = String(localized: "Couldn't add that to Reminders.")
