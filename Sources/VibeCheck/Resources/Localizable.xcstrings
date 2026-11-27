@@ -7642,6 +7642,16 @@
         }
       }
     },
+    "New in 1.10: Date & Time calendar events and meeting alerts, redesigned searchable Settings, and interactive chart scrubbing.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New in 1.10: Date & Time calendar events and meeting alerts, redesigned searchable Settings, and interactive chart scrubbing."
+          }
+        }
+      }
+    },
     "New in 1.6: dev servers, a 30-day vibe timeline and Vibe Card. Press ⌘K to find them.": {
       "extractionState": "stale",
       "localizations": {
@@ -7687,6 +7697,7 @@
       }
     },
     "New in 1.9: live Antigravity plan limits via agy CLI and a local 5-hour window estimate.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
