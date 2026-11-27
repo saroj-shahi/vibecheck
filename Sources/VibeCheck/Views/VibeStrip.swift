@@ -80,6 +80,8 @@ enum VibeTimelineRange: String, CaseIterable, Identifiable {
 struct VibeStripView: View {
     @Environment(SystemStats.self) private var stats
     @AppStorage("vibeTimelineRange") private var rangeRaw = VibeTimelineRange.day.rawValue
+    @State private var hoveredDay: Date?
+    @State private var hoveredSummary: String?
 
     private var range: VibeTimelineRange { VibeTimelineRange(rawValue: rangeRaw) ?? .day }
 
@@ -92,7 +94,10 @@ struct VibeStripView: View {
             case .month: monthBars(episodes)
             }
             HStack {
-                Text(VibeReplayStore.weeklySummary(episodes))
+                Text(hoveredSummary ?? VibeReplayStore.weeklySummary(episodes))
+                    .foregroundStyle(hoveredSummary != nil ? .primary : .secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 Spacer()
                 Picker("Range", selection: $rangeRaw) {
                     ForEach(VibeTimelineRange.allCases) { Text($0.rawValue).tag($0.rawValue) }
@@ -104,6 +109,11 @@ struct VibeStripView: View {
             }
             .font(.caption2)
             .foregroundStyle(.secondary)
+            .animation(.easeOut(duration: 0.12), value: hoveredSummary)
+        }
+        .onChange(of: rangeRaw) { _, _ in
+            hoveredDay = nil
+            hoveredSummary = nil
         }
     }
 
@@ -131,14 +141,16 @@ struct VibeStripView: View {
             .joined(separator: ", ")
         return VStack(alignment: .leading, spacing: 2) {
             ForEach(days, id: \.start) { day in
+                let desc = VibeReplayStore.dayDescription(day)
+                let isHovered = hoveredDay == day.start
                 HStack(spacing: 6) {
                     Text(VibeReplayStore.dayLabel(day, now: now))
-                        .font(.system(size: 9))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 9, weight: isHovered ? .semibold : .regular))
+                        .foregroundStyle(isHovered ? .primary : .secondary)
                         .frame(width: 34, alignment: .leading)
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
-                            Rectangle().fill(Vibe.vibing.color.opacity(0.35))
+                            Rectangle().fill(Vibe.vibing.color.opacity(isHovered ? 0.55 : 0.35))
                             ForEach(Array(day.pieces.enumerated()), id: \.offset) { _, p in
                                 Rectangle().fill(p.vibe.color)
                                     .frame(width: max(1, geo.size.width * (p.end - p.start)))
@@ -147,9 +159,22 @@ struct VibeStripView: View {
                         }
                         .clipShape(Capsule())
                     }
-                    .frame(height: 6)
+                    .frame(height: isHovered ? 7 : 6)
                 }
-                .help(VibeReplayStore.dayDescription(day))
+                .contentShape(Rectangle())
+                .onHover { inside in
+                    if inside {
+                        hoveredDay = day.start
+                        hoveredSummary = desc
+                        if day.cookedMinutes > 0 {
+                            NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+                        }
+                    } else if hoveredDay == day.start {
+                        hoveredDay = nil
+                        hoveredSummary = nil
+                    }
+                }
+                .help(desc)
             }
         }
         .accessibilityElement(children: .ignore)
@@ -163,6 +188,7 @@ struct VibeStripView: View {
         return HStack(alignment: .bottom, spacing: 2) {
             ForEach(days, id: \.start) { day in
                 let desc = VibeReplayStore.dayDescription(day)
+                let isHovered = hoveredDay == day.start
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
                     Rectangle().fill(Vibe.mid.color)
@@ -171,8 +197,19 @@ struct VibeStripView: View {
                         .frame(height: height * day.cookedMinutes / maxMinutes)
                 }
                 .frame(maxWidth: .infinity, minHeight: height, maxHeight: height)
-                .background(Vibe.vibing.color.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 1))
+                .background(Vibe.vibing.color.opacity(isHovered ? 0.36 : 0.15))
+                .opacity(hoveredDay == nil || isHovered ? 1 : 0.55)
+                .clipShape(RoundedRectangle(cornerRadius: 1.5))
+                .contentShape(Rectangle())
+                .onHover { inside in
+                    if inside {
+                        hoveredDay = day.start
+                        hoveredSummary = desc
+                    } else if hoveredDay == day.start {
+                        hoveredDay = nil
+                        hoveredSummary = nil
+                    }
+                }
                 .help(desc)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(desc)

@@ -70,7 +70,7 @@ Your fan starts screaming. The battery drops faster than it should. Everything f
 - **Your Mac stays awake when you need it.** Downloads, exports, presentations, or AI agents running overnight: tap the cup and your Mac won't nod off, then goes back to normal automatically.
 - **Calm during calls.** When your camera or mic is active, VibeCheck holds non-critical alerts, keeps the display on, and warns once if an app spikes above 100% CPU.
 - **Track your AI coding tools locally.** Counts tokens and limits for **Claude Code, Codex, GitHub Copilot CLI, OpenCode, and Antigravity** directly from local logs—with pace bars and run-out forecasts.
-- **Plain-English alerts.** Write rules as sentences: _"Tell me when battery level is below 15%."_ Plus built-in smart alerts for memory leaks, throttling and slow chargers.
+- **Plain-English alerts.** Write rules as sentences: _"Alert when battery level is below 15%."_ with live sensor threshold gauges, plus built-in smart alerts for memory leaks, throttling, slow chargers, and finished AI agent runs.
 - **Private by design.** Native Swift (SwiftUI + AppKit). No account, no tracking, no cloud. Everything stays on your Mac.
 
 ---
@@ -123,7 +123,7 @@ The script downloads the latest `VibeCheck.zip` from GitHub Releases, verifies i
 
 ### Getting started
 
-1. **Glance at the ring** in your menu bar (there's no Dock icon). Full and monochrome means your Mac is vibing.
+1. **Glance at the ring** in your menu bar (quietly lives in the menu bar — a Dock icon appears only while Settings is open). Full and monochrome means your Mac is vibing.
 2. **Click it** to open the deck: verdict on top, quick controls, summary card, and a live tile per module.
 3. **Click a tile** (or press `⌘1`…`⌘9`, `⌘0`) to unfold its detail view and see who's responsible.
 4. **Press `⌘,`** to choose what shows in the menu bar and optionally enable **Launch at login**.
@@ -164,8 +164,9 @@ A 372 pt glass cockpit (312 pt for individual module cards) anchored cleanly und
 - **Verdict line:** plain-English status and the loudest culprit app right at the top.
 - **Quick controls:** **Mic** mute, **Bluetooth** power (double-tap safeguard when a Bluetooth keyboard or mouse is connected), **Share** Vibe Card, plus live **volume** and **built-in display brightness** sliders.
 - **Summary card:** 2×2 glance at uptime, top app now, today's energy leader, and tightest AI agent limit (hideable in Settings → General).
-- **Live tiles:** hero number, sparkline, and a key note per module. Click or navigate with arrow keys + `↩` to unfold into details; `Esc` folds back, then closes.
-- **Command palette (`⌘K` or just start typing):** open modules, start/stop keep awake or focus timers, toggle mic or alerts, add a to-do task, search clipboard history (`clip`), share a Vibe Card, clean keyboard, find cursor, empty Trash, or quit the top 3 CPU apps (with two-step confirmation). The 8 most recent commands float to the top.
+- **Live tiles:** hero number, sparkline, and compact app/stat note per module in a balanced bento grid (no orphan bottom corners). Click or navigate with arrow keys + `↩` to unfold into details; `Esc` folds back, then closes.
+- **Command palette (`⌘K` or just start typing):** open modules, jump directly to any individual Setting (e.g. type `notch`, `chime`, `glass`, or `airpods`), start/stop keep awake or focus timers, toggle mic or alerts, add a to-do task, search clipboard history (`clip`), share a Vibe Card, clean keyboard, find cursor, empty Trash, or quit the top 3 CPU apps (with two-step confirmation). The 8 most recent commands float to the top.
+- **Calm, protected footers:** every detail panel links straight to its own module Settings (and Activity Monitor on CPU/Memory), and the Quit button uses a two-click confirmation so stray clicks near Settings never terminate VibeCheck.
 
 ### Modules
 
@@ -177,16 +178,16 @@ Turn any module on or off in Settings (fresh installs start with **CPU, Memory, 
 
 | Module | Menu bar | Detail view |
 |---|---|---|
-| **CPU** | mini history bars + % | user/system split, per-core bars, P/E core split, load average, thermal state, top apps, **Vibe Replay** (24H/7D/30D timeline + weekly culprit summary) |
+| **CPU** | mini history bars + % | user/system split, per-core bars, P/E core split, load average, thermal state, top apps, interactive **Vibe Replay** (24H/7D/30D timeline with hover day inspection + weekly culprit summary) |
 | **GPU** | mini history bars + % | utilization, renderer/tiler split, GPU memory, model & core count, Apple Silicon power |
-| **Memory** | pressure-colored gauge + % | app/wired/compressed/cached breakdown, memory pressure, swap, folded top apps with hourly growth |
+| **Memory** | pressure-colored gauge + % | interactive hover-to-inspect app/wired/compressed/cached bar, memory pressure, swap, folded top apps with hourly growth |
 | **Network** | ↑/↓ rates (`Offline` when disconnected) | per-interface traffic, Wi-Fi details, local IP (public IP opt-in), top apps by traffic, listening ports & **dev-server stopper** |
 | **Disk** | read/write rates | I/O graph, every local volume with free space, connected USB devices |
 | **Sensors** | hottest temperature | SoC, SSD and battery temperatures, fan RPM, system & adapter wattage |
-| **Battery** | icon + % | state, time left, live power & charger wattage, health, cycle count, 90-day charge & max-capacity history, **energy used today / yesterday by app**, Bluetooth accessory batteries |
-| **Agents** | agent logo + tokens or limits | tokens today/24h/7d, active sessions, live pace & run-out forecast, busiest projects & models |
+| **Battery** | icon + % | state, time left, live power & charger wattage, health, cycle count, 90-day charge & max-capacity history, **energy used today / yesterday by app** (with AI CLI logos), Bluetooth accessory batteries |
+| **Agents** | agent logo + tokens or limits | tokens today, hoverable 24h/7d bars, active sessions, live pace & run-out forecast, busiest projects & models |
 | **Weather** | condition + temperature | current, next 12 hours, 7-day forecast ([Open-Meteo](https://open-meteo.com/); city search, no Location access) |
-| **Clock** | time | date, world clocks with day/night and UTC offset |
+| **Date & Time** | time or mini calendar | date, world clocks with day/night and UTC offset, opt-in Apple Calendar events, video call join links, meeting alerts, and hourly chime |
 | **To-do** | checkmark + open count | synced with your chosen Apple Reminders list (add, complete, delete, due dates, Completed section); asks for Reminders access only when enabled |
 
 ### AI agents
@@ -236,10 +237,10 @@ Stops your Mac from idle-sleeping using a native IOKit power assertion (like `ca
 
 ### Alerts and notifications
 
-Rules read as plain sentences in **Settings → Alerts**: _Tell me when **CPU usage** is **above** **90%** for **1 min**._
+Rules read as plain sentences in **Settings → Alerts**: _Alert when **CPU usage** is **above** **90%** for **1 min**._
 
-- Click any bold word to edit; drag numbers sideways to scrub; preview the banner.
-- **Smart alerts** (opt-in): sustained app memory leak (+1 GB over 45 min), sustained thermal throttling (5+ min), and slow charger draining while plugged in—rate-limited to once per culprit every 2 hours.
+- Click any capsule to edit; drag numbers sideways (`⌥` for fine steps, or press `↑`/`↓` when focused); see a live **`Now X`** readout and hairline threshold meter right inside each rule; toggle an inline notification banner preview.
+- **Smart & activity alerts** (opt-in): sustained app memory leak (+1 GB over 45 min), sustained thermal throttling (5+ min), slow charger draining while plugged in, and long AI agent run completions (10+ min)—rate-limited to once per culprit every 2 hours.
 - **Call guard & Focus:** on by default. When your camera or mic is active, VibeCheck holds non-critical alerts until the call ends (temperature and battery still come through), keeps the display awake, and warns once if an app exceeds 100% CPU with a one-click **Quit** button. You can also configure per-Focus behavior in **System Settings → Focus → Add Filter → VibeCheck**.
 - The deck **bell** keeps the last 20 alerts and keep-awake endings.
 
@@ -272,11 +273,14 @@ vibecheck culprits --top 5  # by memory; --by cpu while the deck is open
 
 ### Settings & keyboard shortcuts
 
-Open Settings via the deck gear, **`⌘,`**, or re-opening the app. Includes a live menu bar preview with your real stats, drag-to-reorder, notch fitting, per-module pages, clipboard history & snippets (off by default), backup/export/reset, and daily GitHub release checks.
+Open Settings via the deck gear, **`⌘,`**, or re-opening the app (a Dock icon appears while Settings is open and vanishes cleanly on close). Built as a spacious native macOS window with a collapsible sidebar (**`⌥⌘S`**), Spotlight-style deep search (**`⌘F`**, arrow keys + `↩` to scroll and highlight any control), interactive **Menu Bar & Notch** and **Live Deck Glass** preview stages with Vivid/Dark/Light backdrops, a unified **Permissions & Privacy** inspector, aligned drag-to-reorder item rows (`⌘↑`/`⌘↓`), segmented Date & Time settings, clipboard history & snippets (off by default), backup/export/reset, and daily GitHub release checks.
 
-<p align="center">
-  <img src="docs/screenshots/settings-menubar.png" alt="Settings → Menu Bar: live preview, style and item order" width="620">
-</p>
+<table align="center">
+  <tr>
+    <td align="center"><img src="docs/screenshots/settings-menubar.png" alt="Settings → Menu Bar: interactive wallpaper and notch preview stage, style and aligned item order" width="460"><br><sub><strong>Menu Bar:</strong> live wallpaper &amp; notch simulator, hover-synced reorderable rows</sub></td>
+    <td align="center"><img src="docs/screenshots/settings-general.png" alt="Settings → General: live Deck glass opacity stage, privacy inspector, and backup" width="460"><br><sub><strong>General:</strong> live Deck glass preview, unified Permissions &amp; Privacy, and Backup</sub></td>
+  </tr>
+</table>
 
 <details>
 <summary><strong>Keyboard shortcuts reference</strong></summary>
@@ -285,12 +289,15 @@ Open Settings via the deck gear, **`⌘,`**, or re-opening the app. Includes a l
 |---|---|---|
 | `⌃⌥⌘1`…`⌃⌥⌘9`, `⌃⌥⌘0` | anywhere | open the deck on modules 1–10 (To-do opens from its item or tile) |
 | `⌃⌥⌘A` | anywhere | toggle keep awake |
-| `⌘K` or start typing | deck | open command palette |
+| `⌘K` or start typing | deck | open command palette (including deep Settings search) |
 | `⌘1`…`⌘9`, `⌘0` | deck | jump directly to a module |
 | Arrow keys, `↩` | deck | move between tiles, open one |
 | `⌘↩` | deck | open actions for a palette row |
 | `Esc` | deck | fold back to home, then close |
 | `⌘,` | deck | open Settings |
+| `⌘F` | Settings | focus sidebar search (`↑`/`↓`/`↩` to jump & highlight) |
+| `⌥⌘S` | Settings | hide or show the Settings sidebar |
+| `⌘↑` / `⌘↓` | Settings → Menu Bar | reorder the focused menu bar item |
 
 If another app holds Secure Event Input (e.g. a password field), macOS pauses global hotkeys and the deck shows a status pill explaining why.
 

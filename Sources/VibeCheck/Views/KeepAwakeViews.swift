@@ -172,25 +172,52 @@ struct KeepAwakeSettings: View {
     @Environment(AppSettings.self) private var settings
     private var awake: KeepAwake { .shared }
 
+    private var bluetoothFooter: String {
+        let snooze = BluetoothSnooze.shared
+        guard snooze.isAvailable else { return String(localized: "Not available on this version of macOS.") }
+        let about = String(localized: "Stops a sleeping Mac from grabbing headphones you also use with your phone. Bluetooth comes back on at wake if it was on before. While asleep, a Bluetooth keyboard or mouse can't wake the Mac, and Apple Watch unlock won't work.")
+        if settings.keepAwake.bluetoothOffWhileAsleep, snooze.access == .denied {
+            return String(localized: "VibeCheck isn't allowed to use Bluetooth. Allow it in System Settings › Privacy & Security › Bluetooth. ") + about
+        }
+        return about
+    }
+
     var body: some View {
         @Bindable var settings = settings
         Form {
             Section {
-                LabeledContent {
+                HStack(spacing: 12) {
+                    AwakeCupFace(active: awake.isActive, hovering: false, pressed: false)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        TimelineView(.periodic(from: .now, by: 15)) { context in
+                            Text(status(context.date))
+                                .fontWeight(.medium)
+                        }
+                        if let reason = awake.lastEndReason, !awake.isActive {
+                            Text("Last session ended: \(reason.message)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else if !awake.isActive {
+                            Text("Use the cup in the deck to start timed, focus, or per-app sessions.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
                     if awake.isActive {
                         Button("Stop") { awake.stop() }
                     } else {
                         Button("Start") { awake.start(minutes: settings.keepAwake.defaultMinutes) }
                     }
-                } label: {
-                    TimelineView(.periodic(from: .now, by: 15)) { context in Text(status(context.date)) }
-                    if let reason = awake.lastEndReason, !awake.isActive {
-                        Text("Last session ended: \(reason.message)").font(.caption).foregroundStyle(.secondary)
-                    }
                 }
-                Picker("Start sessions for", selection: $settings.keepAwake.defaultMinutes) {
+                .padding(.vertical, 2)
+                .settingsAnchor("keepAwake.session")
+
+                Picker("Default session length", selection: $settings.keepAwake.defaultMinutes) {
                     ForEach(AwakePreset.minutes, id: \.self) { Text(AwakePreset.title($0)).tag($0) }
                 }
+
                 LabeledContent("Or stay awake until") {
                     HStack {
                         DatePicker("Time", selection: untilTime, displayedComponents: .hourAndMinute)
@@ -201,25 +228,14 @@ struct KeepAwakeSettings: View {
                     }
                 }
             } footer: {
-                Text("The cup in the deck has more choices, like staying awake while an app is running. A time that has already passed today means tomorrow.")
+                Text("A time that has already passed today means tomorrow.")
                     .settingsFooter()
             }
-            Section("Automatically keep awake") {
+
+            Section("Power & hardware triggers") {
                 Toggle("While plugged in", isOn: $settings.keepAwake.onPower)
+                    .settingsAnchor("keepAwake.power")
                 Toggle("While an external display is connected", isOn: $settings.keepAwake.withDisplay)
-                Toggle(isOn: $settings.keepAwake.whileDownloading) {
-                    Text("While files are downloading")
-                    Text("Watches \(settings.keepAwake.downloadsFolderURL.lastPathComponent) for files that are still arriving.")
-                }
-                Toggle(isOn: $settings.keepAwake.whileAgentWorks) {
-                    Text("While an AI agent is working")
-                    Text("Claude Code, Codex, Copilot CLI or OpenCode wrote to its logs in the last 3 minutes.")
-                }
-                Toggle("Notify me when an agent finishes a run of 10 minutes or more", isOn: $settings.keepAwake.notifyAgentFinished)
-                Toggle(isOn: $settings.callGuardEnabled) {
-                    Text("While you're on a call")
-                    Text("Camera or microphone in use: keeps the display awake, holds alerts until the call ends (overheating and low battery still come through) and warns once if one app is hogging the CPU.")
-                }
                 Toggle(isOn: $settings.keepAwake.whileOnWiFi) {
                     Text("While on a Wi-Fi network")
                     Text("Needs Location access, which macOS requires to read the network name. Your location isn't used.")
@@ -240,12 +256,32 @@ struct KeepAwakeSettings: View {
                         }
                     }
                 }
+            }
+
+            Section("Work & activity triggers") {
+                Toggle(isOn: $settings.keepAwake.whileAgentWorks) {
+                    Text("While an AI agent is working")
+                    Text("Claude Code, Codex, Copilot CLI, or OpenCode wrote to its logs in the last 3 minutes.")
+                }
+                .settingsAnchor("keepAwake.work")
+
+                Toggle(isOn: $settings.callGuardEnabled) {
+                    Text("While you're on a call")
+                    Text("Camera or microphone in use: keeps the display awake, holds alerts until the call ends (overheating and low battery still come through), and warns once if one app is hogging the CPU.")
+                }
+
+                Toggle(isOn: $settings.keepAwake.whileDownloading) {
+                    Text("While files are downloading")
+                    Text("Watches \(settings.keepAwake.downloadsFolderURL.lastPathComponent) for files that are still arriving.")
+                }
                 if settings.keepAwake.whileDownloading {
-                    LabeledContent("Folder") {
+                    LabeledContent("Watched folder") {
                         HStack {
                             Text(settings.keepAwake.downloadsFolderURL.path(percentEncoded: false)
                                     .replacingOccurrences(of: NSHomeDirectory(), with: "~"))
-                                .lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .foregroundStyle(.secondary)
                             Button("Choose…") { chooseDownloadsFolder() }
                             if !settings.keepAwake.downloadsFolder.isEmpty {
                                 Button("Reset") { settings.keepAwake.downloadsFolder = "" }
@@ -254,25 +290,56 @@ struct KeepAwakeSettings: View {
                     }
                 }
             }
+
             Section {
                 Toggle("Keep the display on", isOn: $settings.keepAwake.displayOn)
+                    .settingsAnchor("keepAwake.behavior")
                 Picker("On battery, stop below", selection: $settings.keepAwake.batteryFloor) {
                     Text("Never").tag(0)
                     ForEach([10, 20, 30, 50], id: \.self) { Text("\($0)%").tag($0) }
                 }
                 Toggle("Start a session when VibeCheck opens", isOn: $settings.keepAwake.atLaunch)
                 Toggle("Notify me when a session ends by itself", isOn: $settings.keepAwake.notify)
-                Toggle("\(settings.hotkeyModifier.symbols)A starts or stops a session", isOn: $settings.keepAwake.hotkey)
-                    .disabled(!settings.hotkeysEnabled)
                 Toggle(isOn: $settings.keepAwake.menuBarItem) {
-                    Text("Show keep awake as its own item")
-                    Text("Off: a small cup appears in the vibe ring while a session runs. On: a separate item, always shown. Click it to start or stop, using the length in “Start sessions for” above. Right-click (or ⌥-click) for every option.")
+                    Text("Show Keep Awake as its own menu bar item")
+                    Text("Off: a small cup appears inside the vibe ring while awake. On: a standalone item, always visible.")
                 }
-                Toggle("Show a cup in the ring while awake", isOn: $settings.keepAwake.showInMenuBar)
-                    .disabled(settings.keepAwake.menuBarItem)
+                if !settings.keepAwake.menuBarItem {
+                    Toggle("Show a cup in the ring while awake", isOn: $settings.keepAwake.showInMenuBar)
+                }
+                LabeledContent("Keyboard shortcut") {
+                    HStack(spacing: 8) {
+                        Text(settings.hotkeysEnabled && settings.keepAwake.hotkey
+                             ? "\(settings.hotkeyModifier.symbols)A"
+                             : String(localized: "Off"))
+                            .font(.body.monospaced())
+                            .foregroundStyle(.secondary)
+                        Button("Change in Shortcuts") { SettingsRouter.shared.open(.shortcuts) }
+                            .buttonStyle(.link)
+                    }
+                }
+            } header: {
+                Text("Sleep & display")
             } footer: {
-                Text("With the display allowed to sleep, the screen turns off but downloads, builds and music keep going. Closing the lid still puts the Mac to sleep.")
+                Text("With the display allowed to sleep, the screen turns off while downloads, builds, and music continue. Closing the lid still puts the Mac to sleep.")
                     .settingsFooter()
+            }
+
+            Section {
+                Toggle("Turn Bluetooth off while the Mac sleeps", isOn: $settings.keepAwake.bluetoothOffWhileAsleep)
+                    .disabled(!BluetoothSnooze.shared.isAvailable)
+                    .settingsAnchor("keepAwake.bluetooth")
+                if settings.keepAwake.bluetoothOffWhileAsleep, BluetoothSnooze.shared.access == .denied {
+                    LabeledContent("Bluetooth access") {
+                        Button("Open Privacy Settings…") {
+                            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Bluetooth")!)
+                        }
+                    }
+                }
+            } header: {
+                Text("Bluetooth sleep snooze")
+            } footer: {
+                Text(bluetoothFooter).settingsFooter()
             }
         }
         .settingsForm()
@@ -355,7 +422,12 @@ private struct WiFiNameRow: View {
             }
         }
         if WiFiTrigger.shared.denied {
-            Text("Location access is off for VibeCheck. Turn it on in System Settings > Privacy & Security > Location Services.")
+            LabeledContent("Location access") {
+                Button("Open Privacy Settings…") {
+                    NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")!)
+                }
+            }
+            Text("Location access is off for VibeCheck. Turn it on in System Settings › Privacy & Security › Location Services.")
                 .settingsFooter()
         }
     }

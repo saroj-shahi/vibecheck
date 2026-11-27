@@ -248,17 +248,20 @@ struct MetricChart: View {
         GeometryReader { geo in
             let size = geo.size
             ZStack(alignment: .topLeading) {
-                grid(size)
-                if mirrored, lines.count == 2 {
-                    VStack(spacing: 0) {
-                        series(0, data, flipped: false).frame(height: size.height / 2)
-                        series(1, data, flipped: true).frame(height: size.height / 2)
+                ZStack(alignment: .topLeading) {
+                    grid(size)
+                    if mirrored, lines.count == 2 {
+                        VStack(spacing: 0) {
+                            series(0, data, flipped: false).frame(height: size.height / 2)
+                            series(1, data, flipped: true).frame(height: size.height / 2)
+                        }
+                        Rectangle().fill(.secondary.opacity(0.35)).frame(height: 0.5)
+                            .offset(y: size.height / 2)
+                    } else {
+                        ForEach(lines.indices, id: \.self) { series($0, data, flipped: false) }
                     }
-                    Rectangle().fill(.secondary.opacity(0.35)).frame(height: 0.5)
-                        .offset(y: size.height / 2)
-                } else {
-                    ForEach(lines.indices, id: \.self) { series($0, data, flipped: false) }
                 }
+                .drawingGroup()
                 if let bucket = hoverBucket {
                     scrubOverlay(bucket, data, size)
                 }

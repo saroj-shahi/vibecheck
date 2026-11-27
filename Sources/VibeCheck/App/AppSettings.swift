@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 import ServiceManagement
@@ -81,19 +82,45 @@ enum Module: String, CaseIterable, Identifiable {
 }
 
 enum Palette {
-    static let user = Color(red: 0.25, green: 0.56, blue: 1.0)
-    static let system = Color(red: 1.0, green: 0.33, blue: 0.33)
-    static let gpu = Color(red: 0.55, green: 0.85, blue: 0.3)
-    static let tiler = Color(red: 0.95, green: 0.75, blue: 0.25)
-    static let app = Color(red: 0.36, green: 0.6, blue: 1.0)
-    static let wired = Color(red: 1.0, green: 0.62, blue: 0.2)
-    static let compressed = Color(red: 0.72, green: 0.45, blue: 1.0)
+    /// Dynamic color adapting across Light, Dark, and Increase Contrast appearances.
+    private static func adaptive(light: (CGFloat, CGFloat, CGFloat),
+                                 dark: (CGFloat, CGFloat, CGFloat),
+                                 highContrastLight: (CGFloat, CGFloat, CGFloat)? = nil,
+                                 highContrastDark: (CGFloat, CGFloat, CGFloat)? = nil) -> Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            let isHighContrast = appearance.bestMatch(from: [.accessibilityHighContrastAqua, .accessibilityHighContrastDarkAqua, .aqua, .darkAqua]) == .accessibilityHighContrastAqua
+                || appearance.bestMatch(from: [.accessibilityHighContrastAqua, .accessibilityHighContrastDarkAqua, .aqua, .darkAqua]) == .accessibilityHighContrastDarkAqua
+            let rgb: (CGFloat, CGFloat, CGFloat) = switch (isDark, isHighContrast) {
+            case (false, true): highContrastLight ?? light
+            case (false, false): light
+            case (true, true): highContrastDark ?? dark
+            case (true, false): dark
+            }
+            return NSColor(srgbRed: rgb.0, green: rgb.1, blue: rgb.2, alpha: 1)
+        })
+    }
+
+    static let user = adaptive(light: (0.14, 0.45, 0.92), dark: (0.28, 0.58, 1.0),
+                               highContrastLight: (0.06, 0.34, 0.80), highContrastDark: (0.42, 0.68, 1.0))
+    static let system = adaptive(light: (0.86, 0.22, 0.22), dark: (1.0, 0.36, 0.36),
+                                 highContrastLight: (0.74, 0.12, 0.12), highContrastDark: (1.0, 0.46, 0.46))
+    static let gpu = adaptive(light: (0.24, 0.62, 0.16), dark: (0.48, 0.82, 0.28),
+                              highContrastLight: (0.15, 0.48, 0.08), highContrastDark: (0.58, 0.90, 0.38))
+    static let tiler = adaptive(light: (0.78, 0.56, 0.08), dark: (0.95, 0.75, 0.25))
+    static let app = adaptive(light: (0.24, 0.47, 0.90), dark: (0.38, 0.62, 1.0),
+                              highContrastLight: (0.14, 0.36, 0.78), highContrastDark: (0.50, 0.72, 1.0))
+    static let wired = adaptive(light: (0.84, 0.46, 0.08), dark: (1.0, 0.62, 0.22))
+    static let compressed = adaptive(light: (0.56, 0.30, 0.86), dark: (0.72, 0.48, 1.0))
     static let cached = Color.gray.opacity(0.55)
-    static let download = Color(red: 0.2, green: 0.78, blue: 0.75)
-    static let upload = Color(red: 1.0, green: 0.4, blue: 0.62)
-    static let read = Color(red: 0.35, green: 0.75, blue: 0.4)
-    static let write = Color(red: 1.0, green: 0.7, blue: 0.2)
-    static let agents = Color(red: 0.85, green: 0.5, blue: 0.95)
+    static let download = adaptive(light: (0.06, 0.58, 0.56), dark: (0.20, 0.78, 0.75),
+                                   highContrastLight: (0.02, 0.45, 0.44), highContrastDark: (0.32, 0.88, 0.84))
+    static let upload = adaptive(light: (0.84, 0.22, 0.46), dark: (1.0, 0.42, 0.64))
+    static let read = adaptive(light: (0.18, 0.60, 0.26), dark: (0.35, 0.76, 0.42),
+                               highContrastLight: (0.10, 0.46, 0.18), highContrastDark: (0.46, 0.86, 0.52))
+    static let write = adaptive(light: (0.82, 0.52, 0.08), dark: (1.0, 0.70, 0.22))
+    static let agents = adaptive(light: (0.64, 0.26, 0.78), dark: (0.84, 0.50, 0.95),
+                                 highContrastLight: (0.50, 0.16, 0.66), highContrastDark: (0.90, 0.62, 1.0))
 
     static func pressure(_ p: MemoryPressure) -> Color {
         switch p {
@@ -245,6 +272,14 @@ final class AppSettings {
             save(deckOpacity, "deckOpacity", structural: false)
         }
     }
+    /// Show the quick-toggles row (mic mute, Bluetooth, Vibe Card, volume, brightness) in the deck home.
+    var showQuickToggles: Bool {
+        didSet { save(showQuickToggles, "showQuickToggles", structural: false) }
+    }
+    /// Show the compact summary card in the deck home.
+    var showDeckSummary: Bool {
+        didSet { save(showDeckSummary, "showDeckSummary", structural: false) }
+    }
     /// Opt-in: "Explain my Mac" in ⌘K, using Apple's on-device model (see `OnDeviceExplainer`).
     var onDeviceExplanations: Bool {
         didSet { save(onDeviceExplanations, "onDeviceExplanations", structural: false) }
@@ -313,6 +348,8 @@ final class AppSettings {
         onDeviceExplanations = defaults.bool(forKey: "onDeviceExplanations")
         let savedOpacity = defaults.object(forKey: "deckOpacity") as? Double ?? 0
         deckOpacity = min(max(savedOpacity, 0), 1)
+        showQuickToggles = defaults.object(forKey: "showQuickToggles") as? Bool ?? true
+        showDeckSummary = defaults.object(forKey: "showDeckSummary") as? Bool ?? true
         smartAlertMemoryLeak = defaults.bool(forKey: "smartAlertMemoryLeak")
         smartAlertThrottling = defaults.bool(forKey: "smartAlertThrottling")
         smartAlertSlowCharger = defaults.bool(forKey: "smartAlertSlowCharger")

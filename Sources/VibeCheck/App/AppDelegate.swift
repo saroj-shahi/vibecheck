@@ -278,7 +278,7 @@ final class StatusItemController: NSObject {
 }
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     let stats = SystemStats()
     let launchedAt = Date()
     let settings = AppSettings.shared
@@ -317,7 +317,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
             MainActor.assumeIsolated { self?.checkMenuBarVisibleAtLaunch() }
         }
-        if !CommandLine.arguments.contains("--deck-demo") { StarPrompt.shared.start() }
+        let automated = CommandLine.arguments.contains("--deck-demo") || CommandLine.arguments.contains("--render-screenshots")
+        if !automated { StarPrompt.shared.start() }
         stats.onTick = { [weak self] in
             guard let self else { return }
             CallGuard.shared.tick(stats: self.stats, alerts: self.alerts)
@@ -399,6 +400,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         if CommandLine.arguments.contains("--deck-demo") { runDeckDemo() }
+        if let idx = CommandLine.arguments.firstIndex(of: "--render-screenshots") {
+            let dir = CommandLine.arguments.indices.contains(idx + 1) ? CommandLine.arguments[idx + 1] : "docs/screenshots"
+            runRenderScreenshots(to: dir)
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -822,24 +827,84 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         deck.model.openPalette("clip ")
     }
 
+    static let settingsWindowID = NSUserInterfaceItemIdentifier("VibeCheckSettings")
+
+    /// Ensures standard Edit & Window shortcuts (⌘C/⌘V/⌘A/⌘Z/⌘W) work inside Settings text fields
+    /// even though VibeCheck runs with `.accessory` activation policy.
+    private func ensureStandardMenus() {
+        guard NSApp.mainMenu == nil else { return }
+        let main = NSMenu()
+
+        let appItem = NSMenuItem()
+        let appMenu = NSMenu()
+        appMenu.addItem(withTitle: String(localized: "Quit VibeCheck"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appItem.submenu = appMenu
+        main.addItem(appItem)
+
+        let editItem = NSMenuItem()
+        let editMenu = NSMenu(title: String(localized: "Edit"))
+        editMenu.addItem(withTitle: String(localized: "Undo"), action: Selector(("undo:")), keyEquivalent: "z")
+        editMenu.addItem(withTitle: String(localized: "Redo"), action: Selector(("redo:")), keyEquivalent: "Z")
+        editMenu.addItem(.separator())
+        editMenu.addItem(withTitle: String(localized: "Cut"), action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: String(localized: "Copy"), action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: String(localized: "Paste"), action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: String(localized: "Select All"), action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        editItem.submenu = editMenu
+        main.addItem(editItem)
+
+        let windowItem = NSMenuItem()
+        let windowMenu = NSMenu(title: String(localized: "Window"))
+        windowMenu.addItem(withTitle: String(localized: "Close"), action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        windowItem.submenu = windowMenu
+        main.addItem(windowItem)
+
+        NSApp.mainMenu = main
+    }
+
     func showSettings(_ section: SettingsSection? = nil) {
         if let section { SettingsRouter.shared.open(section) }
         deck.close()
+        ensureStandardMenus()
         if settingsWindow == nil {
             let view = SettingsView(onTestNotification: { [weak self] in self?.alerts.sendTest() })
                 .environment(settings).environment(stats)
             let controller = NSHostingController(rootView: view)
             controller.sizingOptions = [.minSize]
             let window = NSWindow(contentViewController: controller)
-            window.title = String(localized: "VibeCheck Settings")
-            window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
+            window.identifier = Self.settingsWindowID
+            window.delegate = self
+            window.title = (SettingsRouter.shared.section ?? .menuBar).title
+            // Dim minimize and zoom per macOS Settings HIG: quick to reopen with ⌘, and never belongs in the Dock.
+            window.styleMask = [.titled, .closable, .resizable, .fullSizeContentView]
+            window.standardWindowButton(.miniaturizeButton)?.isEnabled = false
+            window.standardWindowButton(.zoomButton)?.isEnabled = false
+            window.collectionBehavior.insert(.fullScreenNone)
+            let toolbar = NSToolbar(identifier: "VibeCheckSettingsToolbar")
+            toolbar.displayMode = .iconOnly
+            toolbar.showsBaselineSeparator = true
+            window.toolbar = toolbar
             window.toolbarStyle = .unified
-            window.setContentSize(NSSize(width: 760, height: 560))
+            window.titlebarSeparatorStyle = .automatic
+            window.setContentSize(NSSize(width: 960, height: 680))
             window.isReleasedWhenClosed = false
             window.center()
             settingsWindow = window
+        } else if let active = SettingsRouter.shared.section {
+            settingsWindow?.title = active.title
         }
-        NSApp.activate()
+        // Show a Dock icon while Settings is open, and remove it again when Settings closes.
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
         settingsWindow?.makeKeyAndOrderFront(nil)
+        DispatchQueue.main.async { [weak self] in
+            NSApp.activate(ignoringOtherApps: true)
+            self?.settingsWindow?.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow, window === settingsWindow else { return }
+        NSApp.setActivationPolicy(.accessory)
     }
 }

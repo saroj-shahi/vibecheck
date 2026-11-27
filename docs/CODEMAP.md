@@ -96,9 +96,10 @@ accessories via `system_profiler`), `ProcessSampler` (`ps`), `EnergySampler` (pe
 | `RecoveryAndDrain.swift` | `RecoveryCheck` (cooked/mid to vibing, never on launch), `PulseCheckShape`, `CulpritDrain` (post-quit outline drain) |
 | `DeckHintView.swift` | One dismissible what's-new line on the deck home after an update |
 | `MetricChart.swift` | Detail charts (resampling, `SeriesShape`, scrubbing) |
-| `SettingsView.swift` | Settings window: `SettingsSection` (sidebar groups, icons, search keywords), `SettingsRouter.open`, sidebar, Menu Bar / General / Backup / About / Support (Buy Me a Coffee) / Shortcuts pages, `.settingsFooter()` |
-| `SettingsModules.swift` | One Settings page per module (`ModuleSettings`): on/off, menu bar options, the module's alerts, shortcut; Claude & Antigravity limits, Clock and Weather sections |
-| `SettingsAlerts.swift` | Alerts page, `AlertRuleRow` (sentence alerts), token menus, `NumberToken`, `FlowLayout` |
+| `SettingsView.swift` | Settings window: `SettingsSection` (4-group always-expanded sidebar IA with toolbar toggle), interactive Menu Bar & Notch Simulator, aligned 4-column `ModuleRow`, General (with Live Deck Glass Preview & Backup/Reset), About (with Support), unified Shortcuts, flat `AdvancedSection` |
+| `SettingsSearch.swift` | Deep Settings search (`SettingsSearchEntry`, `SettingsSearchIndex`), `SettingsRouter` (last-pane persistence, auto-expand disclosures, spotlight pulse highlight), `ClockSettingsTab`, and passive `PermissionsInspector` / `PermissionsSheet` |
+| `SettingsModules.swift` | One Settings page per module (`ModuleSettings`): on/off, menu bar options, module alerts, shortcut; Claude & Antigravity limits, segmented Date & Time (`Clock & World` / `Calendar & Calls` / `Hourly Chime`), Weather, and To-do sections |
+| `SettingsAlerts.swift` | Alerts page (threshold rules, smart & agent-finished alerts, meeting reminder link), single-line `AlertRuleRow`, high-contrast `TokenMenu` & keyboard-accessible `NumberToken` with live sensor calibration readout, toggleable `NotificationPreview`, `FlowLayout` |
 | `ClipboardSettings.swift` | Settings → Clipboard: history on/off, length, keep across restarts, ignored apps, snippets, the "Paste from Other Apps" warning |
 | `KeepAwakeViews.swift` | Deck cup (click → `KeepAwakeMenu`, hold → `AwakeDial`), Keep Awake settings pane |
 | `QuickTogglesView.swift`, `NotificationHistoryView.swift`, `VibeRing.swift`, `ClockPanel.swift`, `NextEventMenuBarLabel.swift`, `MeetingAlertView.swift`, `WeatherPanel.swift`, `Charts.swift` | as named |

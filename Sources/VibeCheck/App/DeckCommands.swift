@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 
 /// One action in the deck's ⌘K command palette.
 struct DeckCommand: Identifiable {
@@ -6,6 +7,10 @@ struct DeckCommand: Identifiable {
     let title: String
     let symbol: String
     var shortcut: String?
+    /// Optional trailing breadcrumb (e.g. "Menu Bar › Layout & notch" for deep Settings matches).
+    var subtitle: String? = nil
+    /// Optional accent tint for the row's icon badge when selected.
+    var tint: Color? = nil
     /// Extra words that should find this command ("caffeinate" → keep awake).
     var keywords = ""
     /// Needs a second ↩ (or click) before it runs: things that can't be undone with one more keystroke.
@@ -48,7 +53,7 @@ enum DeckCommands {
 
         for module in model.modules {
             list.append(DeckCommand(id: "module.\(module.rawValue)", title: String(localized: "Open \(module.title)"), symbol: module.symbol,
-                                    shortcut: module.shortcutKey.map { "⌘\($0)" }, keywords: "show view details",
+                                    shortcut: module.shortcutKey.map { "⌘\($0)" }, tint: module.accent, keywords: "show view details",
                                     settingsSection: .module(module)) {
                 model.closePalette()
                 model.go(.module(module))
@@ -158,9 +163,25 @@ enum DeckCommands {
         })
         list.append(contentsOf: clipboardCommands(model: model))
 
+        // Deep Settings controls: typing "notch", "chime", "airpods", "glass", etc. jumps straight to the highlighted row.
+        if let query = model.paletteQuery?.trimmingCharacters(in: .whitespacesAndNewlines), !query.isEmpty {
+            let deepHits = SettingsSearchIndex.search(query)
+                .filter { !$0.id.hasSuffix(".hero") }
+                .prefix(4)
+            for entry in deepHits {
+                list.append(DeckCommand(id: "settings.deep.\(entry.id)", title: entry.title, symbol: entry.section.symbol,
+                                        subtitle: entry.breadcrumb, tint: entry.section.color,
+                                        keywords: "\(entry.keywords) \(entry.breadcrumb) settings") {
+                    close()
+                    SettingsRouter.shared.reveal(entry)
+                    (NSApp.delegate as? AppDelegate)?.showSettings()
+                })
+            }
+        }
+
         for section in SettingsSection.allCases {
             list.append(DeckCommand(id: "settings.\(section.id)", title: String(localized: "\(section.title) settings"),
-                                    symbol: section.symbol, keywords: "preferences settings options") {
+                                    symbol: section.symbol, tint: section.color, keywords: "preferences settings options") {
                 close()
                 (NSApp.delegate as? AppDelegate)?.showSettings(section)
             })

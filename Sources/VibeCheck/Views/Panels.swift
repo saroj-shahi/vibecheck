@@ -37,22 +37,31 @@ struct Panel<Content: View>: View {
             }
             content
             Divider()
-            HStack {
+            HStack(spacing: 10) {
                 Text("Up \(Fmt.uptime(stats.uptime))")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
+                if module == .cpu || module == .memory {
+                    Button {
+                        let url = URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app")
+                        NSWorkspace.shared.openApplication(at: url, configuration: .init())
+                    } label: {
+                        Image(systemName: "waveform.path.ecg")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    .help("Open Activity Monitor")
+                    .accessibilityLabel("Open Activity Monitor")
+                }
                 Button {
-                    NSWorkspace.shared.open(URL(string: "https://buymeacoffee.com/sarojshahi")!)
-                } label: { Label("Support", systemImage: "heart") }
-                    .help("Support VibeCheck: Buy Me a Coffee")
-                Button {
-                    (NSApp.delegate as? AppDelegate)?.showSettings()
-                } label: { Image(systemName: "gearshape") }
-                    .help("Settings")
-                Button {
-                    NSApp.terminate(nil)
-                } label: { Image(systemName: "power") }
-                    .help("Quit VibeCheck")
+                    (NSApp.delegate as? AppDelegate)?.showSettings(.module(module))
+                } label: {
+                    Label("\(module.title) Settings", systemImage: "gearshape")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .help("\(module.title) Settings")
+                ProtectedQuitButton()
             }
             .buttonStyle(.borderless)
         }
@@ -90,6 +99,51 @@ struct PanelHeader: View {
             Text(module.title).font(.headline)
             Spacer()
         }
+    }
+}
+
+/// Two-step quit button so a stray click near Settings never terminates VibeCheck silently.
+struct ProtectedQuitButton: View {
+    @State private var armed = false
+    @State private var hovering = false
+    @State private var resetTask: Task<Void, Never>?
+
+    var body: some View {
+        Button {
+            if armed {
+                NSApp.terminate(nil)
+            } else {
+                withAnimation(.easeOut(duration: 0.14)) { armed = true }
+                resetTask?.cancel()
+                resetTask = Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(3))
+                    guard !Task.isCancelled else { return }
+                    withAnimation(.easeOut(duration: 0.18)) { armed = false }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "power")
+                    .font(.system(size: 11, weight: .medium))
+                if armed {
+                    Text("Quit?")
+                        .font(.system(size: 11, weight: .semibold))
+                }
+            }
+            .foregroundStyle(armed ? Color.red : (hovering ? .primary : .secondary))
+            .padding(.horizontal, armed ? 7 : 6)
+            .frame(height: 22)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(armed ? Color.red.opacity(0.14) : Color.secondary.opacity(hovering ? 0.15 : 0))
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .help(armed ? "Click again to quit VibeCheck" : "Quit VibeCheck")
+        .accessibilityLabel(armed ? "Confirm quit VibeCheck" : "Quit VibeCheck")
+        .onHover { inside in withAnimation(.easeOut(duration: 0.12)) { hovering = inside } }
+        .onDisappear { resetTask?.cancel() }
     }
 }
 

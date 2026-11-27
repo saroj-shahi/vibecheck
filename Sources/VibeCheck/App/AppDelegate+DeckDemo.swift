@@ -43,13 +43,89 @@ extension AppDelegate {
             (3.2, "home-again", { self.deck.close() }),
             (3.8, "closed", { self.deck.ignoresOutsideClicks = false; self.showSettings() }),
             (4.8, "settings", {
-                let window = NSApp.windows.first { $0.title == String(localized: "VibeCheck Settings") }
+                let window = NSApp.windows.first { $0.identifier == AppDelegate.settingsWindowID }
                 NSLog("%@", "VibeCheck deck-demo settings-window: visible=\(window?.isVisible ?? false) frame=\(NSStringFromRect(window?.frame ?? .zero)) vibe=\(self.stats.vibe.vibe.title) verdict=\(self.stats.vibe.verdict)")
                 window?.close()
             }),
         ]
         for (time, name, action) in steps {
             DispatchQueue.main.asyncAfter(deadline: .now() + time) { log(name); action() }
+        }
+    }
+
+    /// `--render-screenshots <dir>`: captures VibeCheck's own live Settings and Deck windows into PNGs without Screen Recording TCC.
+    func runRenderScreenshots(to directory: String) {
+        let dirURL = URL(fileURLWithPath: directory, isDirectory: true)
+        try? FileManager.default.createDirectory(at: dirURL, withIntermediateDirectories: true)
+        let savedSection = SettingsRouter.shared.section
+        // Match the dark-mode README screenshot suite consistently regardless of host appearance.
+        NSApp.appearance = NSAppearance(named: .darkAqua)
+
+        func capture(_ view: NSView?, name: String) {
+            guard let view else { return }
+            view.layoutSubtreeIfNeeded()
+            let bounds = view.bounds
+            guard bounds.width > 0, bounds.height > 0,
+                  let rep = view.bitmapImageRepForCachingDisplay(in: bounds) else { return }
+            view.cacheDisplay(in: bounds, to: rep)
+            if let data = rep.representation(using: .png, properties: [:]) {
+                let dest = dirURL.appendingPathComponent("\(name).png")
+                try? data.write(to: dest)
+                NSLog("%@", "VibeCheck screenshot: wrote \(dest.path)")
+            }
+        }
+
+        func settingsWindowRef() -> NSWindow? {
+            NSApp.windows.first { $0.identifier == AppDelegate.settingsWindowID }
+        }
+
+        let steps: [(Double, () -> Void)] = [
+            (2.2, {
+                self.showSettings(.general)
+            }),
+            (3.0, {
+                settingsWindowRef()?.makeFirstResponder(nil)
+            }),
+            (3.3, {
+                capture(settingsWindowRef()?.contentView?.superview, name: "settings-general")
+                SettingsRouter.shared.open(.menuBar)
+                settingsWindowRef()?.title = SettingsSection.menuBar.title
+            }),
+            (4.0, {
+                capture(settingsWindowRef()?.contentView?.superview, name: "settings-menubar")
+                SettingsRouter.shared.open(.alerts)
+                settingsWindowRef()?.title = SettingsSection.alerts.title
+            }),
+            (4.7, {
+                capture(settingsWindowRef()?.contentView?.superview, name: "settings-alerts")
+                SettingsRouter.shared.open(.keepAwake)
+                settingsWindowRef()?.title = SettingsSection.keepAwake.title
+            }),
+            (5.4, {
+                capture(settingsWindowRef()?.contentView?.superview, name: "settings-keepawake")
+                settingsWindowRef()?.close()
+                if let savedSection { SettingsRouter.shared.open(savedSection) }
+                guard let button = (self.combinedItem ?? self.vibeItem ?? self.items.values.first)?.button else { return }
+                self.deck.ignoresOutsideClicks = true
+                self.deck.open(from: button, route: .home)
+            }),
+            (6.4, {
+                if let panel = NSApp.windows.first(where: { $0 is DeckPanel }) {
+                    capture(panel.contentView, name: "deck")
+                }
+                self.deck.model.openPalette("")
+            }),
+            (7.0, {
+                if let panel = NSApp.windows.first(where: { $0 is DeckPanel }) {
+                    capture(panel.contentView, name: "palette")
+                }
+                self.deck.ignoresOutsideClicks = false
+                self.deck.close()
+                NSApp.terminate(nil)
+            }),
+        ]
+        for (delay, action) in steps {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { action() }
         }
     }
 }

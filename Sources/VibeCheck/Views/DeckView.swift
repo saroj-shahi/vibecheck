@@ -502,15 +502,12 @@ private struct DeckFooter: View {
                 FooterButton(symbol: "gearshape", title: "Settings", help: "Settings (⌘,)") {
                     (NSApp.delegate as? AppDelegate)?.showSettings()
                 }
-                FooterButton(symbol: "heart", title: "Support", help: "Support VibeCheck: Buy Me a Coffee") {
-                    NSWorkspace.shared.open(URL(string: "https://buymeacoffee.com/sarojshahi")!)
-                }
                 Spacer(minLength: 4)
                 Text(Self.versionLine)
                     .font(.system(size: 11))
                     .foregroundStyle(.tertiary)
                 Spacer(minLength: 4)
-                FooterButton(symbol: "power", title: nil, help: "Quit VibeCheck") { NSApp.terminate(nil) }
+                ProtectedQuitButton()
             }
         }
         .padding(.horizontal, 8)
@@ -561,13 +558,18 @@ private struct FooterButton: View {
 
 // MARK: - Home
 
-/// Quick toggles and the bento grid. Tiles are 108 pt: (372 − 2 × 16 − 2 × 8) / 3, whole pixels at 1× and 2×.
+/// Quick toggles and the balanced bento grid. Rows hold up to 3 tiles; a trailing 1- or 2-tile row spans
+/// cleanly across the full width so there is never an orphan empty corner.
 struct DeckHome: View {
     @Environment(DeckModel.self) private var model
-    @AppStorage("showQuickToggles") private var showQuickToggles = true
-    @AppStorage("showDeckSummary") private var showDeckSummary = true
+    @Environment(AppSettings.self) private var settings
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: Deck.gutter), count: Deck.columns)
+    private var rows: [[(index: Int, module: Module)]] {
+        let indexed = Array(model.modules.enumerated().map { (index: $0.offset, module: $0.element) })
+        return stride(from: 0, to: indexed.count, by: Deck.columns).map { start in
+            Array(indexed[start..<min(start + Deck.columns, indexed.count)])
+        }
+    }
 
     var body: some View {
         // One hint line at a time: the overnight note first; the what's-new tip shows once it's dismissed.
@@ -577,23 +579,27 @@ struct DeckHome: View {
             DeckHintView()
         }
         ExplainCardView()
-        if showQuickToggles {
+        if settings.showQuickToggles {
             QuickTogglesView()
         }
-        if showDeckSummary {
+        if settings.showDeckSummary {
             DeckSummaryCard()
         }
-        LazyVGrid(columns: columns, spacing: Deck.gutter) {
-            ForEach(Array(model.modules.enumerated()), id: \.element) { index, module in
-                ModuleTile(module: module,
-                           focused: model.keyboardFocusVisible && model.focusIndex == index) {
-                    model.go(.module(module))
+        VStack(spacing: Deck.gutter) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(spacing: Deck.gutter) {
+                    ForEach(row, id: \.module) { item in
+                        ModuleTile(module: item.module,
+                                   focused: model.keyboardFocusVisible && model.focusIndex == item.index) {
+                            model.go(.module(item.module))
+                        }
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .scale(scale: 0.96))
+                                .animation(Deck.animation.delay(model.staggerDelay(for: item.index))),
+                            removal: .opacity.combined(with: .scale(scale: 0.96))
+                                .animation(Deck.animation.delay(model.staggerDelay(for: item.index) * 0.5))))
+                    }
                 }
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .scale(scale: 0.96))
-                        .animation(Deck.animation.delay(model.staggerDelay(for: index))),
-                    removal: .opacity.combined(with: .scale(scale: 0.96))
-                        .animation(Deck.animation.delay(model.staggerDelay(for: index) * 0.5))))
             }
         }
     }
@@ -756,7 +762,7 @@ struct TileContent {
         switch module {
         case .cpu:
             if let top = stats.topApps(by: \.cpu, limit: 1).first, top.cpu >= 1 {
-                return appNote(top.name, cpuText(top.cpu))
+                return appNote(compactDisplayName(top.name), cpuText(top.cpu))
             }
             return String(localized: "User \(Fmt.percent(stats.cpu.user)) · Sys \(Fmt.percent(stats.cpu.system))")
         case .gpu:
@@ -766,10 +772,10 @@ struct TileContent {
             return gpu.cores.map { String(localized: "\(String($0)) cores") }
         case .memory:
             if let top = stats.topApps(by: \.memory, limit: 1).first, top.memory > 0 {
-                return appNote(top.name, Fmt.bytes(top.memory))
+                return appNote(compactDisplayName(top.name), Fmt.bytes(top.memory))
             }
             if let top = topMemoryTrack(stats.appMemoryTracks) {
-                return appNote(top.name, Fmt.bytes(top.footprint))
+                return appNote(compactDisplayName(top.name), Fmt.bytes(top.footprint))
             }
             let m = stats.memory
             if m.swapUsed >= 1_073_741_824 { return String(localized: "\(Fmt.bytes(m.used)) · swap \(Fmt.bytes(m.swapUsed))") }
@@ -806,6 +812,29 @@ struct TileContent {
         case .weather, .todo:
             return nil
         }
+    }
+
+    /// Friendlier short names for common long macOS app names inside compact 108-pt tiles.
+    nonisolated static func compactDisplayName(_ name: String) -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        let aliases: [String: String] = [
+            "Google Chrome": "Chrome",
+            "Google Chrome Helper": "Chrome",
+            "Visual Studio Code": "VS Code",
+            "Microsoft Teams": "Teams",
+            "Microsoft Edge": "Edge",
+            "Microsoft Word": "Word",
+            "Microsoft Excel": "Excel",
+            "Microsoft Outlook": "Outlook",
+            "Activity Monitor": "Activity",
+            "System Settings": "Settings",
+            "Brave Browser": "Brave",
+            "Android Studio": "Studio",
+            "IntelliJ IDEA": "IntelliJ",
+        ]
+        if let short = aliases[trimmed] { return short }
+        if trimmed.hasPrefix("Google Chrome") { return "Chrome" }
+        return trimmed
     }
 
     /// "Chrome 46%": the name gives way so the number always shows in a 108-pt tile.

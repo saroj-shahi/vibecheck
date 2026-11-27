@@ -16,8 +16,8 @@ struct MenuBarLabel: View {
     private var options: ItemOptions { settings.options(module) }
     private var gap: CGFloat { settings.menuBar.spacing.inner }
     private let valueFont = Font.system(size: 11, weight: .medium).monospacedDigit()
-    /// Item icons and graphs are drawn at the vibe ring's size (16 pt box) so the menu bar reads as one row.
-    static let iconSize: CGFloat = 15
+    /// Item icons and graphs harmonize with macOS menu bar glyphs and the vibe ring.
+    static let iconSize: CGFloat = 14.5
     static let graphHeight: CGFloat = 16
     private let iconFont = Font.system(size: MenuBarLabel.iconSize)
     private var showsIcon: Bool { style == .iconAndValue || style == .iconValueArrows }
@@ -463,17 +463,20 @@ struct MiniBars: View {
             let count = 8
             let barWidth: CGFloat = 2
             let gap = (size.width - barWidth * CGFloat(count)) / CGFloat(count - 1)
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.primary.opacity(0.08)))
+            let well = Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 2.5)
+            context.fill(well, with: .color(.primary.opacity(0.07)))
+            context.stroke(well, with: .color(.primary.opacity(0.12)), lineWidth: 0.5)
             let offset = count - totals.count
             for (i, total) in totals.enumerated() {
                 let x = CGFloat(i + offset) * (barWidth + gap)
-                let h = max(1, size.height * CGFloat(total))
-                context.fill(Path(CGRect(x: x, y: size.height - h, width: barWidth, height: h)),
-                             with: .color(color))
+                let h = max(1, (size.height - 2) * CGFloat(total))
+                let barRect = CGRect(x: x, y: size.height - 1 - h, width: barWidth, height: h)
+                context.fill(Path(roundedRect: barRect, cornerRadius: 0.75), with: .color(color))
                 let sys = i < system.count ? system[i] : 0
-                let sh = size.height * CGFloat(min(sys, total))
+                let sh = (size.height - 2) * CGFloat(min(sys, total))
                 if sh > 0 {
-                    context.fill(Path(CGRect(x: x, y: size.height - sh, width: barWidth, height: sh)),
+                    let sysRect = CGRect(x: x, y: size.height - 1 - sh, width: barWidth, height: sh)
+                    context.fill(Path(roundedRect: sysRect, cornerRadius: 0.5),
                                  with: .color(systemColor.opacity(color == systemColor ? 0.6 : 1)))
                 }
             }

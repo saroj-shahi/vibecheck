@@ -20,6 +20,15 @@ enum AlertMetric: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    /// Compact name used inside inline alert rule sentences so default rules stay on one line.
+    var shortTitle: String {
+        switch self {
+        case .diskFree: String(localized: "Disk free")
+        case .agentTokens: String(localized: "Agent tokens/hr")
+        default: title
+        }
+    }
+
     var unit: String {
         switch self {
         case .temperature: "°C"

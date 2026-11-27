@@ -8,21 +8,41 @@ struct BatteryHistorySection: View {
         let points = stats.batteryLog.points
         let now = Date().timeIntervalSince1970
         let days = min(14.0, max(1, ceil((now - (points.first?.t ?? now)) / 86_400)))
+        let chargeSeries = points.filter { $0.t >= now - days * 86_400 }.map { ($0.t, $0.charge) }
         VStack(alignment: .leading, spacing: 8) {
             SectionTitle(text: days == 1 ? "Charge, last \(Int(days)) day" : "Charge, last \(Int(days)) days")
-            LineChart(values: points.filter { $0.t >= now - days * 86_400 }.map { ($0.t, $0.charge) },
-                      from: now - days * 86_400, to: now, range: 0...1, color: .green)
-                .frame(height: 56)
+            if chargeSeries.count >= 2 {
+                LineChart(values: chargeSeries,
+                          from: now - days * 86_400, to: now, range: 0...1, color: .green)
+                    .frame(height: 56)
+            } else {
+                Text("Charge history builds automatically as you use your Mac.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
             let trend = BatteryLogStore.healthTrend(points)
-            if trend.count >= 2 {
-                let lo = max(0, (trend.map(\.health).min() ?? 0.8) - 0.02)
-                let hi = min(1.2, (trend.map(\.health).max() ?? 1) + 0.02)
-                SectionTitle(text: "Maximum capacity, \(Fmt.percent(trend.last?.health ?? 0)) now")
-                // One point per day, so the points are always more than 3 h apart: join them all, and mark each day.
-                LineChart(values: trend.map { ($0.t, $0.health) },
-                          from: trend[0].t, to: max(trend[0].t + 1, now), range: lo...max(hi, lo + 0.01), color: .mint,
-                          maxGap: .infinity, dots: true)
-                    .frame(height: 40)
+            if let latest = trend.last {
+                let hasMultiDayTrend = trend.count >= 2 && (latest.t - trend[0].t) >= 43_200
+                if hasMultiDayTrend {
+                    let lo = max(0, (trend.map(\.health).min() ?? 0.8) - 0.02)
+                    let hi = min(1.2, (trend.map(\.health).max() ?? 1) + 0.02)
+                    SectionTitle(text: "Maximum capacity, \(Fmt.percent(latest.health)) now")
+                    // One point per day, so the points are always more than 3 h apart: join them all, and mark each day.
+                    LineChart(values: trend.map { ($0.t, $0.health) },
+                              from: trend[0].t, to: max(trend[0].t + 1, now), range: lo...max(hi, lo + 0.01), color: .mint,
+                              maxGap: .infinity, dots: true)
+                        .frame(height: 40)
+                } else {
+                    HStack {
+                        SectionTitle(text: "Maximum capacity")
+                        Spacer()
+                        Text(Fmt.percent(latest.health))
+                            .font(.callout.weight(.semibold).monospacedDigit())
+                        Text("· trend after 2 days")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
             }
         }
     }

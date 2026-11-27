@@ -2,20 +2,38 @@ import SwiftUI
 
 struct MemoryPanel: View {
     @Environment(SystemStats.self) private var stats
+    @State private var hoveredSegment: Int?
 
     var body: some View {
         let m = stats.memory
+        let parts: [(name: String, bytes: Double, color: Color)] = [
+            (String(localized: "App memory"), m.app, Palette.app),
+            (String(localized: "Wired"), m.wired, Palette.wired),
+            (String(localized: "Compressed"), m.compressed, Palette.compressed),
+            (String(localized: "Cached files"), m.cached, Palette.cached),
+        ]
         Panel(module: .memory, headline: Fmt.percent(m.usage),
               subtitle: String(localized: "\(Fmt.bytes(m.used)) of \(Fmt.bytes(m.total))")) {
             VStack(alignment: .leading, spacing: 6) {
-                StackedBar(segments: [(m.app, Palette.app), (m.wired, Palette.wired),
-                                      (m.compressed, Palette.compressed), (m.cached, Palette.cached)],
-                           total: m.total)
+                StackedBar(segments: parts.map { ($0.bytes, $0.color) },
+                           total: m.total,
+                           hoveredIndex: $hoveredSegment)
                 HStack(spacing: 5) {
-                    Circle().fill(Palette.pressure(m.pressure)).frame(width: 7, height: 7)
-                    Text("Pressure \(m.pressure.label.lowercased())")
+                    if let idx = hoveredSegment, parts.indices.contains(idx) {
+                        let seg = parts[idx]
+                        let share = m.total > 0 ? Fmt.percent(seg.bytes / m.total) : "0%"
+                        Circle().fill(seg.color).frame(width: 7, height: 7)
+                        Text("\(seg.name) · \(Fmt.bytes(seg.bytes)) (\(share))")
+                            .monospacedDigit()
+                            .foregroundStyle(.primary)
+                    } else {
+                        Circle().fill(Palette.pressure(m.pressure)).frame(width: 7, height: 7)
+                        Text("Pressure \(m.pressure.label.lowercased())")
+                    }
                 }
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .animation(.easeOut(duration: 0.12), value: hoveredSegment)
             }
             MetricChart(lines: [.init(key: .memory, color: Palette.app)], maxValue: 1, height: 64, format: Fmt.percent)
 

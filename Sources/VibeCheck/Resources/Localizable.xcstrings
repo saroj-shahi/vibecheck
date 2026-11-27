@@ -71,6 +71,16 @@
         }
       }
     },
+    "%@ Settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Settings"
+          }
+        }
+      }
+    },
     "%@ Settings…": {
       "localizations": {
         "en": {
@@ -431,6 +441,16 @@
         }
       }
     },
+    "%@ reminders active in Date & Time.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ reminders active in Date & Time."
+          }
+        }
+      }
+    },
     "%@ rpm": {
       "localizations": {
         "en": {
@@ -497,6 +517,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ used, pressure %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %@ (%@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$@ (%3$@)"
           }
         }
       }
@@ -822,7 +852,18 @@
         }
       }
     },
+    "%@A starts or stops Keep Awake": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@A starts or stops Keep Awake"
+          }
+        }
+      }
+    },
     "%@A starts or stops a session": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -943,6 +984,16 @@
         }
       }
     },
+    "%lld matches": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld matches"
+          }
+        }
+      }
+    },
     "%lld min": {
       "localizations": {
         "en": {
@@ -989,6 +1040,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld more stats in the deck"
+          }
+        }
+      }
+    },
+    "%lld need attention": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld need attention"
           }
         }
       }
@@ -1269,6 +1330,16 @@
         }
       }
     },
+    "1 match": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 match"
+          }
+        }
+      }
+    },
     "1 min": {
       "localizations": {
         "en": {
@@ -1541,6 +1612,16 @@
         }
       }
     },
+    "A time that has already passed today means tomorrow.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A time that has already passed today means tomorrow."
+          }
+        }
+      }
+    },
     "AC": {
       "localizations": {
         "en": {
@@ -1551,12 +1632,73 @@
         }
       }
     },
+    "AI agent sources & Claude account": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI agent sources & Claude account"
+          }
+        }
+      }
+    },
     "About": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "About"
+          }
+        }
+      }
+    },
+    "About VibeCheck": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About VibeCheck"
+          }
+        }
+      }
+    },
+    "About VibeCheck › Support": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About VibeCheck › Support"
+          }
+        }
+      }
+    },
+    "About VibeCheck › Updates": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About VibeCheck › Updates"
+          }
+        }
+      }
+    },
+    "Accessibility": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accessibility"
+          }
+        }
+      }
+    },
+    "Accessibility allowed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accessibility allowed"
           }
         }
       }
@@ -1567,6 +1709,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Accessory battery"
+          }
+        }
+      }
+    },
+    "Action Needed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Action Needed"
           }
         }
       }
@@ -1662,6 +1814,16 @@
         }
       }
     },
+    "Agenda, upcoming menu bar event, and meeting alerts.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agenda, upcoming menu bar event, and meeting alerts."
+          }
+        }
+      }
+    },
     "Agent tokens per hour": {
       "localizations": {
         "en": {
@@ -1682,12 +1844,32 @@
         }
       }
     },
+    "Agent tokens/hr": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent tokens/hr"
+          }
+        }
+      }
+    },
     "Agents": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Agents"
+          }
+        }
+      }
+    },
+    "Agents › Plan Limits": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agents › Plan Limits"
           }
         }
       }
@@ -1712,12 +1894,52 @@
         }
       }
     },
+    "Alert when": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alert when"
+          }
+        }
+      }
+    },
     "Alerts": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Alerts"
+          }
+        }
+      }
+    },
+    "Alerts › Advanced": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerts › Advanced"
+          }
+        }
+      }
+    },
+    "Alerts › Smart Alerts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerts › Smart Alerts"
+          }
+        }
+      }
+    },
+    "All clear": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All clear"
           }
         }
       }
@@ -1823,6 +2045,16 @@
         }
       }
     },
+    "Allowed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allowed"
+          }
+        }
+      }
+    },
     "Already gone": {
       "localizations": {
         "en": {
@@ -1870,6 +2102,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Amount used"
+          }
+        }
+      }
+    },
+    "An AI agent finishes a run of 10 minutes or more": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An AI agent finishes a run of 10 minutes or more"
           }
         }
       }
@@ -1940,6 +2182,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "App memory"
+          }
+        }
+      }
+    },
+    "Apple Reminders list": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Reminders list"
           }
         }
       }
@@ -2044,7 +2296,28 @@
         }
       }
     },
+    "Auto-paste into frontmost app": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-paste into frontmost app"
+          }
+        }
+      }
+    },
+    "Auto-pasting clipboard entries into the frontmost app and Keyboard Cleaner.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-pasting clipboard entries into the frontmost app and Keyboard Cleaner."
+          }
+        }
+      }
+    },
     "Automatically keep awake": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2094,12 +2367,33 @@
         }
       }
     },
+    "Background clipboard history without repeated confirmation prompts.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background clipboard history without repeated confirmation prompts."
+          }
+        }
+      }
+    },
     "Backup": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Backup"
+          }
+        }
+      }
+    },
+    "Backup & Reset": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backup & Reset"
           }
         }
       }
@@ -2165,12 +2459,32 @@
         }
       }
     },
+    "Bluetooth access": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth access"
+          }
+        }
+      }
+    },
     "Bluetooth can't be switched from here on this Mac.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Bluetooth can't be switched from here on this Mac."
+          }
+        }
+      }
+    },
+    "Bluetooth sleep snooze": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth sleep snooze"
           }
         }
       }
@@ -2206,6 +2520,7 @@
       }
     },
     "Bug reports, ideas and a star on GitHub help too.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2215,7 +2530,18 @@
         }
       }
     },
+    "Built-in checks wait for the problem to persist (an app grows 1 GB+ over 45 minutes; throttling or a slow charger for 5 minutes) and notify at most once every 2 hours.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Built-in checks wait for the problem to persist (an app grows 1 GB+ over 45 minutes; throttling or a slow charger for 5 minutes) and notify at most once every 2 hours."
+          }
+        }
+      }
+    },
     "Built-in checks, off by default. Each one waits for the problem to last (an app grows 1 GB or more over 45 minutes and keeps climbing; throttling or a slow charger for 5 minutes) and sends at most one alert per app or problem every 2 hours.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2408,6 +2734,16 @@
         }
       }
     },
+    "Calendar & Calls": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar & Calls"
+          }
+        }
+      }
+    },
     "Calendar & meetings": {
       "localizations": {
         "en": {
@@ -2448,6 +2784,16 @@
         }
       }
     },
+    "Calendar events & upcoming menu bar item": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar events & upcoming menu bar item"
+          }
+        }
+      }
+    },
     "Calendar icon": {
       "localizations": {
         "en": {
@@ -2478,6 +2824,16 @@
         }
       }
     },
+    "Calendar, Reminders, Bluetooth, Location, Accessibility, and Clipboard.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar, Reminders, Bluetooth, Location, Accessibility, and Clipboard."
+          }
+        }
+      }
+    },
     "Calendars (%lld of %lld)": {
       "localizations": {
         "en": {
@@ -2489,11 +2845,22 @@
       }
     },
     "Camera or microphone in use: keeps the display awake, holds alerts until the call ends (overheating and low battery still come through) and warns once if one app is hogging the CPU.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Camera or microphone in use: keeps the display awake, holds alerts until the call ends (overheating and low battery still come through) and warns once if one app is hogging the CPU."
+          }
+        }
+      }
+    },
+    "Camera or microphone in use: keeps the display awake, holds alerts until the call ends (overheating and low battery still come through), and warns once if one app is hogging the CPU.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera or microphone in use: keeps the display awake, holds alerts until the call ends (overheating and low battery still come through), and warns once if one app is hogging the CPU."
           }
         }
       }
@@ -2564,6 +2931,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Channel"
+          }
+        }
+      }
+    },
+    "Charge history builds automatically as you use your Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charge history builds automatically as you use your Mac."
           }
         }
       }
@@ -2695,6 +3072,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Check for Updates"
+          }
+        }
+      }
+    },
+    "Check for updates": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for updates"
           }
         }
       }
@@ -2860,11 +3247,22 @@
       }
     },
     "Claude Code, Codex, Copilot CLI or OpenCode wrote to its logs in the last 3 minutes.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Claude Code, Codex, Copilot CLI or OpenCode wrote to its logs in the last 3 minutes."
+          }
+        }
+      }
+    },
+    "Claude Code, Codex, Copilot CLI, or OpenCode wrote to its logs in the last 3 minutes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code, Codex, Copilot CLI, or OpenCode wrote to its logs in the last 3 minutes."
           }
         }
       }
@@ -2899,6 +3297,16 @@
         }
       }
     },
+    "Clear Glass · 0%": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear Glass · 0%"
+          }
+        }
+      }
+    },
     "Clear History": {
       "localizations": {
         "en": {
@@ -2919,6 +3327,16 @@
         }
       }
     },
+    "Clear search": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear search"
+          }
+        }
+      }
+    },
     "Clear selected day": {
       "localizations": {
         "en": {
@@ -2929,12 +3347,33 @@
         }
       }
     },
+    "Click a capsule to change it, or drag a number sideways (hold ⌥ for fine steps, or press ↑/↓ when focused). Each alert fires once, then waits for recovery and at least 5 minutes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click a capsule to change it, or drag a number sideways (hold ⌥ for fine steps, or press ↑/↓ when focused). Each alert fires once, then waits for recovery and at least 5 minutes."
+          }
+        }
+      }
+    },
     "Click a highlighted word to change it; drag a number sideways to adjust it (hold ⌥ for fine steps). Each alert fires once, then waits until things recover and at least 5 minutes pass.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Click a highlighted word to change it; drag a number sideways to adjust it (hold ⌥ for fine steps). Each alert fires once, then waits until things recover and at least 5 minutes pass."
+          }
+        }
+      }
+    },
+    "Click again to quit VibeCheck": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click again to quit VibeCheck"
           }
         }
       }
@@ -2990,6 +3429,16 @@
         }
       }
     },
+    "Clipboard › Privacy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipboard › Privacy"
+          }
+        }
+      }
+    },
     "Clock": {
       "extractionState": "stale",
       "localizations": {
@@ -2997,6 +3446,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Clock"
+          }
+        }
+      }
+    },
+    "Clock & World": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clock & World"
+          }
+        }
+      }
+    },
+    "Clock format, seconds & week numbers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clock format, seconds & week numbers"
+          }
+        }
+      }
+    },
+    "Close": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
           }
         }
       }
@@ -3012,11 +3491,22 @@
       }
     },
     "Common password managers are on this list from the start, installed or not.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Common password managers are on this list from the start, installed or not."
+          }
+        }
+      }
+    },
+    "Common password managers, private clipboard types, and anything copied under Secure Event Input are ignored automatically.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Common password managers, private clipboard types, and anything copied under Secure Event Input are ignored automatically."
           }
         }
       }
@@ -3087,6 +3577,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Condition"
+          }
+        }
+      }
+    },
+    "Configure…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure…"
+          }
+        }
+      }
+    },
+    "Confirm quit VibeCheck": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm quit VibeCheck"
           }
         }
       }
@@ -3178,6 +3688,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Copied: %@"
+          }
+        }
+      }
+    },
+    "Copies to clipboard (⌘V to paste)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copies to clipboard (⌘V to paste)"
           }
         }
       }
@@ -3442,6 +3962,16 @@
         }
       }
     },
+    "Currently off. Fullscreen or banner reminders with one-click Join.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Currently off. Fullscreen or banner reminders with one-click Join."
+          }
+        }
+      }
+    },
     "Custom pattern": {
       "localizations": {
         "en": {
@@ -3468,6 +3998,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Custom…"
+          }
+        }
+      }
+    },
+    "Cut": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cut"
           }
         }
       }
@@ -3534,6 +4074,46 @@
         }
       }
     },
+    "Date & Time area": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date & Time area"
+          }
+        }
+      }
+    },
+    "Date & Time › Calendar & Calls": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date & Time › Calendar & Calls"
+          }
+        }
+      }
+    },
+    "Date & Time › Clock & World": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date & Time › Clock & World"
+          }
+        }
+      }
+    },
+    "Date & Time › Hourly Chime": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date & Time › Hourly Chime"
+          }
+        }
+      }
+    },
     "Date & time": {
       "localizations": {
         "en": {
@@ -3594,6 +4174,26 @@
         }
       }
     },
+    "Deck preview at %lld percent opacity": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deck preview at %lld percent opacity"
+          }
+        }
+      }
+    },
+    "Deck preview, opaque because Reduce Transparency is enabled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deck preview, opaque because Reduce Transparency is enabled"
+          }
+        }
+      }
+    },
     "Default (%@)": {
       "localizations": {
         "en": {
@@ -3614,12 +4214,42 @@
         }
       }
     },
+    "Default keep-awake session": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default keep-awake session"
+          }
+        }
+      }
+    },
     "Default list": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Default list"
+          }
+        }
+      }
+    },
+    "Default session length": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default session length"
+          }
+        }
+      }
+    },
+    "Defaults & testing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defaults & testing"
           }
         }
       }
@@ -3745,6 +4375,16 @@
         }
       }
     },
+    "Disk free": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk free"
+          }
+        }
+      }
+    },
     "Dismiss": {
       "localizations": {
         "en": {
@@ -3765,12 +4405,32 @@
         }
       }
     },
+    "Dismiss notification preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss notification preview"
+          }
+        }
+      }
+    },
     "Dismiss overnight battery note": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Dismiss overnight battery note"
+          }
+        }
+      }
+    },
+    "Dismiss preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss preview"
           }
         }
       }
@@ -3801,6 +4461,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Display brightness"
+          }
+        }
+      }
+    },
+    "Display sleep & battery floor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display sleep & battery floor"
           }
         }
       }
@@ -3906,7 +4576,18 @@
         }
       }
     },
+    "Drag sideways to adjust (⌥ for fine steps), click to type, or press ↑/↓": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag sideways to adjust (⌥ for fine steps), click to type, or press ↑/↓"
+          }
+        }
+      }
+    },
     "Drag sideways to adjust (⌥ for fine steps), or click to type": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3927,11 +4608,22 @@
       }
     },
     "Drag to reorder, or right-click a row for Move Up / Move Down. The menu bar items, the combined item and the deck follow this order. Click › for an item's options and alerts.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Drag to reorder, or right-click a row for Move Up / Move Down. The menu bar items, the combined item and the deck follow this order. Click › for an item's options and alerts."
+          }
+        }
+      }
+    },
+    "Drag to reorder, press ⌘↑ / ⌘↓ when focused, or right-click a row for Move Up / Move Down. Click › for an item's options and alerts.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to reorder, press ⌘↑ / ⌘↓ when focused, or right-click a row for Move Up / Move Down. Click › for an item's options and alerts."
           }
         }
       }
@@ -3962,6 +4654,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Drizzle"
+          }
+        }
+      }
+    },
+    "Edit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
           }
         }
       }
@@ -4186,6 +4888,16 @@
         }
       }
     },
+    "Everything stays on your Mac. VibeCheck only asks when you turn a feature on.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything stays on your Mac. VibeCheck only asks when you turn a feature on."
+          }
+        }
+      }
+    },
     "Expand world clocks": {
       "localizations": {
         "en": {
@@ -4212,6 +4924,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Export your settings to a file"
+          }
+        }
+      }
+    },
+    "Export, import & reset settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export, import & reset settings"
           }
         }
       }
@@ -4448,6 +5170,7 @@
       }
     },
     "Folder": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4597,6 +5320,16 @@
         }
       }
     },
+    "Free, open source, no ads or tracking. A coffee or a GitHub star keeps it going.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free, open source, no ads or tracking. A coffee or a GitHub star keeps it going."
+          }
+        }
+      }
+    },
     "Freezing drizzle": {
       "localizations": {
         "en": {
@@ -4653,6 +5386,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "From power adapter"
+          }
+        }
+      }
+    },
+    "Frosted · %lld%%": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frosted · %lld%%"
           }
         }
       }
@@ -4747,6 +5490,56 @@
         }
       }
     },
+    "General › Advanced": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General › Advanced"
+          }
+        }
+      }
+    },
+    "General › Backup & Reset": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General › Backup & Reset"
+          }
+        }
+      }
+    },
+    "General › Deck": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General › Deck"
+          }
+        }
+      }
+    },
+    "General › Privacy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General › Privacy"
+          }
+        }
+      }
+    },
+    "General › Startup": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General › Startup"
+          }
+        }
+      }
+    },
     "Get Mac Stat": {
       "localizations": {
         "en": {
@@ -4787,6 +5580,16 @@
         }
       }
     },
+    "GitHub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub"
+          }
+        }
+      }
+    },
     "GitHub answered %lld.": {
       "localizations": {
         "en": {
@@ -4817,6 +5620,16 @@
         }
       }
     },
+    "Global keyboard shortcuts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Global keyboard shortcuts"
+          }
+        }
+      }
+    },
     "Global shortcuts are off.": {
       "localizations": {
         "en": {
@@ -4828,6 +5641,7 @@
       }
     },
     "Go back to the defaults (history is kept)": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4917,6 +5731,26 @@
         }
       }
     },
+    "Hide Sidebar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Sidebar"
+          }
+        }
+      }
+    },
+    "Hide Sidebar (⌥⌘S)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Sidebar (⌥⌘S)"
+          }
+        }
+      }
+    },
     "Hide This Event from Menu Bar": {
       "localizations": {
         "en": {
@@ -4947,6 +5781,16 @@
         }
       }
     },
+    "Hide notification preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide notification preview"
+          }
+        }
+      }
+    },
     "Hide processes": {
       "localizations": {
         "en": {
@@ -4963,6 +5807,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hide today's past events"
+          }
+        }
+      }
+    },
+    "History": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History"
           }
         }
       }
@@ -5025,6 +5879,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hottest temperature"
+          }
+        }
+      }
+    },
+    "Hourly Chime": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hourly Chime"
           }
         }
       }
@@ -5105,6 +5969,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "If it's been useful, a star on GitHub helps other people find it, and a coffee keeps it going. This is the only time we'll ask."
+          }
+        }
+      }
+    },
+    "Ignored apps": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignored apps"
           }
         }
       }
@@ -5311,6 +6185,16 @@
         }
       }
     },
+    "Item spacing & colorful graphs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Item spacing & colorful graphs"
+          }
+        }
+      }
+    },
     "Items": {
       "localizations": {
         "en": {
@@ -5432,6 +6316,36 @@
         }
       }
     },
+    "Keep Awake › Power & Hardware": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep Awake › Power & Hardware"
+          }
+        }
+      }
+    },
+    "Keep Awake › Sleep & Display": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep Awake › Sleep & Display"
+          }
+        }
+      }
+    },
+    "Keep Awake › Work & Activity": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep Awake › Work & Activity"
+          }
+        }
+      }
+    },
     "Keep Mac Awake": {
       "localizations": {
         "en": {
@@ -5468,6 +6382,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Keep awake for %@"
+          }
+        }
+      }
+    },
+    "Keep awake for AI agents, calls & downloads": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep awake for AI agents, calls & downloads"
+          }
+        }
+      }
+    },
+    "Keep awake on power, display, Wi-Fi or schedule": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep awake on power, display, Wi-Fi or schedule"
           }
         }
       }
@@ -5632,6 +6566,16 @@
         }
       }
     },
+    "Keyboard shortcut": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyboard shortcut"
+          }
+        }
+      }
+    },
     "Keys are off for %lld s": {
       "localizations": {
         "en": {
@@ -5719,6 +6663,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Launch at login"
+          }
+        }
+      }
+    },
+    "Layout & notch": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Layout & notch"
           }
         }
       }
@@ -5873,6 +6827,16 @@
         }
       }
     },
+    "Live Claude & Antigravity plan limits": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live Claude & Antigravity plan limits"
+          }
+        }
+      }
+    },
     "Live from Antigravity CLI · updated %@ min ago": {
       "localizations": {
         "en": {
@@ -5924,7 +6888,18 @@
         }
       }
     },
+    "Live, using your real stats. Hover an item to highlight it below, or click it to open its settings. Reordering below moves items in the menu bar and the deck.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live, using your real stats. Hover an item to highlight it below, or click it to open its settings. Reordering below moves items in the menu bar and the deck."
+          }
+        }
+      }
+    },
     "Live, using your real stats. With separate items macOS sets the gaps between them. Reordering below moves them in the menu bar too; ⌘-dragging there works as well, until the next reorder here.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5974,12 +6949,43 @@
         }
       }
     },
+    "Location Services": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location Services"
+          }
+        }
+      }
+    },
+    "Location access": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location access"
+          }
+        }
+      }
+    },
     "Location access is off for VibeCheck. Turn it on in System Settings > Privacy & Security > Location Services.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Location access is off for VibeCheck. Turn it on in System Settings > Privacy & Security > Location Services."
+          }
+        }
+      }
+    },
+    "Location access is off for VibeCheck. Turn it on in System Settings › Privacy & Security › Location Services.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location access is off for VibeCheck. Turn it on in System Settings › Privacy & Security › Location Services."
           }
         }
       }
@@ -6060,6 +7066,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mac health in one ring"
+          }
+        }
+      }
+    },
+    "Manage…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage…"
           }
         }
       }
@@ -6174,6 +7190,26 @@
         }
       }
     },
+    "Meeting notifications & fullscreen alert": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meeting notifications & fullscreen alert"
+          }
+        }
+      }
+    },
+    "Meeting reminders": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meeting reminders"
+          }
+        }
+      }
+    },
     "Memory": {
       "comment": "Short menu bar badge",
       "localizations": {
@@ -6265,6 +7301,36 @@
         }
       }
     },
+    "Menu Bar › Advanced": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu Bar › Advanced"
+          }
+        }
+      }
+    },
+    "Menu Bar › Items": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu Bar › Items"
+          }
+        }
+      }
+    },
+    "Menu Bar › Style": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu Bar › Style"
+          }
+        }
+      }
+    },
     "Menu bar": {
       "localizations": {
         "en": {
@@ -6285,6 +7351,16 @@
         }
       }
     },
+    "Menu bar items & order": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu bar items & order"
+          }
+        }
+      }
+    },
     "Menu bar items, alerts, clocks and weather go back to their defaults and VibeCheck restarts. History graphs are kept.": {
       "localizations": {
         "en": {
@@ -6301,6 +7377,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Menu bar preview"
+          }
+        }
+      }
+    },
+    "Menu bar style": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu bar style"
           }
         }
       }
@@ -6382,6 +7468,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Module"
+          }
+        }
+      }
+    },
+    "Module shortcuts (1–9, 0)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Module shortcuts (1–9, 0)"
           }
         }
       }
@@ -6891,6 +7987,16 @@
         }
       }
     },
+    "No installed apps ignored yet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No installed apps ignored yet."
+          }
+        }
+      }
+    },
     "No internal battery": {
       "localizations": {
         "en": {
@@ -6917,6 +8023,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No microphone found."
+          }
+        }
+      }
+    },
+    "No pinned snippets yet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pinned snippets yet."
           }
         }
       }
@@ -7031,6 +8147,16 @@
         }
       }
     },
+    "Not Requested": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Requested"
+          }
+        }
+      }
+    },
     "Not allowed": {
       "localizations": {
         "en": {
@@ -7097,6 +8223,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Not set"
+          }
+        }
+      }
+    },
+    "Notch fit active": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch fit active"
           }
         }
       }
@@ -7222,6 +8358,7 @@
       }
     },
     "Notify me when an agent finishes a run of 10 minutes or more": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7237,6 +8374,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Now"
+          }
+        }
+      }
+    },
+    "Now %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now %@"
           }
         }
       }
@@ -7261,7 +8408,18 @@
         }
       }
     },
+    "Off by default. Find copies in ⌘K by typing “clip”, or enable %@V in Shortcuts. Text up to 64 KB, images up to 5 MB, and files are kept in memory only unless you keep them across restarts (images never are).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off by default. Find copies in ⌘K by typing “clip”, or enable %@V in Shortcuts. Text up to 64 KB, images up to 5 MB, and files are kept in memory only unless you keep them across restarts (images never are)."
+          }
+        }
+      }
+    },
     "Off by default. Find copies in ⌘K: type “clip”. Text up to 64 KB, images up to 5 MB and files are kept, in memory only unless you keep them across restarts (images never are). Never recorded: items apps mark as private, anything copied while secure keyboard entry is on, and copies from the apps below. %@V can open it from anywhere (see Shortcuts). Pasting into the app you were in needs Accessibility; without it, ↩ copies and you press ⌘V.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7302,11 +8460,22 @@
       }
     },
     "Off: a small cup appears in the vibe ring while a session runs. On: a separate item, always shown. Click it to start or stop, using the length in “Start sessions for” above. Right-click (or ⌥-click) for every option.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Off: a small cup appears in the vibe ring while a session runs. On: a separate item, always shown. Click it to start or stop, using the length in “Start sessions for” above. Right-click (or ⌥-click) for every option."
+          }
+        }
+      }
+    },
+    "Off: a small cup appears inside the vibe ring while awake. On: a standalone item, always visible.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off: a small cup appears inside the vibe ring while awake. On: a standalone item, always visible."
           }
         }
       }
@@ -7461,6 +8630,16 @@
         }
       }
     },
+    "Opaque (Reduce Transparency)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opaque (Reduce Transparency)"
+          }
+        }
+      }
+    },
     "Open": {
       "localizations": {
         "en": {
@@ -7487,6 +8666,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open %@ settings"
+          }
+        }
+      }
+    },
+    "Open Activity Monitor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Activity Monitor"
           }
         }
       }
@@ -7543,11 +8732,22 @@
       }
     },
     "Open Privacy & Security": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Open Privacy & Security"
+          }
+        }
+      }
+    },
+    "Open Privacy & Security…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Privacy & Security…"
           }
         }
       }
@@ -7692,6 +8892,16 @@
         }
       }
     },
+    "Open…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open…"
+          }
+        }
+      }
+    },
     "Or stay awake until": {
       "localizations": {
         "en": {
@@ -7802,6 +9012,16 @@
         }
       }
     },
+    "Paste from Other Apps": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste from Other Apps"
+          }
+        }
+      }
+    },
     "Pause fullscreen and banner meeting notifications while this Focus is on.": {
       "localizations": {
         "en": {
@@ -7878,6 +9098,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Performance cores"
+          }
+        }
+      }
+    },
+    "Permissions & Privacy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permissions & Privacy"
           }
         }
       }
@@ -8023,11 +9253,22 @@
       }
     },
     "Popover opacity blends a solid background over glass (0% is clear glass, 100% is solid). Quick toggles: mic mute, Bluetooth, Share Vibe Card, and volume and built-in display brightness sliders. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Popover opacity blends a solid background over glass (0% is clear glass, 100% is solid). Quick toggles: mic mute, Bluetooth, Share Vibe Card, and volume and built-in display brightness sliders. Empty Trash is in the ⌘K palette and asks macOS for Automation access the first time."
+          }
+        }
+      }
+    },
+    "Popover opacity blends a solid surface over glass (0% is clear glass, 100% is solid). Quick toggles include mic mute, Bluetooth, Share Vibe Card, volume, and built-in display brightness.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popover opacity blends a solid surface over glass (0% is clear glass, 100% is solid). Quick toggles include mic mute, Bluetooth, Share Vibe Card, volume, and built-in display brightness."
           }
         }
       }
@@ -8038,6 +9279,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Power"
+          }
+        }
+      }
+    },
+    "Power & hardware triggers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power & hardware triggers"
           }
         }
       }
@@ -8082,12 +9333,33 @@
         }
       }
     },
+    "Press a module shortcut from any app to open that panel; press it again to close. Shortcuts for switched-off modules just beep.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press a module shortcut from any app to open that panel; press it again to close. Shortcuts for switched-off modules just beep."
+          }
+        }
+      }
+    },
     "Press a shortcut from any app to open that panel; press it again to close. Shortcuts for items that are switched off just beep. %@A starts or stops keeping your Mac awake (see Keep Awake).": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Press a shortcut from any app to open that panel; press it again to close. Shortcuts for items that are switched off just beep. %@A starts or stops keeping your Mac awake (see Keep Awake)."
+          }
+        }
+      }
+    },
+    "Press a shortcut from any app to trigger or toggle that tool.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press a shortcut from any app to trigger or toggle that tool."
           }
         }
       }
@@ -8152,6 +9424,26 @@
         }
       }
     },
+    "Preview MacBook notch": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview MacBook notch"
+          }
+        }
+      }
+    },
+    "Preview notification": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview notification"
+          }
+        }
+      }
+    },
     "Preview the notification": {
       "localizations": {
         "en": {
@@ -8168,6 +9460,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Previous month (⌥-click for previous year)"
+          }
+        }
+      }
+    },
+    "Privacy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy"
+          }
+        }
+      }
+    },
+    "Privacy…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy…"
           }
         }
       }
@@ -8192,12 +9504,52 @@
         }
       }
     },
+    "Public IP address": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Public IP address"
+          }
+        }
+      }
+    },
     "Pulse the ring when an agent needs you": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Pulse the ring when an agent needs you"
+          }
+        }
+      }
+    },
+    "Quick Bluetooth toggle and turning Bluetooth off while sleeping.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick Bluetooth toggle and turning Bluetooth off while sleeping."
+          }
+        }
+      }
+    },
+    "Quick actions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick actions"
+          }
+        }
+      }
+    },
+    "Quick toggles & summary card": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick toggles & summary card"
           }
         }
       }
@@ -8249,6 +9601,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Quit VibeCheck"
+          }
+        }
+      }
+    },
+    "Quit?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit?"
           }
         }
       }
@@ -8425,12 +9787,32 @@
         }
       }
     },
+    "Redo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redo"
+          }
+        }
+      }
+    },
     "Refresh": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Refresh"
+          }
+        }
+      }
+    },
+    "Refresh Status": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh Status"
           }
         }
       }
@@ -8525,6 +9907,16 @@
         }
       }
     },
+    "Required by macOS to read your Wi-Fi network name for Keep Awake triggers.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Required by macOS to read your Wi-Fi network name for Keep Awake triggers."
+          }
+        }
+      }
+    },
     "Reset": {
       "localizations": {
         "en": {
@@ -8541,6 +9933,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reset all VibeCheck settings?"
+          }
+        }
+      }
+    },
+    "Reset all settings to defaults": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset all settings to defaults"
+          }
+        }
+      }
+    },
+    "Reset restores defaults and restarts VibeCheck. History graphs and logs are kept.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset restores defaults and restarts VibeCheck. History graphs and logs are kept."
           }
         }
       }
@@ -8605,6 +10017,16 @@
         }
       }
     },
+    "Restore default alerts & test notification": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore default alerts & test notification"
+          }
+        }
+      }
+    },
     "Restricted on this Mac": {
       "localizations": {
         "en": {
@@ -8641,6 +10063,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Run"
+          }
+        }
+      }
+    },
+    "Sampling": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sampling"
           }
         }
       }
@@ -8746,11 +10178,22 @@
       }
     },
     "Search settings": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Search settings"
+          }
+        }
+      }
+    },
+    "Search settings…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search settings…"
           }
         }
       }
@@ -8791,6 +10234,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sending & receiving"
+          }
+        }
+      }
+    },
+    "Sends one notification when Claude Code, Codex, Copilot CLI, or OpenCode wraps up a long session.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sends one notification when Claude Code, Codex, Copilot CLI, or OpenCode wraps up a long session."
           }
         }
       }
@@ -8955,6 +10408,16 @@
         }
       }
     },
+    "Shortcuts › Advanced": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shortcuts › Advanced"
+          }
+        }
+      }
+    },
     "Show %@": {
       "localizations": {
         "en": {
@@ -8991,6 +10454,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Show Join button for upcoming video calls"
+          }
+        }
+      }
+    },
+    "Show Keep Awake as its own menu bar item": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Keep Awake as its own menu bar item"
+          }
+        }
+      }
+    },
+    "Show Sidebar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Sidebar"
+          }
+        }
+      }
+    },
+    "Show Sidebar (⌥⌘S)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Sidebar (⌥⌘S)"
           }
         }
       }
@@ -9098,6 +10591,7 @@
       }
     },
     "Show keep awake as its own item": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9327,6 +10821,16 @@
         }
       }
     },
+    "Sleep & display": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep & display"
+          }
+        }
+      }
+    },
     "Slow charger": {
       "localizations": {
         "en": {
@@ -9337,7 +10841,18 @@
         }
       }
     },
+    "Smart & activity alerts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smart & activity alerts"
+          }
+        }
+      }
+    },
     "Smart alerts": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9347,7 +10862,18 @@
         }
       }
     },
+    "Snippets appear first in ⌘K's clipboard results and stay available even with history off. Pin any text copy with ⌘↩ in ⌘K.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snippets appear first in ⌘K's clipboard results and stay available even with history off. Pin any text copy with ⌘↩ in ⌘K."
+          }
+        }
+      }
+    },
     "Snippets come first in ⌘K's clipboard results and are kept even with history off. Pin a text copy with ⌘↩ in ⌘K.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9403,6 +10929,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Snow showers"
+          }
+        }
+      }
+    },
+    "Solid · 100%": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solid · 100%"
           }
         }
       }
@@ -9508,6 +11044,7 @@
       }
     },
     "Start sessions for": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9727,7 +11264,18 @@
         }
       }
     },
+    "Stops a sleeping Mac from grabbing headphones you also use with your phone. Bluetooth comes back on at wake if it was on before. While asleep, a Bluetooth keyboard or mouse can't wake the Mac, and Apple Watch unlock won't work.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stops a sleeping Mac from grabbing headphones you also use with your phone. Bluetooth comes back on at wake if it was on before. While asleep, a Bluetooth keyboard or mouse can't wake the Mac, and Apple Watch unlock won't work."
+          }
+        }
+      }
+    },
     "Stops a sleeping Mac from grabbing headphones you also use with your phone. Bluetooth comes back on when the Mac wakes, if it was on before. While asleep, a Bluetooth keyboard or mouse can't wake the Mac, and Apple Watch unlock won't work.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9773,6 +11321,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Support"
+          }
+        }
+      }
+    },
+    "Support VibeCheck": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Support VibeCheck"
           }
         }
       }
@@ -9912,6 +11470,7 @@
       }
     },
     "Tell me when": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10022,6 +11581,7 @@
       }
     },
     "The cup in the deck has more choices, like staying awake while an app is running. A time that has already passed today means tomorrow.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10117,6 +11677,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Threshold"
+          }
+        }
+      }
+    },
+    "Threshold alert rules": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Threshold alert rules"
+          }
+        }
+      }
+    },
+    "Threshold alerts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Threshold alerts"
           }
         }
       }
@@ -10279,6 +11859,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "To-do"
+          }
+        }
+      }
+    },
+    "To-do module synced with Apple Reminders.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To-do module synced with Apple Reminders."
           }
         }
       }
@@ -10523,6 +12113,26 @@
         }
       }
     },
+    "Unavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unavailable"
+          }
+        }
+      }
+    },
+    "Undo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
+          }
+        }
+      }
+    },
     "Unit": {
       "localizations": {
         "en": {
@@ -10653,6 +12263,16 @@
         }
       }
     },
+    "Upcoming meeting alerts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upcoming meeting alerts"
+          }
+        }
+      }
+    },
     "Update every": {
       "localizations": {
         "en": {
@@ -10679,6 +12299,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Update in Terminal: %@. Settings › About has the other way. Click for what's new."
+          }
+        }
+      }
+    },
+    "Update interval": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update interval"
           }
         }
       }
@@ -10793,6 +12423,16 @@
         }
       }
     },
+    "Use the cup in the deck to start timed, focus, or per-app sessions.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the cup in the deck to start timed, focus, or per-app sessions."
+          }
+        }
+      }
+    },
     "User": {
       "localizations": {
         "en": {
@@ -10864,11 +12504,22 @@
       }
     },
     "Version %@": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Version %@"
+          }
+        }
+      }
+    },
+    "Version %@ · © 2026 Saroj Shahi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ · © 2026 Saroj Shahi"
           }
         }
       }
@@ -10909,6 +12560,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vibe over the last 7 days, minutes mid or cooked per day. %@"
+          }
+        }
+      }
+    },
+    "Vibe ring & agent pulse": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vibe ring & agent pulse"
           }
         }
       }
@@ -10964,6 +12625,7 @@
       }
     },
     "VibeCheck Settings": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10984,6 +12646,7 @@
       }
     },
     "VibeCheck is free, with no ads, accounts or tracking, and it stays that way. If it saves you a few minutes of squinting at Activity Monitor, a coffee says thanks.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -11024,11 +12687,22 @@
       }
     },
     "VibeCheck isn't allowed to use Bluetooth, so this does nothing. Allow it in System Settings → Privacy & Security → Bluetooth. ": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "VibeCheck isn't allowed to use Bluetooth, so this does nothing. Allow it in System Settings → Privacy & Security → Bluetooth. "
+          }
+        }
+      }
+    },
+    "VibeCheck isn't allowed to use Bluetooth. Allow it in System Settings › Privacy & Security › Bluetooth. ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCheck isn't allowed to use Bluetooth. Allow it in System Settings › Privacy & Security › Bluetooth. "
           }
         }
       }
@@ -11126,6 +12800,16 @@
         }
       }
     },
+    "Vivid": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vivid"
+          }
+        }
+      }
+    },
     "Volume": {
       "localizations": {
         "en": {
@@ -11176,6 +12860,16 @@
         }
       }
     },
+    "Wallpaper": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpaper"
+          }
+        }
+      }
+    },
     "Warm": {
       "localizations": {
         "en": {
@@ -11196,6 +12890,16 @@
         }
       }
     },
+    "Watched folder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watched folder"
+          }
+        }
+      }
+    },
     "Watches %@ for files that are still arriving.": {
       "localizations": {
         "en": {
@@ -11212,6 +12916,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Weather"
+          }
+        }
+      }
+    },
+    "Weather city & units": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weather city & units"
           }
         }
       }
@@ -11486,6 +13200,16 @@
         }
       }
     },
+    "Window": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Window"
+          }
+        }
+      }
+    },
     "Wipe away. Touch ID and the power button still work.": {
       "localizations": {
         "en": {
@@ -11507,11 +13231,22 @@
       }
     },
     "With the display allowed to sleep, the screen turns off but downloads, builds and music keep going. Closing the lid still puts the Mac to sleep.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "With the display allowed to sleep, the screen turns off but downloads, builds and music keep going. Closing the lid still puts the Mac to sleep."
+          }
+        }
+      }
+    },
+    "With the display allowed to sleep, the screen turns off while downloads, builds, and music continue. Closing the lid still puts the Mac to sleep.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With the display allowed to sleep, the screen turns off while downloads, builds, and music continue. Closing the lid still puts the Mac to sleep."
           }
         }
       }
@@ -11522,6 +13257,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Work"
+          }
+        }
+      }
+    },
+    "Work & activity triggers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Work & activity triggers"
           }
         }
       }
@@ -12043,7 +13788,18 @@
         }
       }
     },
+    "macOS is blocking VibeCheck from reading the clipboard, so nothing is recorded. Allow it in System Settings › Privacy & Security › Paste from Other Apps.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS is blocking VibeCheck from reading the clipboard, so nothing is recorded. Allow it in System Settings › Privacy & Security › Paste from Other Apps."
+          }
+        }
+      }
+    },
     "macOS is blocking VibeCheck from reading the clipboard, so nothing is recorded. Allow it in System Settings → Privacy & Security → Paste from Other Apps.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -12095,7 +13851,18 @@
         }
       }
     },
+    "macOS may ask before VibeCheck reads a copy. Choose Always Allow for VibeCheck in System Settings › Privacy & Security › Paste from Other Apps to stop the prompts.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS may ask before VibeCheck reads a copy. Choose Always Allow for VibeCheck in System Settings › Privacy & Security › Paste from Other Apps to stop the prompts."
+          }
+        }
+      }
+    },
     "macOS may ask before VibeCheck reads a copy. Choose Always Allow for VibeCheck in System Settings → Privacy & Security → Paste from Other Apps to stop the prompts.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -12582,6 +14349,16 @@
         }
       }
     },
+    "· trend after 2 days": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "· trend after 2 days"
+          }
+        }
+      }
+    },
     "–": {
       "localizations": {
         "en": {
@@ -12622,12 +14399,32 @@
         }
       }
     },
+    "↩": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "↩"
+          }
+        }
+      }
+    },
     "⌘%@": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "⌘%@"
+          }
+        }
+      }
+    },
+    "⌘F": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌘F"
           }
         }
       }

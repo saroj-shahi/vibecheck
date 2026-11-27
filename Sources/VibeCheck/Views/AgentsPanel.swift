@@ -3,6 +3,8 @@ import SwiftUI
 /// Token usage of local AI coding agents (Claude Code, Codex), read from their logs on this Mac.
 struct AgentsPanel: View {
     private var store: AgentUsageStore { .shared }
+    @State private var hoveredHour: String?
+    @State private var hoveredDay: String?
 
     var body: some View {
         let sample = store.sample
@@ -22,17 +24,29 @@ struct AgentsPanel: View {
                 ForEach(sample.agents) { AgentCard(summary: $0) }
                 HStack(alignment: .top, spacing: 14) {
                     VStack(alignment: .leading, spacing: 6) {
-                        SectionTitle(text: "24 hours")
-                        HourlyBars(values: sample.hourly, color: Palette.agents)
+                        HStack {
+                            SectionTitle(text: "24 hours")
+                            Spacer()
+                            if let hoveredHour {
+                                Text(hoveredHour)
+                                    .font(.caption2.monospacedDigit())
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                            }
+                        }
+                        HourlyBars(values: sample.hourly, color: Palette.agents, hoveredLabel: $hoveredHour)
                             .frame(height: 44)
                     }
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
                             SectionTitle(text: "7 days")
                             Spacer()
-                            Text(Fmt.tokens(sample.week.total)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                            Text(hoveredDay ?? Fmt.tokens(sample.week.total))
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(hoveredDay != nil ? .primary : .secondary)
+                                .lineLimit(1)
                         }
-                        DailyBars(values: sample.daily, color: Palette.agents)
+                        DailyBars(values: sample.daily, color: Palette.agents, hoveredLabel: $hoveredDay)
                             .frame(height: 44)
                     }
                 }
@@ -208,19 +222,34 @@ struct PaceBar: View {
     }
 }
 
-/// 24 hourly bars, newest on the right.
+/// 24 hourly bars, newest on the right, with hover inspection.
 struct HourlyBars: View {
     let values: [Double]
     let color: Color
+    var hoveredLabel: Binding<String?>? = nil
+    @State private var hoveredIndex: Int?
 
     var body: some View {
         let peak = max(values.max() ?? 0, 1)
         HStack(alignment: .bottom, spacing: 2) {
-            ForEach(Array(values.enumerated()), id: \.offset) { _, value in
+            ForEach(Array(values.enumerated()), id: \.offset) { index, value in
+                let isHovered = hoveredIndex == index
+                let hoursAgo = max(0, values.count - 1 - index)
                 RoundedRectangle(cornerRadius: 1.5)
-                    .fill(value > 0 ? color : Color.secondary.opacity(0.2))
+                    .fill(value > 0 ? color.opacity(hoveredIndex == nil || isHovered ? 1 : 0.45) : Color.secondary.opacity(isHovered ? 0.4 : 0.2))
                     .frame(height: max(2, CGFloat(value / peak) * 44))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    .contentShape(Rectangle())
+                    .onHover { inside in
+                        if inside {
+                            hoveredIndex = index
+                            let when = hoursAgo == 0 ? String(localized: "Now") : "\(hoursAgo)h ago"
+                            hoveredLabel?.wrappedValue = "\(when) · \(Fmt.tokens(Int(value)))"
+                        } else if hoveredIndex == index {
+                            hoveredIndex = nil
+                            hoveredLabel?.wrappedValue = nil
+                        }
+                    }
             }
         }
         .accessibilityHidden(true)
@@ -255,10 +284,12 @@ private struct WorkingBadge: View {
     }
 }
 
-/// Seven daily bars with weekday initials; today is the last, full-strength bar.
+/// Seven daily bars with weekday initials; today is the last, full-strength bar, with hover inspection.
 struct DailyBars: View {
     let values: [Double]
     let color: Color
+    var hoveredLabel: Binding<String?>? = nil
+    @State private var hoveredIndex: Int?
 
     var body: some View {
         let peak = max(values.max() ?? 0, 1)
@@ -267,16 +298,29 @@ struct DailyBars: View {
         HStack(alignment: .bottom, spacing: 6) {
             ForEach(Array(values.enumerated()), id: \.offset) { index, value in
                 let day = calendar.date(byAdding: .day, value: index - (values.count - 1), to: today) ?? today
+                let isHovered = hoveredIndex == index
+                let isToday = index == values.count - 1
                 VStack(spacing: 3) {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(value > 0 ? color.opacity(index == values.count - 1 ? 1 : 0.6) : Color.secondary.opacity(0.2))
+                        .fill(value > 0 ? color.opacity(isHovered ? 1 : (hoveredIndex != nil ? 0.4 : (isToday ? 1 : 0.6))) : Color.secondary.opacity(isHovered ? 0.4 : 0.2))
                         .frame(height: max(3, CGFloat(value / peak) * 30))
                         .frame(maxHeight: .infinity, alignment: .bottom)
                     Text(day.formatted(.dateTime.weekday(.narrow)))
-                        .font(.system(size: 9, weight: index == values.count - 1 ? .bold : .regular))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 9, weight: isHovered || isToday ? .bold : .regular))
+                        .foregroundStyle(isHovered ? .primary : .secondary)
                 }
                 .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+                .onHover { inside in
+                    if inside {
+                        hoveredIndex = index
+                        let dayName = isToday ? String(localized: "Today") : day.formatted(.dateTime.weekday(.abbreviated))
+                        hoveredLabel?.wrappedValue = "\(dayName) · \(Fmt.tokens(Int(value)))"
+                    } else if hoveredIndex == index {
+                        hoveredIndex = nil
+                        hoveredLabel?.wrappedValue = nil
+                    }
+                }
                 .help("\(day.formatted(.dateTime.weekday(.wide))): \(Fmt.tokens(Int(value)))")
             }
         }

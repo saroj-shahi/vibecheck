@@ -121,4 +121,16 @@ struct DeckCommandsTests {
         model.go(.module(.gpu), animated: false)
         #expect(!model.paletteOpen)
     }
+
+    @Test func paletteSurfacesDeepSettingsControlsForQuery() {
+        let suite = "DeckCommandsTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = AppSettings(defaults: defaults)
+        let model = DeckModel()
+        model.openPalette("notch")
+        let all = DeckCommands.all(model: model, settings: settings)
+        let filtered = DeckCommands.filter(all, query: "notch", recent: [])
+        #expect(filtered.contains { $0.id == "settings.deep.menuBar.notch" && $0.subtitle != nil })
+    }
 }

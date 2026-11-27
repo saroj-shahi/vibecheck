@@ -75,7 +75,8 @@ struct ModuleSettings: View {
         HStack(spacing: 14) {
             SettingsIcon(symbol: module.symbol, color: module.accent, size: 44)
             VStack(alignment: .leading, spacing: 3) {
-                Text(module.title).font(.title2.weight(.semibold))
+                Text(module.title)
+                    .font(.system(.title2, design: .rounded).weight(.semibold))
                 Text(module.settingsSummary)
                     .font(.callout)
                     .foregroundStyle(.secondary)
@@ -90,6 +91,7 @@ struct ModuleSettings: View {
                 .help(isOn ? "Turn \(module.title) off" : "Turn \(module.title) on")
         }
         .padding(.vertical, 6)
+        .settingsAnchor("module.\(module.rawValue).hero")
     }
 
     private var menuBarSection: some View {
@@ -116,7 +118,7 @@ struct ModuleSettings: View {
     }
 
     private var shortcutSection: some View {
-        AdvancedSection {
+        AdvancedSection(id: "module.\(module.rawValue).shortcuts", title: "Shortcuts") {
             LabeledContent("Open from anywhere") {
                 Text(module.shortcutKey.map { "\(settings.hotkeyModifier.symbols)\($0)" } ?? "None")
                     .font(.body.monospaced())
@@ -300,6 +302,7 @@ private struct AgentSourcesSection: View {
             Button("Choose account folder…") { chooseFolder() }
         } header: {
             Text("Agents")
+                .settingsAnchor("agents.sources")
         } footer: {
             Text("Switched-off agents are left out of the menu bar; the deck still shows them all. For a second Claude Code account, pick its profile folder (the one CLAUDE_CONFIG_DIR points to, like ~/.claude-work): usage and live limits then come from that account. Claude Code itself isn't changed.")
                 .settingsFooter()
@@ -336,6 +339,7 @@ private struct ClaudeLimitsSection: View {
         @Bindable var claudeLimits = ClaudeLiveLimits.shared
         Section {
             Toggle("Show Claude's real plan limits", isOn: $claudeLimits.isOn)
+                .settingsAnchor("agents.limits")
             if claudeLimits.isOn {
                 TimelineView(.periodic(from: .now, by: 30)) { context in
                     Text(claudeLimits.statusText(now: context.date))
@@ -386,101 +390,121 @@ private struct ClockSections: View {
 
     var body: some View {
         @Bindable var settings = settings
+        @Bindable var router = SettingsRouter.shared
+
         Section {
-            Picker("Format", selection: $settings.clock.format) {
-                ForEach(ClockFormat.allCases) { format in
-                    if format == .custom {
-                        Text(format.title).tag(format)
-                    } else {
-                        Text(format.formatter(seconds: settings.clock.showSeconds).string(from: Date())).tag(format)
+            Picker("Date & Time area", selection: $router.clockTab) {
+                ForEach(ClockSettingsTab.allCases) { tab in
+                    Text(tab.title).tag(tab)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+        }
+
+        switch router.clockTab {
+        case .clock:
+            Section {
+                Picker("Format", selection: $settings.clock.format) {
+                    ForEach(ClockFormat.allCases) { format in
+                        if format == .custom {
+                            Text(format.title).tag(format)
+                        } else {
+                            Text(format.formatter(seconds: settings.clock.showSeconds).string(from: Date())).tag(format)
+                        }
                     }
                 }
-            }
-            if settings.clock.format == .custom {
-                TextField("Custom pattern", text: $settings.clock.customFormat)
-                    .font(.body.monospaced())
-                LabeledContent("Result") {
-                    Text(settings.clock.formatStyle.format(Date()))
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
+                .settingsAnchor("clock.format")
+                if settings.clock.format == .custom {
+                    TextField("Custom pattern", text: $settings.clock.customFormat)
+                        .font(.body.monospaced())
+                    LabeledContent("Result") {
+                        Text(settings.clock.formatStyle.format(Date()))
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                if settings.clock.format != .custom {
+                    Toggle("Show seconds", isOn: $settings.clock.showSeconds)
+                }
+                Toggle("Show week number in menu bar", isOn: $settings.clock.showWeekNumberInMenuBar)
+                Toggle("Show week numbers in calendar", isOn: $settings.clock.showWeekNumbersInCalendar)
+                if settings.clock.panelHeight > 0 {
+                    LabeledContent("Custom popover height") {
+                        HStack(spacing: 8) {
+                            Text("\(Int(settings.clock.panelHeight)) pt").foregroundStyle(.secondary).monospacedDigit()
+                            Button("Reset to Auto") { settings.clock.panelHeight = 0 }
+                                .controlSize(.small)
+                        }
+                    }
+                }
+            } header: {
+                Text("Format & calendar")
+            } footer: {
+                if settings.clock.format == .custom {
+                    Text("Uses Unicode date tokens: EEE (Thu), d (26), MMM (Nov), MM (11), yyyy (2026), HH:mm (24h), h:mm a (12h), ss (seconds).").settingsFooter()
                 }
             }
-            if settings.clock.format != .custom {
-                Toggle("Show seconds", isOn: $settings.clock.showSeconds)
-            }
-            Toggle("Show week number in menu bar", isOn: $settings.clock.showWeekNumberInMenuBar)
-            Toggle("Show week numbers in calendar", isOn: $settings.clock.showWeekNumbersInCalendar)
-            if settings.clock.panelHeight > 0 {
-                LabeledContent("Custom popover height") {
+
+            Section {
+                if settings.clock.worldClocks.isEmpty {
+                    Text("No world clocks yet.").foregroundStyle(.secondary)
+                }
+                ForEach($settings.clock.worldClocks) { $clock in
                     HStack(spacing: 8) {
-                        Text("\(Int(settings.clock.panelHeight)) pt").foregroundStyle(.secondary).monospacedDigit()
-                        Button("Reset to Auto") { settings.clock.panelHeight = 0 }
-                            .controlSize(.small)
-                    }
-                }
-            }
-        } header: {
-            Text("Format & calendar")
-        } footer: {
-            if settings.clock.format == .custom {
-                Text("Uses Unicode date tokens: EEE (Thu), d (26), MMM (Nov), MM (11), yyyy (2026), HH:mm (24h), h:mm a (12h), ss (seconds).").settingsFooter()
-            }
-        }
-
-        Section {
-            if settings.clock.worldClocks.isEmpty {
-                Text("No world clocks yet.").foregroundStyle(.secondary)
-            }
-            ForEach($settings.clock.worldClocks) { $clock in
-                HStack(spacing: 8) {
-                    TextField("Name", text: $clock.name).labelsHidden().frame(maxWidth: 140)
-                    Text(clock.timeZoneID).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    Spacer()
-                    Text(clock.formattedTime(at: Date()))
-                        .monospacedDigit().foregroundStyle(.secondary)
-                    Button {
-                        clock.showInMenuBar.toggle()
-                    } label: {
-                        Image(systemName: clock.showInMenuBar ? "pin.fill" : "pin")
-                            .foregroundStyle(clock.showInMenuBar ? Color.accentColor : .secondary)
-                    }
-                    .buttonStyle(.borderless)
-                    .help(clock.showInMenuBar ? "Shown in menu bar — click to unpin" : "Pin to menu bar beside local time")
-                    Button(role: .destructive) {
-                        settings.clock.worldClocks.removeAll { $0.id == clock.id }
-                    } label: { Image(systemName: "trash") }
+                        TextField("Name", text: $clock.name).labelsHidden().frame(maxWidth: 140)
+                        Text(clock.timeZoneID).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        Spacer()
+                        Text(clock.formattedTime(at: Date()))
+                            .monospacedDigit().foregroundStyle(.secondary)
+                        Button {
+                            clock.showInMenuBar.toggle()
+                        } label: {
+                            Image(systemName: clock.showInMenuBar ? "pin.fill" : "pin")
+                                .foregroundStyle(clock.showInMenuBar ? Color.accentColor : .secondary)
+                        }
                         .buttonStyle(.borderless)
-                        .help("Remove \(clock.name)")
-                }
-            }
-            TextField("Search city, country or time zone (e.g. San Francisco, IST, Tokyo)", text: $search)
-            ForEach(matches) { entry in
-                HStack {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(entry.name)
-                        Text(entry.displaySubtitle).font(.caption).foregroundStyle(.secondary)
+                        .help(clock.showInMenuBar ? "Shown in menu bar — click to unpin" : "Pin to menu bar beside local time")
+                        Button(role: .destructive) {
+                            settings.clock.worldClocks.removeAll { $0.id == clock.id }
+                        } label: { Image(systemName: "trash") }
+                            .buttonStyle(.borderless)
+                            .help("Remove \(clock.name)")
                     }
-                    Spacer()
-                    let previewClock = WorldClock(name: entry.name, timeZoneID: entry.timeZoneID)
-                    Text(previewClock.formattedTime(at: Date()))
-                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                    Button("Add") {
-                        settings.clock.worldClocks.append(WorldClock(name: entry.name, timeZoneID: entry.timeZoneID))
-                        search = ""
-                    }
-                    .disabled(settings.clock.worldClocks.contains { $0.name == entry.name && $0.timeZoneID == entry.timeZoneID })
                 }
+                TextField("Search city, country or time zone (e.g. San Francisco, IST, Tokyo)", text: $search)
+                    .settingsAnchor("clock.world")
+                ForEach(matches) { entry in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(entry.name)
+                            Text(entry.displaySubtitle).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        let previewClock = WorldClock(name: entry.name, timeZoneID: entry.timeZoneID)
+                        Text(previewClock.formattedTime(at: Date()))
+                            .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        Button("Add") {
+                            settings.clock.worldClocks.append(WorldClock(name: entry.name, timeZoneID: entry.timeZoneID))
+                            search = ""
+                        }
+                        .disabled(settings.clock.worldClocks.contains { $0.name == entry.name && $0.timeZoneID == entry.timeZoneID })
+                    }
+                }
+            } header: {
+                Text("World clocks")
+            } footer: {
+                Text("Pin up to 3 world clocks to show compactly beside the local time in the menu bar. Search works completely offline.").settingsFooter()
             }
-        } header: {
-            Text("World clocks")
-        } footer: {
-            Text("Pin up to 3 world clocks to show compactly beside the local time in the menu bar. Search works completely offline.").settingsFooter()
-        }
 
-        CalendarEventsSettingsSection()
-        NextEventSettingsSection()
-        MeetingAlertsSettingsSection()
-        HourlyChimeSettingsSection()
+        case .calendar:
+            CalendarEventsSettingsSection()
+            NextEventSettingsSection()
+            MeetingAlertsSettingsSection()
+
+        case .chime:
+            HourlyChimeSettingsSection()
+        }
     }
 
     private var matches: [CityEntry] {
@@ -496,6 +520,7 @@ private struct CalendarEventsSettingsSection: View {
         @Bindable var settings = settings
         Section {
             Toggle("Show calendar events in Date & Time", isOn: $settings.clock.showCalendarEvents)
+                .settingsAnchor("clock.calendar")
             if settings.clock.showCalendarEvents {
                 switch store.access {
                 case .granted:
@@ -508,44 +533,6 @@ private struct CalendarEventsSettingsSection: View {
                     Toggle("Show all-day events", isOn: $settings.clock.showAllDayEvents)
                     Toggle("Hide today's past events", isOn: $settings.clock.hidePastEventsToday)
                     Toggle("Include dated Apple Reminders", isOn: $settings.clock.showRemindersInAgenda)
-                    if !store.calendars.isEmpty {
-                        let allIDs = Set(store.calendars.map(\.id))
-                        let selectedCount = store.calendars.count - settings.clock.hiddenCalendarIDs.intersection(allIDs).count
-                        DisclosureGroup("Calendars (\(selectedCount) of \(store.calendars.count))") {
-                            HStack(spacing: 10) {
-                                Button("Select All") {
-                                    settings.clock.hiddenCalendarIDs.removeAll()
-                                }
-                                .disabled(selectedCount == store.calendars.count)
-                                Button("Deselect All") {
-                                    settings.clock.hiddenCalendarIDs = allIDs
-                                }
-                                .disabled(selectedCount == 0)
-                                Spacer()
-                            }
-                            .controlSize(.small)
-                            .padding(.vertical, 2)
-
-                            ForEach(store.calendars) { cal in
-                                let enabled = !settings.clock.hiddenCalendarIDs.contains(cal.id)
-                                Toggle(isOn: Binding(
-                                    get: { enabled },
-                                    set: { on in
-                                        if on { settings.clock.hiddenCalendarIDs.remove(cal.id) }
-                                        else { settings.clock.hiddenCalendarIDs.insert(cal.id) }
-                                    }
-                                )) {
-                                    HStack(spacing: 6) {
-                                        Circle().fill(Color(red: cal.red, green: cal.green, blue: cal.blue)).frame(width: 8, height: 8)
-                                        Text(cal.title)
-                                        if !cal.source.isEmpty {
-                                            Text(cal.source).font(.caption).foregroundStyle(.secondary)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
                 case .notAsked:
                     LabeledContent("Calendar access") {
                         Button("Allow Access…") { store.activate(requestAccess: true) }
@@ -567,6 +554,44 @@ private struct CalendarEventsSettingsSection: View {
         }
         .onAppear {
             if settings.clock.showCalendarEvents { store.activate(requestAccess: false) }
+        }
+
+        if settings.clock.showCalendarEvents, store.access == .granted, !store.calendars.isEmpty {
+            let allIDs = Set(store.calendars.map(\.id))
+            let selectedCount = store.calendars.count - settings.clock.hiddenCalendarIDs.intersection(allIDs).count
+            Section {
+                ForEach(store.calendars) { cal in
+                    let enabled = !settings.clock.hiddenCalendarIDs.contains(cal.id)
+                    Toggle(isOn: Binding(
+                        get: { enabled },
+                        set: { on in
+                            if on { settings.clock.hiddenCalendarIDs.remove(cal.id) }
+                            else { settings.clock.hiddenCalendarIDs.insert(cal.id) }
+                        }
+                    )) {
+                        HStack(spacing: 8) {
+                            Circle().fill(Color(red: cal.red, green: cal.green, blue: cal.blue)).frame(width: 8, height: 8)
+                            Text(cal.title)
+                            if !cal.source.isEmpty {
+                                Text(cal.source).font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            } header: {
+                HStack {
+                    Text("Calendars (\(selectedCount) of \(store.calendars.count))")
+                    Spacer()
+                    Button("Select All") { settings.clock.hiddenCalendarIDs.removeAll() }
+                        .buttonStyle(.borderless)
+                        .font(.caption)
+                        .disabled(selectedCount == store.calendars.count)
+                    Button("Deselect All") { settings.clock.hiddenCalendarIDs = allIDs }
+                        .buttonStyle(.borderless)
+                        .font(.caption)
+                        .disabled(selectedCount == 0)
+                }
+            }
         }
     }
 }
@@ -614,6 +639,7 @@ private struct MeetingAlertsSettingsSection: View {
             Picker("Alert style", selection: $settings.clock.meetingAlertStyle) {
                 ForEach(MeetingAlertStyle.allCases) { Text($0.title).tag($0) }
             }
+            .settingsAnchor("clock.meetingAlerts")
             if settings.clock.meetingAlertStyle != .off {
                 Picker("Notify before start", selection: $settings.clock.meetingAlertLeadMinutes) {
                     Text("At start time").tag(0)
@@ -651,6 +677,7 @@ private struct HourlyChimeSettingsSection: View {
         @Bindable var settings = settings
         Section {
             Toggle("Play an hourly chime", isOn: $settings.clock.hourlyChimeEnabled)
+                .settingsAnchor("clock.chime")
             if settings.clock.hourlyChimeEnabled {
                 Picker("Frequency", selection: $settings.clock.hourlyChimeCadence) {
                     ForEach(ChimeCadence.allCases) { Text($0.title).tag($0) }
@@ -719,6 +746,7 @@ private struct TodoSections: View {
             }
         } header: {
             Text("Reminders")
+                .settingsAnchor("todo.list")
         } footer: {
             Text(footer).settingsFooter()
         }
@@ -772,6 +800,7 @@ private struct WeatherSections: View {
         Section {
             TextField("Search for a city", text: $search)
                 .task(id: search) { await runSearch() }
+                .settingsAnchor("weather.city")
             if searching { ProgressView().controlSize(.small) }
             if let searchError { Text(searchError).font(.caption).foregroundStyle(.secondary) }
             ForEach(results) { place in
@@ -821,6 +850,7 @@ private struct PublicIPSection: View {
         @Bindable var settings = settings
         Section {
             Toggle("Show public IP address", isOn: $settings.showPublicIP)
+                .settingsAnchor("network.publicIP")
         } footer: {
             Text("Off by default. When on, VibeCheck asks api.ipify.org (over HTTPS) for your address at most every 10 minutes and when your network changes. That service sees your IP, as any website does.")
                 .settingsFooter()

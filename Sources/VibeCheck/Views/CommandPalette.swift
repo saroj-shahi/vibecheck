@@ -75,15 +75,25 @@ private struct PaletteRow: View {
     var body: some View {
         Button(action: activate) {
             HStack(spacing: 9) {
+                let iconTint = command.tint ?? Color.accentColor
                 Image(systemName: command.symbol)
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(selected ? Color.accentColor : .secondary)
+                    .foregroundStyle(selected ? iconTint : .secondary)
                     .frame(width: 22, height: 22)
-                    .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(.quaternary.opacity(compact ? 0 : 0.7)))
-                Text(confirming ? "\(command.title)? Press ↩ again" : command.title)
-                    .font(.system(size: compact ? 12 : 13, weight: .medium))
-                    .foregroundStyle(confirming ? Color.red : .primary)
-                    .lineLimit(1)
+                    .background(RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(selected ? iconTint.opacity(compact ? 0 : 0.16) : Color.secondary.opacity(compact ? 0 : 0.14)))
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(confirming ? "\(command.title)? Press ↩ again" : command.title)
+                        .font(.system(size: compact ? 12 : 13, weight: .medium))
+                        .foregroundStyle(confirming ? Color.red : .primary)
+                        .lineLimit(1)
+                    if let subtitle = command.subtitle, !confirming {
+                        Text(subtitle)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
                 Spacer(minLength: 4)
                 ZStack(alignment: .trailing) {
                     if let shortcut = command.shortcut { KeyCap(text: shortcut).opacity(selected ? 0 : 1) }
@@ -91,7 +101,7 @@ private struct PaletteRow: View {
                 }
             }
             .padding(.horizontal, 6)
-            .frame(height: compact ? 26 : 30)
+            .frame(height: compact ? 26 : (command.subtitle == nil ? 30 : 34))
             .background(RoundedRectangle(cornerRadius: compact ? 6 : 8, style: .continuous)
                 .fill(Color.accentColor.opacity(selected ? 0.14 : 0)))
             .contentShape(Rectangle())

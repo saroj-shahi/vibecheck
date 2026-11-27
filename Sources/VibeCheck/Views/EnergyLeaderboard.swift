@@ -25,10 +25,12 @@ struct EnergyLeaderboard: View {
                 ForEach(board.rows) { row in
                     HStack(spacing: 6) {
                         Group {
-                            if let icon = Self.icon(named: row.name) {
+                            if let agent = Self.agentKind(named: row.name) {
+                                AgentLogoTile(agent: agent, size: 16)
+                            } else if let icon = Self.icon(named: row.name) {
                                 Image(nsImage: icon).resizable()
                             } else {
-                                Image(systemName: "app").foregroundStyle(.secondary)
+                                Image(systemName: "terminal").foregroundStyle(.secondary)
                             }
                         }
                         .frame(width: 16, height: 16)
@@ -50,5 +52,18 @@ struct EnergyLeaderboard: View {
 
     private static func icon(named name: String) -> NSImage? {
         NSWorkspace.shared.runningApplications.first { $0.localizedName == name }?.icon
+    }
+
+    /// Maps known local AI CLI binary names to their crisp AgentLogoTile artwork.
+    nonisolated static func agentKind(named name: String) -> AgentKind? {
+        let lower = name.trimmingCharacters(in: .whitespaces).lowercased()
+        switch lower {
+        case "claude", "claude-code": return .claude
+        case "codex": return .codex
+        case "opencode": return .opencode
+        case "copilot", "github-copilot": return .copilot
+        case "agy", "antigravity": return .antigravity
+        default: return nil
+        }
     }
 }

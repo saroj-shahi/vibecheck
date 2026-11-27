@@ -86,8 +86,19 @@ struct DeckSummaryTests {
     @Test func appNoteAndCPUText() {
         #expect(TileContent.appNote("Chrome", TileContent.cpuText(46.4)) == "Chrome 46%")
         #expect(TileContent.appNote("Visual Studio Code", "7.0 GB") == "Visual Stu… 7.0 GB")
+        #expect(TileContent.compactDisplayName("Google Chrome") == "Chrome")
+        #expect(TileContent.compactDisplayName("Visual Studio Code") == "VS Code")
+        #expect(TileContent.compactDisplayName("Google Chrome Helper (Renderer)") == "Chrome")
+        #expect(TileContent.compactDisplayName("Safari") == "Safari")
         #expect(TileContent.cpuText(212.6) == "213%")
         #expect(TileContent.cpuText(-1) == "0%")
+    }
+
+    @Test func energyLeaderboardMapsCLIAgentsToBrandLogos() {
+        #expect(EnergyLeaderboard.agentKind(named: "claude") == .claude)
+        #expect(EnergyLeaderboard.agentKind(named: "codex") == .codex)
+        #expect(EnergyLeaderboard.agentKind(named: "agy") == .antigravity)
+        #expect(EnergyLeaderboard.agentKind(named: "Google Chrome") == nil)
     }
 
     @Test func topMemoryTrackSkipsStaleAndEmpty() {
